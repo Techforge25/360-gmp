@@ -1,3 +1,4 @@
+const port = process.env.PORT || 8000;
 const isProduction = process.env.NODE_ENV === "production";
 
 const corsOptions = {
@@ -16,6 +17,7 @@ const cookieOptions = {
 };
 
 module.exports = {
+    port,
     isProduction,
     corsOptions,
     cookieOptions,

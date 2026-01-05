@@ -3,6 +3,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const path = require("path");
 const { corsOptions } = require("./constants");
+const compression = require("compression");
 const errorHandler = require("./middlewares/errorHandler");
 
 const app = express();

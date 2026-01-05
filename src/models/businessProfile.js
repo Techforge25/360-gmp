@@ -2,7 +2,7 @@ const { Schema, model } = require("mongoose");
 
 // Schema
 const BusinessProfileSchema = new Schema({
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    ownerUserId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     companyName: String,
     businessType: String,
     companySize: Number,

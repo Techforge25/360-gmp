@@ -15,6 +15,12 @@ app.use(express.json({ limit: "20kb" }));
 app.use("/public", express.static(path.resolve("public")));
 app.use(compression());
 
+// Import Routes
+const authRouter = require("./routes/auth");
+
+// Registered Routes
+app.use("/api/v1/auth", authRouter);
+
 // Error handling middleware
 app.use(errorHandler);
 

@@ -1,10 +1,12 @@
 require("dotenv").config();
 const app = require("./app");
 const { port } = require("./constants");
-
-require("dotenv").config();
+const connectDB = require("./database/connection");
 
 // Connect db
-
-// Start app
-app.listen(port, () => console.log(`Server is up and running`));
+connectDB()
+.then(() => {
+    app.on("error", () => console.log("Failed to listen"));
+    app.listen(port, () => console.log(`Server is up and running`));
+})
+.catch(error => console.log("Failed to connect with database", error.message));

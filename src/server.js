@@ -7,4 +7,4 @@ require("dotenv").config();
 // Connect db
 
 // Start app
-app.listen(port, () => console.log(`Server is up adn running`));
+app.listen(port, () => console.log(`Server is up and running`));

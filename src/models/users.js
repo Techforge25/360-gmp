@@ -2,14 +2,14 @@ const { Schema, model } = require("mongoose");
 const bcrypt = require("bcrypt");
 
 // Schema
-const UserSchema = new Schema({
+const userSchema = new Schema({
   email: { type: String, unique: true, required: true },
   passwordHash: { type: String, required: true },
   status: { type: String, default: "active" }
 }, { timestamps: true });
 
 // Hash password
-UserSchema.pre("save", async function(next) {
+userSchema.pre("save", async function(next) {
     if(!this.isModified("passwordHash")) return next();
     try 
     {
@@ -21,7 +21,21 @@ UserSchema.pre("save", async function(next) {
     }
 });
 
+// Match password
+userSchema.methods.matchPassword = async function(password) {
+    if(!password) return false;
+    try 
+    {
+       return await bcrypt.compare(password, this.password); 
+    } 
+    catch (error) 
+    {
+        console.log(error.message);
+        return false;
+    }
+}
+
 // Model
-const User = model("User", UserSchema);
+const User = model("User", userSchema);
 
 module.exports = User;

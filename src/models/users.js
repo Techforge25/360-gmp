@@ -5,7 +5,8 @@ const bcrypt = require("bcrypt");
 const userSchema = new Schema({
   email: { type: String, unique: true, required: true },
   passwordHash: { type: String, required: true },
-  status: { type: String, default: "active" }
+  status: { type: String, default: "active" },
+  role:{ type:String }
 }, { timestamps: true });
 
 // Hash password

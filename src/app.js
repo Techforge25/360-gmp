@@ -20,11 +20,13 @@ app.use(compression());
 const authRouter = require("./routes/auth");
 const planRouter = require("./routes/plan");
 const subscriptionRouter = require("./routes/subscription");
+const userProfileRouter = require("./routes/userProfile");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/plan", planRouter);
 app.use("/api/v1/subscription", subscriptionRouter);
+app.use("/api/v1/userProfile", userProfileRouter);
 
 // Error handling middleware
 app.use(errorHandler);

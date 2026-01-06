@@ -34,9 +34,9 @@ const userLogin = asyncHandler(async (request, response) => {
     // Generate access token
     const accessToken = generateAccessToken(user);
     if(!accessToken) throw new ApiError(500, "Failed to generate access token");
-    return response.status(201)
+    return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
-    .json(new ApiResponse(201, null, "Login successful"));
+    .json(new ApiResponse(200, null, "Login successful"));
 });
 
 module.exports = { userSignup, userLogin };

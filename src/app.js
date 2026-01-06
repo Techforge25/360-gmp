@@ -18,9 +18,11 @@ app.use(compression());
 
 // Import Routes
 const authRouter = require("./routes/auth");
+const planRouter = require("./routes/plan");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/plan", planRouter);
 
 // Error handling middleware
 app.use(errorHandler);

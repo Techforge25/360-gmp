@@ -39,4 +39,11 @@ const userLogin = asyncHandler(async (request, response) => {
     .json(new ApiResponse(200, null, "Login successful"));
 });
 
-module.exports = { userSignup, userLogin };
+// Logout
+const logout = asyncHandler(async (request, response) => {
+    return response.status(200)
+    .clearCookie("accessToken", cookieOptions)
+    .json(new ApiResponse(200, null, "Logout successful"));
+});
+
+module.exports = { userSignup, userLogin, logout };

@@ -6,8 +6,8 @@ const { authentication } = require("../middlewares/auth");
 const planRouter = Router();
 
 // Save plan / Fetch all plans
-planRouter.route("/", authentication)
-.post(savePlan)
-.get(fetchAllPlans);
+planRouter.route("/")
+.post(authentication, savePlan)
+.get(authentication, fetchAllPlans);
 
 module.exports = planRouter;

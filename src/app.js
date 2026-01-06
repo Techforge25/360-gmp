@@ -22,6 +22,7 @@ const planRouter = require("./routes/plan");
 const subscriptionRouter = require("./routes/subscription");
 const userProfileRouter = require("./routes/userProfile");
 const businessProfileRouter = require("./routes/businessProfileRoute");
+const productsRouter = require("./routes/productsRoute");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);
@@ -29,6 +30,7 @@ app.use("/api/v1/plan", planRouter);
 app.use("/api/v1/subscription", subscriptionRouter);
 app.use("/api/v1/userProfile", userProfileRouter);
 app.use("/api/v1/businessProfile", businessProfileRouter);
+app.use("/api/v1/products", productsRouter);
 
 // Error handling middleware
 app.use(errorHandler);

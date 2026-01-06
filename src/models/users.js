@@ -27,11 +27,11 @@ userSchema.methods.matchPassword = async function(password) {
     if(!password) return false;
     try 
     {
-       return await bcrypt.compare(password, this.password); 
+       return await bcrypt.compare(password, this.passwordHash); 
     } 
     catch (error) 
     {
-        console.log(error.message);
+        console.log("Failed to compare passwords", error.message);
         return false;
     }
 }

@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const paginate = require("mongoose-paginate-v2");
 
 // Schema
 const productSchema = new Schema({
@@ -14,6 +15,9 @@ const productSchema = new Schema({
     shippingTerms: String,
     isFeatured: Boolean
 }, { timestamps: true });
+
+// Inject plugin
+productSchema.plugin(paginate);
 
 // Model
 const Product = model("Product", productSchema);

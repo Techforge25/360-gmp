@@ -8,6 +8,6 @@ const planRouter = Router();
 // Save plan / Fetch all plans
 planRouter.route("/")
 .post(authentication, savePlan)
-.get(authentication, fetchAllPlans);
+.get(fetchAllPlans);
 
 module.exports = planRouter;

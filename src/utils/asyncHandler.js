@@ -6,6 +6,7 @@ const asyncHandler = (fn) => {
         } 
         catch(error) 
         {
+            console.log(error);
             return next(error);
         }
     };

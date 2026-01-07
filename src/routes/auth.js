@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { userSignup, userLogin, logout } = require("../controllers/auth");
+const { userSignup, userLogin, logout, refreshToken } = require("../controllers/auth");
 const { authentication } = require("../middlewares/auth");
 
 // Router instance
@@ -13,5 +13,8 @@ authRouter.route("/user/login").post(userLogin);
 
 // Logout
 authRouter.route("/logout").get(logout);
+
+// Refresh token - (update user role)
+authRouter.route("/refreshToken/updateRole").get(authentication, refreshToken);
 
 module.exports = authRouter;

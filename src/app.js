@@ -16,6 +16,7 @@ app.use(express.json({ limit: "20kb" }));
 app.use("/public", express.static(path.resolve("public")));
 app.use(compression());
 app.use(morgan("dev"));
+
 // Import Routes
 const authRouter = require("./routes/auth");
 const planRouter = require("./routes/plan");
@@ -24,6 +25,7 @@ const userProfileRouter = require("./routes/userProfile");
 const businessProfileRouter = require("./routes/businessProfileRoute");
 const productsRouter = require("./routes/productsRoute");
 const jobsRouter = require("./routes/jobsRoute");
+const jobApplicationRouter = require("./routes/jobApplicationRoute");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);
@@ -33,6 +35,7 @@ app.use("/api/v1/userProfile", userProfileRouter);
 app.use("/api/v1/businessProfile", businessProfileRouter);
 app.use("/api/v1/products", productsRouter);
 app.use("/api/v1/jobs", jobsRouter);
+app.use("/api/v1/jobApplication", jobApplicationRouter);
 
 // Error handling middleware
 app.use(errorHandler);

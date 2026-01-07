@@ -23,6 +23,8 @@ const subscriptionRouter = require("./routes/subscription");
 const userProfileRouter = require("./routes/userProfile");
 const businessProfileRouter = require("./routes/businessProfileRoute");
 const jobsRouter = require("./routes/jobsRoute");
+const communityRouter = require("./routes/communityRoute");
+const communityPostRouter = require("./routes/communityPost");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);
@@ -31,6 +33,8 @@ app.use("/api/v1/subscription", subscriptionRouter);
 app.use("/api/v1/userProfile", userProfileRouter);
 app.use("/api/v1/businessProfile", businessProfileRouter);
 app.use("/api/v1/jobs", jobsRouter);
+app.use("/api/v1/community", communityRouter);
+app.use("/api/v1/community-posts", communityPostRouter);
 
 // Error handling middleware
 app.use(errorHandler);

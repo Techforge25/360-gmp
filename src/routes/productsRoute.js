@@ -14,7 +14,7 @@ productsRouter.route("/")
 // Fetch business products
 productsRouter.route("/business").get(authentication, checkSubscription, fetchBusinessProducts);
 
-// View product / Update product
+// View product / Update product / Delete product
 productsRouter.route("/:productId")
 .get(authentication, checkSubscription, viewProduct)
 .put(authentication, checkSubscription, checkBusinessAccess, updateProduct)

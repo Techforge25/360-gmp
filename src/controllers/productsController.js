@@ -19,8 +19,9 @@ const createProduct = asyncHandler(async (request, response) => {
 
 // Fetch all products
 const fetchAllProducts = asyncHandler(async (request, response) => {
-    const products = await Product.find({}).lean();
-    if(!products.length) return response.status(200).json(new ApiResponse(200, [], "Products not found"));
+    const { page = 1, limit = 10 } = request.query;
+    const products = await Product.paginate({}, { page, limit });
+    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, [], "Products not found"));
 
     return response.status(200).json(new ApiResponse(200, products, "All products have been fetched"));
 });
@@ -31,8 +32,9 @@ const fetchBusinessProducts = asyncHandler(async (request, response) => {
     const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");
     if(!business) throw new ApiError(404, "Business not found");    
 
-    const products = await Product.find({ businessId:business._id }).lean();
-    if(!products.length) return response.status(200).json(new ApiResponse(200, [], "Business products not found"));
+    const { page = 1, limit = 10 } = request.query;
+    const products = await Product.paginate({ businessId:business._id }, { page, limit });
+    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, [], "Business products not found"));
 
     return response.status(200).json(new ApiResponse(200, products, "Business products have been fetched"));
 });

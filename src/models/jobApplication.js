@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const paginate = require("mongoose-paginate-v2");
 
 // Schema
 const jobApplicationSchema = new Schema({
@@ -10,6 +11,9 @@ const jobApplicationSchema = new Schema({
     immediateJoiningStatus: { type:String },
     expectedSalary: { type:String }
 }, { timestamps: true });
+
+// Inject plugin
+jobApplicationSchema.plugin(paginate);
 
 // Model
 const JobApplication = model("JobApplication", jobApplicationSchema);

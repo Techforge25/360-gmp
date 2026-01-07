@@ -47,11 +47,15 @@ const logout = asyncHandler(async (request, response) => {
 });
 
 // Refresh token
-const refreshToken = asyncHandler((request, response) => {
+const refreshToken = asyncHandler(async (request, response) => {
     const { _id } = request.user;
     const role = request.query?.role || null;
     if(!role) throw new ApiError(400, "Role is required for refreshing a token");
     if(role.toLowerCase() !== "user" && role.toLowerCase() !== "business") throw new ApiError(400, "Invalid role");
+
+    // Save to db
+    const user = await User.findByIdAndUpdate(_id, { role }, { new:true, lean:true }).select("-_id role");
+    if(!user) throw new ApiError(400, "Failed to update role in db.");
 
     // Generate a new token
     const payload = { _id, role };
@@ -61,7 +65,7 @@ const refreshToken = asyncHandler((request, response) => {
     return response.status(200)
     .clearCookie("accessToken", cookieOptions)
     .cookie("accessToken", accessToken, cookieOptions)
-    .json(new ApiResponse(200, null, `Access token has been refreshed! role has changed to ${role}`));
+    .json(new ApiResponse(200, user, `Access token has been refreshed! role has changed to ${role}`));
 });
 
 module.exports = { userSignup, userLogin, logout, refreshToken };

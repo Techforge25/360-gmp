@@ -28,11 +28,18 @@ const createJobApplicatiion = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, jobApplication, "Applied for job successfully!"));
 });
 
-// Fetch all job applications
-const fetchAlljobApplications = asyncHandler(async (request, response) => {
+// Fetch job applications for specific job
+const fetchjobApplications = asyncHandler(async (request, response) => {
+    const { jobId } = request.params;
+
+    // Find job
+    const job = await Job.findById(jobId).select("_id").lean();
+    if(!job) throw new ApiError(404, "Job not found! Invalid job ID");
+
+    // Find job applications for specific job posted by business
     const { page = 1, limit = 10 } = request.query;
-    const jobApplications = await JobApplication.paginate({}, { page, limit });
-    if(!jobApplications.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Job application not found"));
+    const jobApplications = await JobApplication.paginate({ jobId }, { page, limit });
+    if(!jobApplications.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No job applications found at the moment"));
     return response.status(200).json(new ApiResponse(200, jobApplications, "Job applications have been fetched"));
 });
 
@@ -44,4 +51,4 @@ const viewJobapplication = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, jobApplication, "Job application has been fetched"));
 });
 
-module.exports = { createJobApplicatiion, fetchAlljobApplications, viewJobapplication };
+module.exports = { createJobApplicatiion, fetchjobApplications, viewJobapplication };

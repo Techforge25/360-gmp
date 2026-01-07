@@ -1,15 +1,14 @@
 const { Router } = require("express");
-const { createJobApplicatiion, fetchAlljobApplications, viewJobapplication } = require("../controllers/jobApplicationController");
+const { createJobApplicatiion, fetchjobApplications, viewJobapplication } = require("../controllers/jobApplicationController");
 const { authentication } = require("../middlewares/auth");
 
 // Router instance
 const jobApplicationRouter = Router();
 
-// Create job application
-jobApplicationRouter.route("/:jobId").post(authentication, createJobApplicatiion);
-
-// Fetch all job applications
-jobApplicationRouter.route("/").get(authentication, fetchAlljobApplications);
+// Create job application / Fetch job applications for specific job
+jobApplicationRouter.route("/:jobId")
+.post(authentication, createJobApplicatiion)
+.get(authentication, fetchjobApplications);
 
 // View job Application
 jobApplicationRouter.route("/:id").get(authentication, viewJobapplication);

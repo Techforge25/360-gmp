@@ -26,6 +26,7 @@ const businessProfileRouter = require("./routes/businessProfileRoute");
 const productsRouter = require("./routes/productsRoute");
 const jobsRouter = require("./routes/jobsRoute");
 const jobApplicationRouter = require("./routes/jobApplicationRoute");
+const refreshTokenRouter = require("./routes/refreshTokenRoute");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);
@@ -36,6 +37,7 @@ app.use("/api/v1/businessProfile", businessProfileRouter);
 app.use("/api/v1/products", productsRouter);
 app.use("/api/v1/jobs", jobsRouter);
 app.use("/api/v1/jobApplication", jobApplicationRouter);
+app.use("/api/v1/refreshToken", refreshTokenRouter);
 
 // Error handling middleware
 app.use(errorHandler);

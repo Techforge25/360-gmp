@@ -1,6 +1,8 @@
+// Port and environment
 const port = process.env.PORT || 8000;
 const isProduction = process.env.NODE_ENV === "production";
 
+// Cors options
 const corsOptions = {
     origin:[process.env.ORIGIN],
     credentials:true,
@@ -8,6 +10,7 @@ const corsOptions = {
     allowedHeaders:["Content-Type", "Authorization"]
 };
 
+// Cookie options
 const cookieOptions = {
     httpOnly:true,
     secure:true,
@@ -16,9 +19,13 @@ const cookieOptions = {
     sameSite:"none"
 };
 
+// Empty list
+const emptyList = { docs:[], totalPages:0, totalDocs:0 };
+
 module.exports = {
     port,
     isProduction,
     corsOptions,
     cookieOptions,
+    emptyList
 };

@@ -1,3 +1,4 @@
+const { emptyList } = require("../constants");
 const BusinessProfile = require("../models/businessProfileSchema");
 const Product = require("../models/products");
 const ApiError = require("../utils/ApiError");
@@ -21,7 +22,7 @@ const createProduct = asyncHandler(async (request, response) => {
 const fetchAllProducts = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
     const products = await Product.paginate({}, { page, limit });
-    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, [], "Products not found"));
+    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Products not found"));
 
     return response.status(200).json(new ApiResponse(200, products, "All products have been fetched"));
 });
@@ -34,7 +35,7 @@ const fetchBusinessProducts = asyncHandler(async (request, response) => {
 
     const { page = 1, limit = 10 } = request.query;
     const products = await Product.paginate({ businessId:business._id }, { page, limit });
-    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, [], "Business products not found"));
+    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Business products not found"));
 
     return response.status(200).json(new ApiResponse(200, products, "Business products have been fetched"));
 });

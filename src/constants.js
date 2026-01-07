@@ -4,7 +4,7 @@ const isProduction = process.env.NODE_ENV === "production";
 
 // Cors options
 const corsOptions = {
-    origin:[process.env.ORIGIN],
+    origin:[process.env.ORIGIN, "http://localhost:3000"],
     credentials:true,
     methods:["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders:["Content-Type", "Authorization"]

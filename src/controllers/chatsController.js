@@ -31,7 +31,24 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
     if(!chat) throw new ApiError(400, "Failed to send a message");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, chat, "Message has been sent"));
+    return response.status(201).json(new ApiResponse(201, chat, "Message has been sent"));
 });
 
-module.exports = { sendPrivateMessage };
+// Fetch private messages
+const fetchPrivateMessages = asyncHandler(async (request, response) => {
+    const senderId = request.user._id;
+    const { receiverId } = request.params;
+
+    // Check reciever existence
+    const user = await User.findById(receiverId).select("_id").lean();
+    if(!user) throw new ApiError(404, "User not found! Invalid receiver ID");    
+
+    // Generate unique id for conversation thread
+    const conversationId = generateConversationId(senderId, receiverId);
+
+    const chats = await Chat.find({ conversationId }).lean(); 
+    if(!chats.length) return response.status(200).json(new ApiResponse(200, [], "No messages yet"));
+    return response.status(200).json(new ApiResponse(200, chats, "Messages has been fetched"));
+});
+
+module.exports = { sendPrivateMessage, fetchPrivateMessages };

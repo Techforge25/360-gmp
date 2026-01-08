@@ -81,6 +81,18 @@ const BusinessProfileSchema = new Schema(
     isLocked: {
       type: Boolean,
       default: true
+    },
+
+    // Stripe Connect Account for receiving payments
+    stripeConnectAccountId: {
+      type: String,
+      default: null,
+      index: true
+    },
+    stripeConnectOnboardingStatus: {
+      type: String,
+      enum: ["pending", "in_progress", "completed", "not_started"],
+      default: "not_started"
     }
   },
   {

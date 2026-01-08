@@ -29,6 +29,8 @@ const communityRouter = require("./routes/communityRoute");
 const communityPostRouter = require("./routes/communityPost");
 const jobApplicationRouter = require("./routes/jobApplicationRoute");
 const refreshTokenRouter = require("./routes/refreshTokenRoute");
+const orderRouter = require("./routes/orderRoute");
+const escrowRouter = require("./routes/escrowRoute");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);
@@ -42,6 +44,8 @@ app.use("/api/v1/community", communityRouter);
 app.use("/api/v1/community-posts", communityPostRouter);
 app.use("/api/v1/jobApplication", jobApplicationRouter);
 app.use("/api/v1/refreshToken", refreshTokenRouter);
+app.use("/api/v1/orders", orderRouter);
+app.use("/api/v1/escrow", escrowRouter);
 
 // Error handling middleware
 app.use(errorHandler);

@@ -3,22 +3,28 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 
-// Save plan
-const savePlan = asyncHandler(async (request, response) => {
-    const { name, durationDays, price } = request.body;
+// Create plan
+const createPlan = asyncHandler(async (request, response) => {
+    let { name, price, description, features, durationDays } = request.body;
     if(!name) throw new ApiError(400, "Please select plan");
 
     let allowsUserAccess = true;
     let allowsBusinessAccess = true;
-    if(name === "TRIAL") allowsBusinessAccess = false;
+    if(name === "TRIAL")
+    {
+        price = 0;
+        allowsBusinessAccess = false;
+    }
 
     // Create plan
     const plan = await Plan.create({ 
         name, 
+        price:Number(price),
+        description,
+        features,
         allowsUserAccess, 
         allowsBusinessAccess, 
         durationDays:Number(durationDays),
-        price:Number(price)
     });
 
     if(!plan) throw new ApiError(500, "Failed to save a plan");
@@ -31,4 +37,4 @@ const fetchAllPlans = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, plans, "Plans have been fetched"));
 });
 
-module.exports = { savePlan, fetchAllPlans };
+module.exports = { createPlan, fetchAllPlans };

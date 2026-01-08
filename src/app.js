@@ -29,6 +29,7 @@ const communityRouter = require("./routes/communityRoute");
 const communityPostRouter = require("./routes/communityPost");
 const jobApplicationRouter = require("./routes/jobApplicationRoute");
 const orderRouter = require("./routes/ordersRoute");
+const chatRouter = require("./routes/chatsRoute");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);
@@ -42,6 +43,7 @@ app.use("/api/v1/community", communityRouter);
 app.use("/api/v1/community-posts", communityPostRouter);
 app.use("/api/v1/jobApplication", jobApplicationRouter);
 app.use("/api/v1/orders", orderRouter);
+app.use("/api/v1/chats", chatRouter);
 
 // Error handling middleware
 app.use(errorHandler);

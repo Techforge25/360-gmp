@@ -13,13 +13,19 @@ const { Schema, model } = require("mongoose");
 // Updated Schema
 const orderSchema = new Schema({
     buyerUserProfileId: { type: Schema.Types.ObjectId, ref: "UserProfile" },
-    totalAmount: { type: String },
-    status: { type: String, default: "pending" },
+    sellerBusinessId: { type: Schema.Types.ObjectId, ref: "BusinessProfile" },
+    totalAmount: { type: Number },
+    status: { 
+        type: String,
+        enum: ["pending", "paid", "processing", "shipped", "delivered", "completed", "cancelled"],
+        default: "pending" 
+    },
     shippingAddress: { type:String },
     items:[{
         _id:false,
         productId: { type: Schema.Types.ObjectId, ref:"Product", required:[true, "Product ID is required"] },
-        quantity: { type: Number, required:[true, "Please specify product quantity"] }
+        quantity: { type: Number, required:[true, "Please specify product quantity"] },
+        priceAtPurchase: { type: Number, required:[true, "Please specify product price at purchase"] }
     }]
 }, { timestamps: true });
 

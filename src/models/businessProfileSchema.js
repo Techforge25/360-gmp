@@ -33,6 +33,11 @@ const BusinessProfileSchema = new Schema(
       trim: true
     },
 
+    stripeConnectId: {
+      type: String,
+      trim: true
+    },
+
     operationHour: {
       type: String,
       trim: true

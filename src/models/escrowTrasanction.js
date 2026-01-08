@@ -3,9 +3,17 @@ const { Schema, model } = require("mongoose");
 // Schema
 const escrowTransactionSchema = new Schema({
     orderId: { type: Schema.Types.ObjectId, ref: "Order" },
-    amount: Number,
-    status: String,
-    releaseCondition: String
+    sellerId: { type: Schema.Types.ObjectId, ref: "BusinessProfile" },
+    buyerId: { type: Schema.Types.ObjectId, ref: "UserProfile" },
+    totalAmount: Number,
+    platformFee: Number,   // Aapka 10% ($10)
+    netAmount: Number, 
+    status: { 
+        type: String, 
+        enum: ['held', 'released', 'refunded'], 
+        default: 'held' 
+    },
+    // releaseCondition: String
 }, { timestamps: true });
 
 // Model

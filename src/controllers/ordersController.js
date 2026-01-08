@@ -6,6 +6,9 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const Stripe = require("stripe");
 const mongoose = require("mongoose");
+const EscrowTransaction = require("../models/escrowTrasanction");
+const Wallet = require("../models/walletModel");
+const BusinessProfile = require("../models/businessProfileSchema");
 
 // Create order
 const createOrder = asyncHandler(async (request, response) => {
@@ -19,6 +22,12 @@ const createOrder = asyncHandler(async (request, response) => {
     if (!totalAmount) throw new ApiError(400, "Amount is required");
     if (!shippingAddress) throw new ApiError(400, "Shipping address is required");
     if (!items || !items.length) throw new ApiError(400, "Product item is required");
+
+    
+    // 1. Pehle product se Seller ID nikalna zaroori hai
+    const firstProduct = await Product.findById(items[0].productId).select("businessId");
+    if (!firstProduct) throw new ApiError(404, "Product not found");
+    const sellerBusinessId = firstProduct.businessId;
 
     // Stock check
     for (const item of items) 
@@ -54,6 +63,7 @@ const createOrder = asyncHandler(async (request, response) => {
         }],
         metadata: {
             buyerUserProfileId: userProfile._id.toString(),
+            sellerBusinessId,
             totalAmount,
             shippingAddress,
             items: JSON.stringify(items)
@@ -86,10 +96,11 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
     dbSession.startTransaction();
     try 
     {
-        const { buyerUserProfileId, totalAmount, shippingAddress, items } = stripeSession.metadata;
+        const { buyerUserProfileId,sellerBusinessId, totalAmount, shippingAddress, items } = stripeSession.metadata;
         const parsedItems = JSON.parse(items);
 
-        // Stock deduction
+        // Stock deduction and prepare items with priceAtPurchase
+        const itemsWithPrice = [];
         for (const item of parsedItems) 
         {
             const { productId, quantity } = item;
@@ -107,16 +118,46 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
 
                 throw new ApiError(400,`Only ${existingProduct.stockQty} unit(s) available for "${existingProduct.title}"`);
             }
+
+            // Add priceAtPurchase to item
+            itemsWithPrice.push({
+                productId: product._id,
+                quantity: Number(quantity),
+                priceAtPurchase: product.pricePerUnit
+            });
         }
 
         // Create order
-        const order = await Order.create([{
+        const [order] = await Order.create([{
             buyerUserProfileId,
+            sellerBusinessId,
             totalAmount,
-            status: "processing",
+            status: "paid",
             shippingAddress,
-            items: parsedItems
+            items: itemsWithPrice
         }], { session:dbSession });
+
+        const amount = Number(totalAmount);
+        const platformFee = amount * 0.10; // 10% Fee
+        const netAmount = amount - platformFee; // Seller ka hissa
+
+        await EscrowTransaction.create([{
+            orderId: order._id,
+            sellerId: sellerBusinessId,
+            buyerId: buyerUserProfileId,
+            totalAmount: amount,
+            platformFee: platformFee,
+            netAmount: netAmount,
+            status: 'held' // Paisa hold ho gaya
+        }], { session: dbSession });
+
+        await Wallet.findOneAndUpdate(
+            { businessId: sellerBusinessId },
+            { $inc: { pendingBalance: netAmount } },
+            { upsert: true, session: dbSession }
+        );
+
+
         await dbSession.commitTransaction();
         dbSession.endSession();
         return response.status(201).json(new ApiResponse(201, order, "Order has been created"));
@@ -130,4 +171,90 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
     }
 });
 
-module.exports = { createOrder, verifyStripePaymentForOrders };
+// Complete order
+// First check if the order status and authenticated by the real buyer
+// iskay baaad ham is pr transaction start karega us pr ya hoga kay order status complete hoga ya escrow release hoga aur wallet update hoga
+
+
+const completeOrder = asyncHandler(async (request, response) => {
+    const { orderId } = request.params;
+    const { _id } = request.user;
+
+    if (!orderId) throw new ApiError(400, "Order ID is missing");
+
+    const order = await Order.findById(orderId);
+    if (!order) throw new ApiError(404, "Order not found");
+
+    const buyerProfile = await UserProfile.findOne({ userId: _id });
+    if (!buyerProfile) throw new ApiError(404, "User profile not found");
+    if (buyerProfile._id.toString() !== order.buyerUserProfileId.toString()) 
+        throw new ApiError(403, "You are not authorized to complete this order");
+
+    const allowedStatuses = ["paid", "processing", "shipped", "delivered"];
+    
+    if (!allowedStatuses.includes(order.status)) {
+        throw new ApiError(400, `Order cannot be completed in its current status: ${order.status}`);
+    }
+
+    const escrow = await EscrowTransaction.findOne({ orderId: order._id, status: "held" });
+    if (!escrow) throw new ApiError(404, "Escrow record not found or already released");
+
+    const dbSession = await mongoose.startSession();
+    dbSession.startTransaction();
+
+    try {
+        order.status = "completed";
+        await order.save({ session: dbSession });
+
+        escrow.status = "released";
+        await escrow.save({ session: dbSession });
+
+        await Wallet.findOneAndUpdate(
+            { businessId: order.sellerBusinessId },
+            { $inc: { 
+                pendingBalance: -escrow.netAmount,
+                availableBalance: escrow.netAmount, } },
+            { upsert: true, session: dbSession }
+        );
+
+        await dbSession.commitTransaction();
+        dbSession.endSession();
+        return response.status(200).json(new ApiResponse(200, {}, "Order completed successfully"));
+
+    } catch (error) {
+        await dbSession.abortTransaction();
+        dbSession.endSession();
+        throw error;
+    }
+    
+});
+
+
+const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
+    const { orderId } = request.params;
+    const { status } = request.body;  
+    const { _id } = request.user; 
+
+    const business = await BusinessProfile.findOne({ ownerUserId: _id });
+    if (!business) throw new ApiError(404, "Business profile not found");
+
+    const order = await Order.findById(orderId);
+    if (!order) throw new ApiError(404, "Order not found");
+
+    if (order.sellerBusinessId.toString() !== business._id.toString()) {
+        throw new ApiError(403, "Aap is order ka status change nahi kar sakte.");
+    }
+
+    // Seller order ko "completed" ya "paid" khud se nahi kar sakta
+    const sellerAllowedStatuses = ["processing", "shipped", "delivered"];
+    if (!sellerAllowedStatuses.includes(status)) {
+        throw new ApiError(400, "Invalid status update.");
+    }
+
+    order.status = status;
+    await order.save();
+
+    return response.status(200).json(new ApiResponse(200, order, `Status updated to ${status}`));
+});
+
+module.exports = { createOrder, verifyStripePaymentForOrders ,completeOrder, updateOrderStatusBySeller};

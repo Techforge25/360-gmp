@@ -6,7 +6,8 @@ const userSchema = new Schema({
   email: { type: String, unique: [true, "This email has already been registered"], required: true },
   passwordHash: { type: String, required: true },
   status: { type: String, default: "active" },
-  role:{ type:String }
+  role: { type:String },
+  isNew: { type:Boolean, default:true }
 }, { timestamps: true });
 
 // Hash password

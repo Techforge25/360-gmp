@@ -27,7 +27,7 @@ const createOrder = asyncHandler(async (request, response) => {
     // 1. Pehle product se Seller ID nikalna zaroori hai
     const firstProduct = await Product.findById(items[0].productId).select("businessId");
     if (!firstProduct) throw new ApiError(404, "Product not found");
-    const sellerBusinessId = firstProduct.businessId;
+    const sellerBusinessId = firstProduct.businessId.toString();
 
     // Stock check
     for (const item of items) 
@@ -171,11 +171,29 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
     }
 });
 
+
+const fetchAllOrders = asyncHandler(async (request, response) => {
+    const { _id } = request.user;
+    const userProfile = await UserProfile.findOne({ userId: _id }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found! Invalid user profile ID");
+
+    const orders = await Order.find({buyerUserProfileId : userProfile})
+    if(!orders) throw new ApiError(404, "No Order Found!");
+
+
+
+    return response
+        .status(200)
+        .json(new ApiResponse(200,orders, "Order Fetch SuccessFully"));
+
+    
+
+
+});
+
 // Complete order
 // First check if the order status and authenticated by the real buyer
 // iskay baaad ham is pr transaction start karega us pr ya hoga kay order status complete hoga ya escrow release hoga aur wallet update hoga
-
-
 const completeOrder = asyncHandler(async (request, response) => {
     const { orderId } = request.params;
     const { _id } = request.user;
@@ -213,7 +231,8 @@ const completeOrder = asyncHandler(async (request, response) => {
             { businessId: order.sellerBusinessId },
             { $inc: { 
                 pendingBalance: -escrow.netAmount,
-                availableBalance: escrow.netAmount, } },
+                availableBalance: escrow.netAmount,
+                totalEarned: escrow.netAmount } },
             { upsert: true, session: dbSession }
         );
 
@@ -234,7 +253,7 @@ const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
     const { orderId } = request.params;
     const { status } = request.body;  
     const { _id } = request.user; 
-
+    
     const business = await BusinessProfile.findOne({ ownerUserId: _id });
     if (!business) throw new ApiError(404, "Business profile not found");
 
@@ -257,4 +276,4 @@ const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, order, `Status updated to ${status}`));
 });
 
-module.exports = { createOrder, verifyStripePaymentForOrders ,completeOrder, updateOrderStatusBySeller};
+module.exports = { createOrder, verifyStripePaymentForOrders ,completeOrder, updateOrderStatusBySeller, fetchAllOrders};

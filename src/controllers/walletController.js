@@ -41,6 +41,7 @@ const WithdrawFunds = asyncHandler(async (request, response) => {
     const { _id } = request.user; 
 
     const business = await BusinessProfile.findOne({ ownerUserId: _id });
+    if (!business) throw new ApiError(404, 'Business id not found!')
     const wallet = await Wallet.findOne({ businessId: business._id });
 
     if (!wallet || wallet.availableBalance <= 0) {

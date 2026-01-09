@@ -37,7 +37,7 @@ const getAccessToken = (request) => {
     if(!request) return null;
     try
     {
-        const accessToken = request.headers['authorization']?.split(" ")?.[1];
+        const accessToken = request.cookies?.accessToken || request.signedCookies?.accessToken || request.headers['authorization']?.split(" ")?.[1];
         return accessToken;
     }
     catch(error)

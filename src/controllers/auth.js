@@ -45,7 +45,9 @@ const userLogin = asyncHandler(async (request, response) => {
     // Generate access token
     const accessToken = generateAccessToken(user);
     if(!accessToken) throw new ApiError(500, "Failed to generate access token");
-    return response.status(200).json(new ApiResponse(200, { profilePayload, accessToken, role:user.role, isNew:user.isNew }, "Login successful"));
+    return response.status(200)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .json(new ApiResponse(200, { profilePayload, accessToken, role:user.role, isNew:user.isNew }, "Login successful"));
 });
 
 // Logout
@@ -84,7 +86,9 @@ const refreshToken = asyncHandler(async (request, response) => {
     const accessToken = generateAccessToken(payload);
     if(!accessToken) throw new ApiError(500, "Failed to generate access token");
 
-    return response.status(200).json(new ApiResponse(200, { profilePayload }, `Access token has been refreshed! role has changed to ${role}`));
+    return response.status(200)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .json(new ApiResponse(200, { profilePayload }, `Access token has been refreshed! role has changed to ${role}`));
 });
 
 module.exports = { userSignup, userLogin, logout, refreshToken };

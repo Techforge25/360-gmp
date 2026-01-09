@@ -45,7 +45,7 @@ const userLogin = asyncHandler(async (request, response) => {
     // Generate access token
     const accessToken = generateAccessToken(user);
     if(!accessToken) throw new ApiError(500, "Failed to generate access token");
-    return response.status(200).json(new ApiResponse(200, { profilePayload, accessToken, role:user.role }, "Login successful"));
+    return response.status(200).json(new ApiResponse(200, { profilePayload, accessToken, role:user.role, isNew:user.isNew }, "Login successful"));
 });
 
 // Logout

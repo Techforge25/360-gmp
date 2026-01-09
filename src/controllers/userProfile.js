@@ -1,4 +1,5 @@
 const UserProfile = require("../models/userProfile");
+const User = require("../models/users");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
@@ -14,7 +15,10 @@ const createUserProfile = asyncHandler(async (request, response) => {
     const profile = await UserProfile.create(profileData);
     if(!profile) throw new ApiError(500, "Failed to create user profile");
 
-    return response.status(201).json(new ApiResponse(201, profile, "User profile has been created"));
-});
+    // Update user status
+    const user = await User.findByIdAndUpdate(profile.userId, { role:"user", isNew:false }, { new:true, lean:true });
+    if(!user) throw new ApiError(500, "Failed to update user status upon user profile creation");
+    return response.status(201).json(new ApiResponse(201, { profile, isNew:user.isNew }, "User profile has been created"));
+}); 
 
 module.exports = { createUserProfile };

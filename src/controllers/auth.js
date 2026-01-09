@@ -45,9 +45,7 @@ const userLogin = asyncHandler(async (request, response) => {
     // Generate access token
     const accessToken = generateAccessToken(user);
     if(!accessToken) throw new ApiError(500, "Failed to generate access token");
-    return response.status(200)
-    .cookie("accessToken", accessToken, cookieOptions)
-    .json(new ApiResponse(200, { profilePayload }, "Login successful"));
+    return response.status(200).json(new ApiResponse(200, { profilePayload, accessToken, role:user.role }, "Login successful"));
 });
 
 // Logout
@@ -65,18 +63,28 @@ const refreshToken = asyncHandler(async (request, response) => {
     if(role.toLowerCase() !== "user" && role.toLowerCase() !== "business") throw new ApiError(400, "Invalid role");
 
     // Save to db
-    const user = await User.findByIdAndUpdate(_id, { role }, { new:true, lean:true }).select("-_id role");
+    const user = await User.findByIdAndUpdate(_id, { role }, { new:true, lean:true }).select("role");
     if(!user) throw new ApiError(400, "Failed to update role in db.");
+
+    // Find profiles
+    const [businessProfile, userProfile] = await Promise.all([
+        BusinessProfile.findOne({ ownerUserId:user._id }).lean(),
+        UserProfile.findOne({ userId:user._id }).lean()
+    ]);
+
+    console.log("Business", businessProfile);
+    console.log("User", userProfile);
+
+    // Payload based on role
+    const profilePayload = user.role === "user" ? userProfile : businessProfile;    
+    console.log("Profile payload", profilePayload);
 
     // Generate a new token
     const payload = { _id, role };
     const accessToken = generateAccessToken(payload);
     if(!accessToken) throw new ApiError(500, "Failed to generate access token");
 
-    return response.status(200)
-    .clearCookie("accessToken", cookieOptions)
-    .cookie("accessToken", accessToken, cookieOptions)
-    .json(new ApiResponse(200, user, `Access token has been refreshed! role has changed to ${role}`));
+    return response.status(200).json(new ApiResponse(200, { profilePayload }, `Access token has been refreshed! role has changed to ${role}`));
 });
 
 module.exports = { userSignup, userLogin, logout, refreshToken };

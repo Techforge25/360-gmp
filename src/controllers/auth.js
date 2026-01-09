@@ -13,7 +13,7 @@ const { userSignupSchema } = require("../validations/user");
 const userSignup = asyncHandler(async (request, response) => {
     // Validate
     const { email, passwordHash } = validate(userSignupSchema, request.body);
-    const user = await User.create({ email, passwordHash });
+    const user = await User.create({ email, passwordHash, role:null });
     if(!user) throw new ApiError(500, "Unable to signup");
 
     return response.status(201).json(new ApiResponse(201, null, "Signup successful"));

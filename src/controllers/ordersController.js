@@ -160,7 +160,8 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
 
         await dbSession.commitTransaction();
         dbSession.endSession();
-        return response.status(201).json(new ApiResponse(201, order, "Order has been created"));
+        // return response.status(201).json(new ApiResponse(201, order, "Order has been created"));
+        return response.status(303).redirect("https://github.com");
 
     } 
     catch(error) 

@@ -25,14 +25,8 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
     // If the message contains any document file
     if(messageType.toLowerCase() === "document" && !documentFileUrl) throw new ApiError(400, "Document file is missing");
 
-    // Check sender and reciever existence
-    const [_sender, _receiver] = await Promise.all([
-        User.findById(senderId).select("_id role").lean(),
-        User.findById(receiverId).select("_id role").lean()
-    ]);
-
     // Restrict profile from sending messages to same level profile
-    if(_sender?.role === _receiver?.role) throw new ApiError(400, "You cannot send a message");
+    if(senderModel === receiverModel) throw new ApiError(400, "You cannot send a message");
 
     // Generate unique id for conversation thread
     const conversationId = generateConversationId(senderId, receiverId);
@@ -55,14 +49,9 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
 
 // Fetch private messages
 const fetchPrivateMessages = asyncHandler(async (request, response) => {
-    const { senderId, receiverId } = request.body || {};
-
-    // Check sender and reciever existence
-    const [sender, receiver] = await Promise.all([
-        User.findById(senderId).select("_id role").lean(),
-        User.findById(receiverId).select("_id role").lean()
-    ]);
-    if(!sender) throw new ApiError(404, "User not found! Invalid sender ID")
+    const { senderId, receiverId } = request.query || {};
+    if(!senderId) throw new ApiError(400, "Sender ID is missing");
+    if(!receiverId) throw new ApiError(400, "Receiver ID is missing");
 
     // Generate unique id for conversation thread
     const conversationId = generateConversationId(senderId, receiverId);

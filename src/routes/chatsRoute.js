@@ -9,6 +9,6 @@ const chatRouter = Router();
 chatRouter.route("/private-message").post(authentication, sendPrivateMessage);
 
 // Get private messages
-chatRouter.route("/private-message/:receiverId").get(authentication, fetchPrivateMessages);
+chatRouter.route("/private-message").get(authentication, fetchPrivateMessages);
 
 module.exports = chatRouter;

@@ -6,6 +6,7 @@ const { generateAccessToken } = require("../utils/accessToken");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
+const { getUserProfile, getBusinessProfile } = require("../utils/getProfiles");
 const validate = require("../utils/validate");
 const { userSignupSchema } = require("../validations/user");
 
@@ -63,6 +64,20 @@ const refreshToken = asyncHandler(async (request, response) => {
     const role = request.query?.role || null;
     if(!role) throw new ApiError(400, "Role is required for refreshing a token");
     if(role.toLowerCase() !== "user" && role.toLowerCase() !== "business") throw new ApiError(400, "Invalid role");
+
+    // Check if user profile actually exist before switching
+    if(role.toLowerCase() === "user")
+    {
+        const userProfile = await getUserProfile(_id);
+        if(!userProfile) throw new ApiError(404, "User profile not found! Please create user profile first");
+    }
+
+    // Check if business profile actually exist before switching
+    if(role.toLowerCase() === "business")
+    {
+        const businessProfile = await getBusinessProfile(_id);
+        if(!businessProfile) throw new ApiError(404, "Business profile not found! Please create business profile first");
+    }    
 
     // Save to db
     const user = await User.findByIdAndUpdate(_id, { role }, { new:true, lean:true }).select("role");

@@ -1,4 +1,6 @@
 const { cookieOptions } = require("../constants");
+const BusinessProfile = require("../models/businessProfileSchema");
+const UserProfile = require("../models/userProfile");
 const User = require("../models/users");
 const { generateAccessToken } = require("../utils/accessToken");
 const ApiError = require("../utils/ApiError");
@@ -31,12 +33,21 @@ const userLogin = asyncHandler(async (request, response) => {
     const isMatched = await user.matchPassword(passwordHash);
     if(!isMatched) throw new ApiError(400, "Invalid credentials");
 
+    // Find profiles
+    const [businessProfile, userProfile] = await Promise.all([
+        BusinessProfile.findOne({ ownerUserId:user._id }).lean(),
+        UserProfile.findOne({ userId:user._id }).lean()
+    ]);
+
+    // Payload based on role
+    const profilePayload = user.role === "user" ? userProfile : businessProfile;
+
     // Generate access token
     const accessToken = generateAccessToken(user);
     if(!accessToken) throw new ApiError(500, "Failed to generate access token");
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
-    .json(new ApiResponse(200, null, "Login successful"));
+    .json(new ApiResponse(200, { profilePayload }, "Login successful"));
 });
 
 // Logout

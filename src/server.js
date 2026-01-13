@@ -13,6 +13,9 @@ const io =  new Server(server,{
 })
 app.set("io", io);
 
+app.use((req, res, next)=>{
+    req.io = io;
+}) 
 io.on("connection",(socket)=>{
     console.log("A user connected:", socket.id);
     socket.on("join_community", (communityId) => {

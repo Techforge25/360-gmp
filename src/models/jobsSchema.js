@@ -14,7 +14,7 @@ const jobSchema = new Schema({
         country: String,
         city: String, 
     },
-    status: String
+    status: { type:String, enum:["open", "paused", "closed"], default:"open" },
 }, { timestamps: true });
 
 // Model

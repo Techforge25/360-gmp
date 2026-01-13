@@ -55,4 +55,18 @@ const viewJobapplication = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, jobApplication, "Job application has been fetched"));
 });
 
-module.exports = { createJobApplicatiion, fetchjobApplications, viewJobapplication };
+// Update job application status
+const updateJobApplicationStatus = asyncHandler(async (request, response) => {
+    const { status } = request.body || {};
+    const { jobApplicationId } = request.params;
+    if(!["pending", "viewed", "accepted", "rejected"].includes(status)) throw new ApiError(400, "Invalid status value");
+
+    // Find job and update status
+    const jobApplication = await JobApplication.findByIdAndUpdate(jobApplicationId, { status }, { new:true }).select("status");
+    if(!jobApplication) throw new ApiError(404, "Job application not found! Invalid job application ID");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, jobApplication, "Job application status has been updated successfully"));
+});
+
+module.exports = { createJobApplicatiion, fetchjobApplications, viewJobapplication, updateJobApplicationStatus };

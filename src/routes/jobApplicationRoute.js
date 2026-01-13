@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { createJobApplicatiion, fetchjobApplications, viewJobapplication } = require("../controllers/jobApplicationController");
+const { createJobApplicatiion, fetchjobApplications, viewJobapplication, updateJobApplicationStatus } = require("../controllers/jobApplicationController");
 const { authentication } = require("../middlewares/auth");
 
 // Router instance
@@ -12,5 +12,8 @@ jobApplicationRouter.route("/:jobId")
 
 // View job Application
 jobApplicationRouter.route("/:jobApplicationId/view/").get(authentication, viewJobapplication);
+
+// Update job application status
+jobApplicationRouter.route("/:jobApplicationId/updateStatus").patch(authentication, updateJobApplicationStatus);
 
 module.exports = jobApplicationRouter;

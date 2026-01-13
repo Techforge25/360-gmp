@@ -53,6 +53,9 @@ const createPost = asyncHandler(async (request, response) => {
     // Populate author details
     await post.populate("authorUserProfileId", "fullName title imageProfile");
 
+    const io = request.app.get("io");
+    io.to(value.communityId.toString()).emit("new_post", post); 
+
     return response.status(201).json(
         new ApiResponse(201, post, "Post created successfully")
     );
@@ -280,6 +283,13 @@ const likePost = asyncHandler(async (request, response) => {
 
     await post.save();
 
+    const io = request.app.get("io");
+    io.to(post.communityId.toString()).emit("post_updated", {
+        postId: post._id,
+        likeCount: post.likeCount,
+        action: "like"
+    });
+
     return response.status(200).json(
         new ApiResponse(200, { 
             likeCount: post.likeCount, 
@@ -317,6 +327,14 @@ const addComment = asyncHandler(async (request, response) => {
     // Populate latest comment
     const latestComment = post.comments[post.comments.length - 1];
     await latestComment.populate("userProfileId", "fullName title imageProfile");
+
+    // Socket Emit
+    const io = request.app.get("io");
+    io.to(post.communityId.toString()).emit("new_comment", {
+        postId: post._id,
+        comment: latestComment,
+        commentCount: post.commentCount
+    });
 
     return response.status(201).json(
         new ApiResponse(201, { comment: latestComment, commentCount: post.commentCount }, "Comment added successfully")

@@ -11,6 +11,6 @@ jobApplicationRouter.route("/:jobId")
 .get(authentication, fetchjobApplications);
 
 // View job Application
-jobApplicationRouter.route("/view/:jobApplicationId").get(authentication, viewJobapplication);
+jobApplicationRouter.route("/:jobApplicationId/view/").get(authentication, viewJobapplication);
 
 module.exports = jobApplicationRouter;

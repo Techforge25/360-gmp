@@ -16,9 +16,9 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
     if(!profile) throw new ApiError(500, "Failed to create business profile");
 
     // Update user status
-    const user = await User.findByIdAndUpdate(profile.userId, { role:"business", isNew:false }, { new:true, lean:true });
+    const user = await User.findByIdAndUpdate(profile.userId, { role:"business", isNewToPlatform:false }, { new:true, lean:true });
     if(!user) throw new ApiError(500, "Failed to update user status upon business profile creation");
-    return response.status(201).json(new ApiResponse(201, { profile, isNew:user.isNew }, "Business profile has been created"));
+    return response.status(201).json(new ApiResponse(201, { profile, isNewToPlatform:user.isNewToPlatform }, "Business profile has been created"));
 });
 
 const updateBusinessProfile = asyncHandler(async (request, response) => {

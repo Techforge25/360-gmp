@@ -16,9 +16,9 @@ const createUserProfile = asyncHandler(async (request, response) => {
     if(!profile) throw new ApiError(500, "Failed to create user profile");
 
     // Update user status
-    const user = await User.findByIdAndUpdate(profile.userId, { role:"user", isNew:false }, { new:true, lean:true });
+    const user = await User.findByIdAndUpdate(profile.userId, { role:"user", isNewToPlatform:false }, { new:true, lean:true });
     if(!user) throw new ApiError(500, "Failed to update user status upon user profile creation");
-    return response.status(201).json(new ApiResponse(201, { profile, isNew:user.isNew }, "User profile has been created"));
+    return response.status(201).json(new ApiResponse(201, { profile, isNewToPlatform:user.isNewToPlatform }, "User profile has been created"));
 }); 
 
 module.exports = { createUserProfile };

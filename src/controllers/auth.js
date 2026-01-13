@@ -52,7 +52,7 @@ const userLogin = asyncHandler(async (request, response) => {
     if(!accessToken) throw new ApiError(500, "Failed to generate access token");
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
-    .json(new ApiResponse(200, { profilePayload, accessToken, role:user.role, isNew:user.isNew }, "Login successful"));
+    .json(new ApiResponse(200, { profilePayload, accessToken, role:user.role, isNewToPlatform:user.isNewToPlatform }, "Login successful"));
 });
 
 // Logout
@@ -135,4 +135,10 @@ const forgotPassword = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Password reset token has been sent to your email"));
 });
 
-module.exports = { userSignup, userLogin, logout, refreshToken, forgotPassword };
+// Verify code
+const verifyResetCode = asyncHandler(async (request, response) => {
+    const { email, resetToken } = request.body;
+    if(!email) throw new ApiError(400, "Email is required");
+    if(!resetToken) throw new ApiError(400, "Reset token is required");
+});
+module.exports = { userSignup, userLogin, logout, refreshToken, forgotPassword, verifyResetCode };

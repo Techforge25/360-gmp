@@ -12,7 +12,7 @@ const { getUserProfile, getBusinessProfile } = require("../utils/getProfiles");
 const validate = require("../utils/validate");
 const forgotPasswordSchema = require("../validations/forgotPasswordValidator");
 const { userSignupSchema } = require("../validations/user");
-const crypto = require("crypto");
+const verifyPasswordResetTokenSchema = require("../validations/verifyPasswordResetTokenValidator");
 
 // User signup
 const userSignup = asyncHandler(async (request, response) => {
@@ -135,10 +135,23 @@ const forgotPassword = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Password reset token has been sent to your email"));
 });
 
-// Verify code
-const verifyResetCode = asyncHandler(async (request, response) => {
-    const { email, resetToken } = request.body;
-    if(!email) throw new ApiError(400, "Email is required");
-    if(!resetToken) throw new ApiError(400, "Reset token is required");
+// Verify password reset token
+const verifypasswordResetToken = asyncHandler(async (request, response) => {
+    const { email, passwordResetToken } = validate(verifyPasswordResetTokenSchema, request.body);
+
+    // Find user
+    const user = await User.findOne({ email });
+    if(!user) throw new ApiError(404, "User not found associated with this email");
+
+    // Validate token
+    if(user.passwordResetToken !== passwordResetToken) throw new ApiError(400, "Invalid reset token");
+    if(user.passwordResetTokenExpires < Date.now()) throw new ApiError(400, "Reset token has expired");
+
+    // Rest to null after successful verification
+    user.passwordResetToken = null;
+    user.passwordResetTokenExpires = null;
+    await user.save();
+    return response.status(200).json(new ApiResponse(200, null, "Password reset token verified successfully"));
 });
-module.exports = { userSignup, userLogin, logout, refreshToken, forgotPassword, verifyResetCode };
+
+module.exports = { userSignup, userLogin, logout, refreshToken, forgotPassword, verifypasswordResetToken };

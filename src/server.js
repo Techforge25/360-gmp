@@ -8,14 +8,20 @@ const connectDB = require("./database/connection");
 //create Http server 
 const server = http.createServer(app);
 
-const io =  new Server(server,{
+// Socket.io setup
+const io = new Server(server,{
     cors: corsOptions
-})
+});
+
+// Make io accessible to our app
 app.set("io", io);
 
-app.use((req, res, next)=>{
+// Share io instance with routes through req object
+app.use((req, res, next) => {
     req.io = io;
-}) 
+});
+
+// Socket.io connection handling
 io.on("connection",(socket)=>{
     console.log("A user connected:", socket.id);
     socket.on("join_community", (communityId) => {
@@ -23,16 +29,16 @@ io.on("connection",(socket)=>{
         console.log(`User joined community room: ${communityId}`);
     });
 
+    // Disonnect event
     socket.on("disconnect", () => {
         console.log("User disconnected");
     });
-})
+});
 
 // Connect db
 connectDB()
 .then(() => {
-    app.on("error", () => console.log("Failed to listen"));
-    //app.listen(port, () => console.log(`Server is up and running`));
+    server.on("error", () => console.log("Failed to listen"));
     server.listen(port, () => console.log(`Server is up and running on port ${port}`));
 })
 .catch(error => console.log("Failed to connect with database", error.message));

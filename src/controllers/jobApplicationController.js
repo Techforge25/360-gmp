@@ -22,6 +22,10 @@ const createJobApplicatiion = asyncHandler(async (request, response) => {
     if(!job) throw new ApiError(404, "Job not found! Invalid job ID");
     if(!userProfile) throw new ApiError(404, "User profile not found!");
 
+    // Check if user has already applied for the job
+    const existingApplication = await JobApplication.findOne({ jobId, userProfileId:userProfile._id }).lean();
+    if(existingApplication) throw new ApiError(400, "You have already applied for this job");
+
     // Save job application
     const jobApplication = await JobApplication.create({ jobId, userProfileId:userProfile._id, ...validatedData });
     if(!jobApplication) throw new ApiError(500, "Failed to applied for job application");

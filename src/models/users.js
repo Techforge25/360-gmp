@@ -7,7 +7,8 @@ const userSchema = new Schema({
   passwordHash: { type: String, required: true },
   status: { type: String, default: "active" },
   role: { type:String },
-  isNew: { type:Boolean, default:true }
+  isNew: { type:Boolean, default:true },
+  passwordResetToken: { type:String, default:null },
 }, { timestamps: true });
 
 // Hash password

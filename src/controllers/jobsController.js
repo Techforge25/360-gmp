@@ -34,7 +34,7 @@ const getAllJobs = asyncHandler(async (request, response) => {
     const filter = {};
     if(businessId) filter.businessId = businessId;
     if(status) filter.status = status;
-    if(jobCategory) filter.jobCategory = jobCategory;
+    if(jobCategory) filter.jobCategory = { $regex: jobCategory, $options: "i" }; // Case-insensitive search
     if(employmentType) filter.employmentType = employmentType;
 
     // Convert page and limit to numbers

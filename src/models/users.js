@@ -7,12 +7,14 @@ const userSchema = new Schema({
   passwordHash: { type: String, required: true },
   status: { type: String, default: "active" },
   role: { type:String },
-  isNew: { type:Boolean, default:true }
+  isNewToPlatform: { type:Boolean, default:true },
+  passwordResetToken: { type:String, default:null },
+  passwordResetTokenExpires: { type:Date, default:null }
 }, { timestamps: true });
 
 // Hash password
-userSchema.pre("save", async function(next) {
-    if(!this.isModified("passwordHash")) return next();
+userSchema.pre("save", async function() {
+    if(!this.isModified("passwordHash")) return;
     try 
     {
         this.passwordHash = await bcrypt.hash(this.passwordHash, 10);

@@ -2,12 +2,17 @@ const { cookieOptions } = require("../constants");
 const BusinessProfile = require("../models/businessProfileSchema");
 const UserProfile = require("../models/userProfile");
 const User = require("../models/users");
+const sendEmail = require("../service/email");
 const { generateAccessToken } = require("../utils/accessToken");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
+const generateCode = require("../utils/generateCode");
+const { getUserProfile, getBusinessProfile } = require("../utils/getProfiles");
 const validate = require("../utils/validate");
+const forgotPasswordSchema = require("../validations/forgotPasswordValidator");
 const { userSignupSchema } = require("../validations/user");
+const verifyPasswordResetTokenSchema = require("../validations/verifyPasswordResetTokenValidator");
 
 // User signup
 const userSignup = asyncHandler(async (request, response) => {
@@ -47,7 +52,7 @@ const userLogin = asyncHandler(async (request, response) => {
     if(!accessToken) throw new ApiError(500, "Failed to generate access token");
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
-    .json(new ApiResponse(200, { profilePayload, accessToken, role:user.role, isNew:user.isNew }, "Login successful"));
+    .json(new ApiResponse(200, { profilePayload, accessToken, role:user.role, isNewToPlatform:user.isNewToPlatform }, "Login successful"));
 });
 
 // Logout
@@ -63,6 +68,20 @@ const refreshToken = asyncHandler(async (request, response) => {
     const role = request.query?.role || null;
     if(!role) throw new ApiError(400, "Role is required for refreshing a token");
     if(role.toLowerCase() !== "user" && role.toLowerCase() !== "business") throw new ApiError(400, "Invalid role");
+
+    // Check if user profile actually exist before switching
+    if(role.toLowerCase() === "user")
+    {
+        const userProfile = await getUserProfile(_id);
+        if(!userProfile) throw new ApiError(404, "User profile not found! Please create user profile first");
+    }
+
+    // Check if business profile actually exist before switching
+    if(role.toLowerCase() === "business")
+    {
+        const businessProfile = await getBusinessProfile(_id);
+        if(!businessProfile) throw new ApiError(404, "Business profile not found! Please create business profile first");
+    }    
 
     // Save to db
     const user = await User.findByIdAndUpdate(_id, { role }, { new:true, lean:true }).select("role");
@@ -91,4 +110,48 @@ const refreshToken = asyncHandler(async (request, response) => {
     .json(new ApiResponse(200, { profilePayload }, `Access token has been refreshed! role has changed to ${role}`));
 });
 
-module.exports = { userSignup, userLogin, logout, refreshToken };
+// Forgot password
+const forgotPassword = asyncHandler(async (request, response) => {
+    const { email } = validate(forgotPasswordSchema, request.body) || {};
+    const user = await User.findOne({ email });
+    if(!user) throw new ApiError(404, "User not found associated with this email");
+
+    // Generate a reset token
+    const { code:resetToken } = generateCode(9);
+    if(!resetToken) throw new ApiError(500, "Failed to generate password reset token");
+
+    // Save token to db
+    user.passwordResetToken = resetToken;
+    user.passwordResetTokenExpires = Date.now() + 5 * 60 * 1000; // 5 minutes from now
+    await user.save();
+
+    // Send email
+    const result = sendEmail(email, "Password Reset Request", 
+    `<p>Your password reset token is: <strong>${resetToken}</strong></p>
+    <p>Please use this token to reset your password.</p>`
+    );
+
+    if(!result) throw new ApiError(500, "Failed to send password reset email");
+    return response.status(200).json(new ApiResponse(200, null, "Password reset token has been sent to your email"));
+});
+
+// Verify password reset token
+const verifypasswordResetToken = asyncHandler(async (request, response) => {
+    const { email, passwordResetToken } = validate(verifyPasswordResetTokenSchema, request.body);
+
+    // Find user
+    const user = await User.findOne({ email });
+    if(!user) throw new ApiError(404, "User not found associated with this email");
+
+    // Validate token
+    if(user.passwordResetToken !== passwordResetToken) throw new ApiError(400, "Invalid reset token");
+    if(user.passwordResetTokenExpires < Date.now()) throw new ApiError(400, "Reset token has expired");
+
+    // Rest to null after successful verification
+    user.passwordResetToken = null;
+    user.passwordResetTokenExpires = null;
+    await user.save();
+    return response.status(200).json(new ApiResponse(200, null, "Password reset token verified successfully"));
+});
+
+module.exports = { userSignup, userLogin, logout, refreshToken, forgotPassword, verifypasswordResetToken };

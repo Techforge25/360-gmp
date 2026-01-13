@@ -11,6 +11,7 @@ const generateCode = require("../utils/generateCode");
 const { getUserProfile, getBusinessProfile } = require("../utils/getProfiles");
 const validate = require("../utils/validate");
 const forgotPasswordSchema = require("../validations/forgotPasswordValidator");
+const resetPasswordSchema = require("../validations/resetPasswordValidator");
 const { userSignupSchema } = require("../validations/user");
 const verifyPasswordResetTokenSchema = require("../validations/verifyPasswordResetTokenValidator");
 
@@ -147,11 +148,27 @@ const verifypasswordResetToken = asyncHandler(async (request, response) => {
     if(user.passwordResetToken !== passwordResetToken) throw new ApiError(400, "Invalid reset token");
     if(user.passwordResetTokenExpires < Date.now()) throw new ApiError(400, "Reset token has expired");
 
-    // Rest to null after successful verification
+    // Response
+    return response.status(200).json(new ApiResponse(200, passwordResetToken, "Password reset token verified successfully"));
+});
+
+// Reset password
+const resetPassword = asyncHandler(async (request, response) => {
+    const { newPassword } = validate(resetPasswordSchema, request.body);
+    const { passwordResetToken } = request.params;
+
+    // Find user
+    const user = await User.findOne({ passwordResetToken });
+    if(!user) throw new ApiError(400, "Invalid reset token");
+
+    // Update password
+    user.password = newPassword;
     user.passwordResetToken = null;
     user.passwordResetTokenExpires = null;
     await user.save();
-    return response.status(200).json(new ApiResponse(200, null, "Password reset token verified successfully"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Password has been reset successfully"));
 });
 
-module.exports = { userSignup, userLogin, logout, refreshToken, forgotPassword, verifypasswordResetToken };
+module.exports = { userSignup, userLogin, logout, refreshToken, forgotPassword, verifypasswordResetToken, resetPassword };

@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { userSignup, userLogin, logout, refreshToken, forgotPassword, verifypasswordResetToken } = require("../controllers/auth");
+const { userSignup, userLogin, logout, refreshToken, forgotPassword, verifypasswordResetToken, resetPassword } = require("../controllers/auth");
 const { authentication } = require("../middlewares/auth");
 
 // Router instance
@@ -22,5 +22,8 @@ authRouter.route("/forgotPassword").post(forgotPassword);
 
 // Password reset token verification
 authRouter.route("/verifyPasswordResetToken").post(verifypasswordResetToken);
+
+// Reset password
+authRouter.route("/resetPassword/:passwordResetToken").post(resetPassword);
 
 module.exports = authRouter;

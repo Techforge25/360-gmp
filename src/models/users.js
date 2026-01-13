@@ -9,6 +9,7 @@ const userSchema = new Schema({
   role: { type:String },
   isNew: { type:Boolean, default:true },
   passwordResetToken: { type:String, default:null },
+  passwordResetTokenExpires: { type:Date, default:null }
 }, { timestamps: true });
 
 // Hash password

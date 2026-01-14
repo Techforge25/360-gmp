@@ -13,7 +13,7 @@ const customOfferSchema = new Schema({
     estimatedDelivery:{ type:String, required:[true, "Estimated delivery is required"] },
     noteToBuyer:{ type:String },
     isAccepted: { type:Boolean, default:false }
-});
+}, { timestamps:true });
 
 // Model
 const CustomOffer = model("CustomOffer", customOfferSchema);

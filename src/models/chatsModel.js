@@ -29,7 +29,7 @@ const chatSchema = new Schema({
     conversationId: { type:String, index:true, required:true },
     message: { type:String, trim:true, required:true },
     isRead: { type:Boolean, default:false },
-    messageType: { type:String, enum:["text", "document"], default:"text" },
+    messageType: { type:String, enum:["text", "document", "customOffer"], default:"text" },
     documentFileUrl: { type:String, trim:true }
 }, { timestamps:true });
 

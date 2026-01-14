@@ -1,7 +1,7 @@
 const joi = require("joi");
 
 const customOfferValidator = joi.object({
-    sellerUserId: joi.string().required().label("Seller User ID"),
+    buyerUserProfileId: joi.string().required().label("Buyer User Profile ID"),
     productId: joi.string().required().label("Product ID"),
     quantity: joi.number().min(1).required().label("Quantity"),
     pricePerUnit: joi.number().min(1).required().label("Price Per Unit"),

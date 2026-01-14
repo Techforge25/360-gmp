@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
-const { createCustomOffer, getCustomOffer } = require("../controllers/customOfferController");
+const { createCustomOffer, getCustomOffer, acceptCustomOffer } = require("../controllers/customOfferController");
 
 // Router instance
 const customOfferRouter = Router();
@@ -10,5 +10,8 @@ customOfferRouter.route("/").post(authentication, authorization(["business"]), c
 
 // Get custom offer
 customOfferRouter.route("/:customOfferId").get(authentication, authorization(["business", "user"]), getCustomOffer);
+
+// Accept custom offer
+customOfferRouter.route("/:customOfferId/accept").patch(authentication, authorization(["user"]), acceptCustomOffer);
 
 module.exports = customOfferRouter;

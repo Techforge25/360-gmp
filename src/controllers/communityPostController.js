@@ -296,6 +296,7 @@ const likePost = asyncHandler(async (request, response) => {
     const userProfileId = await getUserProfileId(request.user._id);
 
     const identity = await getIdentity(request.user._id, post.communityId);
+    await checkCommunityMembership(post.communityId, identity.id, identity.model);
 
     const existingLikeIndex = post.likes.findIndex(
         like => like.userId.toString() === identity.id.toString()
@@ -343,7 +344,8 @@ const addComment = asyncHandler(async (request, response) => {
 
 
     // Check if user is member of the community
-    await checkCommunityMembership(post.communityId, identity.id.toString());
+    await checkCommunityMembership(post.communityId, identity.id, identity.model);
+
 
     // Add comment
     post.comments.push({

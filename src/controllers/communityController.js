@@ -39,7 +39,7 @@ const createCommunity = asyncHandler(async (request, response) => {
     await CommunityMembership.create({
         communityId: community._id,
         // userProfileId: userProfileId,
-        memberId: businessId,
+        memberId: value.businessId,
         memberModel: "BusinessProfile",
         role: "owner",
         status: "approved"

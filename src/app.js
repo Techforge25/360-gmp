@@ -31,7 +31,7 @@ const jobApplicationRouter = require("./routes/jobApplicationRoute");
 const orderRouter = require("./routes/ordersRoute");
 const walletRouter = require("./routes/walletRoute");
 const chatRouter = require("./routes/chatsRoute");
-const customOfferRouter = require("./routes/customOffer");
+const customOfferRouter = require("./routes/customOfferRoute");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);

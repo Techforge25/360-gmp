@@ -45,7 +45,20 @@ const createCustomOffer = asyncHandler(async (request, response) => {
     if(!customOffer) throw new ApiError(500, "Failed to create custom offer");
 
     // Response
-    return response.status(201).json(new ApiResponse(201, null, "Custom offer created successfully"));
+    return response.status(201).json(new ApiResponse(201, { customOfferId:customOffer._id }, "Custom offer created successfully"));
 });
 
-module.exports = { createCustomOffer };
+// Get custom offer
+const getCustomOffer = asyncHandler(async (request, response) => {
+    const { customOfferId } = request.params;
+
+    // Get custom offer
+    const customOffer = await CustomOffer.findById(customOfferId)
+    .select("-buyerBusinessProfileId -sellerUserId -productId -updatedAt -__v").lean();
+    if(!customOffer) throw new ApiError(404, "Custom offer not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, customOffer, "Custom offer fetched successfully"));
+});
+
+module.exports = { createCustomOffer, getCustomOffer };

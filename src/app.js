@@ -31,6 +31,7 @@ const jobApplicationRouter = require("./routes/jobApplicationRoute");
 const orderRouter = require("./routes/ordersRoute");
 const walletRouter = require("./routes/walletRoute");
 const chatRouter = require("./routes/chatsRoute");
+const customOfferRouter = require("./routes/customOffer");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);
@@ -46,6 +47,7 @@ app.use("/api/v1/jobApplication", jobApplicationRouter);
 app.use("/api/v1/orders", orderRouter);
 app.use("/api/v1/wallet", walletRouter);
 app.use("/api/v1/chats", chatRouter);
+app.use("/api/v1/customOffer", customOfferRouter);
 
 // Error handling middleware
 app.use(errorHandler);

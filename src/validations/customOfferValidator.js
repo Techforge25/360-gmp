@@ -1,4 +1,4 @@
-const joi = requiure("joi");
+const joi = require("joi");
 
 const customOfferValidator = joi.object({
     buyerBusinessProfileId: joi.string().required().label("Buyer Business Profile ID"),

@@ -35,10 +35,12 @@ const createCommunity = asyncHandler(async (request, response) => {
     if(!community) throw new ApiError(500, "Failed to create community");
 
     // Add business owner as community owner (auto-join)
-    const userProfileId = await getUserProfileId(request.user._id);
+    // const userProfileId = await getUserProfileId(request.user._id);
     await CommunityMembership.create({
         communityId: community._id,
-        userProfileId: userProfileId,
+        // userProfileId: userProfileId,
+        memberId: businessId,
+        memberModel: "BusinessProfile",
         role: "owner",
         status: "approved"
     });
@@ -64,8 +66,8 @@ const getAllCommunities = asyncHandler(async (request, response) => {
     if(category) filter.category = category;
 
     // Pagination
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
+    const pageNumber = Number.parseInt(page, 10);
+    const limitNumber = Number.parseInt(limit, 10);
     const skip = (pageNumber - 1) * limitNumber;
 
     // Get total count
@@ -264,8 +266,8 @@ const getPendingRequests = asyncHandler(async (request, response) => {
     }
 
     // Pagination
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
+    const pageNumber = Number.parseInt(page, 10);
+    const limitNumber = Number.parseInt(limit, 10);
     const skip = (pageNumber - 1) * limitNumber;
 
     // Get pending memberships
@@ -298,8 +300,8 @@ const getCommunityMembers = asyncHandler(async (request, response) => {
     if(!community) throw new ApiError(404, "Community not found");
 
     // Pagination
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
+    const pageNumber = Number.parseInt(page, 10);
+    const limitNumber = Number.parseInt(limit, 10);
     const skip = (pageNumber - 1) * limitNumber;
 
     const filter = { communityId: id, status: "approved" };

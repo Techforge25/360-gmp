@@ -7,10 +7,20 @@ const communityPostSchema = new Schema({
         ref: "Community",
         required: true 
     },
-    authorUserProfileId: { 
+    // authorUserProfileId: { 
+    //     type: Schema.Types.ObjectId, 
+    //     ref: "UserProfile",
+    //     required: true 
+    // },
+    authorId: { 
         type: Schema.Types.ObjectId, 
-        ref: "UserProfile",
-        required: true 
+        required: true,
+        refPath: 'authorModel' 
+    },
+    authorModel: {
+        type: String,
+        required: true,
+        enum: ['UserProfile', 'BusinessProfile']  
     },
     content: {
         type: String,
@@ -23,11 +33,14 @@ const communityPostSchema = new Schema({
     },
     docId: String,
     likes: [{
-        userProfileId: { type: Schema.Types.ObjectId, ref: "UserProfile" },
+        userId: { type: Schema.Types.ObjectId, refPath: 'likes.onModel' },
+        onModel: { type: String, enum: ['UserProfile', 'BusinessProfile'] },
         likedAt: { type: Date, default: Date.now }
     }],
+    
     comments: [{
-        userProfileId: { type: Schema.Types.ObjectId, ref: "UserProfile" },
+        userId: { type: Schema.Types.ObjectId, refPath: 'comments.onModel' },
+        onModel: { type: String, enum: ['UserProfile', 'BusinessProfile'] },
         content: String,
         commentedAt: { type: Date, default: Date.now }
     }],

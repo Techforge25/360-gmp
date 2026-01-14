@@ -7,10 +7,20 @@ const communityMembershipSchema = new Schema({
         ref: "Community",
         required: true 
     },
-    userProfileId: { 
+    // userProfileId: { 
+    //     type: Schema.Types.ObjectId, 
+    //     ref: "UserProfile",
+    //     required: true 
+    // },
+    memberId: { 
         type: Schema.Types.ObjectId, 
-        ref: "UserProfile",
-        required: true 
+        required: true, 
+        refPath: 'memberModel' 
+    },
+    memberModel: {
+        type: String,
+        required: true,
+        enum: ['UserProfile', 'BusinessProfile']
     },
     role: {
         type: String,

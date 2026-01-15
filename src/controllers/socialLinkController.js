@@ -28,8 +28,12 @@ const createSocialLink = asyncHandler(async (request, response) => {
 const getSocialLinks = asyncHandler(async (request, response) => {
     const { businessProfileId } = request.params;
 
-    // Get social links
-    const socialLinks = await SocialLink.find({ businessProfileId }).lean();
+    // Check if business profile exists
+    const [businessProfile, socialLinks] = await Promise.all([
+        BusinessProfile.findById(businessProfileId).select("_id").lean(),
+        SocialLink.find({ businessProfileId }).select("platformName url").lean()
+    ]);
+    if(!businessProfile) throw new ApiError(404, "Business profile not found");
     if(!socialLinks) throw new ApiError(404, "Social links not found");
 
     // Response
@@ -39,11 +43,27 @@ const getSocialLinks = asyncHandler(async (request, response) => {
 // Remove social link
 const removeSocialLink = asyncHandler(async (request, response) => {
     const { socialLinkId } = request.params;
+    const userId = request.user._id;
+
+    // Verify ownership
+    const [businessProfile, socialLink] = await Promise.all([
+        BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean(),
+        SocialLink.findById(socialLinkId).lean()
+    ]);
+
+    // Authorization checks
+    if(!businessProfile) throw new ApiError(404, "Business profile not found");
+    if(!socialLink) throw new ApiError(404, "Social link not found");
+    if(socialLink.businessProfileId.toString() !== businessProfile._id.toString()) {
+        throw new ApiError(403, "You are not authorized to delete this social link");
+    }
 
     // Remove social link
-    const socialLink = await SocialLink.findByIdAndDelete(socialLinkId);
-    if(!socialLink) throw new ApiError(404, "Social link not found");
-    return response.status(200).json(new ApiResponse(200, socialLink, "Social link has been removed successfully"));
+    const deleteSocialLink = await SocialLink.findByIdAndDelete(socialLinkId);
+    if(!deleteSocialLink) throw new ApiError(404, "Social link not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, deleteSocialLink, "Social link has been removed successfully"));
 });
 
 module.exports = { createSocialLink, getSocialLinks, removeSocialLink };

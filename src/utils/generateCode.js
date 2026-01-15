@@ -1,18 +1,12 @@
 const crypto = require("crypto");
 
-// Generate code for account activation and password resets with expiry time
+// Generate numeric code (only digits)
 const generateCode = (length = 9) => {
-    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"; 
-
-    // Generate code
+    const digits = "0123456789";
     let code = "";
     const bytes = crypto.randomBytes(length);
-    for (let i = 0; i < length; i++) 
-    {
-        code += alphabet[bytes[i] % alphabet.length];
-    }    
 
-    // Return payload
+    for(let i = 1; i <= length; i++) code += digits[bytes[i] % digits.length];
     return { code };
 };
 

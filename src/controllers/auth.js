@@ -118,7 +118,7 @@ const forgotPassword = asyncHandler(async (request, response) => {
     if(!user) throw new ApiError(404, "User not found associated with this email");
 
     // Generate a reset token
-    const { code:resetToken } = generateCode(9);
+    const { code:resetToken } = generateCode(6);
     if(!resetToken) throw new ApiError(500, "Failed to generate password reset token");
 
     // Save token to db

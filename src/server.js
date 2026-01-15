@@ -4,8 +4,9 @@ const { Server } = require("socket.io");
 const app = require("./app");
 const { port, corsOptions } = require("./constants");
 const connectDB = require("./database/connection");
+const socketAuthentication = require("./middlewares/socket");
 
-//create Http server 
+// Create Http server 
 const server = http.createServer(app);
 
 // Socket.io setup
@@ -16,14 +17,29 @@ const io = new Server(server,{
 // Make io accessible to our app
 app.set("io", io);
 
-// Share io instance with routes through req object
-app.use((req, res, next) => {
-    req.io = io;
+// Share io instance with routes through request object
+app.use((request, response, next) => {
+    request.io = io;
+    next();
 });
 
+// Socket authentication middleware
+io.use(socketAuthentication);
+
 // Socket.io connection handling
-io.on("connection",(socket)=>{
+io.on("connection", (socket) => {
     console.log("A user connected:", socket.id);
+
+    // Join user private room
+    const { user } = socket;
+    if(user) 
+    {
+        // Join user private room
+        socket.join(`user:${socket.user.id}`);
+        console.log(`User joined private room: ${socket.user.id}`);
+    }
+
+    // Join community room
     socket.on("join_community", (communityId) => {
         socket.join(communityId);
         console.log(`User joined community room: ${communityId}`);
@@ -39,7 +55,7 @@ io.on("connection",(socket)=>{
 connectDB()
 .then(() => {
     server.on("error", () => console.log("Failed to listen"));
-    server.listen(port, () => console.log(`Server is up and running on port ${port}`));
+    server.listen(port, "0.0.0.0", () => console.log(`Server is up and running on port ${port}`));
 })
 .catch(error => console.log("Failed to connect with database", error.message));
 

@@ -59,6 +59,21 @@ const fetchBusinessFeaturedProducts = asyncHandler(async (request, response) => 
     return response.status(200).json(new ApiResponse(200, products, "Business featured products have been fetched"));
 });
 
+// Fetch my products
+const fetchMyProducts = asyncHandler(async (request, response) => {
+    const userId = request.user?._id;
+    const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");
+    if(!business) throw new ApiError(404, "Business not found");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+    const products = await Product.paginate({ businessId:business._id }, { page, limit });
+    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Products not found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, products, "Products have been fetched"));
+});
+
 // View product
 const viewProduct = asyncHandler(async (request, response) => {
     const { productId } = request.params;
@@ -114,4 +129,4 @@ const deleteProduct = asyncHandler(async (request, response) => {
 });
 
 module.exports = { createProduct, fetchAllProducts, fetchBusinessProducts, fetchBusinessFeaturedProducts, 
-viewProduct, updateProduct, setFeaturedProduct, deleteProduct };
+fetchMyProducts, viewProduct, updateProduct, setFeaturedProduct, deleteProduct };

@@ -6,7 +6,9 @@ const generateCode = (length = 9) => {
     let code = "";
     const bytes = crypto.randomBytes(length);
 
-    for(let i = 1; i <= length; i++) code += digits[bytes[i] % digits.length];
+    for(let i = 0; i < length; i++) code += digits[bytes[i] % digits.length];
+    
+
     return { code };
 };
 

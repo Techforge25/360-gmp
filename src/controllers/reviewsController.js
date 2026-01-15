@@ -40,4 +40,16 @@ const createReview = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, review, "Review created successfully"));
 });
 
-module.exports = { createReview };
+// Fetch reviews
+const fetchReviews = asyncHandler(async (request, response) => {
+    const { orderId } = request.params;
+
+    // Fetch reviews
+    const review = await Review.findOne({ orderId }).lean();
+    if(!review) throw new ApiError(404, "No review found for this order");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, review, "Review fetched successfully"));
+});
+
+module.exports = { createReview, fetchReviews };

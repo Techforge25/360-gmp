@@ -32,6 +32,7 @@ const orderRouter = require("./routes/ordersRoute");
 const walletRouter = require("./routes/walletRoute");
 const chatRouter = require("./routes/chatsRoute");
 const customOfferRouter = require("./routes/customOfferRoute");
+const socialLinkRouter = require("./routes/socialLinkRoute");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);
@@ -48,6 +49,7 @@ app.use("/api/v1/orders", orderRouter);
 app.use("/api/v1/wallet", walletRouter);
 app.use("/api/v1/chats", chatRouter);
 app.use("/api/v1/customOffer", customOfferRouter);
+app.use("/api/v1/socialLinks", socialLinkRouter);
 
 // API status route
 app.get("/api/v1/status", (request, response) => {

@@ -49,6 +49,11 @@ app.use("/api/v1/wallet", walletRouter);
 app.use("/api/v1/chats", chatRouter);
 app.use("/api/v1/customOffer", customOfferRouter);
 
+// API status route
+app.get("/api/v1/status", (request, response) => {
+    response.status(200).json({ message: "API is working fine" });
+});
+
 // Error handling middleware
 app.use(errorHandler);
 

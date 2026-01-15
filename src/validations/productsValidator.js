@@ -27,9 +27,7 @@ const createProductSchema = Joi.object({
 
     leadTime: Joi.number().integer().min(0).allow(null),
 
-    shippingTerms: Joi.string().allow("", null),
-
-    isFeatured: Joi.boolean().default(false)
+    shippingTerms: Joi.string().allow("", null)
 });
 
 module.exports = { createProductSchema };

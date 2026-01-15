@@ -41,7 +41,7 @@ io.on("connection", (socket) => {
 
     // Join community room
     socket.on("join_community", (communityId) => {
-        socket.join(communityId);
+        socket.join(`community:${communityId}`);
         console.log(`User joined community room: ${communityId}`);
     });
 
@@ -58,13 +58,6 @@ connectDB()
     server.listen(port, "0.0.0.0", () => console.log(`Server is up and running on port ${port}`));
 })
 .catch(error => console.log("Failed to connect with database", error.message));
-
-
-
-
-
-
-
 
 
 ///Frontend for testing 

@@ -6,6 +6,7 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const { createPostSchema, updatePostSchema, likePostSchema, addCommentSchema } = require("../validations/communityPostValidator");
+const BusinessProfile = require("../models/businessProfileSchema");
 
 // Helper function to get userProfileId from userId
 const getUserProfileId = async (userId) => {
@@ -14,15 +15,38 @@ const getUserProfileId = async (userId) => {
     return userProfile._id;
 };
 
+
+const getIdentity = async (userId, communityId) => {
+    const community = await Community.findById(communityId);
+    if (!community) throw new ApiError(404, "Community not found");
+
+    // Check if the user is the owner of the business that owns this community
+    const business = await BusinessProfile.findOne({ 
+        _id: community.businessId, 
+        ownerUserId: userId 
+    });
+
+    if (business) {
+        return { id: business._id, model: "BusinessProfile" };
+    }
+
+    // Otherwise, they must be a normal user
+    const userProfile = await UserProfile.findOne({ userId });
+    if (!userProfile) throw new ApiError(404, "Please create a user profile first.");
+
+    return { id: userProfile._id, model: "UserProfile" };
+};
+
 // Helper function to check if user is member of community
-const checkCommunityMembership = async (communityId, userProfileId) => {
+const checkCommunityMembership = async (communityId, profileId, profileModel) => {
     const membership = await CommunityMembership.findOne({
         communityId: communityId,
-        userProfileId: userProfileId,
+        memberId: profileId,
+        memberModel: profileModel,
         status: "approved"
     });
-    if(!membership) {
-        throw new ApiError(403, "You must be a member of this community to perform this action");
+    if (!membership) {
+        throw new ApiError(403, "You must be an approved member or owner of this community to perform this action.");
     }
     return membership;
 };
@@ -36,22 +60,27 @@ const createPost = asyncHandler(async (request, response) => {
     const community = await Community.findById(value.communityId);
     if(!community) throw new ApiError(404, "Community not found");
 
-    // Get user profile
-    const userProfileId = await getUserProfileId(request.user._id);
+    const identity = await getIdentity(request.user._id, community);
 
-    // Check if user is a member of the community
-    await checkCommunityMembership(value.communityId, userProfileId);
+    // 2. Check Membership (Using your requested method)
+    await checkCommunityMembership(community._id, identity.id, identity.model);
 
     // Create post
     const post = await CommunityPost.create({
         ...value,
-        authorUserProfileId: userProfileId
+        authorId: identity.id,
+        authorModel: identity.model
     });
 
     if(!post) throw new ApiError(500, "Failed to create post");
 
     // Populate author details
-    await post.populate("authorUserProfileId", "fullName title imageProfile");
+    if (identity.model === "BusinessProfile") {
+        await post.populate({ path: "authorId", model: "BusinessProfile", select: "companyName logo" });
+    } else {
+        await post.populate({ path: "authorId", model: "UserProfile", select: "fullName title imageProfile" });
+    }
+    //await post.populate("authorUserProfileId", "fullName title imageProfile");
 
     const io = request.app.get("io");
     io.to(value.communityId.toString()).emit("new_post", post); 
@@ -67,33 +96,40 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
     const { page = 1, limit = 20 } = request.query;
 
     // Get community
-    const community = await Community.findById(id);
+    const community = await Community.findById(id).populate("businessId");
     if(!community) throw new ApiError(404, "Community not found");
 
     // Check if user is member (for private communities)
+    let hasAccess = community.type === "public";
+    let currentUserProfileId = null;
     let isMember = false;
     if(request.user?._id) {
-        try {
-            const userProfileId = await getUserProfileId(request.user._id);
-            const membership = await CommunityMembership.findOne({
-                communityId: id,
-                userProfileId: userProfileId,
-                status: "approved"
-            });
-            if(membership) isMember = true;
-        } catch(err) {
-            // User not logged in or no profile
+        const isBusinessOwner = community.businessId.ownerUserId.toString() === request.user._id.toString();
+        if (isBusinessOwner) {
+            hasAccess = true;
+        } else {
+            try {
+                const userProfileId = await getUserProfileId(request.user._id);
+                const membership = await CommunityMembership.findOne({
+                    communityId: id,
+                    userProfileId: userProfileId,
+                    status: "approved"
+                });
+                if(membership) isMember =  hasAccess = true;
+            } catch(err) {
+                // User not logged in or no profile
+            }
         }
     }
 
     // For private communities, only members can see posts
-    if(community.type === "private" && !isMember && community.type !== "public") {
+    if(community.type === "private" && !hasAccess && community.type !== "public") {
         throw new ApiError(403, "You must be a member to view posts in this community");
     }
 
     // Pagination
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
+    const pageNumber = Number.parseInt(page, 10);
+    const limitNumber = Number.parseInt(limit, 10);
     const skip = (pageNumber - 1) * limitNumber;
 
     // Get total count
@@ -102,18 +138,18 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
 
     // Get posts
     const posts = await CommunityPost.find({ communityId: id })
-        .populate("authorUserProfileId", "fullName title imageProfile")
+        .populate("authorId", "fullName imageProfile companyName logo")
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(limitNumber);
+        .limit(limitNumber).lean();
 
     // Check if user liked each post
-    if(request.user?._id) {
+    if(currentUserProfileId) {
         try {
-            const userProfileId = await getUserProfileId(request.user._id);
+            // const userProfileId = await getUserProfileId(request.user._id);
             for(let post of posts) {
                 post.likedByUser = post.likes.some(
-                    like => like.userProfileId.toString() === userProfileId.toString()
+                    like =>  like.userProfileId && like.userProfileId.toString() === currentUserProfileId.toString()
                 );
             }
         } catch(err) {
@@ -191,11 +227,12 @@ const updatePost = asyncHandler(async (request, response) => {
     if(!post) throw new ApiError(404, "Post not found");
 
     // Get user profile
-    const userProfileId = await getUserProfileId(request.user._id);
+    // const userProfileId = await getUserProfileId(request.user._id);
+    const identity = await getIdentity(request.user._id, post.communityId);
 
     // Check if user is the author
-    if(post.authorUserProfileId.toString() !== userProfileId.toString()) {
-        throw new ApiError(403, "Only post author can update the post");
+    if (post.authorId.toString() !== identity.id.toString()) {
+        throw new ApiError(403, "Only the author can update this post");
     }
 
     // Update post
@@ -208,7 +245,7 @@ const updatePost = asyncHandler(async (request, response) => {
         },
         { new: true, runValidators: true }
     )
-        .populate("authorUserProfileId", "fullName title imageProfile");
+        .populate("authorId", "companyName logo fullName title imageProfile");
 
     return response.status(200).json(
         new ApiResponse(200, updatedPost, "Post updated successfully")
@@ -224,18 +261,16 @@ const deletePost = asyncHandler(async (request, response) => {
     if(!post) throw new ApiError(404, "Post not found");
 
     // Get user profile
-    const userProfileId = await getUserProfileId(request.user._id);
+    const identity = await getIdentity(request.user._id, post.communityId);
 
-    // Check if user is the author or admin/moderator
-    const isAuthor = post.authorUserProfileId.toString() === userProfileId.toString();
+    // Check if author OR Community Admin
+    const isAuthor = post.authorId.toString() === identity.id.toString();
     
-    // Check if user is admin/moderator of the community
     const membership = await CommunityMembership.findOne({
         communityId: post.communityId,
-        userProfileId: userProfileId,
-        role: { $in: ["owner", "admin", "moderator"] },
-        status: "approved"
-    });
+        memberId: identity.id,
+        role: { $in: ["owner", "admin", "moderator"] }
+        });
 
     if(!isAuthor && !membership) {
         throw new ApiError(403, "Only post author or community admins can delete the post");
@@ -260,12 +295,11 @@ const likePost = asyncHandler(async (request, response) => {
     // Get user profile
     const userProfileId = await getUserProfileId(request.user._id);
 
-    // Check if user is member of the community
-    await checkCommunityMembership(post.communityId, userProfileId);
+    const identity = await getIdentity(request.user._id, post.communityId);
+    await checkCommunityMembership(post.communityId, identity.id, identity.model);
 
-    // Check if already liked
     const existingLikeIndex = post.likes.findIndex(
-        like => like.userProfileId.toString() === userProfileId.toString()
+        like => like.userId.toString() === identity.id.toString()
     );
 
     if(existingLikeIndex > -1) {
@@ -274,10 +308,7 @@ const likePost = asyncHandler(async (request, response) => {
         post.likeCount = Math.max(0, post.likeCount - 1);
     } else {
         // Like: Add like
-        post.likes.push({
-            userProfileId: userProfileId,
-            likedAt: new Date()
-        });
+        post.likes.push({ authorId: likerId, onModel: likerType });
         post.likeCount += 1;
     }
 
@@ -309,14 +340,17 @@ const addComment = asyncHandler(async (request, response) => {
     if(!post) throw new ApiError(404, "Post not found");
 
     // Get user profile
-    const userProfileId = await getUserProfileId(request.user._id);
+    const identity = await getIdentity(request.user._id, post.communityId);
+
 
     // Check if user is member of the community
-    await checkCommunityMembership(post.communityId, userProfileId);
+    await checkCommunityMembership(post.communityId, identity.id, identity.model);
+
 
     // Add comment
     post.comments.push({
-        userProfileId: userProfileId,
+        userId: identity.id,
+        onModel: identity.model,
         content: value.content,
         commentedAt: new Date()
     });
@@ -326,7 +360,7 @@ const addComment = asyncHandler(async (request, response) => {
 
     // Populate latest comment
     const latestComment = post.comments[post.comments.length - 1];
-    await latestComment.populate("userProfileId", "fullName title imageProfile");
+    await latestComment.populate("userProfileId", "companyName logo fullName imageProfile");
 
     // Socket Emit
     const io = request.app.get("io");
@@ -351,8 +385,8 @@ const getPostComments = asyncHandler(async (request, response) => {
     if(!post) throw new ApiError(404, "Post not found");
 
     // Pagination
-    const pageNumber = parseInt(page, 10);
-    const limitNumber = parseInt(limit, 10);
+    const pageNumber = Number.parseInt(page, 10);
+    const limitNumber = Number.parseInt(limit, 10);
     const skip = (pageNumber - 1) * limitNumber;
 
     // Get comments (reverse to get oldest first, or slice and reverse for newest first)

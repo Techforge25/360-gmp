@@ -141,4 +141,9 @@ dist
 # SvelteKit build / generate output
 .svelte-kit
 
+#
+.sonar_lock
+report-task.txt
+sonar-project.properties
+
 # End of https://www.toptal.com/developers/gitignore/api/node

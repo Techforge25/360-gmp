@@ -38,8 +38,8 @@ const getAllJobs = asyncHandler(async (request, response) => {
     if(employmentType) filter.employmentType = { $regex: employmentType, $options: "i" }; // Case-insensitive search
 
     // Convert page and limit to numbers
-    const pageNumber = parseInt(page, 20);
-    const limitNumber = parseInt(limit, 20);
+    const pageNumber = Number.parseInt(page, 20);
+    const limitNumber = Number.parseInt(limit, 20);
     const skip = (pageNumber - 1) * limitNumber;
 
     // Get total count for pagination metadata

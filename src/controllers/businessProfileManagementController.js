@@ -1,5 +1,6 @@
 const Order = require("../models/orders");
 const Product = require("../models/products");
+const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const { getBusinessProfile } = require("../utils/getProfiles");
@@ -8,7 +9,7 @@ const { getBusinessProfile } = require("../utils/getProfiles");
 const fetchMyProducts = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const businessProfile = await getBusinessProfile(userId);
-    if (!businessProfile) throw new Error("Business profile not found");
+    if (!businessProfile) throw new ApiError(404, "Business profile not found");
 
     const products = await Product.aggregate([
         {
@@ -40,10 +41,10 @@ const fetchMyProducts = asyncHandler(async (request, response) => {
 });
 
 // Top performing products
-const topPerformingProducts = asyncHandler(async (req, res) => {
+const topPerformingProducts = asyncHandler(async (request, response) => {
     // Get the current user's business profile
-    const businessProfile = await getBusinessProfile(req.user._id);
-    if (!businessProfile) throw new Error("Business profile not found");
+    const businessProfile = await getBusinessProfile(request.user._id);
+    if (!businessProfile) throw new ApiError(404, "Business profile not found");
 
     // Aggregate orders to calculate top performing products
     const products = await Order.aggregate([
@@ -82,7 +83,7 @@ const topPerformingProducts = asyncHandler(async (req, res) => {
     ]);
 
     // Return the aggregated result
-    return res.status(200).json(new ApiResponse(200, { count:products.length, data:products }, "Top performing products fetched successfully"));
+    return response.status(200).json(new ApiResponse(200, { data:products, count:products.length }, "Top performing products fetched successfully"));
 });
 
 module.exports = { fetchMyProducts, topPerformingProducts };

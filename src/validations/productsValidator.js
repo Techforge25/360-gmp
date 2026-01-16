@@ -5,7 +5,7 @@ const createProductSchema = Joi.object({
         "any.required": "Product title is required"
     }),
 
-    // image: Joi.string().uri().allow("", null),
+    image: Joi.string().allow("", null),
 
     detail: Joi.string().max(2000).allow("", null),
 
@@ -17,6 +17,11 @@ const createProductSchema = Joi.object({
         "any.required": "Price per unit is required"
     }),
 
+    tieredPricing: Joi.object().pattern(
+        Joi.string().pattern(/^\d+(-\d+)?|\d+\+$/), // e.g. "1-10", "11-50", "51+"
+        Joi.number().positive()
+    ).allow(null),
+
     minOrderQty: Joi.number().integer().min(1).required().messages({
         "any.required": "Minimum order quantity is required"
     }),
@@ -24,9 +29,18 @@ const createProductSchema = Joi.object({
     stockQty: Joi.number().integer().min(0).required().messages({
         "any.required": "Stock quantity is required"
     }),
+    
+    lowStockThreshold: Joi.number().integer().min(1).allow(null),    
 
-    leadTime: Joi.number().integer().min(0).allow(null),
+    shippingMethod: Joi.string().required().label("Shipping Method"),
 
+    shippingCost: Joi.number().min(0).required().label("Shipping Cost"),
+
+    estimatedDeliveryDays: Joi.string().required().label("Estimated Delivery Days"),    
+
+    isFeatured: Joi.boolean(),
+
+    status: Joi.string().valid("pending", "approved", "rejected", "draft"),
     shippingTerms: Joi.string().allow("", null)
 });
 

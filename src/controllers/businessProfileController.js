@@ -21,6 +21,12 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, { profile, isNewToPlatform:user.isNewToPlatform }, "Business profile has been created"));
 });
 
+// Fetch business profiles
+const fetchBusinessProfiles = asyncHandler(async (request, response) => {
+    const profiles = await BusinessProfile.find().lean();
+    return response.status(200).json(new ApiResponse(200, profiles, "Business profiles fetched successfully"));
+});
+
 const updateBusinessProfile = asyncHandler(async (request, response) => {
     // Validate
     const { error, value } = updateBusinessProfileSchema.validate(request.body, { abortEarly: false });
@@ -38,4 +44,4 @@ const updateBusinessProfile = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, profile, "Business profile has been updated"));
 });
 
-module.exports = { createBusinessProfile, updateBusinessProfile };
+module.exports = { createBusinessProfile, fetchBusinessProfiles, updateBusinessProfile };

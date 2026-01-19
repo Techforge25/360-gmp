@@ -29,7 +29,8 @@ const userProfileSchema = new Schema({
       isCurrent: { type: Boolean, default: false },
       description: String,
       grade: String
-    }]
+    }],
+    isVerified: { type: Boolean, default: false }
 }, { timestamps: true });
 
 // Model

@@ -126,4 +126,17 @@ const viewBusinessProfile = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Business profile viewed"));
 });
 
-module.exports = { fetchMyProducts, topPerformingProducts, updateMapURL, viewBusinessProfile };
+// fetch view counts
+const fetchViewCounts = asyncHandler(async (request, response) => {
+    // Get business profile
+    const businessProfile = await BusinessProfile.findOne({ ownerUserId: request.user._id });
+    if (!businessProfile) throw new ApiError(404, "Business profile not found");
+
+    // Get views count
+    const viewsCount = Number(businessProfile.viewsCount) || 0;
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, viewsCount, "View count fetched successfully"));
+});
+
+module.exports = { fetchMyProducts, topPerformingProducts, updateMapURL, viewBusinessProfile, fetchViewCounts };

@@ -93,7 +93,8 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
         });
 
         if(!subscription) throw new ApiError(500, "Failed to save subscription details in db");
-        return response.status(200).json(new ApiResponse(200, null, "Payment verified & subscription activated"));
+        return response.status(303).redirect(`${process.env.FRONTEND_URL}/subscription/success`);
+        // return response.status(200).json(new ApiResponse(200, null, "Payment verified & subscription activated"));
     } 
     else 
     {

@@ -213,5 +213,41 @@ const fetchRecentJobApplications = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, jobApplications, "Recent job applicants have been fetched"));
 });
 
+// Fetch closed leads (completed deals count)
+const fetchNewLeads = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const { range = "7d" } = request.query; // 7d | 1m | 3m
+
+    // Find business profile
+    const businessProfile = await getBusinessProfile(userId);
+    if (!businessProfile) throw new ApiError(404, "Business profile not found");
+
+    // Base filter
+    const filter = {
+        sellerBusinessId: businessProfile._id,
+        status: "completed"
+    };
+
+    // Range = days mapping
+    const rangeMap = {
+        "7d": 7,
+        "1m": 30,
+        "3m": 90
+    };
+
+    if(range && rangeMap[range]) 
+    {
+        const fromDate = new Date();
+        fromDate.setDate(fromDate.getDate() - rangeMap[range]);
+        filter.createdAt = { $gte:fromDate };
+    }
+
+    // Count completed orders (closed leads)
+    const totalLeads = await Order.countDocuments(filter);
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, totalLeads || 0, "Leads count fetched successfully"));
+});
+
 module.exports = { fetchMyProducts, topPerformingProducts, updateMapURL, viewBusinessProfile,
-fetchViewCounts, updateContactInfo, fetchLowStockProducts, fetchRecentJobApplications };
+fetchViewCounts, updateContactInfo, fetchLowStockProducts, fetchRecentJobApplications, fetchNewLeads };

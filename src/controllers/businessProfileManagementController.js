@@ -293,6 +293,28 @@ const countTotalHiredApplicants = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, totalHired, "Total hired applicants fetched successfully"));
 });
 
+// Count total applicants that are currently in interview process
+const countTotalInterviewApplicants = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Find business profile
+    const businessProfile = await getBusinessProfile(userId);
+    if(!businessProfile) throw new ApiError(404, "Business profile not found");
+
+    // Find all jobs posted by this business
+    const jobs = await Job.find({ businessId:businessProfile._id }).select("_id").lean();
+
+    // Catch all job ids
+    const jobIds = jobs.map(job => job._id);
+    if(!jobIds.length) return response.status(200).json(new ApiResponse(200, 0, "No job applications found"));
+
+    // Count all applications submitted to these jobs
+    const totalInterviewApplicants = await JobApplication.countDocuments({ jobId:{ $in:jobIds }, status:"interview" });
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, totalInterviewApplicants, "Total interviewed applicants fetched successfully"));
+});
+
 module.exports = { fetchMyProducts, topPerformingProducts, updateMapURL, viewBusinessProfile,
 fetchViewCounts, updateContactInfo, fetchLowStockProducts, fetchRecentJobApplications, fetchNewLeads,
-countTotalJobApplications, countTotalHiredApplicants };
+countTotalJobApplications, countTotalHiredApplicants, countTotalInterviewApplicants };

@@ -1,4 +1,6 @@
 const BusinessProfile = require("../models/businessProfileSchema");
+const JobApplication = require("../models/jobApplication");
+const Job = require("../models/jobsSchema");
 const Order = require("../models/orders");
 const Product = require("../models/products");
 const ApiError = require("../utils/ApiError");
@@ -187,5 +189,29 @@ const updateContactInfo = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, businessProfile, "Contact information updated successfully"));
 });
 
+// Fetch recent job applicants
+const fetchRecentJobApplications = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Find business profile
+    const businessProfile = await getBusinessProfile(userId);
+    if(!businessProfile) throw new ApiError(404, "Business profile not found");
+
+    // Find latest open job
+    const job = await Job.findOne({ businessId:businessProfile._id, status:"open" })
+    .select("_id").sort("-createdAt").lean();
+    if(!job) return response.status(200).json(new ApiResponse(200, null, "No recent job applicants found"));
+
+    // Find job applicants (Who applied for this job)
+    const jobApplications = await JobApplication.find({ jobId:job._id, status:"pending" })
+    .sort("-createdAt").limit(5).lean();
+
+    // Validate job applications
+    if(!jobApplications.length) return response.status(200).json(new ApiResponse(200, [], "No recent job applicants found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, jobApplications, "Recent job applicants have been fetched"));
+});
+
 module.exports = { fetchMyProducts, topPerformingProducts, updateMapURL, viewBusinessProfile,
-fetchViewCounts, updateContactInfo, fetchLowStockProducts };
+fetchViewCounts, updateContactInfo, fetchLowStockProducts, fetchRecentJobApplications };

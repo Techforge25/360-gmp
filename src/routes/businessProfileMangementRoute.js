@@ -4,7 +4,8 @@ const { fetchMyProducts, topPerformingProducts,
 updateMapURL, viewBusinessProfile, 
 fetchViewCounts,
 updateContactInfo,
-fetchLowStockProducts} = require("../controllers/businessProfileManagementController");
+fetchLowStockProducts,
+fetchRecentJobApplications} = require("../controllers/businessProfileManagementController");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -37,4 +38,9 @@ businessProfileManagementRouter.route("/view-counts")
 // Update contact information
 businessProfileManagementRouter.route("/contact-info")
 .patch(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, updateContactInfo);
+
+// Fetch recent job applicants
+businessProfileManagementRouter.route("/recent-job-applicants")
+.get(authentication, authorization(["business"]), fetchRecentJobApplications);
+
 module.exports = businessProfileManagementRouter;

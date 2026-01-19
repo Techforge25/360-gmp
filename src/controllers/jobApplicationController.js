@@ -70,7 +70,7 @@ const viewJobapplication = asyncHandler(async (request, response) => {
 const updateJobApplicationStatus = asyncHandler(async (request, response) => {
     const { status } = request.body || {};
     const { jobApplicationId } = request.params;
-    if(!["pending", "viewed", "accepted", "rejected"].includes(status)) throw new ApiError(400, "Invalid status value");
+    if(!["pending", "accepted", "rejected"].includes(status)) throw new ApiError(400, "Invalid status value");
 
     // Find job and update status
     const jobApplication = await JobApplication.findByIdAndUpdate(jobApplicationId, { status }, { new:true }).select("status");

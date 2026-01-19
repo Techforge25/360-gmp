@@ -10,7 +10,7 @@ const jobApplicationSchema = new Schema({
     yearsOfExperience: { type: Number },
     immediateJoiningStatus: { type:String },
     expectedSalary: { type:String },
-    status: { type:String, enum:["pending", "viewed", "accepted", "rejected"], default:"pending" }
+    status: { type:String, enum:["pending", "viewed", "interview", "hired", "rejected"], default:"pending" }
 }, { timestamps: true });
 
 // Inject plugin

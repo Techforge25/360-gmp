@@ -5,6 +5,8 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const { getBusinessProfile } = require("../utils/getProfiles");
+const validate = require("../utils/validate");
+const { updateBusinessContactValidator } = require("../validations/updateBusinessContactValidator");
 
 // Fetch my products
 const fetchMyProducts = asyncHandler(async (request, response) => {
@@ -139,4 +141,26 @@ const fetchViewCounts = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, viewsCount, "View count fetched successfully"));
 });
 
-module.exports = { fetchMyProducts, topPerformingProducts, updateMapURL, viewBusinessProfile, fetchViewCounts };
+// Update business contact information
+const updateContactInfo = asyncHandler(async (request, response) => {
+    // Get business profile
+    const businessProfile = await BusinessProfile.findOne({ ownerUserId: request.user._id });
+    if (!businessProfile) throw new ApiError(404, "Business profile not found");
+
+    // Validate input
+    const { description, certifications, phone, supportEmail, website, location } = validate(updateBusinessContactValidator, request.body);
+    
+    // Update and save
+    businessProfile.description = description || businessProfile.description;
+    businessProfile.certifications = certifications || businessProfile.certifications;
+    businessProfile.b2bContact.phone = phone || businessProfile.b2bContact.phone;
+    businessProfile.b2bContact.supportEmail = supportEmail || businessProfile.b2bContact.supportEmail;
+    businessProfile.website = website || businessProfile.website;
+    businessProfile.location = location || businessProfile.location;
+    await businessProfile.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, businessProfile, "Contact information updated successfully"));
+});
+
+module.exports = { fetchMyProducts, topPerformingProducts, updateMapURL, viewBusinessProfile, fetchViewCounts, updateContactInfo };

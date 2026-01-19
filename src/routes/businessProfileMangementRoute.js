@@ -2,7 +2,8 @@ const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { fetchMyProducts, topPerformingProducts, 
 updateMapURL, viewBusinessProfile, 
-fetchViewCounts} = require("../controllers/businessProfileManagementController");
+fetchViewCounts,
+updateContactInfo} = require("../controllers/businessProfileManagementController");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -22,10 +23,13 @@ businessProfileManagementRouter.route("/map-url")
 
 // View business profile
 businessProfileManagementRouter.route("/view/:businessProfileId")
-.patch(authentication, authorization(["business"]), viewBusinessProfile);
+.patch(authentication, authorization(["user", "business"]), viewBusinessProfile);
 
 // Fetch view counts
 businessProfileManagementRouter.route("/view-counts")
 .get(authentication, authorization(["business"]), fetchViewCounts);
 
+// Update contact information
+businessProfileManagementRouter.route("/contact-info")
+.patch(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, updateContactInfo);
 module.exports = businessProfileManagementRouter;

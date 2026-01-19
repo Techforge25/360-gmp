@@ -23,7 +23,7 @@ businessProfileManagementRouter.route("/map-url")
 
 // View business profile
 businessProfileManagementRouter.route("/view/:businessProfileId")
-.patch(authentication, authorization(["user", "business"]), viewBusinessProfile);
+.get(authentication, authorization(["user", "business"]), viewBusinessProfile);
 
 // Fetch view counts
 businessProfileManagementRouter.route("/view-counts")

@@ -23,8 +23,8 @@ productsRouter.route("/myProducts").get(authentication, authorization(["business
 // View product / Update product / Delete product
 productsRouter.route("/:productId")
 .get(authentication, checkSubscription, viewProduct)
-.put(authentication, checkSubscription, checkBusinessAccess, updateProduct)
-.delete(authentication, checkSubscription, checkBusinessAccess, deleteProduct);
+.put(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, updateProduct)
+.delete(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, deleteProduct);
 
 // Set featured product
 productsRouter.route("/:productId/featured")

@@ -50,8 +50,19 @@ const fetchjobApplications = asyncHandler(async (request, response) => {
 // view Job application
 const viewJobapplication = asyncHandler(async (request, response) => {
     const { jobApplicationId } = request.params;
-    const jobApplication = await JobApplication.findById(jobApplicationId).lean();
+
+    // Find job application
+    const jobApplication = await JobApplication.findById(jobApplicationId);
     if(!jobApplication) throw new ApiError(404, "Job application not found! Invalid job application ID");
+
+    // Update status to viewed if it's pending
+    if(jobApplication.status === "pending") 
+    {
+        jobApplication.status = "viewed";
+        await jobApplication.save();
+    }
+
+    // Response
     return response.status(200).json(new ApiResponse(200, jobApplication, "Job application has been fetched"));
 });
 

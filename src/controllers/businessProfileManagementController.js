@@ -1,3 +1,4 @@
+const BusinessProfile = require("../models/businessProfileSchema");
 const Order = require("../models/orders");
 const Product = require("../models/products");
 const ApiError = require("../utils/ApiError");
@@ -86,4 +87,22 @@ const topPerformingProducts = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, { data:products, count:products.length }, "Top performing products fetched successfully"));
 });
 
-module.exports = { fetchMyProducts, topPerformingProducts };
+// Update map url
+const updateMapURL = asyncHandler(async (request, response) => {
+    // Get business profile
+    const businessProfile = await BusinessProfile.findOne({ ownerUserId:request.user._id });
+    if(!businessProfile) throw new ApiError(404, "Business profile not found");
+
+    // Validate input
+    const { mapURL } = request.body;
+    if(!mapURL) throw new ApiError(400, "mapURL is required");
+
+    // Update and save
+    businessProfile.mapURL = mapURL || businessProfile.mapURL;
+    await businessProfile.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, mapURL, "Map URL updated successfully"));
+});
+
+module.exports = { fetchMyProducts, topPerformingProducts, updateMapURL };

@@ -3,7 +3,8 @@ const { authentication, authorization } = require("../middlewares/auth");
 const { fetchMyProducts, topPerformingProducts, 
 updateMapURL, viewBusinessProfile, 
 fetchViewCounts,
-updateContactInfo} = require("../controllers/businessProfileManagementController");
+updateContactInfo,
+fetchLowStockProducts} = require("../controllers/businessProfileManagementController");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -12,6 +13,10 @@ const businessProfileManagementRouter = Router();
 // Fetch my products
 businessProfileManagementRouter.route("/my-products")
 .get(authentication, authorization(["business"]), fetchMyProducts);
+
+// Fetch low stock products
+businessProfileManagementRouter.route("/lowStockProducts")
+.get(authentication, authorization(["business"]), fetchLowStockProducts);
 
 // Fetch top performing products
 businessProfileManagementRouter.route("/top-performing-products")

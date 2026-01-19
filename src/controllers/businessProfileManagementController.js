@@ -43,6 +43,30 @@ const fetchMyProducts = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, products, "Products fetched successfully"));
 });
 
+// Fetch low stock products for business
+const fetchLowStockProducts = asyncHandler(async (request, response) => {
+    const userId = request.user?._id;
+    const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");
+    if(!business) throw new ApiError(404, "Business not found");
+
+    // Fetch low stock products
+    const products = await Product.find({ businessId:business._id, status:"approved",
+        $expr: {
+            $lte: ["$stockQty", "$lowStockThreshold"]
+        }
+    })
+    .sort({ stockQty: 1 }) // most critical first
+    .limit(5)
+    .select("title stockQty lowStockThreshold")
+    .lean();
+
+    // Response if no low stock products
+    if(!products.length) return response.status(200).json(new ApiResponse(200, [], "No low stock products found"));
+    
+    // Response
+    return response.status(200).json(new ApiResponse(200, products, "Low stock products have been fetched"));
+});
+
 // Top performing products
 const topPerformingProducts = asyncHandler(async (request, response) => {
     // Get the current user's business profile
@@ -163,4 +187,5 @@ const updateContactInfo = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, businessProfile, "Contact information updated successfully"));
 });
 
-module.exports = { fetchMyProducts, topPerformingProducts, updateMapURL, viewBusinessProfile, fetchViewCounts, updateContactInfo };
+module.exports = { fetchMyProducts, topPerformingProducts, updateMapURL, viewBusinessProfile,
+fetchViewCounts, updateContactInfo, fetchLowStockProducts };

@@ -43,7 +43,11 @@ const BusinessProfileSchema = new Schema({
     banner: { type:String },
     isVerified: { type: Boolean, default: false },
     isLocked: { type: Boolean, default: true },
-    mapURL: { type:String }
+    mapURL: { type:String },
+
+    // Views
+    viewedBy: [{ type:Schema.Types.ObjectId, ref:"User" }],
+    viewsCount: { type:Number, default:0 },
 }, { timestamps: true });
 
 // Indexes that actually matter

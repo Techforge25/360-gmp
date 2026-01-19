@@ -3,7 +3,8 @@ const { authentication, authorization } = require("../middlewares/auth");
 const { fetchMyProducts, topPerformingProducts, updateMapURL, viewBusinessProfile, 
 fetchViewCounts, updateContactInfo, fetchLowStockProducts,fetchRecentJobApplications,
 fetchNewLeads, 
-countTotalJobApplications} = require("../controllers/businessProfileManagementController");
+countTotalJobApplications,
+countTotalHiredApplicants} = require("../controllers/businessProfileManagementController");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -48,5 +49,9 @@ businessProfileManagementRouter.route("/new-leads")
 // Count total job applications
 businessProfileManagementRouter.route("/count-job-applications")
 .get(authentication, authorization(["business"]), countTotalJobApplications);
+
+// Count total hired applicants
+businessProfileManagementRouter.route("/count-hired-applicants")
+.get(authentication, authorization(["business"]), countTotalHiredApplicants);
 
 module.exports = businessProfileManagementRouter;

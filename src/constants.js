@@ -13,10 +13,10 @@ const corsOptions = {
 // Cookie options
 const cookieOptions = {
     httpOnly:true,
-    secure:true,
+    secure:false,
     maxAge: 1000 * 60 * 60 * 24 * 7,
     signed:true,
-    sameSite:"none"
+    sameSite:"lax"
 };
 
 // Empty list

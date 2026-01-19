@@ -115,7 +115,7 @@ const viewBusinessProfile = asyncHandler(async (request, response) => {
     if (!businessProfile) throw new ApiError(404, "Business profile not found");
 
     // Update viewedBy and viewsCount
-    if(!businessProfile.viewedBy.includes(userId)) 
+    if(!businessProfile.viewedBy.includes(userId) && userId.toString() !== businessProfile.ownerUserId.toString())
     {
         businessProfile.viewedBy.push(userId);
         businessProfile.viewsCount += 1;

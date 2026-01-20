@@ -232,6 +232,17 @@ const fetchNewProducts = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, products, "Latest products have been fetched"));
 });
 
+// Fetch flash deals (Top-deals products)
+const fetchFlashDeals = asyncHandler(async (request, response) => {    
+    // Find products
+    const products = await Product.find({ status:"approved", isFlashDeal:true })
+    .select("title detail image minOrderQty pricePerUnit extras").sort("-createdAt").limit(30)
+    if(!products.length) return response.status(200).json(new ApiResponse(200, emptyList, "Latest products not found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, products, "Latest products have been fetched"));
+});
+
 module.exports = { createProduct, fetchAllProducts, fetchFeaturedProducts, fetchBusinessProducts,
 fetchBusinessFeaturedProducts, fetchMyProducts, viewProduct, updateProduct, setFeaturedProduct, 
-deleteProduct, fetchTopRankingProducts, fetchNewProducts };
+deleteProduct, fetchTopRankingProducts, fetchNewProducts, fetchFlashDeals };

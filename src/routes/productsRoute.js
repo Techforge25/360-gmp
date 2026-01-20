@@ -29,6 +29,9 @@ productsRouter.route("/top-ranking").get(authentication, fetchTopRankingProducts
 // Fetch new products (Latest porducts)
 productsRouter.route("/new").get(authentication, fetchNewProducts);
 
+// Fetch flash deals (Top-deals products)
+productsRouter.route("/top-deals").get(authentication, fetchNewProducts);
+
 // View product / Update product / Delete product
 productsRouter.route("/:productId")
 .get(authentication, checkSubscription, viewProduct)

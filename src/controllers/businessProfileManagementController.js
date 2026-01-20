@@ -315,6 +315,53 @@ const countTotalInterviewApplicants = asyncHandler(async (request, response) => 
     return response.status(200).json(new ApiResponse(200, totalInterviewApplicants, "Total interviewed applicants fetched successfully"));
 });
 
+// Count conversion rate
+const countConversionRate = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const { range = "7d" } = request.query; // optional
+
+    // Find business profile
+    const businessProfile = await getBusinessProfile(userId);
+    if(!businessProfile) throw new ApiError(404, "Business profile not found");
+
+    // Total views
+    const totalViews = Number(businessProfile.viewsCount) || 0;
+
+    // If no views, conversion rate is 0
+    if(totalViews === 0) return response.status(200).json(new ApiResponse(200, 0, "Conversion rate fetched successfully"));
+    
+
+    // Base filter for leads
+    const filter = {
+        sellerBusinessId: businessProfile._id,
+        status: "completed"
+    };
+
+    // Range = days mapping (no switch)
+    const rangeMap = {
+        "7d": 7,
+        "1m": 30,
+        "3m": 90
+    };
+
+    if(range && rangeMap[range]) 
+    {
+        const fromDate = new Date();
+        fromDate.setDate(fromDate.getDate() - rangeMap[range]);
+        filter.createdAt = { $gte:fromDate };
+    }
+
+    // Count closed leads
+    const totalLeads = await Order.countDocuments(filter);
+
+    // Conversion rate calculation
+    const conversionRate = Number(((totalLeads / totalViews) * 100).toFixed(2));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, conversionRate, "Conversion rate fetched successfully"));
+});
+
+
 module.exports = { fetchMyProducts, topPerformingProducts, updateMapURL, viewBusinessProfile,
 fetchViewCounts, updateContactInfo, fetchLowStockProducts, fetchRecentJobApplications, fetchNewLeads,
-countTotalJobApplications, countTotalHiredApplicants, countTotalInterviewApplicants };
+countTotalJobApplications, countTotalHiredApplicants, countTotalInterviewApplicants, countConversionRate };

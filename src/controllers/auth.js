@@ -162,7 +162,7 @@ const resetPassword = asyncHandler(async (request, response) => {
     if(!user) throw new ApiError(400, "Invalid reset token");
 
     // Update password
-    user.password = newPassword;
+    user.passwordHash = newPassword;
     user.passwordResetToken = null;
     user.passwordResetTokenExpires = null;
     await user.save();

@@ -6,6 +6,7 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
 const { createProductSchema } = require("../validations/productsValidator");
+const Order = require("../models/orders");
 
 // Create product
 const createProduct = asyncHandler(async (request, response) => {
@@ -143,6 +144,84 @@ const deleteProduct = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, product, "Product has been deleted"));
 });
 
+// Fetch top ranking products (top-selling)
+const fetchTopRankingProducts = asyncHandler(async (request, response) => {
+    const { limit = 10 } = request.query;
+
+    const topProducts = await Order.aggregate([
+        // Only completed orders (closed deals)
+        {
+            $match: { status: "completed" }
+        },
+
+        // Break items array
+        {
+            $unwind: "$items"
+        },
+
+        // Group by productId
+        {
+            $group: {
+                _id: "$items.productId",
+                totalSoldQty: { $sum: "$items.quantity" },
+                totalRevenue: {
+                    $sum: {
+                        $multiply: ["$items.quantity", "$items.priceAtPurchase"]
+                    }
+                }
+            }
+        },
+
+        // Sort by quantity sold
+        {
+            $sort: { totalSoldQty: -1 }
+        },
+
+        // Limit results
+        {
+            $limit: Number(limit)
+        },
+
+        // Join product details
+        {
+            $lookup: {
+                from: "products",
+                localField: "_id",
+                foreignField: "_id",
+                as: "product"
+            }
+        },
+
+        // Flatten product array
+        {
+            $unwind: "$product"
+        },
+
+        // Shape response
+        {
+            $project: {
+                _id: 0,
+                productId: "$product._id",
+                title: "$product.title",
+                detail: "$product.detail",
+                moq: "$product.minOrderQty",
+                image: "$product.image",
+                pricePerUnit: "$product.pricePerUnit",
+                // category: "$product.category",
+                // totalSoldQty: 1,
+                // totalRevenue: 1,
+            }
+        }
+    ]);
+
+    // No top selling products found
+    if(!topProducts.length) return response.status(200).json(new ApiResponse(200, emptyList, "No top selling products found"));
+    
+    // Response
+    return response.status(200).json(new ApiResponse(200, topProducts, "Top selling products fetched successfully"));
+});
+
+
 module.exports = { createProduct, fetchAllProducts, fetchFeaturedProducts, fetchBusinessProducts,
 fetchBusinessFeaturedProducts, fetchMyProducts, viewProduct, updateProduct, setFeaturedProduct, 
-deleteProduct };
+deleteProduct, fetchTopRankingProducts };

@@ -18,7 +18,9 @@ const productSchema = new Schema({
     estimatedDeliveryDays: { type:String, required:true },
     isFeatured: { type:Boolean, default:false },
     status: { type: String, enum:["pending", "approved", "rejected", "draft"], default: "pending" },
-    isSingleProductAvailable: { type: Boolean, default:false }
+    isSingleProductAvailable: { type: Boolean, default:false },
+    isFlashDeal: { type:Boolean, default:false },
+    extras:{ type:String } // 15% off or Free shipping something
 }, { timestamps: true });
 
 // Inject plugin

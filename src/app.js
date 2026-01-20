@@ -38,6 +38,7 @@ const customOfferRouter = require("./routes/customOfferRoute");
 const socialLinkRouter = require("./routes/socialLinkRoute");
 const reviewsRouter = require("./routes/reviewsRoute");
 const businessProfileManagementRouter = require("./routes/businessProfileMangementRoute");
+const categoryRouter = require("./routes/categoryRouter");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);
@@ -57,6 +58,7 @@ app.use("/api/v1/customOffer", customOfferRouter);
 app.use("/api/v1/socialLinks", socialLinkRouter);
 app.use("/api/v1/reviews", reviewsRouter);
 app.use("/api/v1/business-profile-management", businessProfileManagementRouter);
+app.use("/api/v1/category", categoryRouter);
 
 // API status route
 app.get("/api/v1/status", (request, response) => {

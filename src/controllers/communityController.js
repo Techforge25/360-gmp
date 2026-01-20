@@ -58,9 +58,15 @@ const createCommunity = asyncHandler(async (request, response) => {
 
 // Get All Communities (with pagination and filters)
 const getAllCommunities = asyncHandler(async (request, response) => {
-    const { businessId, type, status, category, page = 1, limit = 20, search = "" } = request.query;
+    const { businessId, type, status, category, page = 1, limit = 20, search = "", industry, region } = request.query;
 
-    const filter = {};
+    // Base filter
+    const filter = {
+        name: { $regex: search, $options: "i" },
+    };
+
+    if(industry) filter.industry = { $regex:industry, $options:"i" };
+    if(region) filter.region = { $regex:region, $options:"i" };
     if(businessId) filter.businessId = businessId;
     if(type) filter.type = type;
     if(status) filter.status = status;
@@ -76,10 +82,7 @@ const getAllCommunities = asyncHandler(async (request, response) => {
     // const totalPages = Math.ceil(totalCommunities / limitNumber);
 
     // Get communities
-    const communities = await Community.paginate(
-    {
-        ...filter, name:{ $regex:search, $options:"i" }
-    }, 
+    const communities = await Community.paginate(filter, 
     { 
         page, limit, sort:{ createdAt:-1 },
         populate: { path:"businessId", select:"companyName businessType primaryIndustry logo" }            

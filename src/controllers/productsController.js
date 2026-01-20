@@ -21,15 +21,30 @@ const createProduct = asyncHandler(async (request, response) => {
 // Fetch all products
 const fetchAllProducts = asyncHandler(async (request, response) => {
     // Pagination options
-    const { page = 1, limit = 10 } = request.query;
-    const products = await Product.paginate({}, { page, limit });
+    const { page = 1, limit = 10, search = "" } = request.query;
+    
+    // Find products
+    const products = await Product.paginate({ title:{ $regex:search, $options:"i" } }, { page, limit });
     if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Products not found"));
 
     // Response
     return response.status(200).json(new ApiResponse(200, products, "All products have been fetched"));
 });
 
-// Fetch all products
+// Fetch featured products
+const fetchFeaturedProducts = asyncHandler(async (request, response) => {
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+    
+    // Find products
+    const products = await Product.paginate({ isFeatured:true }, { page, limit });
+    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Featured Products not found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, products, "All Featured products have been fetched"));
+});
+
+// Fetch all business products
 const fetchBusinessProducts = asyncHandler(async (request, response) => {
     const { businessId } = request.params;
     const business = await BusinessProfile.findById(businessId).lean();
@@ -128,5 +143,6 @@ const deleteProduct = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, product, "Product has been deleted"));
 });
 
-module.exports = { createProduct, fetchAllProducts, fetchBusinessProducts, fetchBusinessFeaturedProducts, 
-fetchMyProducts, viewProduct, updateProduct, setFeaturedProduct, deleteProduct };
+module.exports = { createProduct, fetchAllProducts, fetchFeaturedProducts, fetchBusinessProducts,
+fetchBusinessFeaturedProducts, fetchMyProducts, viewProduct, updateProduct, setFeaturedProduct, 
+deleteProduct };

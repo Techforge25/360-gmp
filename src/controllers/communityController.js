@@ -6,6 +6,7 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const { createCommunitySchema, updateCommunitySchema, approveMembershipSchema } = require("../validations/communityValidator");
+const { emptyList } = require("../constants");
 
 // Helper function to get userProfileId from userId
 const getUserProfileId = async (userId) => {
@@ -57,7 +58,7 @@ const createCommunity = asyncHandler(async (request, response) => {
 
 // Get All Communities (with pagination and filters)
 const getAllCommunities = asyncHandler(async (request, response) => {
-    const { businessId, type, status, category, page = 1, limit = 20 } = request.query;
+    const { businessId, type, status, category, page = 1, limit = 20, search = "" } = request.query;
 
     const filter = {};
     if(businessId) filter.businessId = businessId;
@@ -65,34 +66,28 @@ const getAllCommunities = asyncHandler(async (request, response) => {
     if(status) filter.status = status;
     if(category) filter.category = category;
 
-    // Pagination
-    const pageNumber = Number.parseInt(page, 10);
-    const limitNumber = Number.parseInt(limit, 10);
-    const skip = (pageNumber - 1) * limitNumber;
+    // Pagination (Hamza bhai ka kam)
+    // const pageNumber = Number.parseInt(page, 10);
+    // const limitNumber = Number.parseInt(limit, 10);
+    // const skip = (pageNumber - 1) * limitNumber;
 
-    // Get total count
-    const totalCommunities = await Community.countDocuments(filter);
-    const totalPages = Math.ceil(totalCommunities / limitNumber);
+    // Get total count (Hamza bhai ka kam)
+    // const totalCommunities = await Community.countDocuments(filter);
+    // const totalPages = Math.ceil(totalCommunities / limitNumber);
 
     // Get communities
-    const communities = await Community.find(filter)
-        .populate("businessId", "companyName businessType primaryIndustry logo")
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limitNumber);
+    const communities = await Community.paginate(
+    {
+        ...filter, name:{ $regex:search, $options:"i" }
+    }, 
+    { 
+        page, limit, sort:{ createdAt:-1 },
+        populate: { path:"businessId", select:"companyName businessType primaryIndustry logo" }            
+    });
+    if(!communities.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Communites not found"));
 
-    const paginationInfo = {
-        currentPage: pageNumber,
-        totalPages: totalPages,
-        totalCommunities: totalCommunities,
-        hasNextPage: pageNumber < totalPages,
-        hasPrevPage: pageNumber > 1,
-        limit: limitNumber
-    };
-
-    return response.status(200).json(
-        new ApiResponse(200, { communities, pagination: paginationInfo }, "Communities fetched successfully")
-    );
+    // Response
+    return response.status(200).json(new ApiResponse(200, communities, "Communities fetched successfully"));
 });
 
 // Get Community By ID

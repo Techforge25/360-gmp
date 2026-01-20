@@ -19,15 +19,30 @@ const createProduct = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, product, "Product created successfully"));
 });
 
-// Fetch all products
+// Fetch all products with filters
 const fetchAllProducts = asyncHandler(async (request, response) => {
     // Pagination options
     const { page = 1, limit = 10, search = "" } = request.query;
-    
-    // Find products
-    const products = await Product.paginate({ title:{ $regex:search, $options:"i" } }, { page, limit });
-    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Products not found"));
 
+    // Filter options
+    const { category, moq } = request.query;
+
+    // Build filter object
+    const filter = {
+        title: { $regex:search, $options: "i" },
+        // status:"approved" // Will uncomment later if we get actual data
+    };
+
+    // Apply category filter
+    if(category) filter.category = { $regex:category, $options: "i" };
+    
+    // Apply MOQ filter (products whose minOrderQty <= requested moq)
+    if(moq) filter.minOrderQty = { $lte: Number(moq) };
+
+    // Fetch products
+    const products = await Product.paginate(filter, { page, limit, sort:{ createdAt:-1 }});
+    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Products not found"));
+    
     // Response
     return response.status(200).json(new ApiResponse(200, products, "All products have been fetched"));
 });

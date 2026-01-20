@@ -179,13 +179,10 @@ const googleLogin = async (request, response) => {
     const accessToken = generateAccessToken(request.user);
     if(!accessToken) throw new ApiError(400, "Failed to generate access token");
 
-    // Redirection path based on role
-    const redirectionPath = request.user === "user" ? `${process.env.FRONTEND_URL}/dashboard/user` : `${process.env.FRONTEND_URL}/dashboard/business`;
-
     // Redirect to application
     return response.status(303)
     .cookie("accessToken", accessToken, cookieOptions)
-    .redirect(redirectionPath);
+    .redirect(`${process.env.FRONTEND_URL}/onboarding/role`);
 }
 
 module.exports = { userSignup, userLogin, logout, refreshToken, forgotPassword, verifypasswordResetToken, resetPassword, googleLogin };

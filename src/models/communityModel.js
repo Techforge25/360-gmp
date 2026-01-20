@@ -49,7 +49,9 @@ const communitySchema = new Schema({
     memberCount: {
         type: Number,
         default: 0
-    }
+    },
+    industry:{ type:String, trim:true },
+    region:{ type:String }
 }, { timestamps: true });
 
 // Inject plugin

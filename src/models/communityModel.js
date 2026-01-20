@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const paginate = require("mongoose-paginate-v2");
 
 // Schema
 const communitySchema = new Schema({
@@ -50,6 +51,9 @@ const communitySchema = new Schema({
         default: 0
     }
 }, { timestamps: true });
+
+// Inject plugin
+communitySchema.plugin(paginate);
 
 // Indexes
 communitySchema.index({ businessId: 1 });

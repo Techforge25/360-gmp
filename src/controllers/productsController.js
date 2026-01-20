@@ -20,29 +20,70 @@ const createProduct = asyncHandler(async (request, response) => {
 });
 
 // Fetch all products with filters
+// const fetchAllProducts = asyncHandler(async (request, response) => {
+//     // Pagination options
+//     const { page = 1, limit = 10, search = "" } = request.query;
+
+//     // Filter options
+//     const { category, moq } = request.query;
+
+//     // Build filter object
+//     const filter = {
+//         title: { $regex:search, $options: "i" },
+//         // status:"approved" // Will uncomment later if we get actual data
+//     };
+
+//     // Apply category filter
+//     if(category) filter.category = { $regex:category, $options: "i" };
+    
+//     // Apply MOQ filter (products whose minOrderQty <= requested moq)
+//     if(moq) filter.minOrderQty = { $lte: Number(moq) };
+
+//     // Fetch products
+//     const products = await Product.paginate(filter, { page, limit, sort:{ createdAt:-1 }});
+//     if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Products not found"));
+    
+//     // Response
+//     return response.status(200).json(new ApiResponse(200, products, "All products have been fetched"));
+// });
+
+// Fetch all products with filters
 const fetchAllProducts = asyncHandler(async (request, response) => {
     // Pagination options
     const { page = 1, limit = 10, search = "" } = request.query;
 
     // Filter options
-    const { category, moq } = request.query;
+    const { category, moq, certification } = request.query;
 
-    // Build filter object
+    // Base product filter
     const filter = {
-        title: { $regex:search, $options: "i" },
-        // status:"approved" // Will uncomment later if we get actual data
+        title: { $regex: search, $options: "i" },
+        // status: "approved"
     };
 
-    // Apply category filter
-    if(category) filter.category = { $regex:category, $options: "i" };
+    // Category filter
+    if(category) filter.category = { $regex: category, $options: "i" };
     
-    // Apply MOQ filter (products whose minOrderQty <= requested moq)
+    // MOQ filter
     if(moq) filter.minOrderQty = { $lte: Number(moq) };
 
+    // Certification filter (via BusinessProfile)
+    if(certification) 
+    {
+        const businesses = await BusinessProfile.find({ certifications: { $regex:certification, $options: "i" }}).select("_id");
+
+        // Get businesses ids
+        const businessIds = businesses.map(b => b._id);
+
+        // No matching businesses empty result early
+        if(!businessIds.length) return response.status(200).json(new ApiResponse(200, emptyList, "Products not found"));
+        filter.businessId = { $in:businessIds };
+    }
+
     // Fetch products
-    const products = await Product.paginate(filter, { page, limit, sort:{ createdAt:-1 }});
+    const products = await Product.paginate(filter, { page, limit, sort: { createdAt:-1 }});
     if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Products not found"));
-    
+
     // Response
     return response.status(200).json(new ApiResponse(200, products, "All products have been fetched"));
 });

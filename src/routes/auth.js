@@ -1,6 +1,7 @@
 const { Router } = require("express");
-const { userSignup, userLogin, logout, refreshToken, forgotPassword, verifypasswordResetToken, resetPassword } = require("../controllers/auth");
+const { userSignup, userLogin, logout, refreshToken, forgotPassword, verifypasswordResetToken, resetPassword, googleLogin } = require("../controllers/auth");
 const { authentication } = require("../middlewares/auth");
+const passport = require("passport");
 
 // Router instance
 const authRouter = Router();
@@ -25,5 +26,9 @@ authRouter.route("/verifyPasswordResetToken").post(verifypasswordResetToken);
 
 // Reset password
 authRouter.route("/resetPassword/:passwordResetToken").post(resetPassword);
+
+// Login as google
+authRouter.route('/google').get(passport.authenticate('google', { scope:['profile', 'email'], prompt:"select_account" }));
+authRouter.route('/google/callback').get(passport.authenticate('google', { session:false }), googleLogin);
 
 module.exports = authRouter;

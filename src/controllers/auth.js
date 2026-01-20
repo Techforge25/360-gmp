@@ -171,4 +171,21 @@ const resetPassword = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Password has been reset successfully"));
 });
 
-module.exports = { userSignup, userLogin, logout, refreshToken, forgotPassword, verifypasswordResetToken, resetPassword };
+// Login as gmail
+const googleLogin = async (request, response) => {
+    if(!request.user) throw new ApiError(404, "User not found");
+
+    // Generate access token
+    const accessToken = generateAccessToken(request.user);
+    if(!accessToken) throw new ApiError(400, "Failed to generate access token");
+
+    // Redirection path based on role
+    const redirectionPath = request.user === "user" ? `${process.env.FRONTEND_URL}/dashboard/user` : `${process.env.FRONTEND_URL}/dashboard/business`;
+
+    // Redirect to application
+    return response.status(303)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .redirect(redirectionPath);
+}
+
+module.exports = { userSignup, userLogin, logout, refreshToken, forgotPassword, verifypasswordResetToken, resetPassword, googleLogin };

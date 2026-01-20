@@ -5,6 +5,8 @@ const path = require("path");
 const { corsOptions } = require("./constants");
 const compression = require("compression");
 const errorHandler = require("./middlewares/errorHandler");
+const passport = require("passport");
+require("./service/social-auth");
 const morgan = require("morgan");
 const app = express();
 
@@ -13,6 +15,7 @@ app.use(cors(corsOptions));
 app.use(cookieParser(process.env.COOKIE_PARSER_SECRET));
 app.use(express.urlencoded({ extended: true, limit: "20kb" }));
 app.use(express.json({ limit: "20kb" }));
+app.use(passport.initialize());
 app.use("/public", express.static(path.resolve("public")));
 app.use(compression());
 app.use(morgan("dev"));

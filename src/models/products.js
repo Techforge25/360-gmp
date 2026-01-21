@@ -1,5 +1,6 @@
 const { Schema, model, trusted } = require("mongoose");
 const paginate = require("mongoose-paginate-v2");
+const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
 // Schema
 const productSchema = new Schema({
@@ -25,6 +26,7 @@ const productSchema = new Schema({
 
 // Inject plugin
 productSchema.plugin(paginate);
+productSchema.plugin(aggregatePaginate);
 
 // Model
 const Product = model("Product", productSchema);

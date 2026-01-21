@@ -19,10 +19,60 @@ const verifyPasswordResetTokenSchema = require("../validations/verifyPasswordRes
 const userSignup = asyncHandler(async (request, response) => {
     // Validate
     const { email, passwordHash } = validate(userSignupSchema, request.body);
-    const user = await User.create({ email, passwordHash, role:null });
-    if(!user) throw new ApiError(500, "Unable to signup");
 
-    return response.status(201).json(new ApiResponse(201, null, "Signup successful"));
+    // Check if email exist
+    const user = await User.findOne({ email }).lean();
+    if(user) throw new ApiError(400, "This email has already been taken");
+
+    // Generate OTP token
+    const { code:accountVerificationToken } = generateCode(6);
+    if(!accountVerificationToken) throw new ApiError(500, "Failed to generate OTP");
+
+    // Create user
+    const createdUser = await User.create({ 
+        email, 
+        passwordHash, 
+        role:null,
+        accountVerificationToken,
+        accountVerificationTokenExpires: Date.now() + 5 * 60 * 1000
+    });
+    if(!createdUser) throw new ApiError(500, "Unable to signup");    
+
+    // Send email
+    const result = sendEmail(email, "Account Activation Token", 
+    `<p>Your OTP Token is: <strong>${accountVerificationToken}</strong></p>
+    <p>Please use this token to activate your account.</p>`
+    );
+    if(!result) throw new ApiError(500, "Failed to send password reset email");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, createdUser._id, "Signup successful! We have sent you an OTP to your email"));     
+});
+
+// Verify OTP
+const verifyOTP = asyncHandler(async (request, response) => {
+    const { userId, accountVerificationToken } = request.body || {};
+
+    // Validate
+    if(!userId) throw new ApiError(400, "User ID is missing");
+    if(!accountVerificationToken) throw new ApiError(400, "OTP Token is missing");
+
+    // Find user
+    const user = await User.findById(userId);
+    if(!user) throw new ApiError(404, "User not found!");
+
+    // Verify otp token
+    if(user.accountVerificationToken !== accountVerificationToken) throw new ApiError(400, "Invalid OTP");
+    if(user.accountVerificationTokenExpires < Date.now()) throw new ApiError(400, "This OTP has been expired! Request new one");
+
+    // Save to db
+    user.accountVerificationToken = null;
+    user.accountVerificationTokenExpires = null;
+    user.status = "active";
+    await user.save();
+
+    // Response
+    return Response.status(200).json(new ApiResponse(200, user.email, "Your account has been activated"));
 });
 
 // User login
@@ -38,6 +88,9 @@ const userLogin = asyncHandler(async (request, response) => {
     // Match password
     const isMatched = await user.matchPassword(passwordHash);
     if(!isMatched) throw new ApiError(400, "Invalid credentials");
+
+    // Only approved account can log in
+    if(user.status !== "active") throw new ApiError(400, "Your account is currently pending approval. Please wait until it is activated.");
 
     // Find profiles
     const [businessProfile, userProfile] = await Promise.all([
@@ -185,4 +238,5 @@ const googleLogin = async (request, response) => {
     .redirect(`${process.env.FRONTEND_URL}/onboarding/role`);
 }
 
-module.exports = { userSignup, userLogin, logout, refreshToken, forgotPassword, verifypasswordResetToken, resetPassword, googleLogin };
+module.exports = { userSignup, userLogin, logout, refreshToken, forgotPassword, 
+verifyOTP, verifypasswordResetToken, resetPassword, googleLogin };

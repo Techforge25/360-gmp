@@ -6,9 +6,15 @@ const userSchema = new Schema({
     gid:{ type:String, unqiue:true },
     email: { type: String, unique:[true, "This email has already been registered"], required:true },
     passwordHash: { type: String, required: true },
-    status: { type: String, default: "active" },
+    status: { type: String, default: "pending", enum:["pending", "active"] },
     role: { type:String, enum:["user", "business"], default:"user" },
     isNewToPlatform: { type:Boolean, default:true },
+
+    // Account verification otp
+    accountVerificationToken: { type:String, default:null },
+    accountVerificationTokenExpires: { type:Date, default:null },
+
+    // Forgot password
     passwordResetToken: { type:String, default:null },
     passwordResetTokenExpires: { type:Date, default:null }
 }, { timestamps: true });

@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { userSignup, userLogin, logout, refreshToken, forgotPassword, verifypasswordResetToken, resetPassword, googleLogin } = require("../controllers/auth");
+const { userSignup, userLogin, logout, refreshToken, forgotPassword, verifypasswordResetToken, resetPassword, googleLogin, verifyOTP } = require("../controllers/auth");
 const { authentication } = require("../middlewares/auth");
 const passport = require("passport");
 
@@ -8,6 +8,9 @@ const authRouter = Router();
 
 // User signup
 authRouter.route("/user/signup").post(userSignup);
+
+// Account activation
+authRouter.route("/user/verify-otp").post(verifyOTP);
 
 // User login
 authRouter.route("/user/login").post(userLogin);

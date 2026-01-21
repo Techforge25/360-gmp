@@ -29,6 +29,18 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, profiles, "Business profiles fetched successfully"));
 });
 
+// Fetch my business
+const fetchMyBusinessProfile = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Get business
+    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId }).lean("-updatedAt -__v");
+    if(!businessProfile) throw new ApiError(404, "Business profile not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, businessProfile, "Business profile has been fetched successfully"));
+});
+
 const updateBusinessProfile = asyncHandler(async (request, response) => {
     // Validate
     const { error, value } = updateBusinessProfileSchema.validate(request.body, { abortEarly: false });
@@ -58,4 +70,5 @@ const getDirection = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, businessProfile, "Location has been fetched"));
 });
 
-module.exports = { createBusinessProfile, fetchBusinessProfiles, updateBusinessProfile, getDirection };
+module.exports = { createBusinessProfile, fetchBusinessProfiles, fetchMyBusinessProfile, 
+updateBusinessProfile, getDirection };

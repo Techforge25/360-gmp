@@ -79,17 +79,21 @@ const getJobById = asyncHandler(async (request, response) => {
 
     // Find user profile
     const userId = request.user._id;
-    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    const [userProfile, businessProfile] = await Promise.all([
+        UserProfile.findOne({ userId }).select("_id").lean(),
+        BusinessProfile.findOne({ ownerUserId: userId })
+    ]);
 
     // Only user's views can be counted
     if(userProfile)
     {
-        await Job.updateOne(
-            { _id:id, viewedBy:{ $ne:userId } },
+        await Job.findOneAndUpdate(
+            { _id:id, viewedBy:{ $ne:userId }, businessId:{ $ne:businessProfile._id } },
             {
                 $addToSet: { viewedBy:userId },
-                $inc: { viewsCount:1 }
-            }
+                $inc:{ viewsCount:1 }
+            },
+            { new:true }
         );
     }
 

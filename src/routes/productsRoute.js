@@ -1,7 +1,9 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
-const { createProduct, fetchAllProducts, fetchBusinessProducts, viewProduct, updateProduct, deleteProduct, fetchBusinessFeaturedProducts, setFeaturedProduct, fetchMyProducts, fetchFeaturedProducts, fetchTopRankingProducts, fetchNewProducts } = require("../controllers/productsController");
+const { createProduct, fetchAllProducts, fetchBusinessProducts, viewProduct, updateProduct, 
+deleteProduct, fetchBusinessFeaturedProducts, setFeaturedProduct, fetchMyProducts, fetchFeaturedProducts, 
+fetchTopRankingProducts, fetchNewProducts } = require("../controllers/productsController");
 
 // Router instance
 const productsRouter = Router();
@@ -23,13 +25,13 @@ productsRouter.route("/business/:businessId/featured").get(authentication, check
 // Fetch my products
 productsRouter.route("/myProducts").get(authentication, authorization(["business"]), checkSubscription, fetchMyProducts);
 
-// Fetch top ranking products (top-selling)
+// Fetch top ranking products (top-selling) (Market place)
 productsRouter.route("/top-ranking").get(authentication, fetchTopRankingProducts);
 
-// Fetch new products (Latest porducts)
+// Fetch new products (Latest porducts) (Market place)
 productsRouter.route("/new").get(authentication, fetchNewProducts);
 
-// Fetch flash deals (Top-deals products)
+// Fetch flash deals (Top-deals products) (Market place)
 productsRouter.route("/top-deals").get(authentication, fetchNewProducts);
 
 // View product / Update product / Delete product

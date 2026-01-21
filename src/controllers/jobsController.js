@@ -4,6 +4,7 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const { createJobSchema, updateJobSchema } = require("../validations/jobValidator");
+const UserProfile = require("../models/userProfile");
 
 // Create Job
 const createJob = asyncHandler(async (request, response) => {
@@ -68,21 +69,37 @@ const getAllJobs = asyncHandler(async (request, response) => {
 });
 
 // Get Job By ID
-const getJobById = asyncHandler(async (request, response) => {
+const getJobById = asyncHandler(async (request, response) => { 
     const { id } = request.params;
 
+    // Find job
     const job = await Job.findById(id)
-        .populate("businessId", "companyName businessType primaryIndustry location website logo");
-
+    .populate("businessId", "companyName businessType primaryIndustry location website logo");
     if(!job) throw new ApiError(404, "Job not found");
 
+    // Find user profile
+    const userId = request.user._id;
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+
+    // Only user's views can be counted
+    if(userProfile)
+    {
+        await Job.updateOne(
+            { _id:id, viewedBy:{ $ne:userId } },
+            {
+                $addToSet: { viewedBy:userId },
+                $inc: { viewsCount:1 }
+            }
+        );
+    }
+
+    // Response
     return response.status(200).json(new ApiResponse(200, job, "Job fetched successfully"));
 });
 
 // Update Job
 const updateJob = asyncHandler(async (request, response) => {
     const { id } = request.params;
-
   
     const { error, value } = updateJobSchema.validate(request.body, { abortEarly: false });
     if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));

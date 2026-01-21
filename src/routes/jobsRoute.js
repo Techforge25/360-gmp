@@ -3,10 +3,15 @@ const { createJob, getAllJobs, getJobById, updateJob, deleteJob } = require("../
 const { authentication } = require("../middlewares/auth");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
 
+// Router instance
 const jobsRouter = Router();
 
-jobsRouter.route("/").post(authentication, checkSubscription,checkBusinessAccess, createJob);
-jobsRouter.route("/").get(authentication, checkSubscription, getAllJobs);
+// Create job / Fetch jobs
+jobsRouter.route("/")
+.post(authentication, checkSubscription,checkBusinessAccess, createJob)
+.get(authentication, checkSubscription, getAllJobs);
+
+// Fetch single job / Edit job / Delete job
 jobsRouter.route("/:id").get(authentication, checkSubscription, getJobById);
 jobsRouter.route("/:id").put(authentication, checkSubscription,checkBusinessAccess, updateJob); 
 jobsRouter.route("/:id").delete(authentication, checkSubscription,checkBusinessAccess, deleteJob);

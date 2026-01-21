@@ -338,6 +338,34 @@ const fetchNewLeads = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, totalLeads || 0, "Leads count fetched successfully"));
 });
 
+// Count total views on jobs posted by this business
+const countTotalJobViews = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Find business profile
+    const businessProfile = await getBusinessProfile(userId);
+    if(!businessProfile) throw new ApiError(404, "Business profile not found");
+
+    // Aggregate total views
+    const result = await Job.aggregate([
+        { 
+            $match: { businessId:businessProfile._id } 
+        },
+        {
+            $group: {
+                _id: null,
+                totalViews: { $sum: "$viewsCount" }
+            }
+        }
+    ]);
+
+    // Count
+    const totalViews = result.length ? result[0].totalViews : 0;
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, totalViews, "Total job views fetched successfully"));
+});
+
 // Count total job applications for business
 const countTotalJobApplications = asyncHandler(async (request, response) => {
     const userId = request.user._id;
@@ -454,4 +482,4 @@ const countConversionRate = asyncHandler(async (request, response) => {
 module.exports = { fetchMyProducts, topPerformingProducts, updateMapURL, viewBusinessProfile,
 fetchViewCounts, updateContactInfo, fetchLowStockProducts, fetchRecentJobApplications, fetchNewLeads,
 countTotalJobApplications, countTotalHiredApplicants, countTotalInterviewApplicants, countConversionRate,
-fetchInStockProducts, fetchOutOfStockProducts };
+fetchInStockProducts, fetchOutOfStockProducts, countTotalJobViews };

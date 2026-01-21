@@ -338,6 +338,21 @@ const fetchNewLeads = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, totalLeads || 0, "Leads count fetched successfully"));
 });
 
+// Fetch all jobs posted by this business
+const fetchMyJobs = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    
+    // Find business profile
+    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
+    if(!businessProfile) throw new ApiError(404, "Business profile not found");
+
+    // Get my jobs
+    const jobs = await Job.find({ businessId:businessProfile._id }).lean();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, jobs, "Jobs have been fetched"));
+});
+
 // Count total views on jobs posted by this business
 const countTotalJobViews = asyncHandler(async (request, response) => {
     const userId = request.user._id;
@@ -482,4 +497,4 @@ const countConversionRate = asyncHandler(async (request, response) => {
 module.exports = { fetchMyProducts, topPerformingProducts, updateMapURL, viewBusinessProfile,
 fetchViewCounts, updateContactInfo, fetchLowStockProducts, fetchRecentJobApplications, fetchNewLeads,
 countTotalJobApplications, countTotalHiredApplicants, countTotalInterviewApplicants, countConversionRate,
-fetchInStockProducts, fetchOutOfStockProducts, countTotalJobViews };
+fetchInStockProducts, fetchOutOfStockProducts, countTotalJobViews, fetchMyJobs };

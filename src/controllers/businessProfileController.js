@@ -18,6 +18,8 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
     // Update user status
     const user = await User.findByIdAndUpdate(profile.userId, { role:"business", isNewToPlatform:false }, { new:true, lean:true });
     if(!user) throw new ApiError(500, "Failed to update user status upon business profile creation");
+
+    // Response
     return response.status(201).json(new ApiResponse(201, { profile, isNewToPlatform:user.isNewToPlatform }, "Business profile has been created"));
 });
 
@@ -38,10 +40,22 @@ const updateBusinessProfile = asyncHandler(async (request, response) => {
         { $set: value },
         { new: true, runValidators: true }
     );
-    
     if(!profile) throw new ApiError(404, "Business profile not found");
 
+    // Response
     return response.status(200).json(new ApiResponse(200, profile, "Business profile has been updated"));
 });
 
-module.exports = { createBusinessProfile, fetchBusinessProfiles, updateBusinessProfile };
+// Get direction
+const getDirection = asyncHandler(async (request, response) => {
+    const { businessId } = request.params;
+
+    // Find business profile
+    const businessProfile = await BusinessProfile.findById(businessId).select("-_id location").lean();
+    if(!businessProfile) throw new ApiError(404, "Business profile not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, businessProfile, "Location has been fetched"));
+});
+
+module.exports = { createBusinessProfile, fetchBusinessProfiles, updateBusinessProfile, getDirection };

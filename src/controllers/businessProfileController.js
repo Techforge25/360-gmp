@@ -34,7 +34,7 @@ const fetchMyBusinessProfile = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Get business
-    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId }).lean("-updatedAt -__v");
+    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId }).select("-updatedAt -__v").lean();
     if(!businessProfile) throw new ApiError(404, "Business profile not found");
 
     // Response
@@ -58,6 +58,18 @@ const updateBusinessProfile = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, profile, "Business profile has been updated"));
 });
 
+// Delete my business profile
+const deleteMyBusinessProfile = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Get business
+    const businessProfile = await BusinessProfile.findOneAndDelete({ ownerUserId:userId }).select("_id").lean();
+    if(!businessProfile) throw new ApiError(404, "Business profile not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, businessProfile, "Business profile has been deleted successfully"));
+});
+
 // Get direction
 const getDirection = asyncHandler(async (request, response) => {
     const { businessId } = request.params;
@@ -71,4 +83,4 @@ const getDirection = asyncHandler(async (request, response) => {
 });
 
 module.exports = { createBusinessProfile, fetchBusinessProfiles, fetchMyBusinessProfile, 
-updateBusinessProfile, getDirection };
+updateBusinessProfile, deleteMyBusinessProfile, getDirection };

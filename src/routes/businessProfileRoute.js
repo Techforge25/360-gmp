@@ -2,7 +2,8 @@ const {Router} = require("express");
 const { authentication } = require("../middlewares/auth");
 const { createBusinessProfile, updateBusinessProfile, 
 fetchBusinessProfiles, getDirection, 
-fetchMyBusinessProfile} = require("../controllers/businessProfileController");
+fetchMyBusinessProfile,
+deleteMyBusinessProfile} = require("../controllers/businessProfileController");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -23,6 +24,10 @@ businessProfileRouter.route("/me")
 // Update business profile
 businessProfileRouter.route("/")
 .put(authentication, checkSubscription, checkBusinessAccess, updateBusinessProfile);
+
+// Delete business profile
+businessProfileRouter.route("/")
+.delete(authentication, checkSubscription, checkBusinessAccess, deleteMyBusinessProfile);
 
 // Get direction
 businessProfileRouter.route("/:businessId/getDirection")

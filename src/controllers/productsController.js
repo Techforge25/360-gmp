@@ -47,7 +47,7 @@ const createProduct = asyncHandler(async (request, response) => {
 //     return response.status(200).json(new ApiResponse(200, products, "All products have been fetched"));
 // });
 
-// Fetch all products with filters
+// Fetch all products with filters (Shown on market place)
 const fetchAllProducts = asyncHandler(async (request, response) => {
     // Pagination options
     const { page = 1, limit = 10, search = "" } = request.query;
@@ -88,7 +88,7 @@ const fetchAllProducts = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, products, "All products have been fetched"));
 });
 
-// Fetch featured products
+// Fetch featured products (Shown on market place)
 const fetchFeaturedProducts = asyncHandler(async (request, response) => {
     // Pagination options
     const { page = 1, limit = 10 } = request.query;
@@ -101,7 +101,7 @@ const fetchFeaturedProducts = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, products, "All Featured products have been fetched"));
 });
 
-// Fetch all business products
+// Fetch all business products (Shown on business profile)
 const fetchBusinessProducts = asyncHandler(async (request, response) => {
     const { businessId } = request.params;
     const business = await BusinessProfile.findById(businessId).lean();
@@ -116,7 +116,7 @@ const fetchBusinessProducts = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, products, "Business products have been fetched"));
 });
 
-// Fetch business featured products
+// Fetch business featured products (Shown on business profile)
 const fetchBusinessFeaturedProducts = asyncHandler(async (request, response) => {
     const { businessId } = request.params;
     const business = await BusinessProfile.findById(businessId).lean();
@@ -131,16 +131,28 @@ const fetchBusinessFeaturedProducts = asyncHandler(async (request, response) => 
     return response.status(200).json(new ApiResponse(200, products, "Business featured products have been fetched"));
 });
 
-// Fetch my products
+// Fetch my products (Business see his own products)
 const fetchMyProducts = asyncHandler(async (request, response) => {
     const userId = request.user?._id;
     const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");
     if(!business) throw new ApiError(404, "Business not found");
 
+    // Base search filter
+    const searchFilter = { businessId:business._id };
+
+    // Get filter from frontend
+    const { filter } = request.query;
+    if(filter)
+    {
+        const allowedFilters = ["pending", "approved", "rejected", "draft"];
+        if(!allowedFilters.includes(filter)) throw new ApiError(400, `Invalid filter! No filter found such as ${filter}`);
+        searchFilter.status = filter;
+    }
+
     // Pagination options
     const { page = 1, limit = 10 } = request.query;
-    const products = await Product.paginate({ businessId:business._id }, { page, limit });
-    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Products not found"));
+    const products = await Product.paginate(searchFilter, { page, limit });
+    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, `Products not found for ${filter} category`));
 
     // Response
     return response.status(200).json(new ApiResponse(200, products, "Products have been fetched"));
@@ -200,7 +212,7 @@ const deleteProduct = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, product, "Product has been deleted"));
 });
 
-// Fetch top ranking products (top-selling)
+// Fetch top ranking products (top-selling) (Shown on market place)
 const fetchTopRankingProducts = asyncHandler(async (request, response) => {
     const { limit = 10 } = request.query;
 
@@ -277,7 +289,7 @@ const fetchTopRankingProducts = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, topProducts, "Top selling products fetched successfully"));
 });
 
-// Fetch new products (Latest 30 products)
+// Fetch new products (Latest 30 products) (Shown on market place)
 const fetchNewProducts = asyncHandler(async (request, response) => {    
     // Find products
     const products = await Product.find({ status:"approved" })
@@ -288,7 +300,7 @@ const fetchNewProducts = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, products, "Latest products have been fetched"));
 });
 
-// Fetch flash deals (Top-deals products)
+// Fetch flash deals (Top-deals products) (Shown on market place)
 const fetchFlashDeals = asyncHandler(async (request, response) => {    
     // Find products
     const products = await Product.find({ status:"approved", isFlashDeal:true })

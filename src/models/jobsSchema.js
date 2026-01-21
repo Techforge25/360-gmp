@@ -15,6 +15,10 @@ const jobSchema = new Schema({
         city: String, 
     },
     status: { type:String, enum:["open", "paused", "closed"], default:"open" },
+
+    // Views
+    viewedBy: [{ type:Schema.Types.ObjectId, ref:"User" }],
+    viewsCount: { type:Number, default:0 },   
 }, { timestamps: true });
 
 // Model

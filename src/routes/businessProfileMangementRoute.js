@@ -2,11 +2,8 @@ const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { fetchMyProducts, topPerformingProducts, updateMapURL, viewBusinessProfile, 
 fetchViewCounts, updateContactInfo, fetchLowStockProducts,fetchRecentJobApplications,
-fetchNewLeads, 
-countTotalJobApplications,
-countTotalHiredApplicants,
-countTotalInterviewApplicants,
-countConversionRate} = require("../controllers/businessProfileManagementController");
+fetchNewLeads, countTotalJobApplications, countTotalHiredApplicants, countTotalInterviewApplicants,
+countConversionRate, fetchInStockProducts, fetchOutOfStockProducts} = require("../controllers/businessProfileManagementController");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -16,9 +13,17 @@ const businessProfileManagementRouter = Router();
 businessProfileManagementRouter.route("/my-products")
 .get(authentication, authorization(["business"]), fetchMyProducts);
 
-// Fetch low stock products
-businessProfileManagementRouter.route("/lowStockProducts")
+// Fetch in-stock products
+businessProfileManagementRouter.route("/in-stock-products")
+.get(authentication, authorization(["business"]), checkSubscription, fetchInStockProducts);
+
+// Fetch low-stock products
+businessProfileManagementRouter.route("/low-stock-products")
 .get(authentication, authorization(["business"]), fetchLowStockProducts);
+
+// Fetch out-of-stock products
+businessProfileManagementRouter.route("/out-of-stock-products")
+.get(authentication, authorization(["business"]), fetchOutOfStockProducts);
 
 // Fetch top performing products
 businessProfileManagementRouter.route("/top-performing-products")

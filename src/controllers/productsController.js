@@ -131,33 +131,6 @@ const fetchBusinessFeaturedProducts = asyncHandler(async (request, response) => 
     return response.status(200).json(new ApiResponse(200, products, "Business featured products have been fetched"));
 });
 
-// Fetch my products (Business see his own products)
-const fetchMyProducts = asyncHandler(async (request, response) => {
-    const userId = request.user?._id;
-    const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");
-    if(!business) throw new ApiError(404, "Business not found");
-
-    // Base search filter
-    const searchFilter = { businessId:business._id };
-
-    // Get filter from frontend
-    const { filter } = request.query;
-    if(filter)
-    {
-        const allowedFilters = ["pending", "approved", "rejected", "draft"];
-        if(!allowedFilters.includes(filter)) throw new ApiError(400, `Invalid filter! No filter found such as ${filter}`);
-        searchFilter.status = filter;
-    }
-
-    // Pagination options
-    const { page = 1, limit = 10 } = request.query;
-    const products = await Product.paginate(searchFilter, { page, limit });
-    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, `Products not found for ${filter} category`));
-
-    // Response
-    return response.status(200).json(new ApiResponse(200, products, "Products have been fetched"));
-});
-
 // View product
 const viewProduct = asyncHandler(async (request, response) => {
     const { productId } = request.params;
@@ -312,5 +285,5 @@ const fetchFlashDeals = asyncHandler(async (request, response) => {
 });
 
 module.exports = { createProduct, fetchAllProducts, fetchFeaturedProducts, fetchBusinessProducts,
-fetchBusinessFeaturedProducts, fetchMyProducts, viewProduct, updateProduct, setFeaturedProduct, 
+fetchBusinessFeaturedProducts, viewProduct, updateProduct, setFeaturedProduct, 
 deleteProduct, fetchTopRankingProducts, fetchNewProducts, fetchFlashDeals };

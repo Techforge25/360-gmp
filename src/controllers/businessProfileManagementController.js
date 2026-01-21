@@ -1,3 +1,4 @@
+const { emptyList } = require("../constants");
 const BusinessProfile = require("../models/businessProfileSchema");
 const JobApplication = require("../models/jobApplication");
 const Job = require("../models/jobsSchema");
@@ -13,15 +14,26 @@ const { updateBusinessContactValidator } = require("../validations/updateBusines
 // Fetch my products
 const fetchMyProducts = asyncHandler(async (request, response) => {
     const userId = request.user._id;
+
+    // Find business profile
     const businessProfile = await getBusinessProfile(userId);
     if (!businessProfile) throw new ApiError(404, "Business profile not found");
 
-    const products = await Product.aggregate([
-        {
-            $match: {
-                businessId: businessProfile._id
-            }
-        },
+    // Base search filter
+    const searchFilter = { businessId:businessProfile._id };
+
+    // Get filter from frontend
+    const { filter, page = 1, limit = 10 } = request.query;
+    if(filter) 
+    {
+        const allowedFilters = ["pending", "approved", "rejected", "draft"];
+        if(!allowedFilters.includes(filter)) throw new ApiError(400, `Invalid filter! No filter found such as ${filter}`);
+        searchFilter.status = filter;
+    }
+
+    // Aggregation
+    const aggregate = Product.aggregate([
+        { $match:searchFilter },
         {
             $addFields: {
                 stockFlag: {
@@ -41,32 +53,109 @@ const fetchMyProducts = asyncHandler(async (request, response) => {
         }
     ]);
 
+    // Execute query
+    const products = await Product.aggregatePaginate(aggregate, { page, limit });
+
     // Response
     return response.status(200).json(new ApiResponse(200, products, "Products fetched successfully"));
 });
 
-// Fetch low stock products for business
+// Fetch in stock products (stockQty > lowStockThreshold)
+const fetchInStockProducts = asyncHandler(async (request, response) => {
+    const userId = request.user?._id;
+
+    // Find business
+    const business = await BusinessProfile.findOne({ ownerUserId: userId }).select("_id");
+    if(!business) throw new ApiError(404, "Business not found");
+
+    // Base search filter (stock greater than threshold)
+    const searchFilter = {
+        businessId: business._id,
+        $expr: { $gt:["$stockQty", "$lowStockThreshold"] }
+    };
+
+    // Optional status filter from frontend
+    const { filter } = request.query;
+    if (filter) 
+    {
+        const allowedFilters = ["pending", "approved", "rejected", "draft"];
+        if(!allowedFilters.includes(filter)) throw new ApiError(400, `Invalid filter! No filter found such as ${filter}`);
+        searchFilter.status = filter;
+    }
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+    const products = await Product.paginate(searchFilter, { page, limit });
+
+    // Empty response
+    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No in-stock products found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, products, "In-stock products have been fetched"));
+});
+
+// Fetch low stock products for business (Critical)
 const fetchLowStockProducts = asyncHandler(async (request, response) => {
     const userId = request.user?._id;
+
+    // Find business
     const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");
     if(!business) throw new ApiError(404, "Business not found");
 
-    // Fetch low stock products
-    const products = await Product.find({ businessId:business._id, status:"approved",
-        $expr: {
-            $lte: ["$stockQty", "$lowStockThreshold"]
-        }
-    })
-    .sort({ stockQty: 1 }) // most critical first
-    .limit(5)
-    .select("title stockQty lowStockThreshold")
-    .lean();
+    // Base search filter (low stock products)
+    const searchFilter = {
+        businessId: business._id,
+        status: "approved",
+        $expr: { $lte: ["$stockQty", "$lowStockThreshold"] }
+    };
 
-    // Response if no low stock products
-    if(!products.length) return response.status(200).json(new ApiResponse(200, [], "No low stock products found"));
-    
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+    const products = await Product.paginate(searchFilter, { page, limit,
+        sort: { stockQty:1 }, // most critical first
+        select: "title stockQty lowStockThreshold",
+        lean: true
+    });
+
+    // Empty response
+    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No low stock products found"));
+
     // Response
     return response.status(200).json(new ApiResponse(200, products, "Low stock products have been fetched"));
+});
+
+// Fetch out of stock products (stockQty = 0)
+const fetchOutOfStockProducts = asyncHandler(async (request, response) => {
+    const userId = request.user?._id;
+
+    // Find business
+    const business = await BusinessProfile.findOne({ ownerUserId: userId }).select("_id");
+    if(!business) throw new ApiError(404, "Business not found");
+
+    // Base search filter (stock = 0)
+    const searchFilter = {
+        businessId: business._id,
+        stockQty:0
+    };
+
+    // Optional status filter from frontend
+    const { filter } = request.query;
+    if (filter) 
+    {
+        const allowedFilters = ["pending", "approved", "rejected", "draft"];
+        if(!allowedFilters.includes(filter)) throw new ApiError(400, `Invalid filter! No filter found such as ${filter}`);
+        searchFilter.status = filter;
+    }
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+    const products = await Product.paginate(searchFilter, { page, limit });
+
+    // Empty response
+    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No out-of-stock products found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, products, "Out-of-stock products have been fetched"));
 });
 
 // Top performing products
@@ -364,4 +453,5 @@ const countConversionRate = asyncHandler(async (request, response) => {
 
 module.exports = { fetchMyProducts, topPerformingProducts, updateMapURL, viewBusinessProfile,
 fetchViewCounts, updateContactInfo, fetchLowStockProducts, fetchRecentJobApplications, fetchNewLeads,
-countTotalJobApplications, countTotalHiredApplicants, countTotalInterviewApplicants, countConversionRate };
+countTotalJobApplications, countTotalHiredApplicants, countTotalInterviewApplicants, countConversionRate,
+fetchInStockProducts, fetchOutOfStockProducts };

@@ -30,13 +30,15 @@ const createJob = asyncHandler(async (request, response) => {
 
 // Get All Jobs with Pagination
 const getAllJobs = asyncHandler(async (request, response) => {
-    const { businessId, status, jobCategory, employmentType, page = 1, limit = 20 } = request.query;
+    const { businessId, status, jobCategory, employmentType, page = 1, limit = 20, search } = request.query;
 
+    // Filter and searches
     const filter = {};
+    if(search) filter.jobTitle = { $regex:search, $options: "i" };
     if(businessId) filter.businessId = businessId;
-    if(status) filter.status = { $regex: status, $options: "i" }; // Case-insensitive search
-    if(jobCategory) filter.jobCategory = { $regex: jobCategory, $options: "i" }; // Case-insensitive search
-    if(employmentType) filter.employmentType = { $regex: employmentType, $options: "i" }; // Case-insensitive search
+    if(status) filter.status = { $regex: status, $options: "i" };
+    if(jobCategory) filter.jobCategory = { $regex: jobCategory, $options: "i" };
+    if(employmentType) filter.employmentType = { $regex: employmentType, $options: "i" };
 
     // Convert page and limit to numbers
     const pageNumber = Number.parseInt(page, 20);

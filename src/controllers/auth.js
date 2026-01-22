@@ -72,7 +72,7 @@ const verifyOTP = asyncHandler(async (request, response) => {
     await user.save();
 
     // Response
-    return Response.status(200).json(new ApiResponse(200, user.email, "Your account has been activated"));
+    return response.status(200).json(new ApiResponse(200, user.email, "Your account has been activated"));
 });
 
 // User login

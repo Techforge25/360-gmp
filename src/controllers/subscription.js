@@ -1,4 +1,3 @@
-const { default: mongoose } = require("mongoose");
 const Plan = require("../models/plan");
 const Subscription = require("../models/subscription");
 const ApiError = require("../utils/ApiError");
@@ -134,4 +133,39 @@ const getMySubscription = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, subscription, "Subscription details has been fetched"));
 });
 
-module.exports = { createSubscriptionStripe, verifyStripePayment, getMySubscription };
+// Total spent on subscriptions till now
+const totalSpent = asyncHandler(async (request, response) => {
+    const userId = convertToMongoId(request.user._id);
+
+    // Sum
+    const result = await Subscription.aggregate([
+        // Match
+        { $match:{ userId } },
+
+        // Lookup
+        {
+            $lookup: {
+                from:"plans",
+                localField:"planId",
+                foreignField:"_id",
+                as:"plan"
+            }
+        },
+
+        // Plain array to object
+        { $unwind: "$plan" },
+
+        // Sum
+        {
+            $group:{ _id:null, totalSpent:{ $sum:"$plan.price" } }
+        }
+    ]);
+
+    // Total spent
+    const totalSpent = result[0]?.totalSpent || 0;
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, totalSpent, "Total subscription amount calculated"));
+});
+
+module.exports = { createSubscriptionStripe, verifyStripePayment, getMySubscription, totalSpent };

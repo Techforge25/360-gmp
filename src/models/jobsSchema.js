@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const paginate = require("mongoose-paginate-v2");
 
 // Schema
 const jobSchema = new Schema({
@@ -20,6 +21,9 @@ const jobSchema = new Schema({
     viewedBy: [{ type:Schema.Types.ObjectId, ref:"User" }],
     viewsCount: { type:Number, default:0 },   
 }, { timestamps: true });
+
+// Inject plugin
+jobSchema.plugin(paginate);
 
 // Model
 const Job = model("Job", jobSchema);

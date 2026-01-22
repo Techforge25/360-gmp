@@ -31,15 +31,17 @@ const createJob = asyncHandler(async (request, response) => {
 
 // Get All Jobs with Pagination
 const getAllJobs = asyncHandler(async (request, response) => {
-    const { businessId, status, jobCategory, employmentType, page = 1, limit = 20, search, payRange } = request.query;
+    const { businessId, status, jobCategory, employmentType,
+    page = 1, limit = 20, search, payRange, country } = request.query;
 
     // Filter and searches
     const filter = {};
-    if(search) filter.jobTitle = { $regex:search, $options: "i" };
+    if(search) filter.jobTitle = { $regex:search, $options:"i" };
     if(businessId) filter.businessId = businessId;
     if(status) filter.status = { $regex: status, $options: "i" };
-    if(jobCategory) filter.jobCategory = { $regex: jobCategory, $options: "i" };
-    if(employmentType) filter.employmentType = { $regex: employmentType, $options: "i" };
+    if(jobCategory) filter.jobCategory = { $regex:jobCategory, $options:"i" };
+    if(employmentType) filter.employmentType = { $regex:employmentType, $options:"i" };
+    if(country) filter["location.country"] = { $regex:country, $options:"i" };
     if(payRange) 
     {
         const amount = Number(payRange);
@@ -54,7 +56,7 @@ const getAllJobs = asyncHandler(async (request, response) => {
         sort:{ createdAt:-1 },
         populate: {
             path: "businessId",
-            select: "companyName businessType primaryIndustry location"
+            select: "companyName businessType primaryIndustry"
         }
     });
 

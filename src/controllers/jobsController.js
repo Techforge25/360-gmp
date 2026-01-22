@@ -68,6 +68,15 @@ const getAllJobs = asyncHandler(async (request, response) => {
     );
 });
 
+// Fetch latest jobs for market place
+const fetchLatestJobs = asyncHandler(async (request, response) => {
+    // Get jobs
+    const jobs = await Job.find({}).limit(10).lean();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, jobs, "Jobs has been fetched successfully"));
+});
+
 // Get Job By ID
 const getJobById = asyncHandler(async (request, response) => { 
     const { id } = request.params;
@@ -115,6 +124,7 @@ const updateJob = asyncHandler(async (request, response) => {
         }
     }
 
+    // Update
     const job = await Job.findByIdAndUpdate(
         id,
         { $set: value },
@@ -129,7 +139,7 @@ const updateJob = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, job, "Job has been updated successfully"));
 });
 
- 
+// Delete job
 const deleteJob = asyncHandler(async (request, response) => {
     const { id } = request.params;
 
@@ -140,10 +150,4 @@ const deleteJob = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Job has been deleted successfully"));
 });
 
-module.exports = {
-    createJob,
-    getAllJobs,
-    getJobById,
-    updateJob,
-    deleteJob
-};
+module.exports = { createJob, getAllJobs, getJobById, updateJob, deleteJob, fetchLatestJobs };

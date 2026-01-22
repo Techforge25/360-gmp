@@ -1,3 +1,4 @@
+const { default: mongoose } = require("mongoose");
 const Plan = require("../models/plan");
 const Subscription = require("../models/subscription");
 const ApiError = require("../utils/ApiError");
@@ -5,6 +6,7 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const getMonthlySubscriptionDates = require("../utils/getSubscriptionDates");
 const Stripe = require("stripe");
+const convertToMongoId = require("../utils/convertToMongoId");
 
 // Create subscription via stripe
 const createSubscriptionStripe = asyncHandler(async (request, response) => {
@@ -102,4 +104,34 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
     }
 });
 
-module.exports = { createSubscriptionStripe, verifyStripePayment };
+// Get my subscription
+const getMySubscription = asyncHandler(async (request, response) => {
+    const userId = convertToMongoId(request.user._id);
+
+    // Subscription details
+    const subscription = await Subscription.aggregate([
+        // Match
+        { $match: { userId } },
+
+        // Lookup
+        {
+            $lookup: {
+                from: "plans",
+                localField: "planId",
+                foreignField: "_id",
+                as: "plan"
+            }
+        },
+
+        // Plan array to object
+        { $unwind: "$plan" },
+
+        // Exclude _id and other unnecessary fields
+        { $project:{ _id:0, __v:0, "plan._id":0, "plan.__v":0, userId:0, planId:0 } }
+    ]);
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, subscription, "Subscription details has been fetched"));
+});
+
+module.exports = { createSubscriptionStripe, verifyStripePayment, getMySubscription };

@@ -5,6 +5,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const { createBusinessProfileSchema, updateBusinessProfileSchema } = require("../validations/businessProfileVaidator");
 const User = require("../models/users");
 
+// Create business
 const createBusinessProfile = asyncHandler(async (request, response) => {
     // Validate
     const { error, value } = createBusinessProfileSchema.validate(request.body, { abortEarly: false });
@@ -82,5 +83,14 @@ const getDirection = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, businessProfile, "Location has been fetched"));
 });
 
+// Fetch latest business for market place
+const fetchLatestBusiness = asyncHandler(async (request, response) => {
+    // Get business
+    const business = await BusinessProfile.find({}).limit(10).lean();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, business, "Latest Business has been fetched successfully"));
+});
+
 module.exports = { createBusinessProfile, fetchBusinessProfiles, fetchMyBusinessProfile, 
-updateBusinessProfile, deleteMyBusinessProfile, getDirection };
+updateBusinessProfile, deleteMyBusinessProfile, getDirection, fetchLatestBusiness };

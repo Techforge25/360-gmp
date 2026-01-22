@@ -3,7 +3,8 @@ const { authentication } = require("../middlewares/auth");
 const { createBusinessProfile, updateBusinessProfile, 
 fetchBusinessProfiles, getDirection, 
 fetchMyBusinessProfile,
-deleteMyBusinessProfile} = require("../controllers/businessProfileController");
+deleteMyBusinessProfile,
+fetchLatestBusiness} = require("../controllers/businessProfileController");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -32,5 +33,9 @@ businessProfileRouter.route("/")
 // Get direction
 businessProfileRouter.route("/:businessId/getDirection")
 .get(authentication, checkSubscription, getDirection);
+
+// Fetch latest business for market place
+businessProfileRouter.route("/latest/marketplace")
+.get(authentication, fetchLatestBusiness);
 
 module.exports = businessProfileRouter;

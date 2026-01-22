@@ -9,7 +9,7 @@ const convertToMongoId = require("../utils/convertToMongoId");
 
 // Create subscription via stripe
 const createSubscriptionStripe = asyncHandler(async (request, response) => {
-    const { _id } = request.user;
+    const { _id, role } = request.user;
     const { planId } = request.query;
     if(!planId) throw new ApiError(400, "Plan ID is missing");
 
@@ -39,7 +39,7 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
             },
             quantity: 1,
         }],
-        metadata: { _id, planId },
+        metadata: { _id, planId, role },
         success_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/cancel`
     });
@@ -67,7 +67,7 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
     if(session.payment_status === "paid") 
     {
         // Get metadata
-        const { _id, planId } = session.metadata;
+        const { _id, planId, role } = session.metadata;
 
         // Check existing subscription
         const existingSubscription = await Subscription.findOne({ userId:_id, planId, status:"active", endDate:{ $gt:new Date() }});
@@ -93,8 +93,13 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
             endDate
         });
 
+        // Redirect to url based on role
+        const redirectUrl = role === "user" ? 
+        `${process.env.FRONTEND_URL}/onboarding/user-profile` : 
+        `${process.env.FRONTEND_URL}/onboarding/business-profile`
+
         if(!subscription) throw new ApiError(500, "Failed to save subscription details in db");
-        return response.status(303).redirect(`${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`);
+        return response.status(303).redirect(redirectUrl);
         // return response.status(200).json(new ApiResponse(200, null, "Payment verified & subscription activated"));
     } 
     else 

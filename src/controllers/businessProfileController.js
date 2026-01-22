@@ -7,17 +7,19 @@ const User = require("../models/users");
 
 // Create business
 const createBusinessProfile = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
     // Validate
     const { error, value } = createBusinessProfileSchema.validate(request.body, { abortEarly: false });
     if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
 
     // Profile payload
-    const profileData = { ...value, ownerUserId: request.user._id };
+    const profileData = { ...value, ownerUserId:userId };
     const profile = await BusinessProfile.create(profileData);
     if(!profile) throw new ApiError(500, "Failed to create business profile");
 
     // Update user status
-    const user = await User.findByIdAndUpdate(profile.userId, { role:"business", isNewToPlatform:false }, { new:true, lean:true });
+    const user = await User.findByIdAndUpdate(userId, { role:"business", isNewToPlatform:false }, { new:true, lean:true });
     if(!user) throw new ApiError(500, "Failed to update user status upon business profile creation");
 
     // Response

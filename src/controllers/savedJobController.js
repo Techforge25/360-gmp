@@ -12,12 +12,16 @@ const saveJob = asyncHandler(async (request, response) => {
     if(!isValidObjectId(jobId)) throw new ApiError(400, "Invalid Mongodb ID");
     
     // Find job
-    const job = await Job.findById(jobId).select("_id").lean();
+    const [job, savedJob] = await Promise.all([
+        Job.findById(jobId).select("_id").lean(),
+        SavedJob.findOne({ userId, jobId }).lean()
+    ]);
     if(!job) throw new ApiError(404, "Job not found");
+    if(savedJob) return response.status(200).json(new ApiResponse(200, savedJob, "This job has already been saved"));
 
     // Mark job as save
     const save = await SavedJob.create({ userId, jobId });
-    if(!save) throw new ApiError(500, "Failed to save job");
+    
 
     // Response
     return response.status(201).json(new ApiResponse(201, save, "Job has been saved!"));
@@ -42,7 +46,7 @@ const fetchMySavedJobs = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Find
-    const savedJobs = await SavedJob.findOne({ userId }).populate("jobId");
+    const savedJobs = await SavedJob.find({ userId }).populate("jobId");
 
     // Response
     return response.status(200).json(new ApiResponse(200, savedJobs, "My saved jobs have been fetched"));

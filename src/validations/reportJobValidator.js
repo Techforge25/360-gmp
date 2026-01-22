@@ -6,7 +6,7 @@ const reportJobValidationSchema = joi.object({
     subject: joi.string().trim().required().label("Subject"),
     category: joi.string().trim().required().label("Category"),
     description: joi.string().trim().optional().label("Category"),
-    evidences: joi.array().items(joi.string().trim()).label("Evidence images")
+    evidences: joi.array().items(joi.string().trim()).min(1).label("Evidence images")
 });
 
 module.exports = reportJobValidationSchema;

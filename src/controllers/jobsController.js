@@ -25,12 +25,13 @@ const createJob = asyncHandler(async (request, response) => {
     // Populate businessId
     await job.populate("businessId", "companyName businessType primaryIndustry");
 
+    // Response
     return response.status(201).json(new ApiResponse(201, job, "Job has been created successfully"));
 });
 
 // Get All Jobs with Pagination
 const getAllJobs = asyncHandler(async (request, response) => {
-    const { businessId, status, jobCategory, employmentType, page = 1, limit = 20, search } = request.query;
+    const { businessId, status, jobCategory, employmentType, page = 1, limit = 20, search, payRange } = request.query;
 
     // Filter and searches
     const filter = {};
@@ -39,35 +40,26 @@ const getAllJobs = asyncHandler(async (request, response) => {
     if(status) filter.status = { $regex: status, $options: "i" };
     if(jobCategory) filter.jobCategory = { $regex: jobCategory, $options: "i" };
     if(employmentType) filter.employmentType = { $regex: employmentType, $options: "i" };
+    if(payRange) 
+    {
+        const amount = Number(payRange);
+        filter.salaryMin = { $lte:amount };
+        filter.salaryMax = { $gte:amount };
+    }
 
-    // Convert page and limit to numbers
-    const pageNumber = Number.parseInt(page, 20);
-    const limitNumber = Number.parseInt(limit, 20);
-    const skip = (pageNumber - 1) * limitNumber;
+    // Find jobs
+    const jobs = await Job.paginate(filter, { 
+        page:Number(page), 
+        limit:Number(limit), 
+        sort:{ createdAt:-1 },
+        populate: {
+            path: "businessId",
+            select: "companyName businessType primaryIndustry location"
+        }
+    });
 
-    // Get total count for pagination metadata
-    const totalJobs = await Job.countDocuments(filter);
-    const totalPages = Math.ceil(totalJobs / limitNumber);
-
-    // Get jobs with pagination
-    const jobs = await Job.find(filter)
-        .populate("businessId", "companyName businessType primaryIndustry location")
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limitNumber);
-
-    const paginationInfo = {
-        currentPage: pageNumber,
-        totalPages: totalPages,
-        totalJobs: totalJobs,
-        hasNextPage: pageNumber < totalPages,
-        hasPrevPage: pageNumber > 1,
-        limit: limitNumber
-    };
-
-    return response.status(200).json(
-        new ApiResponse(200, { jobs, pagination: paginationInfo }, "Jobs fetched successfully")
-    );
+    // Response
+    return response.status(200).json(new ApiResponse(200, jobs, "Jobs fetched successfully"));
 });
 
 // Fetch latest jobs for market place

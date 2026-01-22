@@ -32,16 +32,18 @@ const createJob = asyncHandler(async (request, response) => {
 // Get All Jobs with Pagination
 const getAllJobs = asyncHandler(async (request, response) => {
     const { businessId, status, jobCategory, employmentType,
-    page = 1, limit = 20, search, payRange, country } = request.query;
+    page = 1, limit = 20, search, payRange, country, datePosted } = request.query;
 
     // Filter and searches
     const filter = {};
     if(search) filter.jobTitle = { $regex:search, $options:"i" };
     if(businessId) filter.businessId = businessId;
-    if(status) filter.status = { $regex: status, $options: "i" };
+    if(status) filter.status = { $regex:status, $options:"i" };
     if(jobCategory) filter.jobCategory = { $regex:jobCategory, $options:"i" };
     if(employmentType) filter.employmentType = { $regex:employmentType, $options:"i" };
     if(country) filter["location.country"] = { $regex:country, $options:"i" };
+
+    // Pay range (single value)
     if(payRange) 
     {
         const amount = Number(payRange);
@@ -49,11 +51,23 @@ const getAllJobs = asyncHandler(async (request, response) => {
         filter.salaryMax = { $gte:amount };
     }
 
+    // Date Posted Filters unseen
+    if(datePosted === "unseen") filter.viewedBy = { $ne: request.user._id };
+
+    // Last 24 hours
+    if(datePosted === "24h") filter.createdAt = { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) };
+    
+    // Last 7 days
+    if(datePosted === "7d") filter.createdAt = { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) };
+    
+    // Last 14 days
+    if(datePosted === "14d") filter.createdAt = { $gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) };
+
     // Find jobs
-    const jobs = await Job.paginate(filter, { 
-        page:Number(page), 
-        limit:Number(limit), 
-        sort:{ createdAt:-1 },
+    const jobs = await Job.paginate(filter, {
+        page: Number(page),
+        limit: Number(limit),
+        sort: { createdAt: -1 },
         populate: {
             path: "businessId",
             select: "companyName businessType primaryIndustry"

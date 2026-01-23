@@ -28,7 +28,19 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
 
 // Fetch business profiles
 const fetchBusinessProfiles = asyncHandler(async (request, response) => {
-    const profiles = await BusinessProfile.find().lean();
+    const { page = 1, limit = 10, search, industry, country } = request.query;
+
+    // Filters
+    const filter = {};
+    if(search) filter.companyName = { $regex:search, $options:"i" };
+    if(industry) filter.primaryIndustry = { $regex:industry, $options:"i" };
+    if(country) filter["location.country"] = { $regex: country, $options: "i" };
+
+    // Fetch
+    const profiles = await BusinessProfile.paginate(filter, { page, limit });
+    if(!profiles.docs?.length) return response.status(200).json(new ApiResponse(200, profiles, "No business profiles found"));
+
+    // Response
     return response.status(200).json(new ApiResponse(200, profiles, "Business profiles fetched successfully"));
 });
 

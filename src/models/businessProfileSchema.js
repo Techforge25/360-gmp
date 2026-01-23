@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const paginate = require("mongoose-paginate-v2");
 
 const BusinessProfileSchema = new Schema({
     // Basic info
@@ -53,6 +54,9 @@ const BusinessProfileSchema = new Schema({
 // Indexes that actually matter
 BusinessProfileSchema.index({ "location.country": 1 });
 BusinessProfileSchema.index({ isVerified: 1 });
+
+// Inject plugin
+BusinessProfileSchema.plugin(paginate);
 
 // Model
 const BusinessProfile = model("BusinessProfile", BusinessProfileSchema);

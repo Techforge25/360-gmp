@@ -308,7 +308,7 @@ const resolveReport = asyncHandler(async (request, response) => {
     const { reportId } = request.params;
 
     // Resolve
-    const report = await Report.findOneAndUpdate(reportId, { status:"resolved" }, { new:true }).lean();
+    const report = await Report.findByIdAndUpdate(reportId, { status:"resolved" }, { new:true }).lean();
     if(!report) throw new ApiError(404, "Report not found");
 
     // Response
@@ -320,7 +320,7 @@ const rejectReport = asyncHandler(async (request, response) => {
     const { reportId } = request.params;
 
     // Reject
-    const report = await Report.findOneAndUpdate(reportId, { status:"rejected" }, { new:true }).lean();
+    const report = await Report.findByIdAndUpdate(reportId, { status:"rejected" }, { new:true }).lean();
     if(!report) throw new ApiError(404, "Report not found");
 
     // Response

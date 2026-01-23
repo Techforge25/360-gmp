@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const paginate = require("mongoose-paginate-v2");
 
 // Schema
 const reportSchema = new Schema({
@@ -15,6 +16,9 @@ const reportSchema = new Schema({
     evidences: [{ type: String }],
     status: { type: String, enum: ["pending", "reviewed", "resolved", "rejected"], default: "pending" }
 }, { timestamps: true });
+
+// Inject plugin
+reportSchema.plugin(paginate);
 
 // Model
 const Report = model("Report", reportSchema);

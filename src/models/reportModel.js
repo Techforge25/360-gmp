@@ -1,5 +1,5 @@
 const { Schema, model } = require("mongoose");
-const paginate = require("mongoose-paginate-v2");
+const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
 // Schema
 const reportSchema = new Schema({
@@ -18,7 +18,7 @@ const reportSchema = new Schema({
 }, { timestamps: true });
 
 // Inject plugin
-reportSchema.plugin(paginate);
+reportSchema.plugin(aggregatePaginate);
 
 // Model
 const Report = model("Report", reportSchema);

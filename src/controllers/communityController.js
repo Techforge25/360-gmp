@@ -36,10 +36,10 @@ const createCommunity = asyncHandler(async (request, response) => {
     if(!community) throw new ApiError(500, "Failed to create community");
 
     // Add business owner as community owner (auto-join)
-    // const userProfileId = await getUserProfileId(request.user._id);
+    const userProfileId = await getUserProfileId(request.user._id);
     await CommunityMembership.create({
         communityId: community._id,
-        // userProfileId: userProfileId,
+        userProfileId: userProfileId,
         memberId: value.businessId,
         memberModel: "BusinessProfile",
         role: "owner",

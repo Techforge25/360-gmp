@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
-const { createReport, fetchJobReports, fetchCommunityReports, fetchCommunityPostReports, fetchCommunityPostCommentReports, viewReport } = require("../controllers/reportController");
+const { createReport, fetchJobReports, fetchCommunityReports, fetchCommunityPostReports, fetchCommunityPostCommentReports, viewReport, resolveReport, rejectReport } = require("../controllers/reportController");
 
 // Router instance
 const reportRouter = Router();
@@ -28,5 +28,13 @@ reportRouter.route("/type/community-post-comment")
 // View report
 reportRouter.route("/:reportId")
 .get(authentication, authorization(["user", "business", "admin"]), viewReport);
+
+// Resolve report
+reportRouter.route("/:reportId/resolve")
+.get(authentication, authorization(["user", "business", "admin"]), resolveReport);
+
+// Reject report
+reportRouter.route("/:reportId/reject")
+.get(authentication, authorization(["user", "business", "admin"]), rejectReport);
 
 module.exports = reportRouter;

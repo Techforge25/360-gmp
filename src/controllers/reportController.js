@@ -303,5 +303,29 @@ const viewReport = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, report, "Report has been viewed"));
 });
 
-module.exports = { createReport, fetchJobReports, fetchCommunityReports, 
-fetchCommunityPostReports, fetchCommunityPostCommentReports, viewReport };
+// Resolve report
+const resolveReport = asyncHandler(async (request, response) => {
+    const { reportId } = request.params;
+
+    // Resolve
+    const report = await Report.findOneAndUpdate(reportId, { status:"resolved" }, { new:true }).lean();
+    if(!report) throw new ApiError(404, "Report not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, report, "Report has been resolved"));
+});
+
+// Reject report
+const rejectReport = asyncHandler(async (request, response) => {
+    const { reportId } = request.params;
+
+    // Reject
+    const report = await Report.findOneAndUpdate(reportId, { status:"rejected" }, { new:true }).lean();
+    if(!report) throw new ApiError(404, "Report not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, report, "Report has been rejected"));
+});
+
+module.exports = { createReport, fetchJobReports, fetchCommunityReports, fetchCommunityPostReports, 
+fetchCommunityPostCommentReports, viewReport, resolveReport, rejectReport };

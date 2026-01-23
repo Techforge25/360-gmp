@@ -20,7 +20,9 @@ const createCommunitySchema = Joi.object({
     tags: Joi.array().items(Joi.string().trim()).default([]),
     rules: Joi.string().max(2000).trim().allow("", null),
     coverImage: Joi.string().trim().allow("", null),
-    profileImage: Joi.string().trim().allow("", null)
+    profileImage: Joi.string().trim().allow("", null),
+    industry: Joi.string().allow("", null).label("Industry"),
+    region: Joi.string().allow("", null).label("Region"),
 });
 
 // Update Community schema (all fields optional)

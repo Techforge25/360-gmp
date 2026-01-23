@@ -281,4 +281,27 @@ const fetchCommunityPostCommentReports = asyncHandler(async (request, response) 
     return response.status(200).json(new ApiResponse(200, reports, "Reported comments have been fetched"));
 });
 
-module.exports = { createReport, fetchJobReports, fetchCommunityReports, fetchCommunityPostReports, fetchCommunityPostCommentReports };
+// View report
+const viewReport = asyncHandler(async (request, response) => {
+    const { reportId } = request.params;
+
+    // Find
+    const report = await Report.findById(reportId);
+    if(!report) throw new ApiError(404, "Report not found");
+
+    // Mark as reviewed if viewing first time
+    if(report.status === "pending")
+    {
+        report.status = "reviewed";
+        await report.save();
+    }
+
+    // Get content based on reported model
+    await report.populate("reportedContentId");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, report, "Report has been viewed"));
+});
+
+module.exports = { createReport, fetchJobReports, fetchCommunityReports, 
+fetchCommunityPostReports, fetchCommunityPostCommentReports, viewReport };

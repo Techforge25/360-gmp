@@ -6,7 +6,7 @@ const reportSchema = new Schema({
     // Reference
     reporterId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     reportedModel: { type: String, required:true, enum: ["Job", "Community", "CommunityPost"] },
-    reportedContentId: { type: Schema.Types.ObjectId, required:true },
+    reportedContentId: { type: Schema.Types.ObjectId, required:true, refPath:"reportedModel" },
     reportedCommentId: { type: Schema.Types.ObjectId, default: null },
 
     // Details

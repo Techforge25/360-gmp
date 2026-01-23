@@ -72,19 +72,9 @@ const getAllCommunities = asyncHandler(async (request, response) => {
     if(status) filter.status = status;
     if(category) filter.category = category;
 
-    // Pagination (Hamza bhai ka kam)
-    // const pageNumber = Number.parseInt(page, 10);
-    // const limitNumber = Number.parseInt(limit, 10);
-    // const skip = (pageNumber - 1) * limitNumber;
-
-    // Get total count (Hamza bhai ka kam)
-    // const totalCommunities = await Community.countDocuments(filter);
-    // const totalPages = Math.ceil(totalCommunities / limitNumber);
-
     // Get communities
-    const communities = await Community.paginate(filter, 
-    { 
-        page, limit, sort:{ createdAt:-1 },
+    const communities = await Community.paginate(filter, { 
+        page, limit, sort:{ createdAt:-1 }, select:"industry region",
         populate: { path:"businessId", select:"companyName businessType primaryIndustry logo" }            
     });
     if(!communities.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Communites not found"));
@@ -124,6 +114,7 @@ const getCommunityById = asyncHandler(async (request, response) => {
 
 // Join Community
 const joinCommunity = asyncHandler(async (request, response) => {
+    const role = request.user.role;
     const { id } = request.params; // Get communityId from URL params
 
     // Get community
@@ -131,31 +122,25 @@ const joinCommunity = asyncHandler(async (request, response) => {
     if(!community) throw new ApiError(404, "Community not found");
 
     // Get user profile
-    const userProfileId = await getUserProfileId(request.user._id);
+    const userProfile = await UserProfile.findOne({ userId:request.user._id }).lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found! Please create your profile first.");
 
     // Check if already a member
-    const existingMembership = await CommunityMembership.findOne({
-        communityId: id,
-        userProfileId: userProfileId
-    });
-
-    if(existingMembership) {
-        if(existingMembership.status === "approved") {
-            throw new ApiError(400, "You are already a member of this community");
-        } else if(existingMembership.status === "pending") {
-            throw new ApiError(400, "Your join request is pending approval");
-        } else {
-            throw new ApiError(400, "Your join request was rejected");
-        }
+    const existingMembership = await CommunityMembership.findOne({ communityId:id, userProfileId:userProfile._id });
+    if(existingMembership) 
+    {
+        if(existingMembership.status === "approved") throw new ApiError(400, "You are already a member of this community");
+        if(existingMembership.status === "pending") throw new ApiError(400, "Your join request is pending approval");
+        if(existingMembership.status === "rejected") throw new ApiError(400, "Your join request was rejected");
     }
 
     // Handle different community types
     let membershipStatus = "approved";
     let isPaid = false;
 
-    if(community.type === "private") {
-        membershipStatus = "pending";
-    } else if(community.type === "featured") {
+    if(community.type === "private") membershipStatus = "pending";
+    if(community.type === "featured") 
+    {
         // Check if user has subscription/paid access
         // For now, set as pending - business owner will approve after payment verification
         membershipStatus = "pending";
@@ -166,25 +151,26 @@ const joinCommunity = asyncHandler(async (request, response) => {
     // Create membership
     const membership = await CommunityMembership.create({
         communityId: id,
-        userProfileId: userProfileId,
+        userProfileId: userProfile._id,
+        memberId:userProfile._id,
         role: "member",
         status: membershipStatus,
-        isPaid: isPaid
+        isPaid: isPaid,
+        memberModel: role === "user" ? "UserProfile" : "BusinessProfile"
     });
 
     // Update member count only if approved
-    if(membershipStatus === "approved") {
+    if(membershipStatus === "approved") 
+    {
         community.memberCount += 1;
         await community.save();
     }
 
-    return response.status(201).json(
-        new ApiResponse(
-            201, 
-            { membership, message: membershipStatus === "approved" ? "Successfully joined community" : "Join request sent. Waiting for approval" },
-            membershipStatus === "approved" ? "Joined community successfully" : "Join request sent successfully"
-        )
-    );
+    // Response message based on community joining behaviour
+    const responseMessage = membershipStatus === "approved" ? "Successfully joined community" : "Join request sent. Waiting for approval";
+
+    // Response
+    return response.status(201).json(new ApiResponse(201, membership, responseMessage));
 });
 
 // Approve/Reject Membership (for private/featured communities)

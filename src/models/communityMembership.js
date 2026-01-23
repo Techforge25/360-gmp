@@ -7,11 +7,11 @@ const communityMembershipSchema = new Schema({
         ref: "Community",
         required: true 
     },
-    // userProfileId: { 
-    //     type: Schema.Types.ObjectId, 
-    //     ref: "UserProfile",
-    //     required: true 
-    // },
+    userProfileId: { 
+        type: Schema.Types.ObjectId, 
+        ref: "UserProfile",
+        required: true 
+    },
     memberId: { 
         type: Schema.Types.ObjectId, 
         required: true, 

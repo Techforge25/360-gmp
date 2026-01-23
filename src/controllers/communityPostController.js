@@ -346,7 +346,6 @@ const addComment = asyncHandler(async (request, response) => {
     // Check if user is member of the community
     await checkCommunityMembership(post.communityId, identity.id, identity.model);
 
-
     // Add comment
     post.comments.push({
         userId: identity.id,
@@ -354,13 +353,18 @@ const addComment = asyncHandler(async (request, response) => {
         content: value.content,
         commentedAt: new Date()
     });
-    post.commentCount += 1;
 
+    post.commentCount += 1;
     await post.save();
 
-    // Populate latest comment
+    // Populate latest comment properly
+    await post.populate({
+        path: `comments.${post.comments.length - 1}.userId`,
+        select: "companyName logo fullName imageProfile"
+    });
+
+    // Get latest populated comment
     const latestComment = post.comments[post.comments.length - 1];
-    await latestComment.populate("userProfileId", "companyName logo fullName imageProfile");
 
     // Socket Emit
     const io = request.app.get("io");
@@ -370,9 +374,8 @@ const addComment = asyncHandler(async (request, response) => {
         commentCount: post.commentCount
     });
 
-    return response.status(201).json(
-        new ApiResponse(201, { comment: latestComment, commentCount: post.commentCount }, "Comment added successfully")
-    );
+    // Response
+    return response.status(201).json(new ApiResponse(201, { comment: latestComment, commentCount: post.commentCount }, "Comment added successfully"));
 });
 
 // Get Post Comments (with pagination)

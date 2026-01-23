@@ -11,7 +11,7 @@ const reportSchema = new Schema({
     // Details
     subject: { type: String, required: true, trim: true },
     category: { type: String, required: true, trim: true },
-    description: { type: String, required: true, trim: true },
+    description: { type: String, trim: true },
     evidences: [{ type: String }],
     status: { type: String, enum: ["pending", "reviewed", "resolved", "rejected"], default: "pending" }
 }, { timestamps: true });

@@ -19,20 +19,20 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
     const { name, price } = plan;
 
     // If trial is selected
-    if(name === "TRIAL")
-    {
-        // Calculate trial period
-        const startDate = new Date();
-        const endDate = new Date();
-        endDate.setDate(endDate.getDate() + 14);  
+    // if(name === "TRIAL")
+    // {
+    //     // Calculate trial period
+        // const startDate = new Date();
+        // const endDate = new Date();
+        // endDate.setDate(endDate.getDate() + 14);  
 
-        // Create subscription for trial period
-        const trialSubscription = await Subscription.create({ userId:_id, planId, status:"active", startDate, endDate });
-        if(!trialSubscription) throw new ApiError(500, "Failed to create trial subscription");
+    //     // Create subscription for trial period
+    //     const trialSubscription = await Subscription.create({ userId:_id, planId, status:"active", startDate, endDate });
+    //     if(!trialSubscription) throw new ApiError(500, "Failed to create trial subscription");
 
-        // Response for trial
-        return response.status(200).json(new ApiResponse(200, "Trial period has been started successfully"));
-    }
+    //     // Response for trial
+    //     return response.status(200).json(new ApiResponse(200, "Trial period has been started successfully"));
+    // }
 
     // Stripe instance
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -55,7 +55,7 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
             },
             quantity: 1,
         }],
-        metadata: { _id, planId, role },
+        metadata: { _id, planId, planName:name, role },
         success_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/cancel`
     });
@@ -71,19 +71,49 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
 const verifyStripePayment = asyncHandler(async (request, response) => {
     const { session_id } = request.query;
     if(!session_id) throw new ApiError(400, "Session ID is missing");
+
+    // Check subscription
+    const checkSubscription = await Subscription
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
     // Get checkout session details
     const session = await stripe.checkout.sessions.retrieve(session_id);
 
     // Validate session
-    if(!session) throw new ApiError(404, "Session not found");
+    if(!session || !session.id) throw new ApiError(404, "Session not found");
+
+    // Prevent dual payment for single session
+    const existing = await Subscription.findOne({ stripeSubscriptionId:session.id });
+    if(existing) return response.status(200).json(new ApiResponse(200, null, "Payment already processed"));    
 
     // Check payment status
     if(session.payment_status === "paid") 
     {
         // Get metadata
-        const { _id, planId, role } = session.metadata;
+        const { _id, planId, planName, role } = session.metadata;
+        
+        // If trial selected
+        if(planName === "TRIAL")
+        {
+            // Calculate for trial period
+            const startDate = new Date();
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() + 14);
+            
+            // Create subscription for trial
+            const trialSubscription = await Subscription.create({ 
+                userId:_id, 
+                planId, 
+                status:"active", 
+                startDate, 
+                endDate,
+                stripeSubscriptionId:session.id
+            });
+            if(!trialSubscription) throw new ApiError(500, "Failed to create trial subscription");
+
+            // Response for trial
+            return response.status(200).json(new ApiResponse(200, null, "Trial period has been started successfully"));
+        }
 
         // Check existing subscription
         const existingSubscription = await Subscription.findOne({ userId:_id, planId, status:"active", endDate:{ $gt:new Date() }});
@@ -106,7 +136,8 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
             planId,
             status: "active",
             startDate,
-            endDate
+            endDate,
+            stripeSubscriptionId:session.id
         });
 
         // Redirect to url based on role

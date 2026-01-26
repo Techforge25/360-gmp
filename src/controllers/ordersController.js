@@ -12,65 +12,92 @@ const BusinessProfile = require("../models/businessProfileSchema");
 
 // Create order
 const createOrder = asyncHandler(async (request, response) => {
-    // Validate user profile
     const userId = request.user._id;
+
+    // Get user profile
     const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
     if(!userProfile) throw new ApiError(404, "User profile not found! Invalid user profile ID");
-    
-    // Validate
+
+    // Validate request body
     const { totalAmount, shippingAddress, items } = request.body;
-    if (!totalAmount) throw new ApiError(400, "Amount is required");
-    if (!shippingAddress) throw new ApiError(400, "Shipping address is required");
-    if (!items || !items.length) throw new ApiError(400, "Product item is required");
+    if(!totalAmount) throw new ApiError(400, "Amount is required");
+    if(!shippingAddress) throw new ApiError(400, "Shipping address is required");
+    if(!items || !items.length) throw new ApiError(400, "Product item is required");
 
-    
-    // 1. Pehle product se Seller ID nikalna zaroori hai
-    const firstProduct = await Product.findById(items[0].productId).select("businessId");
-    if (!firstProduct) throw new ApiError(404, "Product not found");
-    const sellerBusinessId = firstProduct.businessId.toString();
+    // Variables
+    let sellerBusinessId = null;
+    let serverComputedTotal = 0;
 
-    // Stock check
-    for(const item of items) 
+    // Loop through items for validation & calculation
+    for(const item of items)
     {
         const { productId, quantity } = item;
+
+        // Validate quantity
         if(!quantity || quantity <= 0) throw new ApiError(400, "Invalid product quantity");
-        
-        const product = await Product.findById(productId).select("title stockQty");
+
+        // Trial user cannot purchase in bulk
+        if(request.user.plan?.name === "TRIAL" && quantity > 1) throw new ApiError(400, "You cannot purchase in bulk within Trial period! Please upgrade");
+
+        // Fetch product from DB (price & shipping must come from server)
+        const product = await Product.findById(productId).select("title stockQty price shippingCost businessId");
         if(!product) throw new ApiError(404, "Product not found");
-        if(product.stockQty < Number(quantity)) throw new ApiError(400,`Only ${product.stockQty} unit(s) available for "${product.title}"`);
+
+        // Enforce single seller per order
+        if(!sellerBusinessId)
+        {
+            sellerBusinessId = product.businessId.toString();
+        }
+        else if(sellerBusinessId !== product.businessId.toString())
+        {
+            throw new ApiError(400, "Multiple sellers in one order are not allowed");
+        }
+
+        // Stock check
+        if(product.stockQty < Number(quantity)) throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
+
+        // Compute item total (SERVER TRUSTED)
+        const itemTotal = Number(product.price) * Number(quantity) + Number(product.shippingCost);
+        serverComputedTotal += itemTotal;
     }
+
+    // Final amount validation
+    if(Number(totalAmount) !== Number(serverComputedTotal)) throw new ApiError(400, "Invalid total amount");
 
     // Stripe instance
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-    // Create Stripe session
+    // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         mode: "payment",
-        line_items: [{
-            price_data: {
-                currency: "usd",
-                unit_amount: Number(totalAmount) * 100,
-                product_data: {
-                    name: "Product purchasing",
-                    metadata: {
-                        brand: "360-GMP",
-                        category: "Products"
+        line_items: [
+            {
+                price_data: {
+                    currency: "usd",
+                    unit_amount: Number(serverComputedTotal) * 100,
+                    product_data: {
+                        name: "Product purchasing",
+                        metadata: {
+                            brand: "360-GMP",
+                            category: "Products"
+                        }
                     }
-                }
-            },
-            quantity: 1
-        }],
+                },
+                quantity: 1
+            }
+        ],
         metadata: {
             buyerUserProfileId: userProfile._id.toString(),
             sellerBusinessId,
-            totalAmount,
+            totalAmount: serverComputedTotal,
             shippingAddress,
             items: JSON.stringify(items)
         },
         success_url: `${process.env.BACKEND_URL}/api/v1/orders/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.BACKEND_URL}/api/v1/orders/stripe/cancel`
     });
+
     if(!session) throw new ApiError(400, "Stripe session creation failed");
 
     // Response

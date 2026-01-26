@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { fetchMyNotifications } = require("../controllers/notificationsController");
+const { fetchMyNotifications, markAllAsRead } = require("../controllers/notificationsController");
 const { authentication } = require("../middlewares/auth");
 
 // Router instance
@@ -7,5 +7,8 @@ const notificationsRouter = Router();
 
 // Fetch my notifications
 notificationsRouter.route("/").get(authentication, fetchMyNotifications);
+
+// Mark all as read
+notificationsRouter.route("/mark-all-as-read").get(authentication, markAllAsRead);
 
 module.exports = notificationsRouter;

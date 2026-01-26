@@ -28,4 +28,15 @@ const fetchMyNotifications = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, notifications, "Notifications have been fetched"));
 });
 
-module.exports = { createNotification, fetchMyNotifications };
+// Mark all as read
+const markAllAsRead = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Update
+    const notifications = await Notification.findOneAndUpdate({ userId }, { haveSeen:true }, { new:true }).lean();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, notifications, "All notifications have been marked as read"));
+});
+
+module.exports = { createNotification, fetchMyNotifications, markAllAsRead };

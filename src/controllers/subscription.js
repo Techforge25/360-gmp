@@ -100,7 +100,7 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
             const endDate = new Date();
             endDate.setDate(endDate.getDate() + 14);
             
-            // Create subscription for trial
+            // Create trial period
             const trialSubscription = await Subscription.create({ 
                 userId:_id, 
                 planId, 
@@ -109,7 +109,7 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
                 endDate,
                 stripeSubscriptionId:session.id
             });
-            if(!trialSubscription) throw new ApiError(500, "Failed to create trial subscription");
+            if(!trialSubscription) throw new ApiError(500, "Failed to create trial period");
 
             // Response for trial
             return response.status(200).json(new ApiResponse(200, null, "Trial period has been started successfully"));
@@ -118,7 +118,7 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
         // Check existing subscription
         const existingSubscription = await Subscription.findOne({ userId:_id, planId, status:"active", endDate:{ $gt:new Date() }});
 
-        // Extend
+        // Existing subscription extend by 1 month
         if(existingSubscription) 
         {
             const { endDate } = getMonthlySubscriptionDates(existingSubscription.endDate);
@@ -130,7 +130,7 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
         // Get subscription dates
         const { startDate, endDate } = getMonthlySubscriptionDates();        
         
-        // Save subscription
+        // Upgrade subscription
         const subscription = await Subscription.create({
             userId: _id,
             planId,

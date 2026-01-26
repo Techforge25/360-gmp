@@ -22,7 +22,7 @@ const userSignup = asyncHandler(async (request, response) => {
 
     // Check if email exist
     const user = await User.findOne({ email }).lean();
-    if(user) throw new ApiError(400, "This email has already been taken");
+    if(user && user.status !== "pending") throw new ApiError(400, "This email has already been taken");
 
     // Generate OTP token
     const { code:accountVerificationToken } = generateCode(6);

@@ -5,13 +5,14 @@ const asyncHandler = require("../utils/asyncHandler");
 const { isValidObjectId } = require("mongoose");
 
 // Helper to create notification
-const createNotification = async (userId, content) => {
+const createNotification = async (userId, title, content) => {
     // Validate Mongodb ID and notification content
     if(!isValidObjectId(userId)) throw new ApiError(400, "Invalid Object ID");
+    if(!title) throw new ApiError(400, "Notification title is required");
     if(!content) throw new ApiError(400, "Notification content is required");
 
     // Add notification
-    const notification = await Notification.create({ userId, content });
+    const notification = await Notification.create({ userId, title, content });
     if(!notification) throw new ApiError(500, "Failed to create notification");
 
     // Response

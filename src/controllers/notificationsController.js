@@ -33,7 +33,10 @@ const markAllAsRead = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Update
-    const notifications = await Notification.findOneAndUpdate({ userId }, { haveSeen:true }, { new:true }).lean();
+    const notifications = await Notification.updateMany(
+        { userId, haveSeen:false }, 
+        { $set:{ haveSeen:true } }
+    );
 
     // Response
     return response.status(200).json(new ApiResponse(200, notifications, "All notifications have been marked as read"));

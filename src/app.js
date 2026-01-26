@@ -41,6 +41,7 @@ const businessProfileManagementRouter = require("./routes/businessProfileMangeme
 const categoryRouter = require("./routes/categoryRouter");
 const savedJobRouter = require("./routes/savedJobsRoute");
 const reportRouter = require("./routes/reportRouter");
+const notificationsRouter = require("./routes/notificationsRoute");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);
@@ -63,6 +64,7 @@ app.use("/api/v1/business-profile-management", businessProfileManagementRouter);
 app.use("/api/v1/category", categoryRouter);
 app.use("/api/v1/savedJob", savedJobRouter);
 app.use("/api/v1/report", reportRouter);
+app.use("/api/v1/notifications", notificationsRouter);
 
 // API status route
 app.get("/api/v1/status", (request, response) => {

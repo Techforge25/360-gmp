@@ -2,10 +2,11 @@ const BusinessProfile = require("../models/businessProfileSchema");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
+const convertToMongoId = require("../utils/convertToMongoId");
 
 // Fetch views over time
 const fetchViewsOverTime = asyncHandler(async (request, response) => {
-    const userId = request.user._id;
+    const userId = convertToMongoId(request.user._id);
     const { range = "7d" } = request.query;
 
     // Decide start date

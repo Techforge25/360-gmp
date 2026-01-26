@@ -23,13 +23,15 @@ const fetchMyProducts = asyncHandler(async (request, response) => {
     const searchFilter = { businessId:businessProfile._id };
 
     // Get filter from frontend
-    const { filter, page = 1, limit = 10 } = request.query;
+    const { page = 1, limit = 10, filter, category } = request.query;
     if(filter) 
     {
         const allowedFilters = ["pending", "approved", "rejected", "draft"];
         if(!allowedFilters.includes(filter)) throw new ApiError(400, `Invalid filter! No filter found such as ${filter}`);
         searchFilter.status = filter;
     }
+
+    if(category) searchFilter.category = category;
 
     // Aggregation
     const aggregate = Product.aggregate([

@@ -6,12 +6,20 @@ const asyncHandler = require("../utils/asyncHandler");
 const { createUserProfileSchema } = require("../validations/userProfile");
 
 const createUserProfile = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
     // Validate
     const { error, value } = createUserProfileSchema.validate(request.body, { abortEarly: false });
     if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
 
     // Profile payload
-    const profileData = { ...value, userId: request.user._id };
+    const profileData = { ...value, userId };
+
+    // Check if user has already created UserProfile
+    const existingProfile = await UserProfile.findOne({ userId }).lean();
+    if(existingProfile) throw new ApiError(400, "You have already created a user profile");
+
+    // Create profile
     const profile = await UserProfile.create(profileData);
     if(!profile) throw new ApiError(500, "Failed to create user profile");
 

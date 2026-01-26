@@ -3,7 +3,7 @@ const { Schema, model } = require("mongoose");
 // Schema
 const userProfileSchema = new Schema({
     // Basic info
-    userId: { type:Schema.Types.ObjectId, ref: "User", required: true },
+    userId: { type:Schema.Types.ObjectId, ref:"User", required:true, unique:[true, "You have already created a user profile"] },
     fullName: String,
     title: String,
     phone: String,

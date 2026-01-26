@@ -13,8 +13,8 @@ const BusinessProfile = require("../models/businessProfileSchema");
 // Create order
 const createOrder = asyncHandler(async (request, response) => {
     // Validate user profile
-    const { _id } = request.user;
-    const userProfile = await UserProfile.findOne({ userId: _id }).select("_id").lean();
+    const userId = request.user._id;
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
     if(!userProfile) throw new ApiError(404, "User profile not found! Invalid user profile ID");
     
     // Validate
@@ -172,24 +172,18 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
     }
 });
 
-
+// Fetch all orders
 const fetchAllOrders = asyncHandler(async (request, response) => {
-    const { _id } = request.user;
-    const userProfile = await UserProfile.findOne({ userId: _id }).select("_id").lean();
+    const userId = request.user._id;
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
     if(!userProfile) throw new ApiError(404, "User profile not found! Invalid user profile ID");
 
-    const orders = await Order.find({buyerUserProfileId : userProfile})
+    // Find orders
+    const orders = await Order.find({ buyerUserProfileId:userProfile._id });
     if(!orders) throw new ApiError(404, "No Order Found!");
 
-
-
-    return response
-        .status(200)
-        .json(new ApiResponse(200,orders, "Order Fetch SuccessFully"));
-
-    
-
-
+    // Response
+    return response.status(200).json(new ApiResponse(200, orders, "Order Fetch SuccessFully"));
 });
 
 // Complete order

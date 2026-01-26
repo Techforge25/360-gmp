@@ -229,17 +229,18 @@ const viewBusinessProfile = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const { businessProfileId } = request.params;
 
-    // Get business profile
-    const businessProfile = await BusinessProfile.findById(businessProfileId);
-    if (!businessProfile) throw new ApiError(404, "Business profile not found");
-
-    // Update viewedBy and viewsCount
-    if(!businessProfile.viewedBy.includes(userId) && userId.toString() !== businessProfile.ownerUserId.toString())
-    {
-        businessProfile.viewedBy.push(userId);
-        businessProfile.viewsCount += 1;
-        await businessProfile.save();
-    }
+    // Update
+    await BusinessProfile.updateOne(
+        {
+            _id:businessProfileId,
+            ownerUserId: { $ne:userId }, // Ignore owner's view
+            "viewedBy.userId": { $ne:userId } // check unique viewer
+        },
+        {
+            $push:{ viewedBy:{ userId, viewedAt:new Date() } },
+            $inc:{ viewsCount:1 }
+        }
+    );
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Business profile viewed"));

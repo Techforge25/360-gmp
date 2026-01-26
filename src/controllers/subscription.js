@@ -140,10 +140,12 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
             stripeSubscriptionId:session.id
         });
 
+
         // Redirect to url based on role
-        const redirectUrl = role === "user" ? 
-        `${process.env.FRONTEND_URL}/onboarding/user-profile` : 
-        `${process.env.FRONTEND_URL}/onboarding/business-profile`
+        // const redirectUrl = role === "user" ? 
+        // `${process.env.FRONTEND_URL}/onboarding/user-profile` : 
+        // `${process.env.FRONTEND_URL}/onboarding/business-profile`;
+        const redirectUrl = `${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`;
 
         if(!subscription) throw new ApiError(500, "Failed to save subscription details in db");
         return response.status(303).redirect(redirectUrl);

@@ -18,6 +18,22 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
     if(!plan) throw new ApiError(404, "Plan not found! Invalid plan ID");
     const { name, price } = plan;
 
+    // If trial is selected
+    if(name === "TRIAL")
+    {
+        // Calculate trial period
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 14);  
+
+        // Create subscription for trial period
+        const trialSubscription = await Subscription.create({ userId:_id, planId, status:"active", startDate, endDate });
+        if(!trialSubscription) throw new ApiError(500, "Failed to create trial subscription");
+
+        // Response for trial
+        return response.status(200).json(new ApiResponse(200, "Trial period has been started successfully"));
+    }
+
     // Stripe instance
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 

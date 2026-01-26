@@ -40,7 +40,7 @@ const createOrder = asyncHandler(async (request, response) => {
         if(request.user.plan?.name === "TRIAL" && quantity > 1) throw new ApiError(400, "You cannot purchase in bulk within Trial period! Please upgrade");
 
         // Fetch product from DB (price & shipping must come from server)
-        const product = await Product.findById(productId).select("title stockQty price shippingCost businessId");
+        const product = await Product.findById(productId).select("title stockQty pricePerUnit shippingCost businessId");
         if(!product) throw new ApiError(404, "Product not found");
 
         // Enforce single seller per order
@@ -57,7 +57,7 @@ const createOrder = asyncHandler(async (request, response) => {
         if(product.stockQty < Number(quantity)) throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
 
         // Compute item total (SERVER TRUSTED)
-        const itemTotal = Number(product.price) * Number(quantity) + Number(product.shippingCost);
+        const itemTotal = Number(product.pricePerUnit) * Number(quantity) + Number(product.shippingCost);
         serverComputedTotal += itemTotal;
     }
 

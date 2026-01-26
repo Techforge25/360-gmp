@@ -30,7 +30,7 @@ const createOrder = asyncHandler(async (request, response) => {
     const sellerBusinessId = firstProduct.businessId.toString();
 
     // Stock check
-    for (const item of items) 
+    for(const item of items) 
     {
         const { productId, quantity } = item;
         if(!quantity || quantity <= 0) throw new ApiError(400, "Invalid product quantity");
@@ -71,14 +71,10 @@ const createOrder = asyncHandler(async (request, response) => {
         success_url: `${process.env.BACKEND_URL}/api/v1/orders/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.BACKEND_URL}/api/v1/orders/stripe/cancel`
     });
+    if(!session) throw new ApiError(400, "Stripe session creation failed");
 
-    if (!session) {
-        throw new ApiError(400, "Stripe session creation failed");
-    }
-
-    return response
-        .status(200)
-        .json(new ApiResponse(200, session.url, "Checkout url generated"));
+    // Response
+    return response.status(200).json(new ApiResponse(200, session.url, "Checkout url generated"));
 });
 
 // Verify stripe payment for orders
@@ -86,17 +82,20 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
     const { session_id } = request.query;
     if (!session_id) throw new ApiError(400, "Session ID is missing");
 
+    // Fetch session
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const stripeSession = await stripe.checkout.sessions.retrieve(session_id);
-    if (!stripeSession) throw new ApiError(404, "Session not found");
-    if (stripeSession.payment_status !== "paid") throw new ApiError(400, "Payment not completed");
+
+    // Validate
+    if(!stripeSession) throw new ApiError(404, "Session not found");
+    if(stripeSession.payment_status !== "paid") throw new ApiError(400, "Payment not completed");
 
     // Start MongoDB transaction
     const dbSession = await mongoose.startSession();
     dbSession.startTransaction();
     try 
     {
-        const { buyerUserProfileId,sellerBusinessId, totalAmount, shippingAddress, items } = stripeSession.metadata;
+        const { buyerUserProfileId, sellerBusinessId, totalAmount, shippingAddress, items } = stripeSession.metadata;
         const parsedItems = JSON.parse(items);
 
         // Stock deduction and prepare items with priceAtPurchase
@@ -141,6 +140,7 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
         const platformFee = amount * 0.10; // 10% Fee
         const netAmount = amount - platformFee; // Seller ka hissa
 
+        // Hold on escrow
         await EscrowTransaction.create([{
             orderId: order._id,
             sellerId: sellerBusinessId,
@@ -151,13 +151,14 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
             status: 'held' // Paisa hold ho gaya
         }], { session: dbSession });
 
+        // Update wallet
         await Wallet.findOneAndUpdate(
             { businessId: sellerBusinessId },
             { $inc: { pendingBalance: netAmount } },
             { upsert: true, session: dbSession }
         );
 
-
+        // Complete transaction
         await dbSession.commitTransaction();
         dbSession.endSession();
         // return response.status(201).json(new ApiResponse(201, order, "Order has been created"));

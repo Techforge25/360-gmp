@@ -47,7 +47,10 @@ const BusinessProfileSchema = new Schema({
     mapURL: { type:String },
 
     // Views
-    viewedBy: [{ type:Schema.Types.ObjectId, ref:"User" }],
+    viewedBy: [{
+        userId: { type: Schema.Types.ObjectId, ref:"User" },
+        viewedAt: { type: Date, default: Date.now }
+    }],
     viewsCount: { type:Number, default:0 },
 }, { timestamps: true });
 

@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { authentication } = require("../middlewares/auth");
+const { authentication, authorization } = require("../middlewares/auth");
 const { createOrder, verifyStripePaymentForOrders, completeOrder, updateOrderStatusBySeller, fetchAllOrders } = require("../controllers/ordersController");
 const { checkSubscription } = require("../middlewares/checkSubscription");
 
@@ -7,7 +7,7 @@ const { checkSubscription } = require("../middlewares/checkSubscription");
 const orderRouter = Router();
 
 // Create order through stripe
-orderRouter.route("/stripe").post(authentication, checkSubscription, createOrder);
+orderRouter.route("/stripe").post(authentication, authorization(["user"]), checkSubscription, createOrder);
 orderRouter.route("/stripe/success").get(verifyStripePaymentForOrders);
 
 // Complete order by buyer

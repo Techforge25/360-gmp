@@ -11,12 +11,13 @@ const transporter = nodemailer.createTransport({
 });
 
 // Send email
-const sendEmail = async (to, subject, text) => {
+const sendEmail = async (to, subject, text, attachments = []) => {
     const mailOptions = {
         from: GMAIL,
         to:to,
         subject:subject,
-        html:text
+        html:text,
+        attachments
     }
 
     try 

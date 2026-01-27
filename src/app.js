@@ -43,6 +43,7 @@ const savedJobRouter = require("./routes/savedJobsRoute");
 const reportRouter = require("./routes/reportRouter");
 const notificationsRouter = require("./routes/notificationsRoute");
 const analyticsOverviewRouter = require("./routes/analyticsOverviewRoute");
+const supportRouter = require("./routes/supportRoute");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);
@@ -67,6 +68,7 @@ app.use("/api/v1/savedJob", savedJobRouter);
 app.use("/api/v1/report", reportRouter);
 app.use("/api/v1/notifications", notificationsRouter);
 app.use("/api/v1/analytics-overview", analyticsOverviewRouter);
+app.use("/api/v1/support", supportRouter);
 
 // API status route
 app.get("/api/v1/status", (request, response) => {

@@ -1,19 +1,19 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
-const { fetchViewsOverTime } = require("../controllers/analyticsOverviewController");
+const { fetchViewsOverTime, fetchJobApplicationFunnel } = require("../controllers/analyticsOverviewController");
 
 // Router instance
 const analyticsOverviewRouter = Router();
 
-// Views over time
+// Views over time graph
 analyticsOverviewRouter.route("/views-over-time")
 .get(authentication, authorization(["business"]), fetchViewsOverTime);
 
-// Application success funnel
+// Application success funnel graph
 analyticsOverviewRouter.route("/application-success-funnel")
-.get(authentication, authorization(["business"]));
+.get(authentication, authorization(["business"]), fetchJobApplicationFunnel);
 
-// Top purchased categories
+// Top purchased categories graph
 analyticsOverviewRouter.route("/top-purchased-categories")
 .get(authentication, authorization(["business"]));
 

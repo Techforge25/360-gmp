@@ -1,10 +1,12 @@
 const BusinessProfile = require("../models/businessProfileSchema");
+const JobApplication = require("../models/jobApplication");
+const Job = require("../models/jobsSchema");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const convertToMongoId = require("../utils/convertToMongoId");
 
-// Fetch views over time
+// Fetch views over time graph
 const fetchViewsOverTime = asyncHandler(async (request, response) => {
     const userId = convertToMongoId(request.user._id);
     const { range = "7d" } = request.query;
@@ -62,4 +64,76 @@ const fetchViewsOverTime = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, views, "Views over time fetched successfully"));
 });
 
-module.exports = { fetchViewsOverTime };
+// Fetch job application success funnel graph
+const fetchJobApplicationFunnel = asyncHandler(async (request, response) => {
+    const userId = convertToMongoId(request.user._id);
+    const { range = "7d" } = request.query;
+
+    // Decide date
+    const now = new Date();
+    let startDate = new Date();
+
+    if(range === "7d") 
+    {
+        startDate.setDate(now.getDate() - 7);
+    } 
+    else if(range === "1m") 
+    {
+        startDate.setMonth(now.getMonth() - 1);
+    } 
+    else 
+    {
+        throw new ApiError(400, "Invalid range. Use 7d or 1m");
+    }
+
+    // Get business profile
+    const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");
+    if(!business) throw new ApiError(404, "Business profile not found");
+    
+    // Get jobs posted in selected range
+    const jobs = await Job.find({ businessId:business._id, createdAt:{ $gte:startDate } }).select("_id");
+
+    // Get job ids
+    const jobIds = jobs.map(job => job?._id);
+
+    if (jobIds.length === 0) 
+    {
+        const payload = { totalApplications:0, viewed:0, interview:0, hired:0, rejected:0 };
+        return response.status(200).json( new ApiResponse(200, payload, "No jobs found in selected range"));
+    }
+
+    // Aggregate applications funnel
+    const funnel = await JobApplication.aggregate([
+        { $match:{ jobId:{ $in:jobIds }, createdAt:{ $gte:startDate } } },
+        {
+            $group: {
+                _id: "$status",
+                count: { $sum: 1 }
+            }
+        }
+    ]);
+
+    // Convert aggregation result to object
+    const stats = {
+        totalApplications: 0,
+        viewed: 0,
+        interview: 0,
+        hired: 0,
+        rejected: 0
+    };
+
+    funnel.forEach(item => {
+        stats.totalApplications += item.count;
+
+        if(item._id === "viewed") stats.viewed = item.count;
+        if(item._id === "interview") stats.interview = item.count;
+        if(item._id === "hired") stats.hired = item.count;
+        if(item._id === "rejected") stats.rejected = item.count;
+        if(item._id === "pending") stats.totalApplications += 0; // already counted
+    });
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, stats, "Job application funnel fetched successfully"));
+});
+
+module.exports = { fetchViewsOverTime, fetchJobApplicationFunnel };

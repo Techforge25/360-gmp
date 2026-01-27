@@ -7,8 +7,8 @@ const supportSchema = new Schema({
     subject:{ type:String, trim:true, required:true },
     category:{ type:String, trim:true, required:true },
     description:{ type:String, trim:true, required:true },
-    fileType:{ type:String, trim:true },
-    fileURL:{ type:String, trim:true }
+    fileType:{ type:String, trim:true, default:null },
+    fileURL:{ type:String, trim:true, default:null }
 }, { timestamps:true });
 
 // Inject plugin

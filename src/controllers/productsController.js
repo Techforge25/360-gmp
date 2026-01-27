@@ -7,6 +7,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
 const { createProductSchema } = require("../validations/productsValidator");
 const Order = require("../models/orders");
+const convertToMongoId = require("../utils/convertToMongoId");
 
 // Create product
 const createProduct = asyncHandler(async (request, response) => {
@@ -116,7 +117,7 @@ const viewProduct = asyncHandler(async (request, response) => {
 
     // Find product and business profile
     const [product, businessProfile] = await Promise.all([
-        Product.findById(productId).select("businessId viewedBy viewsCount"),
+        Product.findById(productId),
         BusinessProfile.findOne({ ownerUserId:userId }).select("_id")
     ]);
     if(!product) throw new ApiError(404, "Product not found");

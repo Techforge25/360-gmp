@@ -111,9 +111,32 @@ const fetchBusinessFeaturedProducts = asyncHandler(async (request, response) => 
 
 // View product
 const viewProduct = asyncHandler(async (request, response) => {
+    const userId = convertToMongoId(request.user._id);
     const { productId } = request.params;
-    const product = await Product.findById(productId).lean();
+
+    // Find product and business profile
+    const [product, businessProfile] = await Promise.all([
+        Product.findById(productId).select("businessId viewedBy viewsCount"),
+        BusinessProfile.findOne({ ownerUserId:userId }).select("_id")
+    ]);
     if(!product) throw new ApiError(404, "Product not found");
+
+    // Owner flag
+    const isOwner = businessProfile && String(product.businessId) === String(businessProfile._id);
+
+    // Check if already viewed
+    const alreadyViewed = product.viewedBy.some(id => String(id) === String(userId));
+
+    // Add unique view
+    if (!alreadyViewed && !isOwner) 
+    {
+        await Product.findByIdAndUpdate(productId, { 
+            $addToSet:{ viewedBy:userId }, 
+            $inc:{ viewsCount:1 } 
+        });
+    }
+
+    // Response
     return response.status(200).json(new ApiResponse(200, product, "Product has been fetched"));
 });
 

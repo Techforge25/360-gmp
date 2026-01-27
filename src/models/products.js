@@ -21,7 +21,11 @@ const productSchema = new Schema({
     status: { type: String, enum:["pending", "approved", "rejected", "draft"], default: "pending" },
     isSingleProductAvailable: { type: Boolean, default:false },
     isFlashDeal: { type:Boolean, default:false },
-    extras:{ type:String } // 15% off or Free shipping something
+    extras:{ type:String }, // 15% off or Free shipping something
+
+    // Views
+    viewedBy: [{ type:Schema.Types.ObjectId, ref:"User" }],
+    viewsCount: { type:Number, default:0 }
 }, { timestamps: true });
 
 // Inject plugin

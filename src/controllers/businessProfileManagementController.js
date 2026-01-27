@@ -229,8 +229,12 @@ const viewBusinessProfile = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const { businessProfileId } = request.params;
 
+    // Find business profile to send this complete payload as a response
+    const business = await BusinessProfile.findById(businessProfileId).lean();
+    if(!business) throw new ApiError(404, "Business profile not found");
+
     // Update
-    await BusinessProfile.updateOne(
+    await BusinessProfile.findOneAndUpdate(
         {
             _id:businessProfileId,
             ownerUserId: { $ne:userId }, // Ignore owner's view
@@ -243,7 +247,7 @@ const viewBusinessProfile = asyncHandler(async (request, response) => {
     );
 
     // Response
-    return response.status(200).json(new ApiResponse(200, null, "Business profile viewed"));
+    return response.status(200).json(new ApiResponse(200, business, "Business profile viewed"));
 });
 
 // fetch view counts

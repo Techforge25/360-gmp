@@ -1,8 +1,10 @@
+const { emptyList } = require("../constants");
 const Support = require("../models/supportModel");
 const sendEmail = require("../service/email");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
+const convertToMongoId = require("../utils/convertToMongoId");
 const validate = require("../utils/validate");
 const supportEmailValidationSchema = require("../validations/supportEmailValidator");
 
@@ -52,11 +54,26 @@ const fetchAllSupportEmails = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
 
     // Fetch
-    const support = await Support.paginate({}, { page, limit });
-    if(!support.length) return response.status(200, json(new ApiResponse(200, support, "No spport email found")));
+    const supportEmails = await Support.paginate({}, { page, limit });
+    if(!supportEmails.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No support email found"));
 
     // Response
-    return response.status(200).json(new ApiResponse(200, support, "Support emails have been fetched"));
+    return response.status(200).json(new ApiResponse(200, supportEmails, "Support emails have been fetched"));
 });
 
-module.exports = { supportEmail, fetchAllSupportEmails };
+// Fetch my support emails
+const fetchMySupportEmails = asyncHandler(async (request, response) => {
+    const userId = convertToMongoId(request.user._id);
+
+    // Pagination filter
+    const { page = 1, limit = 10 } = request.query;
+
+    // Fetch
+    const supportEmails = await Support.paginate({ userId }, { page, limit });
+    if(!supportEmails.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No support email found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, supportEmails, "Support emails have been fetched"));
+});
+
+module.exports = { supportEmail, fetchAllSupportEmails, fetchMySupportEmails };

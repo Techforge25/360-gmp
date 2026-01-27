@@ -46,4 +46,17 @@ const supportEmail = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, support, "Your email has been sent to support team!"));
 });
 
-module.exports = { supportEmail };
+// Fetch all support emails
+const fetchAllSupportEmails = asyncHandler(async (request, response) => {
+    // Pagination filter
+    const { page = 1, limit = 10 } = request.query;
+
+    // Fetch
+    const support = await Support.paginate({}, { page, limit });
+    if(!support.length) return response.status(200, json(new ApiResponse(200, support, "No spport email found")));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, support, "Support emails have been fetched"));
+});
+
+module.exports = { supportEmail, fetchAllSupportEmails };

@@ -224,4 +224,100 @@ const fetchTopPerformingProducts = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, topProducts, "Top performing products fetched successfully"));
 });
 
-module.exports = { fetchViewsOverTime, fetchJobApplicationFunnel, fetchTopPerformingProducts };
+// Fetch competitor bench marking
+const fetchCompetitorBenchMarking = asyncHandler(async (request, response) => {
+    const { range = "7d" } = request.query;
+
+    // Decide date
+    const now = new Date();
+    let startDate = new Date();
+
+    // Range filter
+    if(range === "7d") 
+    {
+        startDate.setDate(now.getDate() - 7);
+    } 
+    else if(range === "1m") 
+    {
+        startDate.setMonth(now.getMonth() - 1);
+    } 
+    else 
+    {
+        throw new ApiError(400, "Invalid range. Use 7d or 1m");
+    }
+
+    // Growth rate formula = (total sales in range / total sales overall) * 100
+
+    // Aggregate business profiles
+    const benchmarking = await BusinessProfile.aggregate([
+        {
+            $project: {
+                companyName: 1,
+                profileViews: { $ifNull: ["$viewsCount", 0] }
+            }
+        },
+
+        // Lookup total sales per business in date range
+        {
+            $lookup: {
+                from: "orders",
+                localField: "_id",
+                foreignField: "sellerBusinessId",
+                as: "orders"
+            }
+        },
+
+        // Calculate total sales overall and in range
+        {
+            $addFields: {
+                totalSales: { $sum: "$orders.totalAmount" },
+                salesInRange: {
+                    $sum: {
+                        $map: {
+                            input: {
+                                $filter: {
+                                    input: "$orders",
+                                    as: "order",
+                                    cond: { $gte: ["$$order.createdAt", startDate] }
+                                }
+                            },
+                            as: "o",
+                            in: "$$o.totalAmount"
+                        }
+                    }
+                }
+            }
+        },
+
+        // Calculate growth rate %
+        {
+            $addFields: {
+                growthRate: {
+                    $cond: [
+                        { $eq: ["$totalSales", 0] },
+                        0,
+                        { $multiply: [{ $divide: ["$salesInRange", "$totalSales"] }, 100] }
+                    ]
+                }
+            }
+        },
+
+        // Projection
+        {
+            $project: {
+                _id: 0,
+                companyName: 1,
+                profileViews: 1,
+                growthRate: { $round: ["$growthRate", 2] } // round to 2 decimals
+            }
+        },
+
+        // Sort by growthRate descending
+        { $sort: { growthRate: -1 } }
+    ]);
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, benchmarking, "Competitor benchmarking fetched successfully"));
+});
+
+module.exports = { fetchViewsOverTime, fetchJobApplicationFunnel, fetchTopPerformingProducts, fetchCompetitorBenchMarking };

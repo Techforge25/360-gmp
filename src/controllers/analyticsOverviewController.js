@@ -320,4 +320,31 @@ const fetchCompetitorBenchMarking = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, benchmarking, "Competitor benchmarking fetched successfully"));
 });
 
-module.exports = { fetchViewsOverTime, fetchJobApplicationFunnel, fetchTopPerformingProducts, fetchCompetitorBenchMarking };
+// Fetch total product views
+const fetchTotalProductViews = asyncHandler(async (request, response) => {
+    const userId = convertToMongoId(request.user._id);
+
+    // Get business profile
+    const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");
+    if(!business) throw new ApiError(404, "Business profile not found");
+
+    // Sum all product views
+    const result = await Product.aggregate([
+        { $match: { businessId:business._id } },
+        {
+            $group: {
+                _id: null,
+                totalViews: { $sum: { $ifNull: ["$viewsCount", 0] } }
+            }
+        }
+    ]);
+
+    // Prepare format
+    const totalViews = result.length ? result[0].totalViews : 0;
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, totalViews, "Total product views fetched successfully"));
+});
+
+module.exports = { fetchViewsOverTime, fetchJobApplicationFunnel,
+fetchTopPerformingProducts, fetchCompetitorBenchMarking, fetchTotalProductViews };

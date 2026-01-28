@@ -323,14 +323,38 @@ const fetchCompetitorBenchMarking = asyncHandler(async (request, response) => {
 // Fetch total product views
 const fetchTotalProductViews = asyncHandler(async (request, response) => {
     const userId = convertToMongoId(request.user._id);
+    const { range = "7d" } = request.query;
+
+    // Decide date
+    const now = new Date();
+    let startDate = new Date();
+
+    // Date range filter
+    if(range === "7d") 
+    {
+        startDate.setDate(now.getDate() - 7);
+    } 
+    else if(range === "1m") 
+    {
+        startDate.setMonth(now.getMonth() - 1);
+    } 
+    else 
+    {
+        throw new ApiError(400, "Invalid range. Use 7d or 1m");
+    }
 
     // Get business profile
     const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");
     if(!business) throw new ApiError(404, "Business profile not found");
 
-    // Sum all product views
+    // Aggregate total views of products created in date range
     const result = await Product.aggregate([
-        { $match: { businessId:business._id } },
+        {
+            $match: {
+                businessId: business._id,
+                createdAt: { $gte: startDate }
+            }
+        },
         {
             $group: {
                 _id: null,
@@ -339,11 +363,11 @@ const fetchTotalProductViews = asyncHandler(async (request, response) => {
         }
     ]);
 
-    // Prepare format
+    // Extract total views safely
     const totalViews = result.length ? result[0].totalViews : 0;
 
     // Response
-    return response.status(200).json(new ApiResponse(200, totalViews, "Total product views fetched successfully"));
+    return response.status(200).json(new ApiResponse(200, { totalViews }, "Total product views fetched successfully"));
 });
 
 module.exports = { fetchViewsOverTime, fetchJobApplicationFunnel,

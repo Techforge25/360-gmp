@@ -15,11 +15,13 @@ const communitySchema = new Schema({
     tags: { type: [String], default:[] },
     rules: { type: String, trim: true },
 
-    // Images
+    // Media settings
     coverImage: { type:String, default:null },
     profileImage: { type:String, default:null },
+    bannerTagLine: { type:String, trim:true, default:null },
+    colorHashcode:{ type:String, trim:true, default:null },
 
-    // Status & member count
+    // Security
     status: { type: String, enum: ["active", "inactive", "suspended"], default: "active" },
     postingPermissions: { type:String, default:"all-members", enum:["all-members", "moderators-only", "admins-only"] },
     memberCount: { type:Number, default: 0 }

@@ -7,6 +7,7 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const { createCommunitySchema, updateCommunitySchema, approveMembershipSchema } = require("../validations/communityValidator");
 const { emptyList } = require("../constants");
+const UserSearch = require("../models/userSearchesModel");
 
 // Helper function to get userProfileId from userId
 const getUserProfileId = async (userId) => {
@@ -394,20 +395,52 @@ const leaveCommunity = asyncHandler(async (request, response) => {
         await community.save();
     }
 
-    return response.status(200).json(
-        new ApiResponse(200, null, "Left community successfully")
-    );
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Left community successfully"));
 });
 
-module.exports = {
-    createCommunity,
-    getAllCommunities,
-    getCommunityById,
-    joinCommunity,
-    approveMembership,
-    getPendingRequests,
-    getCommunityMembers,
-    updateCommunity,
-    deleteCommunity,
-    leaveCommunity
-};
+// Fetch suggested communities
+const fetchSuggestedCommunities = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Get recent searches
+    const searches = await UserSearch.find({ userId }).sort({ createdAt:-1 }).limit(10).lean();
+
+    // Get keywords
+    const keywords = searches.map(s => s.searchedContent);
+    if (!keywords.length) return response.status(200).json(new ApiResponse(200, [], "No suggested communities found"));
+    
+    // Get user's profile
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) return response.status(200).json(new ApiResponse(200, [], "No suggested communities found"));
+    
+    // Get joined communities
+    const memberships = await CommunityMembership.find({ userProfileId:userProfile._id, status:"approved" }).select("communityId").lean();
+
+    // Capture joined communities ids
+    const joinedCommunityIds = memberships.map(m => m.communityId);
+
+    // Build regex conditions
+    const orConditions = [];
+    keywords.forEach(k => {
+        orConditions.push(
+            { name: { $regex: k, $options: "i" } },
+            { category: { $regex: k, $options: "i" } },
+            { tags: { $regex: k, $options: "i" } },
+            { description: { $regex: k, $options: "i" } },
+            { industry: { $regex: k, $options: "i" } }
+        );
+    });
+
+    // Fetch suggestions
+    const communities = await Community.find({ status:"active", _id:{ $nin:joinedCommunityIds }, $or:orConditions })
+    .sort({ memberCount:-1 }).limit(5).select("name category tags profileImage memberCount").lean();
+    if(!communities.length) return response.status(200).json(new ApiResponse(200, [], "No suggested communities found"));
+
+    // Response  
+    return response.status(200).json(new ApiResponse(200, communities, "Suggested communities have been fetched"));
+});
+
+module.exports = { createCommunity, getAllCommunities, getCommunityById, 
+joinCommunity, approveMembership, getPendingRequests, getCommunityMembers, 
+updateCommunity, deleteCommunity, leaveCommunity, fetchSuggestedCommunities };

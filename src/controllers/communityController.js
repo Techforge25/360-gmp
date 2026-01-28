@@ -75,7 +75,7 @@ const getAllCommunities = asyncHandler(async (request, response) => {
 
     // Get communities
     const communities = await Community.paginate(filter, { 
-        page, limit, sort:{ createdAt:-1 }, select:"industry region",
+        page, limit, sort:{ createdAt:-1 }, select:"-purpose -rules -status -tags",
         populate: { path:"businessId", select:"companyName businessType primaryIndustry logo" }            
     });
     if(!communities.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Communites not found"));

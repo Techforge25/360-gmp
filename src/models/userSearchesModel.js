@@ -11,6 +11,6 @@ const userSearchesSchema = new Schema({
 userSearchesSchema.plugin(paginate);
 
 // Model
-const UserSearches = model("UserSearches", userSearchesSchema);
+const UserSearch = model("UserSearch", userSearchesSchema);
 
-module.exports = UserSearches;
+module.exports = UserSearch;

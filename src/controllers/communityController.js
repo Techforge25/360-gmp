@@ -18,17 +18,17 @@ const getUserProfileId = async (userId) => {
 
 // Create Community (only business owner)
 const createCommunity = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
     const { error, value } = createCommunitySchema.validate(request.body, { abortEarly: false });
     if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
 
     // Check if businessId exists
-    const businessProfile = await BusinessProfile.findById(value.businessId);
-    if(!businessProfile) {
-        throw new ApiError(404, "Business profile not found. Invalid business ID");
-    }
-
+    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId }).lean();
+    if(!businessProfile) throw new ApiError(404, "Business profile not found. Invalid business ID");
+    
     // Verify that the user is the owner of the business
-    if(businessProfile.ownerUserId.toString() !== request.user._id.toString()) {
+    if(businessProfile.ownerUserId.toString() !== userId.toString()) {
         throw new ApiError(403, "Only business owner can create communities");
     }
 
@@ -41,7 +41,7 @@ const createCommunity = asyncHandler(async (request, response) => {
     await CommunityMembership.create({
         communityId: community._id,
         userProfileId: userProfileId,
-        memberId: value.businessId,
+        memberId: businessProfile.ownerUserId,
         memberModel: "BusinessProfile",
         role: "owner",
         status: "approved"

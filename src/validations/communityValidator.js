@@ -2,10 +2,6 @@ const Joi = require("joi");
 
 // Create Community schema
 const createCommunitySchema = Joi.object({
-    businessId: Joi.string().required().messages({
-        "any.required": "Business ID is required",
-        "string.empty": "Business ID cannot be empty"
-    }),
     name: Joi.string().min(3).max(100).required().trim().messages({
         "any.required": "Community name is required",
         "string.min": "Community name must be at least 3 characters long",

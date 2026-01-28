@@ -434,7 +434,7 @@ const fetchSuggestedCommunities = asyncHandler(async (request, response) => {
 
     // Fetch suggestions
     const communities = await Community.find({ status:"active", _id:{ $nin:joinedCommunityIds }, $or:orConditions })
-    .sort({ memberCount:-1 }).limit(5).select("name category tags profileImage memberCount").lean();
+    .sort({ memberCount:-1 }).limit(5).select("name profileImage memberCount type").lean();
     if(!communities.length) return response.status(200).json(new ApiResponse(200, [], "No suggested communities found"));
 
     // Response  

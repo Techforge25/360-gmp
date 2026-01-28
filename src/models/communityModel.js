@@ -3,55 +3,26 @@ const paginate = require("mongoose-paginate-v2");
 
 // Schema
 const communitySchema = new Schema({
-    businessId: { 
-        type: Schema.Types.ObjectId, 
-        ref: "BusinessProfile",
-        required: true 
-    },
-    name: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    category: {
-        type: String,
-        trim: true
-    },
-    type: {
-        type: String,
-        enum: ["public", "private", "featured"],
-        default: "public",
-        required: true
-    },
-    description: {
-        type: String,
-        trim: true
-    },
-    purpose: {
-        type: String,
-        trim: true
-    },
-    tags: {
-        type: [String],
-        default: []
-    },
-    rules: {
-        type: String,
-        trim: true
-    },
-    coverImage: String,
-    profileImage: String,
-    status: {
-        type: String,
-        enum: ["active", "inactive", "suspended"],
-        default: "active"
-    },
-    memberCount: {
-        type: Number,
-        default: 0
-    },
+    // Basic info
+    businessId: { type:Schema.Types.ObjectId, ref: "BusinessProfile", required:true },
+    name: { type:String, required:true, trim:true },
+    category: { type:String, trim:true },
+    type: { type:String, enum: ["public", "private", "featured"], default: "public", required:true },
+    description: { type:String, trim:true },
+    purpose: { type:String, trim:true },
     industry:{ type:String, trim:true },
-    region:{ type:String }
+    region:{ type:String },
+    tags: { type: [String], default:[] },
+    rules: { type: String, trim: true },
+
+    // Images
+    coverImage: { type:String, default:null },
+    profileImage: { type:String, default:null },
+
+    // Status & member count
+    status: { type: String, enum: ["active", "inactive", "suspended"], default: "active" },
+    postingPermissions: { type:String, default:"all-members", enum:["all-members", "moderators-only", "admins-only"] },
+    memberCount: { type:Number, default: 0 }
 }, { timestamps: true });
 
 // Inject plugin

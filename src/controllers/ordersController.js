@@ -220,85 +220,93 @@ const fetchAllOrders = asyncHandler(async (request, response) => {
 // First check if the order status and authenticated by the real buyer
 // iskay baaad ham is pr transaction start karega us pr ya hoga kay order status complete hoga ya escrow release hoga aur wallet update hoga
 const completeOrder = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
     const { orderId } = request.params;
-    const { _id } = request.user;
 
-    if (!orderId) throw new ApiError(400, "Order ID is missing");
-
+    // Find order
     const order = await Order.findById(orderId);
-    if (!order) throw new ApiError(404, "Order not found");
+    if(!order) throw new ApiError(404, "Order not found");
 
-    const buyerProfile = await UserProfile.findOne({ userId: _id });
-    if (!buyerProfile) throw new ApiError(404, "User profile not found");
-    if (buyerProfile._id.toString() !== order.buyerUserProfileId.toString()) 
-        throw new ApiError(403, "You are not authorized to complete this order");
+    // Find buyer profile
+    const buyerProfile = await UserProfile.findOne({ userId });
+    if(!buyerProfile) throw new ApiError(404, "User profile not found");
 
+    // Check permissions
+    if(buyerProfile._id.toString() !== order.buyerUserProfileId.toString()) throw new ApiError(403, "You are not authorized to complete this order");
     const allowedStatuses = ["paid", "processing", "shipped", "delivered"];
     
-    if (!allowedStatuses.includes(order.status)) {
-        throw new ApiError(400, `Order cannot be completed in its current status: ${order.status}`);
-    }
+    // Check status
+    if(!allowedStatuses.includes(order.status)) throw new ApiError(400, `Order cannot be completed in its current status: ${order.status}`);
 
-    const escrow = await EscrowTransaction.findOne({ orderId: order._id, status: "held" });
+    // Find escrow
+    const escrow = await EscrowTransaction.findOne({ orderId:order._id, status:"held" });
     if (!escrow) throw new ApiError(404, "Escrow record not found or already released");
 
+    // Start db session for safe transaction
     const dbSession = await mongoose.startSession();
     dbSession.startTransaction();
 
-    try {
+    try 
+    {
+        // Update order status
         order.status = "completed";
-        await order.save({ session: dbSession });
+        await order.save({ session:dbSession });
 
+        // Order escrow status
         escrow.status = "released";
-        await escrow.save({ session: dbSession });
+        await escrow.save({ session:dbSession });
 
+        // Update wallet
         await Wallet.findOneAndUpdate(
-            { businessId: order.sellerBusinessId },
+            { businessId:order.sellerBusinessId },
             { $inc: { 
                 pendingBalance: -escrow.netAmount,
                 availableBalance: escrow.netAmount,
                 totalEarned: escrow.netAmount } },
-            { upsert: true, session: dbSession }
+            { upsert:true, session:dbSession }
         );
 
+        // Commit changes
         await dbSession.commitTransaction();
         dbSession.endSession();
+
+        // Response
         return response.status(200).json(new ApiResponse(200, {}, "Order completed successfully"));
 
-    } catch (error) {
+    } 
+    catch(error) 
+    {
         await dbSession.abortTransaction();
         dbSession.endSession();
         throw error;
     }
-    
 });
 
-
+// Update order status by seller
 const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
     const { orderId } = request.params;
-    const { status } = request.body;  
-    const { _id } = request.user; 
+    const { status } = request.body;   
     
-    const business = await BusinessProfile.findOne({ ownerUserId: _id });
-    if (!business) throw new ApiError(404, "Business profile not found");
+    // Find business
+    const business = await BusinessProfile.findOne({ ownerUserId:userId });
+    if(!business) throw new ApiError(404, "Business profile not found");
 
+    // Find order
     const order = await Order.findById(orderId);
-    if (!order) throw new ApiError(404, "Order not found");
-
-    if (order.sellerBusinessId.toString() !== business._id.toString()) {
-        throw new ApiError(403, "Aap is order ka status change nahi kar sakte.");
-    }
+    if(!order) throw new ApiError(404, "Order not found");
+    if(order.sellerBusinessId.toString() !== business._id.toString()) throw new ApiError(403, "You cannot change the status of this order");
 
     // Seller order ko "completed" ya "paid" khud se nahi kar sakta
     const sellerAllowedStatuses = ["processing", "shipped", "delivered"];
-    if (!sellerAllowedStatuses.includes(status)) {
-        throw new ApiError(400, "Invalid status update.");
-    }
+    if(!sellerAllowedStatuses.includes(status)) throw new ApiError(400, "Invalid status update.");
 
+    // Save status
     order.status = status;
     await order.save();
 
+    // Response
     return response.status(200).json(new ApiResponse(200, order, `Status updated to ${status}`));
 });
 
-module.exports = { createOrder, verifyStripePaymentForOrders ,completeOrder, updateOrderStatusBySeller, fetchAllOrders};
+module.exports = { createOrder, verifyStripePaymentForOrders ,completeOrder, updateOrderStatusBySeller, fetchAllOrders };

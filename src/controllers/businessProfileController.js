@@ -4,6 +4,7 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const { createBusinessProfileSchema, updateBusinessProfileSchema } = require("../validations/businessProfileVaidator");
 const User = require("../models/users");
+const Wallet = require("../models/walletModel");
 
 // Create business
 const createBusinessProfile = asyncHandler(async (request, response) => {
@@ -13,13 +14,21 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
     const { error, value } = createBusinessProfileSchema.validate(request.body, { abortEarly: false });
     if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
 
-    // Profile payload
+    // Prepare profile payload
     const profileData = { ...value, ownerUserId:userId };
+
+    // Create profile
     const profile = await BusinessProfile.create(profileData);
     if(!profile) throw new ApiError(500, "Failed to create business profile");
 
-    // Update user status
-    const user = await User.findByIdAndUpdate(userId, { role:"business", isNewToPlatform:false }, { new:true, lean:true });
+    // Executes queries parallel
+    const [wallet, user] = await Promise.all([
+        Wallet.create({ businessId:profile._id }),
+        User.findByIdAndUpdate(userId, { role:"business", isNewToPlatform:false }, { new:true, lean:true })
+    ]);
+
+    // Validate
+    if(!wallet) throw new ApiError(500, "Failed to setup wallet account");
     if(!user) throw new ApiError(500, "Failed to update user status upon business profile creation");
 
     // Response

@@ -1,5 +1,6 @@
 const {Router} = require("express");
-const { createJob, getAllJobs, getJobById, updateJob, deleteJob, fetchLatestJobs, fetchMyAppliedJobs } = require("../controllers/jobsController");
+const { createJob, getAllJobs, getJobById, updateJob, deleteJob, fetchLatestJobs, 
+fetchMyAppliedJobs, fetchHiredJobs } = require("../controllers/jobsController");
 const { authentication, authorization } = require("../middlewares/auth");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
 
@@ -21,8 +22,12 @@ jobsRouter.route("/:id")
 .put(authentication, checkSubscription,checkBusinessAccess, updateJob)
 .delete(authentication, checkSubscription,checkBusinessAccess, deleteJob);
 
-// Fetch all jobs thats user applied
+// Fetch applied jobs
 jobsRouter.route("/user/applied")
 .get(authentication, authorization(["user"]), fetchMyAppliedJobs);
+
+// Fetch hired jobs
+jobsRouter.route("/user/hired")
+.get(authentication, authorization(["user"]), fetchHiredJobs);
 
 module.exports = jobsRouter;

@@ -33,7 +33,7 @@ const createCommunity = asyncHandler(async (request, response) => {
     }
 
     // Create community
-    const community = await Community.create(value);
+    const community = await Community.create({ ...value, businessId:businessProfile._id });
     if(!community) throw new ApiError(500, "Failed to create community");
 
     // Add business owner as community owner (auto-join)

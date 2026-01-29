@@ -9,7 +9,7 @@ const BusinessProfileSchema = new Schema({
     companySize: { type: String, trim: true },
     foundedDate: { type:Date },
     primaryIndustry: { type: String, trim: true },
-    stripeConnectId: { type: String, trim: true },
+    stripeConnectId: { type: String, trim: true, default:null },
     operationHour: { type: String, trim: true },
 
     // Location  

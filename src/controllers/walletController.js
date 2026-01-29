@@ -1,5 +1,4 @@
 const BusinessProfile = require("../models/businessProfileSchema");
-const UserProfile = require("../models/userProfile");
 const Wallet = require("../models/walletModel");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
@@ -7,30 +6,52 @@ const asyncHandler = require("../utils/asyncHandler");
 const mongoose = require("mongoose");
 const Stripe = require("stripe");
 
-
+// Connect seller Stripe account (onboarding)
 const connectSellerAccountStripe = asyncHandler(async (request, response) => {
-    const { _id } = request.user;
-    const business = await BusinessProfile.findOne({ ownerUserId: _id });
+    // 1 Logged-in user ka ID nikaala
+    const userId = request.user._id;
+
+    // 2 Us user ka business profile dhoonda
+    // Kyun? Kyunki Stripe account business ke naam se banega
+    const business = await BusinessProfile.findOne({ ownerUserId:userId });
+
+    // 3 Stripe SDK initialize ki Stripe secret key se
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+    // 4 Check karo kya business ke paas pehle se Stripe Connect account hai
     let stripeAccountId = business.stripeConnectId;
 
-     
+    // 5 Agar Stripe account pehle se NAHI hai to naya bana do
     if (!stripeAccountId) {
+
+        // Stripe pe ek Express type connected account create kiya
+        // Express accounts = sellers ke liye best (Stripe onboarding handle karta hai)
         const account = await stripe.accounts.create({ type: 'express' });
+
+        // Stripe ne jo account ID di woh save kar li
         stripeAccountId = account.id;
+
+        // Apne database me bhi store kar li taake future me reuse ho
         business.stripeConnectId = stripeAccountId;
         await business.save();
     }
 
-    // Onboarding link generate karein
+    // 6 Ab onboarding link generate karte hain
+    // Yeh link seller ko bhejna hota hai taake wo Stripe form fill kare
     const accountLink = await stripe.accountLinks.create({
-        account: stripeAccountId,
-        refresh_url: `${process.env.BACKEND_URL}/api/v1/wallet/retry`,
-        return_url: `${process.env.BACKEND_URL}/api/v1/wallet/success`,
-        type: 'account_onboarding',
+        account: stripeAccountId, // kis Stripe account ke liye onboarding
+
+        // Agar user onboarding beech me chhor de to yahan wapas aayega
+        refresh_url:`${process.env.BACKEND_URL}/api/v1/wallet/retry`,
+
+        // Onboarding complete hone ke baad yahan redirect hoga
+        return_url:`${process.env.BACKEND_URL}/api/v1/wallet/success`,
+
+        type:'account_onboarding', // onboarding flow start karna hai
     });
 
+    // 7 Frontend ko onboarding URL bhej diya
+    // Frontend is link pe seller ko redirect karega
     return response.status(200).json(new ApiResponse(200, accountLink.url, "Onboarding link generated"));
 });
 
@@ -68,7 +89,8 @@ const WithdrawFunds = asyncHandler(async (request, response) => {
     // If Stripe transfer succeeds, update wallet using MongoDB transaction
     const dbSession = await mongoose.startSession();
     dbSession.startTransaction();
-    try {
+    try 
+    {
         // Deduct the withdrawn amount from wallet and update totalEarned
         wallet.availableBalance = 0;
         wallet.totalEarned = (wallet.totalEarned || 0) + withdrawalAmount;
@@ -77,13 +99,13 @@ const WithdrawFunds = asyncHandler(async (request, response) => {
         await dbSession.commitTransaction();
         dbSession.endSession();
         return response.status(200).json(new ApiResponse(200, transfer, "Funds transferred to your bank account successfully"));
-    } catch (error) {
+    } 
+    catch(error) 
+    {
         await dbSession.abortTransaction();
         dbSession.endSession();
         throw error;
     }
-     
 }); 
-
 
 module.exports = {connectSellerAccountStripe , WithdrawFunds}

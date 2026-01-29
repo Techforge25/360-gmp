@@ -43,28 +43,62 @@ const fetchUserAnalytics = asyncHandler(async (request, response) => {
     // Extract user profile ID
     const userProfileId = userProfile._id;
 
+    // Date range
+    const { range = "7d" } = request.query;
+
+    // Decide date
+    const now = new Date();
+    let startDate = new Date();
+
+    // Range filter
+    if(range === "7d") 
+    {
+        startDate.setDate(now.getDate() - 7);
+    } 
+    else if(range === "1m") 
+    {
+        startDate.setMonth(now.getMonth() - 1);
+    }
+    else if(range === "3m") 
+    {
+        startDate.setMonth(now.getMonth() - 3);
+    }      
+    else 
+    {
+        throw new ApiError(400, "Invalid range. Use 7d, 1m or 1m");
+    }    
+
     // Run all counts in parallel
     const [totalProductsPurchased, totalAppliedJobs, totalSavedJobs, totalInterviewInvites] = await Promise.all([
         // Total products purchased (orders count)
-        Order.countDocuments({ buyerUserProfileId:userProfileId, status:{ $in:["paid", "completed"] } }),
+        Order.countDocuments({ 
+            buyerUserProfileId:userProfileId, 
+            status:{ $in:["paid", "completed"] },
+            createdAt:{ $gte:startDate, $lte:now }
+        }),
 
         // Total jobs applied
-        JobApplication.countDocuments({ userProfileId }),
+        JobApplication.countDocuments({ 
+            userProfileId,
+            createdAt:{ $gte:startDate, $lte:now }
+        }),
 
         // Total saved jobs
-        SavedJob.countDocuments({ userId:userProfileId }), // <-- make sure model exists
+        SavedJob.countDocuments({ 
+            userId:userProfileId,
+            createdAt:{ $gte:startDate, $lte:now }
+        }),
 
         // Interview invites
-        JobApplication.countDocuments({ userProfileId, status:"interview" })
+        JobApplication.countDocuments({ 
+            userProfileId, 
+            status:"interview",
+            createdAt:{ $gte:startDate, $lte:now } 
+        })
     ]);
 
     // Prepare payload
-    const payload = {
-        totalProductsPurchased,
-        totalAppliedJobs,
-        totalSavedJobs,
-        totalInterviewInvites
-    };
+    const payload = { totalProductsPurchased, totalAppliedJobs, totalSavedJobs, totalInterviewInvites };
 
     // Response
     return response.status(200).json(new ApiResponse(200, payload, "User analytics fetched successfully"));

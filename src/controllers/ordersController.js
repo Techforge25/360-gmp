@@ -10,6 +10,7 @@ const EscrowTransaction = require("../models/escrowTrasanction");
 const Wallet = require("../models/walletModel");
 const BusinessProfile = require("../models/businessProfileSchema");
 const { emptyList } = require("../constants");
+const convertToMongoId = require("../utils/convertToMongoId");
 
 // Create order
 const createOrder = asyncHandler(async (request, response) => {
@@ -386,5 +387,71 @@ const fetchCancelledOrders = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, orders, "Cancelled orders have been fetch")); 
 });
 
+// View order
+const viewOrder = asyncHandler(async (request, response) => {
+    const orderId = convertToMongoId(request.params.orderId);
+
+    // Fetch order details
+    const orderDetails = await Order.aggregate([
+        // Match order ID
+        {
+            $match:{ _id:orderId }
+        },
+
+        // Lookup for user profile
+        {
+            $lookup:{
+                from:"userprofiles",
+                localField:"buyerUserProfileId",
+                foreignField:"_id",
+                as:"userProfile",
+                pipeline:[
+                    { $project:{ fullName:1 } }
+                ]
+            }
+        },
+
+        // Lookup for business profile
+        {
+            $lookup:{
+                from:"businessprofiles",
+                localField:"sellerBusinessId",
+                foreignField:"_id",
+                as:"buisnessProfile",
+                pipeline:[
+                    { $project:{ companyName:1 } }
+                ]
+            }
+        },   
+        
+        // Lookup for products
+        {
+            $lookup:{
+                from:"products",
+                localField:"items.productId",
+                foreignField:"_id",
+                as:"products",
+                pipeline:[
+                    { $project:{ title:1 } }
+                ]
+            }
+        },         
+
+        // Unwind
+        { $unwind:"$userProfile" },
+        { $unwind:"$buisnessProfile" },
+
+        // Final projection
+        { 
+            $project:{ totalAmount:1, status:1, shippingAddress:1, items:1, 
+            createdAt:1, userProfile:1, buisnessProfile:1, products:1 } 
+        }
+    ]);
+    if(!orderDetails.length) throw new ApiError(404, "No order found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, orderDetails[0], "Order details have been fetched"));
+});
+
 module.exports = { createOrder, verifyStripePaymentForOrders ,completeOrder, updateOrderStatusBySeller, 
-fetchAllOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, fetchCancelledOrders };
+fetchAllOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, fetchCancelledOrders, viewOrder };

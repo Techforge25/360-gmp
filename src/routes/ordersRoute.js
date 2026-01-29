@@ -2,7 +2,8 @@ const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { createOrder, verifyStripePaymentForOrders, completeOrder, updateOrderStatusBySeller, 
 fetchAllOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, 
-fetchCancelledOrders } = require("../controllers/ordersController");
+fetchCancelledOrders, 
+viewOrder} = require("../controllers/ordersController");
 const { checkSubscription } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -43,5 +44,9 @@ orderRouter.route("/user/completed-orders")
 // Fetch cancelled orders
 orderRouter.route("/user/cancelled-orders")
 .get(authentication, authorization(["user"]), fetchCancelledOrders);
+
+// View order
+orderRouter.route("/:orderId/view")
+.get(authentication, viewOrder);
 
 module.exports = orderRouter;

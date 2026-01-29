@@ -1,4 +1,5 @@
 const BusinessProfile = require("../models/businessProfileSchema");
+const EscrowTransaction = require("../models/escrowTrasanction");
 const Wallet = require("../models/walletModel");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
@@ -121,4 +122,78 @@ const WithdrawFunds = asyncHandler(async (request, response) => {
     }
 }); 
 
-module.exports = { connectSellerAccountStripe , WithdrawFunds };
+// Fetch wallet analytics
+const fetchWalletAnalytics = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Business find
+    const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");
+    if(!business) throw new ApiError(404, "Business profile not found");
+
+    // Wallet
+    const wallet = await Wallet.findOne({ businessId:business._id });
+
+    // Escrow aggregation
+    const escrowStats = await EscrowTransaction.aggregate([
+        { $match: { sellerId:business._id } },
+        {
+            $group: {
+                _id: null,
+
+                // Total sales (excluding refunded)
+                totalSalesVolume: {
+                    $sum: {
+                        $cond: [
+                            { $ne: ["$status", "refunded"] },
+                            "$totalAmount",
+                            0
+                        ]
+                    }
+                },
+
+                // Platform fees (excluding refunded)
+                totalPlatformFees: {
+                    $sum: {
+                        $cond: [
+                            { $ne: ["$status", "refunded"] },
+                            "$platformFee",
+                            0
+                        ]
+                    }
+                },
+
+                // Net earnings (only released to seller)
+                netEarnings: {
+                    $sum: {
+                        $cond: [
+                            { $eq: ["$status", "released"] },
+                            "$netAmount",
+                            0
+                        ]
+                    }
+                }
+            }
+        }
+    ]);
+
+    // Stats
+    const stats = escrowStats[0] || {
+        totalSalesVolume: 0,
+        totalPlatformFees: 0,
+        netEarnings: 0
+    };
+
+    // Payload
+    const payload = {
+        availableBalance: wallet?.availableBalance || 0,
+        pendingBalance: wallet?.pendingBalance || 0,
+        totalSalesVolume: stats.totalSalesVolume,
+        totalPlatformFees: stats.totalPlatformFees,
+        netEarnings: stats.netEarnings        
+    };
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, payload, "Wallet analytics fetched successfully"));
+});
+
+module.exports = { connectSellerAccountStripe , WithdrawFunds, fetchWalletAnalytics };

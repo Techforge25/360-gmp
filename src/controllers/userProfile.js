@@ -1,3 +1,6 @@
+const JobApplication = require("../models/jobApplication");
+const Order = require("../models/orders");
+const SavedJob = require("../models/savedJobsModel");
 const UserProfile = require("../models/userProfile");
 const User = require("../models/users");
 const ApiError = require("../utils/ApiError");
@@ -29,4 +32,42 @@ const createUserProfile = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, { profile, isNewToPlatform:user.isNewToPlatform }, "User profile has been created"));
 }); 
 
-module.exports = { createUserProfile };
+// Fetch user profile analytics
+const fetchUserAnalytics = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Find user profile
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Extract user profile ID
+    const userProfileId = userProfile._id;
+
+    // Run all counts in parallel
+    const [totalProductsPurchased, totalAppliedJobs, totalSavedJobs, totalInterviewInvites] = await Promise.all([
+        // Total products purchased (orders count)
+        Order.countDocuments({ buyerUserProfileId:userProfileId, status:{ $in:["paid", "completed"] } }),
+
+        // Total jobs applied
+        JobApplication.countDocuments({ userProfileId }),
+
+        // Total saved jobs
+        SavedJob.countDocuments({ userId:userProfileId }), // <-- make sure model exists
+
+        // Interview invites
+        JobApplication.countDocuments({ userProfileId, status:"interview" })
+    ]);
+
+    // Prepare payload
+    const payload = {
+        totalProductsPurchased,
+        totalAppliedJobs,
+        totalSavedJobs,
+        totalInterviewInvites
+    };
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, payload, "User analytics fetched successfully"));
+});
+
+module.exports = { createUserProfile, fetchUserAnalytics };

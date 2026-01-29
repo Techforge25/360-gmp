@@ -173,21 +173,23 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
             sellerId: sellerBusinessId,
             buyerId: buyerUserProfileId,
             totalAmount: amount,
-            platformFee: platformFee,
-            netAmount: netAmount,
+            platformFee: Number(platformFee),
+            netAmount: Number(netAmount),
             status: 'held' // Paisa hold ho gaya
-        }], { session: dbSession });
+        }], { session:dbSession });
 
         // Update wallet
         await Wallet.findOneAndUpdate(
             { businessId: sellerBusinessId },
-            { $inc: { pendingBalance: netAmount } },
-            { upsert: true, session: dbSession }
+            { $inc: { pendingBalance:netAmount } },
+            { upsert:true, session:dbSession }
         );
 
         // Complete transaction
         await dbSession.commitTransaction();
         dbSession.endSession();
+
+        // Response
         // return response.status(201).json(new ApiResponse(201, order, "Order has been created"));
         return response.status(303).redirect("https://github.com");
 

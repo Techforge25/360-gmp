@@ -9,6 +9,7 @@ const mongoose = require("mongoose");
 const EscrowTransaction = require("../models/escrowTrasanction");
 const Wallet = require("../models/walletModel");
 const BusinessProfile = require("../models/businessProfileSchema");
+const { emptyList } = require("../constants");
 
 // Create order
 const createOrder = asyncHandler(async (request, response) => {
@@ -208,9 +209,13 @@ const fetchAllOrders = asyncHandler(async (request, response) => {
     const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
     if(!userProfile) throw new ApiError(404, "User profile not found! Invalid user profile ID");
 
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
     // Find orders
-    const orders = await Order.find({ buyerUserProfileId:userProfile._id });
-    if(!orders) throw new ApiError(404, "No Order Found!");
+    const orders = await Order.paginate({ buyerUserProfileId:userProfile._id }, 
+    { page, limit, lean:true, select:"-updatedAt -__v" });
+    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No orders found"));
 
     // Response
     return response.status(200).json(new ApiResponse(200, orders, "Order Fetch SuccessFully"));
@@ -309,4 +314,77 @@ const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, order, `Status updated to ${status}`));
 });
 
-module.exports = { createOrder, verifyStripePaymentForOrders ,completeOrder, updateOrderStatusBySeller, fetchAllOrders };
+// Fetch processing orders
+const fetchProcessingOrders = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found! Invalid user profile ID");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Find orders
+    const orders = await Order.paginate({ buyerUserProfileId:userProfile._id, status:{ $in: ["pending", "processing"] } }, 
+    { page, limit, lean:true, select:"-updatedAt -__v" });
+    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No processing orders found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, orders, "Processing order have been fetch"));    
+});
+
+// Fetch in-transit orders
+const fetchInTransitOrders = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found! Invalid user profile ID");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Find orders
+    const orders = await Order.paginate({ buyerUserProfileId:userProfile._id, status:"in-transit" }, 
+    { page, limit, lean:true, select:"-updatedAt -__v" });
+    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No in-transit orders found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, orders, "In-transit orders have been fetch")); 
+});
+
+// Fetch in-transit orders
+const fetchCompletedOrders = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found! Invalid user profile ID");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Find orders
+    const orders = await Order.paginate({ buyerUserProfileId:userProfile._id, status:"completed" }, 
+    { page, limit, lean:true, select:"-updatedAt -__v" });
+    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No completed orders found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, orders, "Completed orders have been fetch")); 
+});
+
+// Fetch in-transit orders
+const fetchCancelledOrders = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found! Invalid user profile ID");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Find orders
+    const orders = await Order.paginate({ buyerUserProfileId:userProfile._id, status:"cancelled" }, 
+    { page, limit, lean:true, select:"-updatedAt -__v" });
+    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No cancelled orders found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, orders, "Cancelled orders have been fetch")); 
+});
+
+module.exports = { createOrder, verifyStripePaymentForOrders ,completeOrder, updateOrderStatusBySeller, 
+fetchAllOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, fetchCancelledOrders };

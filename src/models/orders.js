@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const paginate = require("mongoose-paginate-v2");
 
 // Schema
 // const orderSchema = new Schema({
@@ -28,6 +29,9 @@ const orderSchema = new Schema({
         priceAtPurchase: { type: Number, required:[true, "Please specify product price at purchase"] }
     }]
 }, { timestamps: true });
+
+// Inject plugin
+orderSchema.plugin(paginate);
 
 // Model
 const Order = model("Order", orderSchema);

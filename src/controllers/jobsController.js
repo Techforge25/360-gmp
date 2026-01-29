@@ -5,6 +5,7 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const { createJobSchema, updateJobSchema } = require("../validations/jobValidator");
 const UserProfile = require("../models/userProfile");
+const JobApplication = require("../models/jobApplication");
 
 // Create Job
 const createJob = asyncHandler(async (request, response) => {
@@ -160,4 +161,41 @@ const deleteJob = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Job has been deleted successfully"));
 });
 
-module.exports = { createJob, getAllJobs, getJobById, updateJob, deleteJob, fetchLatestJobs };
+// Fetch all jobs that user applied to
+const fetchMyAppliedJobs = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Find user profile
+    const userProfile = await UserProfile.findOne({ userId }).select("_id");
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Pagination
+    const { page = 1, limit = 10 } = request.query;
+
+    // Find applications + populate job details
+    const applications = await JobApplication.paginate(
+        { userProfileId: userProfile._id },
+        {
+            page: Number(page),
+            limit: Number(limit),
+            sort: { createdAt: -1 },
+            populate: {
+                path: "jobId",
+                select: "jobTitle jobCategory employmentType experienceLevel salaryMin salaryMax location status businessId",
+                populate: {
+                    path: "businessId",
+                    select: "companyName logo location"
+                }
+            }
+        }
+    );
+
+    // Not applied yet
+    if(!applications.docs.length) return response.status(200).json(new ApiResponse(200, applications, "You have not applied to any jobs yet"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, applications, "Applied jobs fetched successfully"));
+});
+
+
+module.exports = { createJob, getAllJobs, getJobById, updateJob, deleteJob, fetchLatestJobs, fetchMyAppliedJobs };

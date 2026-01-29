@@ -1,5 +1,6 @@
 const { Schema, model } = require("mongoose");
 const paginate = require("mongoose-paginate-v2");
+const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
 // Schema
 const jobSchema = new Schema({
@@ -24,6 +25,7 @@ const jobSchema = new Schema({
 
 // Inject plugin
 jobSchema.plugin(paginate);
+jobSchema.plugin(aggregatePaginate);
 
 // Model
 const Job = model("Job", jobSchema);

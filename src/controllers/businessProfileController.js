@@ -23,7 +23,7 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
 
     // Executes queries parallel
     const [wallet, user] = await Promise.all([
-        Wallet.create({ businessId:profile._id }),
+        Wallet.create({ ownerId:profile._id, ownerModel:"BusinessProfile" }),
         User.findByIdAndUpdate(userId, { role:"business", isNewToPlatform:false }, { new:true, lean:true })
     ]);
 

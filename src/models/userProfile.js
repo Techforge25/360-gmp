@@ -12,6 +12,7 @@ const userProfileSchema = new Schema({
     resumeUrl: String,
     skills: [String],
     imageProfile: String,
+    stripeConnectId: { type:String, trim:true, default:null },
 
     // For Job Application
     targetJob: String,

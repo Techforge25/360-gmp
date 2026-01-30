@@ -1,12 +1,12 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
-const { connectSellerAccountStripe, WithdrawFunds, fetchWalletAnalytics } = require("../controllers/walletController");
+const { connectStripeAccount, WithdrawFunds, fetchWalletAnalytics } = require("../controllers/walletController");
 
 // Router instance
 const walletRouter = Router();
 
-// Connect seller Stripe account (onboarding)
-walletRouter.route("/connect").post(authentication, connectSellerAccountStripe);
+// Connect Stripe account (onboarding)
+walletRouter.route("/connect").post(authentication, connectStripeAccount);
 
 // Withdraw funds from wallet to Stripe account
 walletRouter.route("/withdraw").post(authentication, WithdrawFunds);
@@ -19,8 +19,8 @@ walletRouter.route("/retry")
 walletRouter.route("/success")
 .get((req, res) => res.json({ message: "Stripe account connected successfully" }));
 
-// Fetch wallet analytics
-walletRouter.route("/analytics")
+// Fetch wallet analytics (for business)
+walletRouter.route("/business/analytics")
 .get(authentication, authorization(["business"]), fetchWalletAnalytics);
 
 module.exports = walletRouter;

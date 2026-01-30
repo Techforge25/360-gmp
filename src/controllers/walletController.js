@@ -6,141 +6,196 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const mongoose = require("mongoose");
 const Stripe = require("stripe");
+const validate = require("../utils/validate");
+const withdrawFundsValidationSchema = require("../validations/withdrawFundValidator");
+const UserProfile = require("../models/userProfile");
+const Withdrawal = require("../models/withdrawalModel");
+const User = require("../models/users");
 
-// Connect seller Stripe account (onboarding)
-const connectSellerAccountStripe = asyncHandler(async (request, response) => {
-    // 1 Logged-in user ka ID nikaala
+// Connect Stripe account (onboarding)
+const connectStripeAccount = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
-    // 2 Us user ka business profile dhoonda
-    // Kyun? Kyunki Stripe account business ke naam se banega
-    const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("stripeConnectId");
-    if(!business) throw new ApiError(404, "Business profile not found");
+    // Get parent user's email for stripe dashboard
+    const user = await User.findById(userId).select("email").lean();
+    if(!user) throw new ApiError(404, "User not found");
 
-    // 3 Stripe SDK initialize ki Stripe secret key se
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-    // 4 Check karo kya business ke paas pehle se Stripe Connect account hai
-    let stripeAccountId = business.stripeConnectId;
-
-    // 5 Agar Stripe account pehle se NAHI hai to naya bana do
-    if(!stripeAccountId) 
-    {
-        // Stripe pe ek Express type connected account create kiya
-        // Express accounts = sellers ke liye best (Stripe onboarding handle karta hai)
-        const account = await stripe.accounts.create({ type: 'express' });
-
-        // Stripe ne jo account ID di woh save kar li
-        stripeAccountId = account.id;
-
-        // Apne database me bhi store kar li taake future me reuse ho
-        business.stripeConnectId = stripeAccountId;
-        await business.save();
-    }
-
-    // 6 Ab onboarding link generate karte hain
-    // Yeh link seller ko bhejna hota hai taake wo Stripe form fill kare
-    const accountLink = await stripe.accountLinks.create({
-        account:stripeAccountId, // kis Stripe account ke liye onboarding
-
-        // Agar user onboarding beech me chhor de to yahan wapas aayega
-        refresh_url:`${process.env.BACKEND_URL}/api/v1/wallet/retry`,
-
-        // Onboarding complete hone ke baad yahan redirect hoga
-        return_url:`${process.env.BACKEND_URL}/api/v1/wallet/success`,
-
-        type:'account_onboarding' // onboarding flow start karna hai
-    });
-
-    // 7 Frontend ko onboarding URL bhej diya
-    // Frontend is link pe seller ko redirect karega
-    return response.status(200).json(new ApiResponse(200, accountLink.url, "Onboarding link generated"));
-});
-
-// Withdraw funds from wallet to stripe account
-// ismay pehlay ham check kr rhay hai kay seller kay pass balance hai kay nhi agar nhi hai to ham bataday gay 
-// ham check kr rhay hai kay seller kay stripe connect id hai kay nhi agar nhi hai to error ayega agar dono condition true hhai to ham transfer karega
-const WithdrawFunds = asyncHandler(async (request, response) => {
-    const userId = request.user._id; 
-
-    // Find business
-    const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id stripeConnectId companyName").lean();
-    if(!business) throw new ApiError(404, 'Business profile not found!');
-
-    // If stripe connect account does not exist
-    if(!business.stripeConnectId) return response.status(200).json(new ApiResponse(200, { onboardingRequired:true }, "Please setup your payout account first"));
-    
-    // Find wallet
-    const wallet = await Wallet.findOne({ businessId:business._id });
-    if(!wallet || wallet.availableBalance <= 0) throw new ApiError(400, "You don't have enough available balance to withdraw");
+    // Get owner model
+    const { ownerModel } = request.body; // "BusinessProfile" | "UserProfile"
+    if(!ownerModel) throw new ApiError(400, "Owner model is missing");
+    if(!["BusinessProfile", "UserProfile"].includes(ownerModel)) throw new ApiError(400, "Invalid owner model");
 
     // Initialize stripe SDK
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-    // Check payout verification
-    const account = await stripe.accounts.retrieve(business.stripeConnectId);
+    let owner;
+    let stripeAccountId;
+
+    // Business profile
+    if(ownerModel === "BusinessProfile") 
+    {
+        owner = await BusinessProfile.findOne({ ownerUserId:userId });
+        if(!owner) throw new ApiError(404, "Business profile not found");
+        stripeAccountId = owner.stripeConnectId;
+    }
+
+    // User profile
+    if(ownerModel === "UserProfile") 
+    {
+        owner = await UserProfile.findOne({ userId });
+        if(!owner) throw new ApiError(404, "User profile not found");
+        stripeAccountId = owner.stripeConnectId;
+    }
+
+    // If Stripe account does not exist, then create
+    if(!stripeAccountId) 
+    {
+        const account = await stripe.accounts.create({
+            type: "express",
+            email: user.email, // helpful for Stripe dashboard
+            metadata: { platformUserId:userId.toString(), ownerModel }
+        });
+
+        stripeAccountId = account.id;
+
+        // Save Stripe account ID in respective model
+        owner.stripeConnectId = stripeAccountId;
+        await owner.save();
+    }
+
+    // Create onboarding link
+    const accountLink = await stripe.accountLinks.create({
+        account: stripeAccountId,
+        refresh_url: `${process.env.FRONTEND_URL}/stripe/onboarding/refresh`,
+        return_url: `${process.env.FRONTEND_URL}/stripe/onboarding/success`,
+        type: "account_onboarding"
+    });
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { url: accountLink.url }, "Stripe onboarding link generated"));
+});
+
+
+// Withdraw funds from wallet to stripe account
+const WithdrawFunds = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const { ownerModel, withdrawalAmount } = validate(withdrawFundsValidationSchema, request.body);
+
+    // Type safety
+    const amount = Number(withdrawalAmount);
+
+    // Find owner profile
+    let owner;
+    if(ownerModel === "BusinessProfile") 
+    {
+        owner = await BusinessProfile.findOne({ ownerUserId: userId }).select("_id stripeConnectId companyName").lean();
+    } 
+    else if(ownerModel === "UserProfile")
+    {
+        owner = await UserProfile.findOne({ userId }).select("_id stripeConnectId fullName").lean();
+    }
+
+    if(!owner) throw new ApiError(404, `${ownerModel} not found`);
+    if(!owner.stripeConnectId) return response.status(200).json(new ApiResponse(200, { onboardingRequired:true }, "Setup payout account first"));
+
+    // Get wallet
+    const wallet = await Wallet.findOne({ ownerId:owner._id, ownerModel });
+    if(!wallet) throw new ApiError(404, "Wallet not found");
+    if(amount > wallet.availableBalance) throw new ApiError(400, "Insufficient available balance");
+
+    // Initialize stripe SDK
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+    // Check payout account verification
+    const account = await stripe.accounts.retrieve(owner.stripeConnectId);
     if(!account.payouts_enabled) throw new ApiError(400, "Your payout account is not verified yet");
 
-    // Store withdwaral amount
-    const withdrawalAmount = wallet.availableBalance;
+    // Start db session
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    // Start db session for safe transaction
-    const dbSession = await mongoose.startSession();
-    dbSession.startTransaction();
+    let withdrawalDoc;
 
     try 
     {
-        // Update wallet
+        // Deduct balance safely (atomic)
         const updatedWallet = await Wallet.findOneAndUpdate(
-            { businessId:business._id, availableBalance:{ $gt:0 } },
-            { $inc:{ totalEarned:withdrawalAmount }, $set:{ availableBalance:0 } },
-            { new:true, session:dbSession }
+            { ownerId:owner._id, ownerModel, availableBalance:{ $gte:amount } },
+            { $inc:{ availableBalance: -amount } },
+            { new:true, session }
         );
-        if(!updatedWallet) throw new ApiError(400, "Balance already withdrawn");
+        if (!updatedWallet) throw new ApiError(400, "Balance already used in another withdrawal");
 
-        // Commit changes
-        await dbSession.commitTransaction();
-        dbSession.endSession();
+        // Create withdrawal record
+        withdrawalDoc = await Withdrawal.create([{
+            ownerId:owner._id,
+            ownerModel,
+            amount,
+            currency: wallet.currency,
+            status: "pending"
+        }], { session });
 
-        // Transfer
-        const transfer = await stripe.transfers.create({
-            amount: Math.round(Number(withdrawalAmount) * 100),
-            currency: 'usd',
-            destination: business.stripeConnectId,
-            description: `Withdrawal for business: ${business.companyName}`,
-        });
-        if(!transfer) throw new ApiError(500, "Failed to transfer amount");
-
-        // Response
-        return response.status(200).json(new ApiResponse(200, transfer, "Funds sent to your Stripe account successfully"));
+        await session.commitTransaction();
+        session.endSession();
     } 
-    catch(error) 
+    catch (error) 
     {
-        await dbSession.abortTransaction();
-        dbSession.endSession();
+        await session.abortTransaction();
+        session.endSession();
         throw error;
     }
-}); 
 
-// Fetch wallet analytics
+    // Stripe transfer AFTER DB lock
+    try 
+    {
+        const transfer = await stripe.transfers.create({
+            amount: Math.round(amount * 100),
+            currency: wallet.currency.toLowerCase(),
+            destination: owner.stripeConnectId,
+            description: `Wallet withdrawal`,
+            metadata: { withdrawalId: withdrawalDoc[0]._id.toString() }
+        });
+
+        // Mark success
+        await Withdrawal.findByIdAndUpdate(withdrawalDoc[0]._id, { stripeTransferId:transfer.id, status:"completed" });
+
+        // Response
+        return response.status(200).json(new ApiResponse(200, { transferId: transfer.id }, "Funds sent successfully"));
+    } 
+    catch(stripeError) 
+    {
+        // Refund wallet if Stripe fails
+        await Wallet.findOneAndUpdate(
+            { ownerId: owner._id, ownerModel },
+            { $inc: { availableBalance: amount } }
+        );
+
+        // Mark status failed
+        await Withdrawal.findByIdAndUpdate(withdrawalDoc[0]._id, { status:"failed" });
+        throw new ApiError(500, "Transfer failed. Amount refunded to wallet.");
+    }
+});
+
+// Fetch wallet analytics (Business only)
 const fetchWalletAnalytics = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
-    // Business find
-    const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");
+    // Find Business
+    const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
     if(!business) throw new ApiError(404, "Business profile not found");
 
     // Wallet
-    const wallet = await Wallet.findOne({ businessId:business._id });
+    const wallet = await Wallet.findOne({ ownerId:business._id, ownerModel:"BusinessProfile" }).lean();
+    if(!wallet) throw new ApiError(400, "Wallet account not found");
 
-    // Escrow aggregation
-    const escrowStats = await EscrowTransaction.aggregate([
+    // Escrow Stats
+    const [escrowStats] = await EscrowTransaction.aggregate([
         { $match: { sellerId:business._id } },
         {
             $group: {
                 _id: null,
 
-                // Total sales (excluding refunded)
+                // Total sales volume
                 totalSalesVolume: {
                     $sum: {
                         $cond: [
@@ -151,7 +206,7 @@ const fetchWalletAnalytics = asyncHandler(async (request, response) => {
                     }
                 },
 
-                // Platform fees (excluding refunded)
+                // Total platform fee
                 totalPlatformFees: {
                     $sum: {
                         $cond: [
@@ -162,7 +217,7 @@ const fetchWalletAnalytics = asyncHandler(async (request, response) => {
                     }
                 },
 
-                // Net earnings (only released to seller)
+                // Net earnings
                 netEarnings: {
                     $sum: {
                         $cond: [
@@ -176,24 +231,20 @@ const fetchWalletAnalytics = asyncHandler(async (request, response) => {
         }
     ]);
 
-    // Stats
-    const stats = escrowStats[0] || {
-        totalSalesVolume: 0,
-        totalPlatformFees: 0,
-        netEarnings: 0
-    };
+    // Safe defaults
+    const stats = escrowStats || { totalSalesVolume:0, totalPlatformFees:0, netEarnings:0 };
 
-    // Payload
+    // Final payload
     const payload = {
-        availableBalance: wallet?.availableBalance || 0,
-        pendingBalance: wallet?.pendingBalance || 0,
+        availableBalance: wallet?.availableBalance ?? 0,
+        pendingBalance: wallet?.pendingBalance ?? 0,
         totalSalesVolume: stats.totalSalesVolume,
         totalPlatformFees: stats.totalPlatformFees,
-        netEarnings: stats.netEarnings        
+        netEarnings: stats.netEarnings
     };
 
     // Response
-    return response.status(200).json(new ApiResponse(200, payload, "Wallet analytics fetched successfully"));
+    return response.status(200).json(new ApiResponse(200, payload, "Wallet analytics for business fetched successfully"));
 });
 
-module.exports = { connectSellerAccountStripe , WithdrawFunds, fetchWalletAnalytics };
+module.exports = { connectStripeAccount , WithdrawFunds, fetchWalletAnalytics };

@@ -2,11 +2,15 @@ const { Schema, model } = require("mongoose");
 
 // Schema
 const walletSchema = new Schema({
-    businessId: { type: Schema.Types.ObjectId, ref:"BusinessProfile", required:true, unique:true },
-    pendingBalance: { type: Number, default: 0 },    
-    availableBalance: { type: Number, default: 0 }, 
-    totalEarned: { type: Number, default: 0 },       
-    currency: { type: String, default: "USD" }
+    // Owner reference
+    ownerId:{ type:Schema.Types.ObjectId, required:true, refPath:"ownerModel", unique:true },
+    ownerModel:{ type:String, required:true, enum:["BusinessProfile", "UserProfile"] },
+
+    // Balance info
+    pendingBalance:{ type:Number, default:0 },
+    availableBalance:{ type:Number, default:0 },
+    totalEarned:{ type:Number, default:0 },
+    currency:{ type:String, default:"USD" }
 }, { timestamps: true });
 
 // Model

@@ -1,0 +1,16 @@
+const { Schema, model } = require("mongoose");
+
+// Schema
+const withdrawalSchema = new Schema({
+    ownerId: { type: Schema.Types.ObjectId, required: true, refPath: "ownerModel" },
+    ownerModel: { type: String, enum: ["BusinessProfile", "UserProfile"], required: true },
+    amount: Number,
+    currency: String,
+    stripeTransferId: String,
+    status: { type: String, enum: ["pending", "completed", "failed"], default: "pending" }
+}, { timestamps: true });
+
+// Model
+const Withdrawal = model("Withdrawal", withdrawalSchema);
+
+module.exports = Withdrawal;

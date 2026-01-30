@@ -266,10 +266,7 @@ const completeOrder = asyncHandler(async (request, response) => {
         // Update wallet
         await Wallet.findOneAndUpdate(
             { ownerId:order.sellerBusinessId, ownerModel:"BusinessProfile" },
-            { $inc: { 
-                pendingBalance: -escrow.netAmount,
-                availableBalance: escrow.netAmount,
-                totalEarned: escrow.netAmount } },
+            { $inc:{ pendingBalance:-escrow.netAmount, availableBalance:escrow.netAmount, totalEarned:escrow.netAmount } },
             { upsert:true, session:dbSession }
         );
 

@@ -182,7 +182,7 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
 
         // Update wallet
         await Wallet.findOneAndUpdate(
-            { businessId: sellerBusinessId },
+            { ownerId:sellerBusinessId, ownerModel:"BusinessProfile" },
             { $inc: { pendingBalance:netAmount } },
             { upsert:true, session:dbSession }
         );
@@ -264,7 +264,7 @@ const completeOrder = asyncHandler(async (request, response) => {
 
         // Update wallet
         await Wallet.findOneAndUpdate(
-            { businessId:order.sellerBusinessId },
+            { ownerId:order.sellerBusinessId, ownerModel:"BusinessProfile" },
             { $inc: { 
                 pendingBalance: -escrow.netAmount,
                 availableBalance: escrow.netAmount,

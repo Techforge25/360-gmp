@@ -177,7 +177,8 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
             totalAmount: amount,
             platformFee: Number(platformFee),
             netAmount: Number(netAmount),
-            status: 'held' // Paisa hold ho gaya
+            status: 'held', // Paisa hold ho gaya
+            paymentMethod:"stripe"
         }], { session:dbSession });
 
         // Update wallet

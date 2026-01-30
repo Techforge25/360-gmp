@@ -72,7 +72,7 @@ const getAllJobs = asyncHandler(async (request, response) => {
         sort: { createdAt: -1 },
         populate: {
             path: "businessId",
-            select: "companyName businessType primaryIndustry"
+            select: "companyName businessType primaryIndustry logo"
         }
     });
 

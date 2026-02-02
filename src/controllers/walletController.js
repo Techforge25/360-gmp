@@ -94,6 +94,10 @@ const WithdrawFunds = asyncHandler(async (request, response) => {
     {
         owner = await UserProfile.findOne({ userId }).select("_id stripeConnectId fullName").lean();
     }
+    else
+    {
+        throw new ApiError(400, "Invalid owner model");
+    }
 
     if(!owner) throw new ApiError(404, `${ownerModel} not found`);
     if(!owner.stripeConnectId) return response.status(200).json(new ApiResponse(200, { onboardingRequired:true }, "Setup payout account first"));

@@ -3,7 +3,7 @@ const { Schema, model } = require("mongoose");
 // Schema
 const walletSchema = new Schema({
     // Owner reference
-    ownerId:{ type:Schema.Types.ObjectId, required:true, refPath:"ownerModel" },
+    ownerId:{ type:Schema.Types.ObjectId, required:true, refPath:"ownerModel", unique:true },
     ownerModel:{ type:String, required:true, enum:["BusinessProfile", "UserProfile"] },
 
     // Balance info

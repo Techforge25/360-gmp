@@ -111,8 +111,8 @@ const WithdrawFunds = asyncHandler(async (request, response) => {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
     // Check payout account verification
-    const account = await stripe.accounts.retrieve(owner.stripeConnectId);
-    if(!account.payouts_enabled) throw new ApiError(400, "Your payout account is not verified yet");
+    // const account = await stripe.accounts.retrieve(owner.stripeConnectId);
+    // if(!account.payouts_enabled) throw new ApiError(400, "Your payout account is not verified yet");
 
     // Start db session
     const session = await mongoose.startSession();

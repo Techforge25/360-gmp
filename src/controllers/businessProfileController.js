@@ -10,6 +10,10 @@ const Wallet = require("../models/walletModel");
 const createBusinessProfile = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
+    // Check if user has already created BusinessProfile
+    const existingProfile = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
+    if(existingProfile) throw new ApiError(400, "You have already created a business profile");
+
     // Validate
     const { error, value } = createBusinessProfileSchema.validate(request.body, { abortEarly: false });
     if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
@@ -28,7 +32,7 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
     ]);
 
     // Validate
-    if(!wallet) throw new ApiError(500, "Failed to setup wallet account");
+    if(!wallet) throw new ApiError(500, "Failed to setup wallet account business");
     if(!user) throw new ApiError(500, "Failed to update user status upon business profile creation");
 
     // Response

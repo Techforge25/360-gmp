@@ -3,6 +3,7 @@ const Order = require("../models/orders");
 const SavedJob = require("../models/savedJobsModel");
 const UserProfile = require("../models/userProfile");
 const User = require("../models/users");
+const Wallet = require("../models/walletModel");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
@@ -26,9 +27,17 @@ const createUserProfile = asyncHandler(async (request, response) => {
     const profile = await UserProfile.create(profileData);
     if(!profile) throw new ApiError(500, "Failed to create user profile");
 
-    // Update user status
-    const user = await User.findByIdAndUpdate(profile.userId, { role:"user", isNewToPlatform:false }, { new:true, lean:true });
+   // Executes queries parallel
+    const [wallet, user] = await Promise.all([
+        Wallet.create({ ownerId:profile._id, ownerModel:"UserProfile" }),
+        User.findByIdAndUpdate(userId, { role:"user", isNewToPlatform:false }, { new:true, lean:true })
+    ]);
+
+    // Validate
+    if(!wallet) throw new ApiError(500, "Failed to setup wallet account for user");
     if(!user) throw new ApiError(500, "Failed to update user status upon user profile creation");
+
+    // Response
     return response.status(201).json(new ApiResponse(201, { profile, isNewToPlatform:user.isNewToPlatform }, "User profile has been created"));
 }); 
 

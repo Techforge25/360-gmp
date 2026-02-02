@@ -84,11 +84,14 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
 
     // Prevent dual payment for single session
     const existing = await Subscription.findOne({ stripeSubscriptionId:session.id });
-    if(existing) return response.status(200).json(new ApiResponse(200, null, "Payment already processed"));    
+    if(existing) return response.status(200).json(new ApiResponse(200, null, "Payment already processed"));
 
     // Check payment status
     if(session.payment_status === "paid") 
     {
+        // Redirect url
+        const redirectUrl = `${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`;
+
         // Get metadata
         const { _id, planId, planName, role } = session.metadata;
         
@@ -112,7 +115,7 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
             if(!trialSubscription) throw new ApiError(500, "Failed to create trial period");
 
             // Response for trial
-            return response.status(200).json(new ApiResponse(200, null, "Trial period has been started successfully"));
+            return response.status(303).redirect(redirectUrl);
         }
 
         // Check existing subscription
@@ -145,7 +148,6 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
         // const redirectUrl = role === "user" ? 
         // `${process.env.FRONTEND_URL}/onboarding/user-profile` : 
         // `${process.env.FRONTEND_URL}/onboarding/business-profile`;
-        const redirectUrl = `${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`;
 
         if(!subscription) throw new ApiError(500, "Failed to save subscription details in db");
         return response.status(303).redirect(redirectUrl);

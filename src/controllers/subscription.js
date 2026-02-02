@@ -9,31 +9,19 @@ const convertToMongoId = require("../utils/convertToMongoId");
 
 // Create subscription via stripe
 const createSubscriptionStripe = asyncHandler(async (request, response) => {
-    const { _id, role } = request.user;
-    const { planId } = request.query;
+    const userId = request.user._id;
+    const { planId, profile } = request.query;
     if(!planId) throw new ApiError(400, "Plan ID is missing");
+    if(!profile) throw new ApiError(400, "Profile model is missing! Please specify 'business' or 'user'");
 
     // Get plan
     const plan = await Plan.findById(planId).lean();
     if(!plan) throw new ApiError(404, "Plan not found! Invalid plan ID");
     const { name, price } = plan;
 
-    // If trial is selected
-    // if(name === "TRIAL")
-    // {
-    //     // Calculate trial period
-        // const startDate = new Date();
-        // const endDate = new Date();
-        // endDate.setDate(endDate.getDate() + 14);  
-
-    //     // Create subscription for trial period
-    //     const trialSubscription = await Subscription.create({ userId:_id, planId, status:"active", startDate, endDate });
-    //     if(!trialSubscription) throw new ApiError(500, "Failed to create trial subscription");
-
-    //     // Response for trial
-    //     return response.status(200).json(new ApiResponse(200, "Trial period has been started successfully"));
-    // }
-
+    // If business try to select trial period
+    if(name === "TRIAL" && profile === "business") throw new ApiError(400, "Business profile cannot select trial period");
+    
     // Stripe instance
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -55,7 +43,7 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
             },
             quantity: 1,
         }],
-        metadata: { _id, planId, planName:name, role },
+        metadata: { userId, planId, planName:name },
         success_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/cancel`
     });
@@ -72,8 +60,7 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
     const { session_id } = request.query;
     if(!session_id) throw new ApiError(400, "Session ID is missing");
 
-    // Check subscription
-    const checkSubscription = await Subscription
+    // Initialize stripe SDK
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
     // Get checkout session details
@@ -93,7 +80,7 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
         const redirectUrl = `${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`;
 
         // Get metadata
-        const { _id, planId, planName, role } = session.metadata;
+        const { userId, planId, planName } = session.metadata;
         
         // If trial selected
         if(planName === "TRIAL")
@@ -105,7 +92,7 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
             
             // Create trial period
             const trialSubscription = await Subscription.create({ 
-                userId:_id, 
+                userId, 
                 planId, 
                 status:"active", 
                 startDate, 
@@ -119,7 +106,7 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
         }
 
         // Check existing subscription
-        const existingSubscription = await Subscription.findOne({ userId:_id, planId, status:"active", endDate:{ $gt:new Date() }});
+        const existingSubscription = await Subscription.findOne({ userId, planId, status:"active", endDate:{ $gt:new Date() }});
 
         // Existing subscription extend by 1 month
         if(existingSubscription) 
@@ -135,7 +122,7 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
         
         // Upgrade subscription
         const subscription = await Subscription.create({
-            userId: _id,
+            userId,
             planId,
             status: "active",
             startDate,
@@ -143,15 +130,8 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
             stripeSubscriptionId:session.id
         });
 
-
-        // Redirect to url based on role
-        // const redirectUrl = role === "user" ? 
-        // `${process.env.FRONTEND_URL}/onboarding/user-profile` : 
-        // `${process.env.FRONTEND_URL}/onboarding/business-profile`;
-
         if(!subscription) throw new ApiError(500, "Failed to save subscription details in db");
         return response.status(303).redirect(redirectUrl);
-        // return response.status(200).json(new ApiResponse(200, null, "Payment verified & subscription activated"));
     } 
     else 
     {

@@ -17,12 +17,6 @@ const io = new Server(server,{
 // Make io accessible to our app
 app.set("io", io);
 
-// Share io instance with routes through request object
-app.use((request, response, next) => {
-    request.io = io;
-    next();
-});
-
 // Socket authentication middleware
 io.use(socketAuthentication);
 

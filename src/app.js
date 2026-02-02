@@ -73,9 +73,7 @@ app.use("/api/v1/support", supportRouter);
 app.use("/api/v1/userSearches", userSearchesRouter);
 
 // API status route
-app.get("/api/v1/status", (request, response) => {
-    response.status(200).json({ message: "API is working fine" });
-});
+app.get("/", (request, response) => response.send(`Server is up and running at port ${port}`));
 
 // Error handling middleware
 app.use(errorHandler);

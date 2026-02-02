@@ -11,8 +11,11 @@ const convertToMongoId = require("../utils/convertToMongoId");
 const createSubscriptionStripe = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const { planId, profile } = request.query;
+
+    // Validate
     if(!planId) throw new ApiError(400, "Plan ID is missing");
     if(!profile) throw new ApiError(400, "Profile model is missing! Please specify 'business' or 'user'");
+    if(!["business", "user"].includes(profile)) throw new ApiError(400, "Invalid profile model! Please use 'business' or 'user'");
 
     // Get plan
     const plan = await Plan.findById(planId).lean();

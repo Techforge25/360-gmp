@@ -41,6 +41,18 @@ const createUserProfile = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, { profile, isNewToPlatform:user.isNewToPlatform }, "User profile has been created"));
 }); 
 
+// View user profile
+const viewUserProfile = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    
+    // Get user profile
+    const userProfile = await UserProfile.findOne({ userId }).lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, userProfile, "User profile has been viewed"));
+});
+
 // Fetch user profile analytics
 const fetchUserAnalytics = asyncHandler(async (request, response) => {
     const userId = request.user._id;
@@ -113,4 +125,4 @@ const fetchUserAnalytics = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "User analytics fetched successfully"));
 });
 
-module.exports = { createUserProfile, fetchUserAnalytics };
+module.exports = { createUserProfile, viewUserProfile, fetchUserAnalytics };

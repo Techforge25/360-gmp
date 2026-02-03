@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
-const { createUserProfile, fetchUserAnalytics } = require("../controllers/userProfile");
+const { createUserProfile, fetchUserAnalytics, viewUserProfile } = require("../controllers/userProfile");
 
 // Router instance
 const userProfileRouter = Router();
@@ -8,6 +8,10 @@ const userProfileRouter = Router();
 // Create user profile
 userProfileRouter.route("/")
 .post(authentication, createUserProfile);
+
+// View user profile
+userProfileRouter.route("/view")
+.get(authentication, authorization(["user"]), viewUserProfile);
 
 // Fetch user analytics
 userProfileRouter.route("/analytics")

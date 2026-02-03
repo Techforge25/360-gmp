@@ -8,7 +8,7 @@ const walletTransactionSchema = new Schema({
 
     // Balance info
     amount:{ type:Number, required:true },
-    type:{ type:String, default:"deposit" },
+    type:{ type:String, default:"deposit", enum:["buy", "subscription", "deposit", "refund"] },
     stripeSessionId: { type:String, default:null },
     status:{ type:String, default:"pending", enum:["pending", "failed", "completed"] }
 }, { timestamps: true });

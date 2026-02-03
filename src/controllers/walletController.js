@@ -12,6 +12,7 @@ const UserProfile = require("../models/userProfile");
 const Withdrawal = require("../models/withdrawalModel");
 const User = require("../models/users");
 const WalletTransaction = require("../models/walletTransactionModel");
+const convertToMongoId = require("../utils/convertToMongoId");
 
 // Connect Stripe account (onboarding)
 const connectStripeAccount = asyncHandler(async (request, response) => {
@@ -319,8 +320,8 @@ const verifyAddFunds = asyncHandler(async (request, response) => {
     }
 });
 
-// Fetch wallet analytics (Business only)
-const fetchWalletAnalytics = asyncHandler(async (request, response) => {
+// Fetch wallet analytics for business
+const fetchBusinessWalletAnalytics = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Find Business
@@ -390,4 +391,44 @@ const fetchWalletAnalytics = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Wallet analytics for business fetched successfully"));
 });
 
-module.exports = { connectStripeAccount , WithdrawFunds, addFunds, verifyAddFunds, fetchWalletAnalytics };
+// Fetch wallet analytics for business
+const fetchUserWalletAnalytics = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Find user profile
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Get user profile id
+    const userProfileId = convertToMongoId(userProfile._id);
+
+    // Get wallet balance
+    const wallet = await Wallet.findOne({ ownerId:userProfileId, ownerModel:"UserProfile" }).select("availableBalance").lean();
+    if(!wallet) return response.status(200).json(new ApiResponse(200, null, "You need to setup your wallet account"));
+
+    // Get pending escrow amount (buyer side)
+    const escrowStats = await EscrowTransaction.aggregate([
+        {
+            $match: { buyerId:userProfileId, status:"held" }
+        },
+        {
+            $group: {
+                _id: null,
+                totalPendingEscrow: { $sum:"$totalAmount" }
+            }
+        }
+    ]);
+
+    // Compute stats
+    const availableBalance = wallet?.availableBalance || 0;
+    const totalPendingEscrow = escrowStats[0]?.totalPendingEscrow || 0;
+
+    // Prepare payload
+    const payload = { availableBalance, totalPendingEscrow }
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, payload, "User wallet analytics have been fetched"))
+});
+
+module.exports = { connectStripeAccount , WithdrawFunds, addFunds, verifyAddFunds,
+fetchBusinessWalletAnalytics, fetchUserWalletAnalytics };

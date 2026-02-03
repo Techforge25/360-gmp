@@ -7,13 +7,13 @@ const walletTransactionSchema = new Schema({
     ownerModel:{ type:String, required:true, enum:["BusinessProfile", "UserProfile"] },
 
     // Balance info
-    amount:{ type:Number, required },
+    amount:{ type:Number, required:true },
     type:{ type:String, default:"deposit" },
     stripeSessionId: { type:String, default:null },
     status:{ type:String, default:"pending", enum:["pending", "failed", "completed"] }
 }, { timestamps: true });
 
 // Model
-const WalletTransaction = model("Wallet", walletTransactionSchema);
+const WalletTransaction = model("WalletTransaction", walletTransactionSchema);
 
 module.exports = WalletTransaction;

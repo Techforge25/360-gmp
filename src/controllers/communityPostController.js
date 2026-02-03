@@ -298,9 +298,8 @@ const likePost = asyncHandler(async (request, response) => {
     const identity = await getIdentity(request.user._id, post.communityId);
     await checkCommunityMembership(post.communityId, identity.id, identity.model);
 
-    const existingLikeIndex = post.likes.findIndex(
-        like => like.userId.toString() === identity.id.toString()
-    );
+    // Check existing like
+    const existingLikeIndex = post.likes.findIndex(like => like.userId.toString() === identity.id.toString());
 
     if(existingLikeIndex > -1) {
         // Unlike: Remove like
@@ -308,7 +307,7 @@ const likePost = asyncHandler(async (request, response) => {
         post.likeCount = Math.max(0, post.likeCount - 1);
     } else {
         // Like: Add like
-        post.likes.push({ authorId: likerId, onModel: likerType });
+        post.likes.push({ authorId:identity.id, onModel:identity.model });
         post.likeCount += 1;
     }
 

@@ -8,6 +8,7 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
+const updateUserContactInfoValidationSchema = require("../validations/updateUserContactInfoValidator");
 const { createUserProfileSchema } = require("../validations/userProfile");
 
 const createUserProfile = asyncHandler(async (request, response) => {
@@ -54,7 +55,7 @@ const viewUserProfile = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, userProfile, "User profile has been viewed"));
 });
 
-// Update user profile
+// Update user profile (basic info)
 const updateUserProfileBasicInfo = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
@@ -71,6 +72,44 @@ const updateUserProfileBasicInfo = asyncHandler(async (request, response) => {
 
     // Response
     return response.status(200).json(new ApiResponse(200, payload, "User profile has been updated!"));
+});
+
+// Update user profile (contact info)
+const updateUserProfileContactInfo = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Get validated payload
+    const { email, phone, location } = validate(updateUserContactInfoValidationSchema, request.body);
+
+    // Update user profile
+    const userProfile = await UserProfile.findOneAndUpdate({ userId }, { email, phone, location }, { new:true });
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Prepare payload
+    const payload = { 
+        email: userProfile.email, 
+        phone: userProfile.phone, 
+        location: userProfile.location, 
+    };
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, payload, "User contact info has been updated!"));
+});
+
+// Update user profile (Profile logo)
+const updateUserProfileLogo = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Get validated payload
+    const { logo } = request.body || {};
+    if(!logo) throw new ApiError(400, "User profile image is required");
+
+    // Update user profile
+    const userProfile = await UserProfile.findOneAndUpdate({ userId }, { logo }, { new:true });
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { logo:userProfile.logo }, "User logo has been updated!"));
 });
 
 // Delete user profile
@@ -157,4 +196,5 @@ const fetchUserAnalytics = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "User analytics fetched successfully"));
 });
 
-module.exports = { createUserProfile, viewUserProfile, updateUserProfileBasicInfo, deleteUserProfile, fetchUserAnalytics };
+module.exports = { createUserProfile, viewUserProfile, updateUserProfileBasicInfo, 
+updateUserProfileContactInfo, updateUserProfileLogo, deleteUserProfile, fetchUserAnalytics };

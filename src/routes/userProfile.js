@@ -1,7 +1,9 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { createUserProfile, fetchUserAnalytics, viewUserProfile, 
-deleteUserProfile, updateUserProfileBasicInfo } = require("../controllers/userProfile");
+deleteUserProfile, updateUserProfileBasicInfo, 
+updateUserProfileContactInfo,
+updateUserProfileLogo} = require("../controllers/userProfile");
 
 // Router instance
 const userProfileRouter = Router();
@@ -14,9 +16,17 @@ userProfileRouter.route("/")
 userProfileRouter.route("/view")
 .get(authentication, authorization(["user"]), viewUserProfile);
 
-// Update user profile
+// Update user profile (basic info)
 userProfileRouter.route("/update/basic-info")
 .patch(authentication, authorization(["user"]), updateUserProfileBasicInfo);
+
+// Update user profile (contact info)
+userProfileRouter.route("/update/contact-info")
+.patch(authentication, authorization(["user"]), updateUserProfileContactInfo);
+
+// Update user profile (Profile logo)
+userProfileRouter.route("/update/logo")
+.patch(authentication, authorization(["user"]), updateUserProfileLogo);
 
 // Delete user profile
 userProfileRouter.route("/delete")

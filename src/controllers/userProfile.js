@@ -8,7 +8,7 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
-const updateUserContactInfoValidationSchema = require("../validations/updateUserContactInfoValidator");
+const { updateUserContactInfoValidationSchema, updateEducationValidationSchema } = require("../validations/userProfile");
 const { createUserProfileSchema } = require("../validations/userProfile");
 
 const createUserProfile = asyncHandler(async (request, response) => {
@@ -100,7 +100,7 @@ const updateUserProfileContactInfo = asyncHandler(async (request, response) => {
 const updateUserProfileLogo = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
-    // Get validated payload
+    // Get payload
     const { logo } = request.body || {};
     if(!logo) throw new ApiError(400, "User profile image is required");
 
@@ -116,7 +116,7 @@ const updateUserProfileLogo = asyncHandler(async (request, response) => {
 const updateUserProfileResume = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
-    // Get validated payload
+    // Get payload
     const { resumeUrl } = request.body || {};
     if(!resumeUrl) throw new ApiError(400, "Resume is required");
 
@@ -126,6 +126,37 @@ const updateUserProfileResume = asyncHandler(async (request, response) => {
 
     // Response
     return response.status(200).json(new ApiResponse(200, { resumeUrl:userProfile.resumeUrl }, "Resume has been updated!"));
+});
+
+// Update user profile (Education)
+const updateUserProfileEducation = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Get validated payload
+    const { institution, degree, fieldOfStudy, startDate, endDate,
+    isCurrent, description, grade } = validate(updateEducationValidationSchema, request.body);
+
+    // Update education object
+    const userProfile = await UserProfile.findOneAndUpdate(
+        { userId },
+        {
+            $set: {
+                "education.institution": institution,
+                "education.degree": degree,
+                "education.fieldOfStudy": fieldOfStudy,
+                "education.startDate": startDate,
+                "education.endDate": endDate,
+                "education.isCurrent": isCurrent,
+                "education.description": description,
+                "education.grade": grade
+            }
+        },
+        { new:true }
+    );
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, userProfile.education, "Education has been updated!"));
 });
 
 // Delete user profile
@@ -214,4 +245,4 @@ const fetchUserAnalytics = asyncHandler(async (request, response) => {
 
 module.exports = { createUserProfile, viewUserProfile, updateUserProfileBasicInfo, 
 updateUserProfileContactInfo, updateUserProfileLogo, updateUserProfileResume,
-deleteUserProfile, fetchUserAnalytics };
+updateUserProfileEducation, deleteUserProfile, fetchUserAnalytics };

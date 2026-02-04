@@ -1,4 +1,6 @@
+const { emptyList } = require("../constants");
 const JobApplication = require("../models/jobApplication");
+const Job = require("../models/jobsSchema");
 const Order = require("../models/orders");
 const SavedJob = require("../models/savedJobsModel");
 const UserProfile = require("../models/userProfile");
@@ -325,7 +327,54 @@ const deleteWorkExperience = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, workExperience._id, "Work experience has been deleted!"));
 });
 
+// Fetch jobs that matches with my job preferences
+const fetchJobMatches = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Find user profile
+    const userProfile = await UserProfile.findOne({ userId }).lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Get already applied job IDs
+    const appliedJobs = await JobApplication.find({ userProfileId: userProfile._id }).select("jobId").lean();
+    const appliedJobIds = appliedJobs.map(app => app.jobId);
+
+    // Build match query
+    const matchQuery = { 
+        status:"open",
+        _id: { $nin:appliedJobIds } // Exclude applied jobs
+    };
+
+    // Match job title (if user set targetJob)
+    if(userProfile.targetJob) matchQuery.jobTitle = { $regex:userProfile.targetJob, $options:"i" };
+    
+    // Match employment type
+    if(userProfile.employmentType && userProfile.employmentType.length > 0) matchQuery.employmentType = { $in:userProfile.employmentType };
+
+    // Salary overlap logic
+    if(userProfile.minSalary || userProfile.maxSalary) 
+    {
+        matchQuery.$and = [];
+        if(userProfile.minSalary) matchQuery.$and.push({ salaryMax:{ $gte:userProfile.minSalary } });
+        if(userProfile.maxSalary) matchQuery.$and.push({ salaryMin:{ $lte:userProfile.maxSalary } });
+    }
+
+    // Fetch jobs with pagination
+    const options = {
+        page: parseInt(request.query.page) || 1,
+        limit: parseInt(request.query.limit) || 10,
+        sort: { createdAt:-1 }
+    };
+
+    // Find matches jobs
+    const jobs = await Job.paginate(matchQuery, options);
+    if(!jobs.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No job matches found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, jobs, "Matched jobs fetched successfully"));
+});
+
 module.exports = { createUserProfile, viewUserProfile, updateUserProfileBasicInfo, 
 updateUserProfileContactInfo, updateUserProfileLogo, updateUserProfileResume,
 updateUserProfileEducation, deleteUserProfile, fetchUserAnalytics, createWorkExperience,
-fetchWorkExperiences, updateWorkExperience, deleteWorkExperience };
+fetchWorkExperiences, updateWorkExperience, deleteWorkExperience, fetchJobMatches };

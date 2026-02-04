@@ -3,7 +3,8 @@ const { authentication, authorization } = require("../middlewares/auth");
 const { createUserProfile, fetchUserAnalytics, viewUserProfile, 
 deleteUserProfile, updateUserProfileBasicInfo, updateUserProfileContactInfo,
 updateUserProfileLogo, updateUserProfileResume, updateUserProfileEducation,
-createWorkExperience, fetchWorkExperiences, updateWorkExperience, deleteWorkExperience} = require("../controllers/userProfile");
+createWorkExperience, fetchWorkExperiences, updateWorkExperience, deleteWorkExperience,
+fetchJobMatches} = require("../controllers/userProfile");
 
 // Router instance
 const userProfileRouter = Router();
@@ -55,5 +56,9 @@ userProfileRouter.route("/work-experience")
 userProfileRouter.route("/work-experience/:workExperienceId")
 .put(authentication, authorization(["user"]), updateWorkExperience)
 .delete(authentication, authorization(["user"]), deleteWorkExperience);
+
+// Fetch job matches (Job based on preferences)
+userProfileRouter.route("/job-matches")
+.get(authentication, authorization(["user"]), fetchJobMatches);
 
 module.exports = userProfileRouter;

@@ -2,8 +2,8 @@ const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { createUserProfile, fetchUserAnalytics, viewUserProfile, 
 deleteUserProfile, updateUserProfileBasicInfo, updateUserProfileContactInfo,
-updateUserProfileLogo, updateUserProfileResume, 
-updateUserProfileEducation} = require("../controllers/userProfile");
+updateUserProfileLogo, updateUserProfileResume, updateUserProfileEducation,
+createWorkExperience, fetchWorkExperiences, updateWorkExperience, deleteWorkExperience} = require("../controllers/userProfile");
 
 // Router instance
 const userProfileRouter = Router();
@@ -16,7 +16,7 @@ userProfileRouter.route("/")
 userProfileRouter.route("/view")
 .get(authentication, authorization(["user"]), viewUserProfile);
 
-/* ======================= USER PROFILE UPDATES ======================= */
+/* ======================= USER PROFILE UPDATES STARTS ======================= */
 // Update basic info
 userProfileRouter.route("/update/basic-info")
 .patch(authentication, authorization(["user"]), updateUserProfileBasicInfo);
@@ -36,7 +36,7 @@ userProfileRouter.route("/update/resume")
 // Update education
 userProfileRouter.route("/update/education")
 .patch(authentication, authorization(["user"]), updateUserProfileEducation);
-/* ======================= USER PROFILE UPDATES ======================= */
+/* ======================= USER PROFILE UPDATES ENDS ======================= */
 
 // Delete user profile
 userProfileRouter.route("/delete")
@@ -45,5 +45,15 @@ userProfileRouter.route("/delete")
 // Fetch user analytics
 userProfileRouter.route("/analytics")
 .get(authentication, authorization(["user"]), fetchUserAnalytics);
+
+// Create work experience / Fetch work experiences
+userProfileRouter.route("/work-experience")
+.post(authentication, authorization(["user"]), createWorkExperience)
+.get(authentication, authorization(["user"]), fetchWorkExperiences);
+
+// Update work experience / Delete work experience
+userProfileRouter.route("/work-experience/:workExperienceId")
+.put(authentication, authorization(["user"]), updateWorkExperience)
+.delete(authentication, authorization(["user"]), deleteWorkExperience);
 
 module.exports = userProfileRouter;

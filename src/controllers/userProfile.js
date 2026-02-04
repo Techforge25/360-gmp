@@ -1,3 +1,4 @@
+const { valid } = require("joi");
 const JobApplication = require("../models/jobApplication");
 const Order = require("../models/orders");
 const SavedJob = require("../models/savedJobsModel");
@@ -244,8 +245,8 @@ const fetchUserAnalytics = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "User analytics fetched successfully"));
 });
 
-// Add work experience
-const addWorkExperience = asyncHandler(async (request, response) => {
+// Create work experience
+const createWorkExperience = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Get validated payload
@@ -257,7 +258,7 @@ const addWorkExperience = asyncHandler(async (request, response) => {
     if(!userProfile) throw new ApiError(404, "User profile not found");
 
     // Save work experience to db
-    const workExperience = await WorkExperience.create({ userProfileId: userId, jobTitle, employementType, companyName, 
+    const workExperience = await WorkExperience.create({ userProfileId:userProfile._id, jobTitle, employementType, companyName, 
     startDate, endDate, location, description, isCurrentlyWorking });
     if(!workExperience) throw new ApiError(500, "Failed to add work experience");
 
@@ -265,6 +266,67 @@ const addWorkExperience = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, workExperience._id, "Work experience has been added!"));
 });
 
+// Fetch work experiences
+const fetchWorkExperiences = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Find user profile
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Find work experience
+    const workExperiences = await WorkExperience.find({ userProfileId:userProfile._id });
+    if(!workExperiences.length) return response.status(200).json(new ApiResponse(200, [], "No work experience found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, workExperiences, "Work experiences have been fetched!"));
+});
+
+// Update work experience
+const updateWorkExperience = asyncHandler(async (request, response) => {
+    const { workExperienceId } = request.params;
+    const userId = request.user._id;
+
+    // Get validated payload
+    const { jobTitle, employementType, companyName, startDate, endDate, 
+    location, description, isCurrentlyWorking } = validate(addWorkExperienceValidationSchema, request.body);
+
+    // Find user profile
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Update work experience
+    const workExperience = await WorkExperience.findOneAndUpdate(
+        { _id:workExperienceId, userProfileId:userProfile._id },
+        { 
+            jobTitle, employementType, companyName, startDate, 
+            endDate, location, description, isCurrentlyWorking },
+        { new:true }
+    );
+    if(!workExperience) throw new ApiError(404, "Work experience not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, workExperience, "Work experience has been updated!"));
+});
+
+// Delete work experience
+const deleteWorkExperience = asyncHandler(async (request, response) => {
+    const { workExperienceId } = request.params;
+    const userId = request.user._id;
+
+    // Find user profile
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Update work experience
+    const workExperience = await WorkExperience.findOneAndDelete({ _id:workExperienceId, userProfileId:userProfile });
+    if(!workExperience) throw new ApiError(404, "Work experience not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, workExperience._id, "Work experience has been deleted!"));
+});
+
 module.exports = { createUserProfile, viewUserProfile, updateUserProfileBasicInfo, 
 updateUserProfileContactInfo, updateUserProfileLogo, updateUserProfileResume,
-updateUserProfileEducation, deleteUserProfile, fetchUserAnalytics, addWorkExperience };
+updateUserProfileEducation, deleteUserProfile, fetchUserAnalytics, createWorkExperience,
+fetchWorkExperiences, updateWorkExperience, deleteWorkExperience };

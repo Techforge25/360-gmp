@@ -38,7 +38,7 @@ const createUserProfileSchema = joi.object({
     targetJob: joi.string().allow("", null),
     minSalary: joi.number().min(0),
     maxSalary: joi.number().greater(joi.ref("minSalary")),
-    education: joi.array().items(educationSchema).default([])
+    education: educationSchema.default({})
 });
 
 // Update contact info 

@@ -62,4 +62,20 @@ const updateEducationValidationSchema = joi.object({
     grade: joi.string().optional().label("Grade")
 });
 
-module.exports = { createUserProfileSchema, updateUserContactInfoValidationSchema, updateEducationValidationSchema };
+// Allowed employemnt types
+const allowedEmployementTypes = ["Full-Time", "Remote", "Contract", "Hybrid", "Part-Time"];
+
+// Add work experience validation schema
+const addWorkExperienceValidationSchema = joi.object({
+    jobTitle: joi.string().trim().required().label("Job title"),
+    employementType: joi.array().items(joi.string().trim().valid(...allowedEmployementTypes)).min(1).max(5).label("Employement type"),
+    companyName: joi.string().trim().required().label("Company name"),
+    startDate: joi.date().required().label("Starting date"),
+    endDate: joi.date().optional().label("Ending date"),
+    location: joi.string().trim().required().label("Location"),
+    description: joi.string().optional().label("Description"),
+    isCurrentlyWorking: joi.boolean().default(false).label("Currently enrolled")
+});
+
+module.exports = { createUserProfileSchema, updateUserContactInfoValidationSchema, 
+updateEducationValidationSchema, addWorkExperienceValidationSchema };

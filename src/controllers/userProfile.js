@@ -1,4 +1,3 @@
-const { valid } = require("joi");
 const JobApplication = require("../models/jobApplication");
 const Order = require("../models/orders");
 const SavedJob = require("../models/savedJobsModel");

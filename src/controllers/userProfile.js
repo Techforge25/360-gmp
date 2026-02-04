@@ -81,7 +81,7 @@ const updateUserProfileContactInfo = asyncHandler(async (request, response) => {
     // Get validated payload
     const { email, phone, location } = validate(updateUserContactInfoValidationSchema, request.body);
 
-    // Update user profile
+    // Update contact info
     const userProfile = await UserProfile.findOneAndUpdate({ userId }, { email, phone, location }, { new:true });
     if(!userProfile) throw new ApiError(404, "User profile not found");
 
@@ -104,12 +104,28 @@ const updateUserProfileLogo = asyncHandler(async (request, response) => {
     const { logo } = request.body || {};
     if(!logo) throw new ApiError(400, "User profile image is required");
 
-    // Update user profile
+    // Update logo
     const userProfile = await UserProfile.findOneAndUpdate({ userId }, { logo }, { new:true });
     if(!userProfile) throw new ApiError(404, "User profile not found");
 
     // Response
     return response.status(200).json(new ApiResponse(200, { logo:userProfile.logo }, "User logo has been updated!"));
+});
+
+// Update user profile (Resume)
+const updateUserProfileResume = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Get validated payload
+    const { resumeUrl } = request.body || {};
+    if(!resumeUrl) throw new ApiError(400, "Resume is required");
+
+    // Update resume
+    const userProfile = await UserProfile.findOneAndUpdate({ userId }, { resumeUrl }, { new:true });
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { resumeUrl:userProfile.resumeUrl }, "Resume has been updated!"));
 });
 
 // Delete user profile
@@ -121,7 +137,7 @@ const deleteUserProfile = asyncHandler(async (request, response) => {
     if(!userProfile) throw new ApiError(404, "User profile not found");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, userProfile._id, "User profile has been deleted successfully"));
+    return response.status(200).json(new ApiResponse(200, userProfile._id, "User profile has been deleted!"));
 });
 
 // Fetch user profile analytics
@@ -197,4 +213,5 @@ const fetchUserAnalytics = asyncHandler(async (request, response) => {
 });
 
 module.exports = { createUserProfile, viewUserProfile, updateUserProfileBasicInfo, 
-updateUserProfileContactInfo, updateUserProfileLogo, deleteUserProfile, fetchUserAnalytics };
+updateUserProfileContactInfo, updateUserProfileLogo, updateUserProfileResume,
+deleteUserProfile, fetchUserAnalytics };

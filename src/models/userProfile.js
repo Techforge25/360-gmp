@@ -22,7 +22,7 @@ const userProfileSchema = new Schema({
     maxSalary: Number,
 
     // Education fields
-    education: [{
+    education: {
       institution: String,
       degree: String,
       fieldOfStudy: String,
@@ -31,7 +31,7 @@ const userProfileSchema = new Schema({
       isCurrent: { type: Boolean, default: false },
       description: String,
       grade: String
-    }],
+    },
     isVerified: { type: Boolean, default: false }
 }, { timestamps: true });
 

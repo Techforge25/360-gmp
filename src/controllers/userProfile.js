@@ -7,6 +7,8 @@ const Wallet = require("../models/walletModel");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
+const validate = require("../utils/validate");
+const updateUserProfileValidationSchema = require("../validations/updateUserProfileValidator");
 const { createUserProfileSchema } = require("../validations/userProfile");
 
 const createUserProfile = asyncHandler(async (request, response) => {
@@ -57,8 +59,20 @@ const viewUserProfile = asyncHandler(async (request, response) => {
 const updateUserProfile = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
-    // To be continued when fields confirm from frontend
-    // ...
+    // Get validated payload
+    const { fullName, imageProfile, bio, email, phone, location, resumeUrl,
+    education, title, employementType } = validate(updateUserProfileValidationSchema, request.body);
+
+    // Update user profile
+    const userProfile = await UserProfile.findOneAndUpdate(
+        { userId },
+        { 
+            fullName, imageProfile, bio, email, phone, location, 
+            resumeUrl, education, title, employementType 
+        },
+        { new:true }
+    );
+    if(!userProfile) throw new ApiError(404, "User profile not found");
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "User profile has been updated!"));

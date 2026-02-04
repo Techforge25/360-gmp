@@ -4,11 +4,12 @@ const SavedJob = require("../models/savedJobsModel");
 const UserProfile = require("../models/userProfile");
 const User = require("../models/users");
 const Wallet = require("../models/walletModel");
+const WorkExperience = require("../models/workExperienceModel");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
-const { updateUserContactInfoValidationSchema, updateEducationValidationSchema } = require("../validations/userProfile");
+const { updateUserContactInfoValidationSchema, updateEducationValidationSchema, addWorkExperienceValidationSchema } = require("../validations/userProfile");
 const { createUserProfileSchema } = require("../validations/userProfile");
 
 const createUserProfile = asyncHandler(async (request, response) => {
@@ -243,6 +244,27 @@ const fetchUserAnalytics = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "User analytics fetched successfully"));
 });
 
+// Add work experience
+const addWorkExperience = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Get validated payload
+    const { jobTitle, employementType, companyName, startDate, endDate, 
+    location, description, isCurrentlyWorking } = validate(addWorkExperienceValidationSchema, request.body);
+
+    // Find user profile
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Save work experience to db
+    const workExperience = await WorkExperience.create({ userProfileId: userId, jobTitle, employementType, companyName, 
+    startDate, endDate, location, description, isCurrentlyWorking });
+    if(!workExperience) throw new ApiError(500, "Failed to add work experience");
+
+    // Response
+    return response.status(201).json(new ApiResponse(201, workExperience._id, "Work experience has been added!"));
+});
+
 module.exports = { createUserProfile, viewUserProfile, updateUserProfileBasicInfo, 
 updateUserProfileContactInfo, updateUserProfileLogo, updateUserProfileResume,
-updateUserProfileEducation, deleteUserProfile, fetchUserAnalytics };
+updateUserProfileEducation, deleteUserProfile, fetchUserAnalytics, addWorkExperience };

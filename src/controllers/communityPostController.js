@@ -78,9 +78,9 @@ const createPost = asyncHandler(async (request, response) => {
     if (identity.model === "BusinessProfile") {
         await post.populate({ path: "authorId", model: "BusinessProfile", select: "companyName logo" });
     } else {
-        await post.populate({ path: "authorId", model: "UserProfile", select: "fullName title imageProfile" });
+        await post.populate({ path: "authorId", model: "UserProfile", select: "fullName title logo" });
     }
-    //await post.populate("authorUserProfileId", "fullName title imageProfile");
+    //await post.populate("authorUserProfileId", "fullName title logo");
 
     const io = request.app.get("io");
     io.to(value.communityId.toString()).emit("new_post", post); 
@@ -138,7 +138,7 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
 
     // Get posts
     const posts = await CommunityPost.find({ communityId: id })
-        .populate("authorId", "fullName imageProfile companyName logo")
+        .populate("authorId", "fullName logo companyName logo")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNumber).lean();
@@ -176,7 +176,7 @@ const getPostById = asyncHandler(async (request, response) => {
     const { postId } = request.params;
 
     const post = await CommunityPost.findById(postId)
-        .populate("authorUserProfileId", "fullName title imageProfile bio")
+        .populate("authorUserProfileId", "fullName title logo bio")
         .populate("communityId", "name type");
 
     if(!post) throw new ApiError(404, "Post not found");
@@ -245,7 +245,7 @@ const updatePost = asyncHandler(async (request, response) => {
         },
         { new: true, runValidators: true }
     )
-        .populate("authorId", "companyName logo fullName title imageProfile");
+        .populate("authorId", "companyName logo fullName title logo");
 
     return response.status(200).json(
         new ApiResponse(200, updatedPost, "Post updated successfully")
@@ -359,7 +359,7 @@ const addComment = asyncHandler(async (request, response) => {
     // Populate latest comment properly
     await post.populate({
         path: `comments.${post.comments.length - 1}.userId`,
-        select: "companyName logo fullName imageProfile"
+        select: "companyName logo fullName logo"
     });
 
     // Get latest populated comment
@@ -399,7 +399,7 @@ const getPostComments = asyncHandler(async (request, response) => {
 
     // Populate user profiles
     for(let comment of comments) {
-        await comment.populate("userProfileId", "fullName title imageProfile");
+        await comment.populate("userProfileId", "fullName title logo");
     }
 
     const paginationInfo = {

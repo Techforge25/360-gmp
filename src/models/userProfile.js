@@ -11,7 +11,7 @@ const userProfileSchema = new Schema({
     bio: { type:String, trim:true },
     resumeUrl: { type:String, trim:true },
     skills: [String],
-    imageProfile: { type:String, trim:true, required:true },
+    logo: { type:String, trim:true, required:true },
     stripeConnectId: { type:String, trim:true, default:null },
 
     // For Job Application

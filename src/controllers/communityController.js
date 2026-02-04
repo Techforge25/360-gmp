@@ -260,7 +260,7 @@ const getPendingRequests = asyncHandler(async (request, response) => {
         communityId: id,
         status: "pending"
     })
-        .populate("userProfileId", "fullName title imageProfile")
+        .populate("userProfileId", "fullName title logo")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNumber);
@@ -295,7 +295,7 @@ const getCommunityMembers = asyncHandler(async (request, response) => {
 
     // Get members
     const members = await CommunityMembership.find(filter)
-        .populate("userProfileId", "fullName title imageProfile bio")
+        .populate("userProfileId", "fullName title logo bio")
         .sort({ joinedAt: -1 })
         .skip(skip)
         .limit(limitNumber);

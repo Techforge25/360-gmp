@@ -8,7 +8,6 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
-const updateUserProfileValidationSchema = require("../validations/updateUserProfileValidator");
 const { createUserProfileSchema } = require("../validations/userProfile");
 
 const createUserProfile = asyncHandler(async (request, response) => {
@@ -56,26 +55,22 @@ const viewUserProfile = asyncHandler(async (request, response) => {
 });
 
 // Update user profile
-const updateUserProfile = asyncHandler(async (request, response) => {
+const updateUserProfileBasicInfo = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
-    // Get validated payload
-    const { fullName, imageProfile, bio, email, phone, location, resumeUrl,
-    education, title, employementType } = validate(updateUserProfileValidationSchema, request.body);
+    // Get payload
+    const { fullName, bio } = request.body || {};
+    if(!fullName) throw new ApiError(400, "Full name is required");
 
     // Update user profile
-    const userProfile = await UserProfile.findOneAndUpdate(
-        { userId },
-        { 
-            fullName, imageProfile, bio, email, phone, location, 
-            resumeUrl, education, title, employementType 
-        },
-        { new:true }
-    );
+    const userProfile = await UserProfile.findOneAndUpdate({ userId }, { fullName, bio }, { new:true });
     if(!userProfile) throw new ApiError(404, "User profile not found");
 
+    // Prepare payload
+    const payload = { fullName:userProfile.fullName, bio:userProfile.bio };
+
     // Response
-    return response.status(200).json(new ApiResponse(200, null, "User profile has been updated!"));
+    return response.status(200).json(new ApiResponse(200, payload, "User profile has been updated!"));
 });
 
 // Delete user profile
@@ -162,4 +157,4 @@ const fetchUserAnalytics = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "User analytics fetched successfully"));
 });
 
-module.exports = { createUserProfile, viewUserProfile, updateUserProfile, deleteUserProfile, fetchUserAnalytics };
+module.exports = { createUserProfile, viewUserProfile, updateUserProfileBasicInfo, deleteUserProfile, fetchUserAnalytics };

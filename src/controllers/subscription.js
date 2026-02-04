@@ -6,9 +6,6 @@ const asyncHandler = require("../utils/asyncHandler");
 const getMonthlySubscriptionDates = require("../utils/getSubscriptionDates");
 const Stripe = require("stripe");
 const convertToMongoId = require("../utils/convertToMongoId");
-const WalletTransaction = require("../models/walletTransactionModel");
-const BusinessProfile = require("../models/businessProfileSchema");
-const UserProfile = require("../models/userProfile");
 const mongoose = require("mongoose");
 
 // Create subscription via stripe
@@ -28,24 +25,6 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
 
     // If business try to select trial period
     if(name === "TRIAL" && profile === "business") throw new ApiError(400, "Business profile cannot select trial period");
-
-    // Get owner id
-    let ownerId;
-    let ownerModel;
-    if(profile === "business")
-    {
-        const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
-        if(!businessProfile) throw new ApiError(404, "Business profile not found");
-        ownerId = String(businessProfile._id);
-        ownerModel = "BusinessProfile";
-    }
-    else
-    {
-        const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
-        if(!userProfile) throw new ApiError(404, "User profile not found");
-        ownerId = String(userProfile._id);
-        ownerModel = "UserProfile";
-    }
     
     // Stripe instance
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -68,7 +47,7 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
             },
             quantity: 1,
         }],
-        metadata: { userId, planId, planName:name, ownerId, ownerModel },
+        metadata: { userId, planId, planName:name },
         success_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/cancel`
     });
@@ -98,19 +77,17 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
     const existing = await Subscription.findOne({ stripeSubscriptionId:session.id });
     if(existing) return response.status(200).json(new ApiResponse(200, null, "Payment already processed"));
 
-    
-
     // Check payment status
     if(session.payment_status === "paid") 
     {
         // Get subscription amount from stripe session
-        const subscriptionAmount = session.amount_total / 100;
+        // const subscriptionAmount = session.amount_total / 100;
 
         // Redirect url
         const redirectUrl = `${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`;
 
         // Get metadata
-        const { userId, planId, planName, ownerId, ownerModel } = session.metadata;
+        const { userId, planId, planName } = session.metadata;
         
         // If trial selected
         if(planName === "TRIAL")
@@ -149,30 +126,10 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
 
         // Get subscription dates
         const { startDate, endDate } = getMonthlySubscriptionDates();    
-        
-        // Enable db session
-        const dbSession = await mongoose.startSession();
-        dbSession.startTransaction();
-        
-        try 
-        {
-            // Upgrade subscription
-            await Subscription.create([{ userId, planId, status:"active", startDate, endDate, stripeSubscriptionId:session.id}], { session:dbSession });
 
-            // Add transaction record
-            await WalletTransaction.create([{ ownerId, ownerModel, amount:Number(subscriptionAmount), 
-            type:"subscription", stripeSessionId:session.id,status:"completed" }], { session:dbSession });
-            
-            // Commit changes
-            await dbSession.commitTransaction();
-            dbSession.endSession();
-        } 
-        catch(error) 
-        {
-            await dbSession.abortTransaction();
-            dbSession.endSession();
-            throw error;
-        }
+        // Upgrade subscription
+        const subscription = await Subscription.create({ userId, planId, status:"active", startDate, endDate, stripeSubscriptionId:session.id });
+        if(!subscription) throw new ApiError(400, "Failed to update subscription");
 
         // Response
         return response.status(303).redirect(redirectUrl);

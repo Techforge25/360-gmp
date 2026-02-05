@@ -14,6 +14,7 @@ const userProfileSchema = new Schema({
     // Media files url
     resumeUrl: { type:String, trim:true },
     logo: { type:String, trim:true, required:true },
+    banner: { type:String, trim:true },
 
     // Personal
     bio: { type:String, trim:true },

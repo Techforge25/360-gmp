@@ -24,22 +24,23 @@ const createUserProfileSchema = joi.object({
     fullName: joi.string().min(3).max(100).required().messages({
         "any.required": "Full name is required"
     }),
-    title: joi.string().allow("", null),
-    phone: joi.string().allow("", null),
+    title: joi.string().allow("", null).label("Title"),
+    phone: joi.string().trim().required().label("Phone"),
     email: joi.string().trim().lowercase().email().required().label("Email"),
-    location: joi.string().allow("", null),
-    bio: joi.string().max(1000).allow("", null),
-    resumeUrl: joi.string().allow("", null),
-    logo: joi.string().allow("", null),
+    location: joi.string().allow("", null).label("Location"),
+    bio: joi.string().max(1000).allow("", null).label("Bio"),
+    resumeUrl: joi.string().allow("", null).label("Resume"),
+    logo: joi.string().required().label("Profile image"),
+    banner: joi.string().optional().label("Banner"),
 
-    skills: joi.array().items(joi.string()).default([]),
-    employmentType:joi.array().allow("", null),
+    skills: joi.array().items(joi.string()).default([]).label("Skills"),
+    employmentType:joi.array().allow("", null).label("Employment type"),
 
     // Job preferences
-    targetJob: joi.string().allow("", null),
-    minSalary: joi.number().min(0),
-    maxSalary: joi.number().greater(joi.ref("minSalary")),
-    education: educationSchema.default({})
+    targetJob: joi.string().allow("", null).label("Target job"),
+    minSalary: joi.number().min(0).label("Minimum salary"),
+    maxSalary: joi.number().greater(joi.ref("minSalary")).label("Maximum salary"),
+    education: educationSchema.default({}).label("Education")
 });
 
 // Update contact info 

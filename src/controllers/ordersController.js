@@ -13,7 +13,7 @@ const { emptyList } = require("../constants");
 const convertToMongoId = require("../utils/convertToMongoId");
 const Transaction = require("../models/transactionModel");
 
-// Create order
+// Create order - Purchase product using stripe payment
 const createOrder = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
@@ -207,6 +207,155 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
         // Response
         // return response.status(201).json(new ApiResponse(201, order, "Order has been created"));
         return response.status(303).redirect("https://github.com");
+    } 
+    catch(error) 
+    {
+        await dbSession.abortTransaction();
+        dbSession.endSession();
+        throw error;
+    }
+});
+
+// Purchase product using Wallet balance
+const createOrderWithWallet = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Get buyer profile
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Get payload
+    const { items, shippingAddress } = request.body;
+
+    // Validate shipping address and items
+    if(!shippingAddress) throw new ApiError(400, "Shipping address is required");
+    if(!items || !items.length) throw new ApiError(400, "Product item is required");
+
+    let sellerBusinessId = null;
+    let serverComputedTotal = 0;
+
+    // Validate items & compute total
+    for(const item of items)
+    {
+        const { productId, quantity } = item;
+
+        // Validate quantity
+        if(!quantity || quantity <= 0) throw new ApiError(400, "Invalid product quantity");
+
+        // Trial cannot purchase in bulk
+        if(request.user.plan?.name === "TRIAL" && quantity > 1)
+            throw new ApiError(400, "You cannot purchase in bulk within Trial period! Please upgrade");
+
+        // Find each product by "id"
+        const product = await Product.findById(productId).select("title stockQty pricePerUnit shippingCost businessId");
+        if(!product) throw new ApiError(404, "Product not found");
+
+        // Prevent multiple sellers in single order
+        if(!sellerBusinessId)
+        {
+            sellerBusinessId = product.businessId.toString();
+        }
+        else if(sellerBusinessId !== product.businessId.toString())
+        {
+            throw new ApiError(400, "Multiple sellers in one order are not allowed");
+        }
+
+        // Compare stock quantity with demanded quantity
+        if(product.stockQty < quantity)
+            throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
+
+        // Compute total amount
+        const itemTotal = (product.pricePerUnit * quantity) + product.shippingCost;
+        serverComputedTotal += itemTotal;
+    }
+
+    // Start DB transaction
+    const dbSession = await mongoose.startSession();
+    dbSession.startTransaction();
+
+    try 
+    {
+        const amount = Number(serverComputedTotal);
+
+        // Deduct buyer wallet balance
+        const buyerWallet = await Wallet.findOneAndUpdate(
+            { ownerId: userProfile._id, ownerModel: "UserProfile", availableBalance: { $gte: amount } },
+            { $inc: { availableBalance: -amount } },
+            { new: true, session: dbSession }
+        );
+        if(!buyerWallet) throw new ApiError(400, "Insufficient wallet balance");
+
+        // Deduct stock & prepare items
+        const itemsWithPrice = [];
+        for(const item of items) 
+        {
+            const { productId, quantity } = item;
+
+            // Deduct stock
+            const product = await Product.findOneAndUpdate(
+                { _id: productId, stockQty: { $gte: quantity } },
+                { $inc: { stockQty: -quantity } },
+                { new: true, session: dbSession }
+            );
+            if(!product) throw new ApiError(400, "Product went out of stock");
+
+            // Push items
+            itemsWithPrice.push({
+                productId: product._id,
+                quantity,
+                priceAtPurchase: product.pricePerUnit
+            });
+        }
+
+        // Create order
+        const [order] = await Order.create([{
+            buyerUserProfileId: userProfile._id,
+            sellerBusinessId,
+            totalAmount: amount,
+            status: "paid",
+            shippingAddress,
+            items: itemsWithPrice
+        }], { session: dbSession });
+
+        // Escrow calculation
+        const platformFee = amount * 0.10;
+        const netAmount = amount - platformFee; // Seller's share
+
+        // Hold escrow
+        await EscrowTransaction.create([{
+            orderId: order._id,
+            sellerId: sellerBusinessId,
+            buyerId: userProfile._id,
+            totalAmount: amount,
+            platformFee,
+            netAmount,
+            status: "held",
+            paymentMethod: "wallet"
+        }], { session: dbSession });
+
+        // Increase seller pending balance
+        await Wallet.findOneAndUpdate(
+            { ownerId: sellerBusinessId, ownerModel: "BusinessProfile" },
+            { $inc: { pendingBalance: netAmount } },
+            { upsert: true, session: dbSession }
+        );
+
+        // Log buyer wallet transaction
+        await Transaction.create([{
+            ownerId: userProfile._id,
+            ownerModel: "UserProfile",
+            amount,
+            type: "buy",
+            paymentMethod: "wallet",
+            status: "completed"
+        }], { session: dbSession });
+
+        // Commit db changes
+        await dbSession.commitTransaction();
+        dbSession.endSession();
+
+        // Response
+        return response.status(201).json(new ApiResponse(201, order, "Order placed successfully using wallet"));
     } 
     catch(error) 
     {
@@ -461,5 +610,5 @@ const viewOrder = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, orderDetails[0], "Order details have been fetched"));
 });
 
-module.exports = { createOrder, verifyStripePaymentForOrders ,completeOrder, updateOrderStatusBySeller, 
+module.exports = { createOrder, verifyStripePaymentForOrders, createOrderWithWallet, completeOrder, updateOrderStatusBySeller, 
 fetchAllOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, fetchCancelledOrders, viewOrder };

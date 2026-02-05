@@ -2,9 +2,8 @@ const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { createOrder, verifyStripePaymentForOrders, completeOrder, updateOrderStatusBySeller, 
 fetchAllOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, 
-fetchCancelledOrders, 
-viewOrder} = require("../controllers/ordersController");
-const { checkSubscription } = require("../middlewares/checkSubscription");
+fetchCancelledOrders, viewOrder, createOrderWithWallet } = require("../controllers/ordersController");
+const { checkSubscription, checkUserAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
 const orderRouter = Router();
@@ -16,6 +15,10 @@ orderRouter.route("/stripe")
 // Verify payment
 orderRouter.route("/stripe/success")
 .get(verifyStripePaymentForOrders);
+
+// Create order through wallet
+orderRouter.route("/wallet")
+.post(authentication, authorization(["user"]), checkSubscription, checkUserAccess, createOrderWithWallet);
 
 // Complete order by buyer
 orderRouter.route("/:orderId/complete")

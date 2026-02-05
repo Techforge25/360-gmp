@@ -197,7 +197,7 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
             type: "buy",
             stripeSessionId: stripeSession.id,
             status: "completed",
-            paymentMethod:"wallet"
+            paymentMethod:"stripe"
         }], { session:dbSession });
 
         // Complete transaction
@@ -301,7 +301,7 @@ const completeOrder = asyncHandler(async (request, response) => {
         escrow.status = "released";
         await escrow.save({ session:dbSession });
 
-        // Update wallet
+        // Release funds (Update business profile wallet)
         await Wallet.findOneAndUpdate(
             { ownerId:order.sellerBusinessId, ownerModel:"BusinessProfile" },
             { $inc:{ pendingBalance:-escrow.netAmount, availableBalance:escrow.netAmount, totalEarned:escrow.netAmount } },
@@ -314,7 +314,6 @@ const completeOrder = asyncHandler(async (request, response) => {
 
         // Response
         return response.status(200).json(new ApiResponse(200, {}, "Order completed successfully"));
-
     } 
     catch(error) 
     {

@@ -4,7 +4,7 @@ const { Schema, model } = require("mongoose");
 const workExperienceSchema = new Schema({
     userProfileId: { type:Schema.Types.ObjectId, ref:"UserProfile", required:true },
     jobTitle: { type:String, trim:true, required:true },
-    employementType: [{ type:String, trim:true }],
+    employmentType: [{ type:String, trim:true }],
     companyName: { type:String, trim:true, required:true },
     startDate: { type:Date, required:true },
     endDate: { type:Date },

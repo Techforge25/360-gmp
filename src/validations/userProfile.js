@@ -83,5 +83,11 @@ const updateJobPreferencesValidationSchema = joi.object({
     employmentType: joi.array().items(joi.string().trim().valid(...allowedEmploymentTypes)).min(1).max(5).label("Employment type"),
 });
 
+// Add user social link validation schema
+const userSocialLinkValidationSchema = joi.object({
+    platformName: joi.string().trim().required().label("Platform name"),
+    url: joi.string().trim().uri().required().label("Platform url"),
+});
+
 module.exports = { createUserProfileSchema, updateUserContactInfoValidationSchema, updateEducationValidationSchema, 
-addWorkExperienceValidationSchema, updateJobPreferencesValidationSchema };
+addWorkExperienceValidationSchema, updateJobPreferencesValidationSchema, userSocialLinkValidationSchema };

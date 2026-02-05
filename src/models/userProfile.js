@@ -5,13 +5,19 @@ const userProfileSchema = new Schema({
     // Basic info
     userId: { type:Schema.Types.ObjectId, ref:"User", required:true, unique:[true, "You have already created a user profile"] },
     fullName: { type:String, required:true, trim:true },
+
+    // Contact info
     email:{ type:String, required:true, trim:true, lowercase:true, unique:[true, "This email has already been taken"] },
     phone: { type:String },
     location: { type:String, trim:true },
-    bio: { type:String, trim:true },
+
+    // Media files url
     resumeUrl: { type:String, trim:true },
-    skills: [String],
     logo: { type:String, trim:true, required:true },
+
+    // Personal
+    bio: { type:String, trim:true },
+    skills: [String],
     stripeConnectId: { type:String, trim:true, default:null },
 
     // For Job Application

@@ -296,7 +296,8 @@ const verifyAddFunds = asyncHandler(async (request, response) => {
                 type: "deposit",
                 amount: Number(amountPaid),
                 stripeSessionId: session.id,
-                status: "completed"
+                status: "completed",
+                paymentMethod:"stripe"
             }], { session: dbSession });
             if (!walletTransaction) throw new ApiError(500, "Failed to create transaction entry");
 

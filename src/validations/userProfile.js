@@ -62,13 +62,13 @@ const updateEducationValidationSchema = joi.object({
     grade: joi.string().optional().label("Grade")
 });
 
-// Allowed employemnt types
-const allowedEmployementTypes = ["Full-Time", "Remote", "Contract", "Hybrid", "Part-Time"];
+// Allowed employment types
+const allowedEmploymentTypes = ["Full-Time", "Remote", "Contract", "Hybrid", "Part-Time"];
 
 // Add work experience validation schema
 const addWorkExperienceValidationSchema = joi.object({
     jobTitle: joi.string().trim().required().label("Job title"),
-    employementType: joi.array().items(joi.string().trim().valid(...allowedEmployementTypes)).min(1).max(5).label("Employement type"),
+    employmentType: joi.array().items(joi.string().trim().valid(...allowedEmploymentTypes)).min(1).max(5).label("Employment type"),
     companyName: joi.string().trim().required().label("Company name"),
     startDate: joi.date().required().label("Starting date"),
     endDate: joi.date().optional().label("Ending date"),
@@ -77,5 +77,11 @@ const addWorkExperienceValidationSchema = joi.object({
     isCurrentlyWorking: joi.boolean().default(false).label("Currently enrolled")
 });
 
-module.exports = { createUserProfileSchema, updateUserContactInfoValidationSchema, 
-updateEducationValidationSchema, addWorkExperienceValidationSchema };
+// Update job preferences validation schema
+const updateJobPreferencesValidationSchema = joi.object({
+    targetJob: joi.string().allow("", null).label("Target job"),
+    employmentType: joi.array().items(joi.string().trim().valid(...allowedEmploymentTypes)).min(1).max(5).label("Employment type"),
+});
+
+module.exports = { createUserProfileSchema, updateUserContactInfoValidationSchema, updateEducationValidationSchema, 
+addWorkExperienceValidationSchema, updateJobPreferencesValidationSchema };

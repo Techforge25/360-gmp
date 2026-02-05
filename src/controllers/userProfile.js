@@ -5,13 +5,14 @@ const Order = require("../models/orders");
 const SavedJob = require("../models/savedJobsModel");
 const UserProfile = require("../models/userProfile");
 const User = require("../models/users");
+const UserSocialLink = require("../models/userSocialLinkModel");
 const Wallet = require("../models/walletModel");
 const WorkExperience = require("../models/workExperienceModel");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
-const { updateUserContactInfoValidationSchema, updateEducationValidationSchema, addWorkExperienceValidationSchema, updateJobPreferencesValidationSchema } = require("../validations/userProfile");
+const { updateUserContactInfoValidationSchema, updateEducationValidationSchema, addWorkExperienceValidationSchema, updateJobPreferencesValidationSchema, userSocialLinkValidationSchema } = require("../validations/userProfile");
 const { createUserProfileSchema } = require("../validations/userProfile");
 
 const createUserProfile = asyncHandler(async (request, response) => {
@@ -398,8 +399,26 @@ const fetchJobMatches = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, jobs, "Matched jobs fetched successfully"));
 });
 
+// Add social link
+const createUserSocialLink = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Find user
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Get validated payload
+    const { platformName, url } = validate(userSocialLinkValidationSchema, request.body) || {};
+
+    const social = await UserSocialLink.create({ userProfileId:userProfile._id, platformName, url });
+    if(!social) throw new ApiError(500, "Failed to create social link");
+
+    // Response
+    return response.status(201).json(new ApiResponse(201, { platformName, url }, "Social link has been created"));
+});
+
 module.exports = { createUserProfile, viewUserProfile, updateUserProfileBasicInfo, 
 updateUserProfileContactInfo, updateUserProfileLogo, updateUserProfileResume,
 updateUserProfileEducation, updateUserProfileJobPreferences, deleteUserProfile, 
 fetchUserAnalytics, createWorkExperience, fetchWorkExperiences, updateWorkExperience, 
-deleteWorkExperience, fetchJobMatches };
+deleteWorkExperience, fetchJobMatches, createUserSocialLink };

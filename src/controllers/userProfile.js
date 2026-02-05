@@ -11,7 +11,7 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
-const { updateUserContactInfoValidationSchema, updateEducationValidationSchema, addWorkExperienceValidationSchema } = require("../validations/userProfile");
+const { updateUserContactInfoValidationSchema, updateEducationValidationSchema, addWorkExperienceValidationSchema, updateJobPreferencesValidationSchema } = require("../validations/userProfile");
 const { createUserProfileSchema } = require("../validations/userProfile");
 
 const createUserProfile = asyncHandler(async (request, response) => {
@@ -162,6 +162,30 @@ const updateUserProfileEducation = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, userProfile.education, "Education has been updated!"));
 });
 
+// Update user profile (Job preferences)
+const updateUserProfileJobPreferences = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Get validated payload
+    const { targetJob, employmentType } = validate(updateJobPreferencesValidationSchema, request.body);
+
+    // Update
+    const updateUserProfile = await UserProfile.findOneAndUpdate(
+        { userId },
+        { targetJob, employmentType },
+        { new:true }
+    );
+
+    // Prepare payload
+    const payload = { 
+        targetJob:updateUserProfile.targetJob, 
+        employmentType:updateUserProfile.employmentType 
+    };
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, payload, "Job preferences has been updated"));
+});
+
 // Delete user profile
 const deleteUserProfile = asyncHandler(async (request, response) => {
     const userId = request.user._id;
@@ -251,7 +275,7 @@ const createWorkExperience = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Get validated payload
-    const { jobTitle, employementType, companyName, startDate, endDate, 
+    const { jobTitle, employmentType, companyName, startDate, endDate, 
     location, description, isCurrentlyWorking } = validate(addWorkExperienceValidationSchema, request.body);
 
     // Find user profile
@@ -259,7 +283,7 @@ const createWorkExperience = asyncHandler(async (request, response) => {
     if(!userProfile) throw new ApiError(404, "User profile not found");
 
     // Save work experience to db
-    const workExperience = await WorkExperience.create({ userProfileId:userProfile._id, jobTitle, employementType, companyName, 
+    const workExperience = await WorkExperience.create({ userProfileId:userProfile._id, jobTitle, employmentType, companyName, 
     startDate, endDate, location, description, isCurrentlyWorking });
     if(!workExperience) throw new ApiError(500, "Failed to add work experience");
 
@@ -289,7 +313,7 @@ const updateWorkExperience = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Get validated payload
-    const { jobTitle, employementType, companyName, startDate, endDate, 
+    const { jobTitle, employmentType, companyName, startDate, endDate, 
     location, description, isCurrentlyWorking } = validate(addWorkExperienceValidationSchema, request.body);
 
     // Find user profile
@@ -300,7 +324,7 @@ const updateWorkExperience = asyncHandler(async (request, response) => {
     const workExperience = await WorkExperience.findOneAndUpdate(
         { _id:workExperienceId, userProfileId:userProfile._id },
         { 
-            jobTitle, employementType, companyName, startDate, 
+            jobTitle, employmentType, companyName, startDate, 
             endDate, location, description, isCurrentlyWorking },
         { new:true }
     );
@@ -376,5 +400,6 @@ const fetchJobMatches = asyncHandler(async (request, response) => {
 
 module.exports = { createUserProfile, viewUserProfile, updateUserProfileBasicInfo, 
 updateUserProfileContactInfo, updateUserProfileLogo, updateUserProfileResume,
-updateUserProfileEducation, deleteUserProfile, fetchUserAnalytics, createWorkExperience,
-fetchWorkExperiences, updateWorkExperience, deleteWorkExperience, fetchJobMatches };
+updateUserProfileEducation, updateUserProfileJobPreferences, deleteUserProfile, 
+fetchUserAnalytics, createWorkExperience, fetchWorkExperiences, updateWorkExperience, 
+deleteWorkExperience, fetchJobMatches };

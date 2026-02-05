@@ -4,7 +4,7 @@ const { createUserProfile, fetchUserAnalytics, viewUserProfile,
 deleteUserProfile, updateUserProfileBasicInfo, updateUserProfileContactInfo,
 updateUserProfileLogo, updateUserProfileResume, updateUserProfileEducation,
 createWorkExperience, fetchWorkExperiences, updateWorkExperience, deleteWorkExperience,
-fetchJobMatches} = require("../controllers/userProfile");
+fetchJobMatches, updateUserProfileJobPreferences} = require("../controllers/userProfile");
 
 // Router instance
 const userProfileRouter = Router();
@@ -37,6 +37,10 @@ userProfileRouter.route("/update/resume")
 // Update education
 userProfileRouter.route("/update/education")
 .patch(authentication, authorization(["user"]), updateUserProfileEducation);
+
+// Update job preferences
+userProfileRouter.route("/update/job-preferences")
+.patch(authentication, authorization(["user"]), updateUserProfileJobPreferences);
 /* ======================= USER PROFILE UPDATES ENDS ======================= */
 
 // Delete user profile

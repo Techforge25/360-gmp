@@ -2,10 +2,13 @@ const { Schema, model } = require("mongoose");
 
 // Schema
 const userSocialLinkSchema = new Schema({
-    platformName: { type: String, required: [true, "Platform is required"] },
+    userProfileId: { type:Schema.Types.ObjectId, ref:"UserProfile", required:[true, "User profile ID is required"] },
+    platformName: { type:String, required:[true, "Platform name is required"] },
     url: { type:String, required:[true, "URL is required"] },
-    userProfileId: { type:Schema.Types.ObjectId, ref:"UserProfile" }
-}, { timestamps: true });
+}, { timestamps:true });
+
+// Prevent duplicate platform per user
+userSocialLinkSchema.index({ userProfileId:1, platformName:1 }, { unique:true });
 
 // Model
 const UserSocialLink = model("UserSocialLink", userSocialLinkSchema);

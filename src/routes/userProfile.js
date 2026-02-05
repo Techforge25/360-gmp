@@ -4,7 +4,10 @@ const { createUserProfile, fetchUserAnalytics, viewUserProfile,
 deleteUserProfile, updateUserProfileBasicInfo, updateUserProfileContactInfo,
 updateUserProfileLogo, updateUserProfileResume, updateUserProfileEducation,
 createWorkExperience, fetchWorkExperiences, updateWorkExperience, deleteWorkExperience,
-fetchJobMatches, updateUserProfileJobPreferences, createUserSocialLink} = require("../controllers/userProfile");
+fetchJobMatches, updateUserProfileJobPreferences, createUserSocialLink,
+fetchUserSocialLinks,
+updateUserSocialLink,
+deleteUserSocialLink} = require("../controllers/userProfile");
 
 // Router instance
 const userProfileRouter = Router();
@@ -66,9 +69,15 @@ userProfileRouter.route("/job-matches")
 .get(authentication, authorization(["user"]), fetchJobMatches);
 
 /* ======================= USER PROFILE SOCIAL LINK STARTS ======================= */
-// Create social link
+// Create social link / Fetch social links
 userProfileRouter.route("/social")
-.post(authentication, authorization(["user"]), createUserSocialLink);
+.post(authentication, authorization(["user"]), createUserSocialLink)
+.get(authentication, authorization(["user"]), fetchUserSocialLinks);
+
+// Update social link
+userProfileRouter.route("/social/:socialId")
+.patch(authentication, authorization(["user"]), updateUserSocialLink)
+.delete(authentication, authorization(["user"]), deleteUserSocialLink);
 /* ======================= USER PROFILE SOCIAL LINK ENDS ======================= */
 
 module.exports = userProfileRouter;

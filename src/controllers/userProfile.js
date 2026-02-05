@@ -417,8 +417,71 @@ const createUserSocialLink = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, { platformName, url }, "Social link has been created"));
 });
 
+// Fetch social links
+const fetchUserSocialLinks = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Find user
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Find
+    const social = await UserSocialLink.find({ userProfileId:userProfile._id }).select("platformName url").lean();
+    if(!social.length) return response.status(200).json(new ApiResponse(200, [], "No social links found"));
+
+    // Response
+    return response.status(201).json(new ApiResponse(201, social, "Social links have been fetched"));
+});
+
+// Update social link
+const updateUserSocialLink = asyncHandler(async (request, response) => {
+    const { socialId } = request.params;
+    const userId = request.user._id;
+
+    // Find user
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Get validated payload
+    const { platformName, url } = validate(userSocialLinkValidationSchema, request.body) || {};
+    
+    // Find social
+    const social = await UserSocialLink.findById(socialId).select("userProfileId platformName url");
+    if(!social) throw new ApiError(404, "Social link not found");
+
+    // Check authorization
+    if(String(social.userProfileId) !== String(userProfile._id)) throw new ApiError(403, "You are not allowed to update this record");
+
+    // Update
+    social.platformName = platformName;
+    social.url = url;
+    await social.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, social, "Social link has been updated"));
+});
+
+// Delete social link
+const deleteUserSocialLink = asyncHandler(async (request, response) => {
+    const { socialId } = request.params;
+    const userId = request.user._id;
+
+    // Find user
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+    
+    // Delete
+    const social = await UserSocialLink.findOneAndDelete({ _id:socialId, userProfileId:userProfile._id })
+    .select("platformName").lean();
+    if(!social) throw new ApiError(404, "Social link not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, social, "Social link has been deleted"));
+});
+
 module.exports = { createUserProfile, viewUserProfile, updateUserProfileBasicInfo, 
 updateUserProfileContactInfo, updateUserProfileLogo, updateUserProfileResume,
 updateUserProfileEducation, updateUserProfileJobPreferences, deleteUserProfile, 
 fetchUserAnalytics, createWorkExperience, fetchWorkExperiences, updateWorkExperience, 
-deleteWorkExperience, fetchJobMatches, createUserSocialLink };
+deleteWorkExperience, fetchJobMatches, createUserSocialLink, fetchUserSocialLinks,
+updateUserSocialLink, deleteUserSocialLink };

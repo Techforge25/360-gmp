@@ -116,6 +116,22 @@ const updateUserProfileLogo = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, { logo:userProfile.logo }, "User logo has been updated!"));
 });
 
+// Update user profile (Profile banner)
+const updateUserProfileBanner = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Get payload
+    const { banner } = request.body || {};
+    if(!banner) throw new ApiError(400, "User profile banner is required");
+
+    // Update banner
+    const userProfile = await UserProfile.findOneAndUpdate({ userId }, { banner }, { new:true });
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { banner:userProfile.banner }, "User banner has been updated!"));
+});
+
 // Update user profile (Resume)
 const updateUserProfileResume = asyncHandler(async (request, response) => {
     const userId = request.user._id;
@@ -480,8 +496,8 @@ const deleteUserSocialLink = asyncHandler(async (request, response) => {
 });
 
 module.exports = { createUserProfile, viewUserProfile, updateUserProfileBasicInfo, 
-updateUserProfileContactInfo, updateUserProfileLogo, updateUserProfileResume,
-updateUserProfileEducation, updateUserProfileJobPreferences, deleteUserProfile, 
-fetchUserAnalytics, createWorkExperience, fetchWorkExperiences, updateWorkExperience, 
-deleteWorkExperience, fetchJobMatches, createUserSocialLink, fetchUserSocialLinks,
-updateUserSocialLink, deleteUserSocialLink };
+updateUserProfileContactInfo, updateUserProfileLogo, updateUserProfileBanner, 
+updateUserProfileResume, updateUserProfileEducation, updateUserProfileJobPreferences,
+deleteUserProfile, fetchUserAnalytics, createWorkExperience, fetchWorkExperiences,
+updateWorkExperience, deleteWorkExperience, fetchJobMatches, createUserSocialLink,
+fetchUserSocialLinks, updateUserSocialLink, deleteUserSocialLink };

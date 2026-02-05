@@ -1,13 +1,11 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
-const { createUserProfile, fetchUserAnalytics, viewUserProfile, 
-deleteUserProfile, updateUserProfileBasicInfo, updateUserProfileContactInfo,
-updateUserProfileLogo, updateUserProfileResume, updateUserProfileEducation,
-createWorkExperience, fetchWorkExperiences, updateWorkExperience, deleteWorkExperience,
-fetchJobMatches, updateUserProfileJobPreferences, createUserSocialLink,
-fetchUserSocialLinks,
-updateUserSocialLink,
-deleteUserSocialLink} = require("../controllers/userProfile");
+const { createUserProfile, fetchUserAnalytics, viewUserProfile, deleteUserProfile, 
+updateUserProfileBasicInfo, updateUserProfileContactInfo, updateUserProfileLogo, 
+updateUserProfileResume, updateUserProfileEducation,createWorkExperience, 
+fetchWorkExperiences, updateWorkExperience, deleteWorkExperience,fetchJobMatches, 
+updateUserProfileJobPreferences, createUserSocialLink, fetchUserSocialLinks,
+updateUserSocialLink, deleteUserSocialLink, updateUserProfileBanner} = require("../controllers/userProfile");
 
 // Router instance
 const userProfileRouter = Router();
@@ -29,9 +27,13 @@ userProfileRouter.route("/update/basic-info")
 userProfileRouter.route("/update/contact-info")
 .patch(authentication, authorization(["user"]), updateUserProfileContactInfo);
 
-// Update Profile logo
+// Update logo
 userProfileRouter.route("/update/logo")
 .patch(authentication, authorization(["user"]), updateUserProfileLogo);
+
+// Update banner
+userProfileRouter.route("/update/banner")
+.patch(authentication, authorization(["user"]), updateUserProfileBanner);
 
 // Update resume
 userProfileRouter.route("/update/resume")

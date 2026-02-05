@@ -11,7 +11,7 @@ const withdrawFundsValidationSchema = require("../validations/withdrawFundValida
 const UserProfile = require("../models/userProfile");
 const Withdrawal = require("../models/withdrawalModel");
 const User = require("../models/users");
-const WalletTransaction = require("../models/walletTransactionModel");
+const Transaction = require("../models/transactionModel");
 const convertToMongoId = require("../utils/convertToMongoId");
 
 // Connect Stripe account (onboarding)
@@ -251,7 +251,7 @@ const verifyAddFunds = asyncHandler(async (request, response) => {
     // if(session.client_reference_id !== request.user._id.toString()) throw new ApiError(403, "This session does not belong to the logged in user");
 
     // Prevent dual payment processing
-    const existing = await WalletTransaction.findOne({ stripeSessionId:session.id });
+    const existing = await Transaction.findOne({ stripeSessionId:session.id });
     if(existing) return response.status(200).json(new ApiResponse(200, null, "Payment already processed"));
 
     // Check payment status
@@ -290,7 +290,7 @@ const verifyAddFunds = asyncHandler(async (request, response) => {
             if(!wallet) throw new ApiError(404, "Wallet not found");
 
             // Save transaction log
-            const walletTransaction = await WalletTransaction.create([{
+            const transaction = await Transaction.create([{
                 ownerId: userProfileId,
                 ownerModel: "UserProfile",
                 type: "deposit",
@@ -299,7 +299,7 @@ const verifyAddFunds = asyncHandler(async (request, response) => {
                 status: "completed",
                 paymentMethod:"stripe"
             }], { session: dbSession });
-            if (!walletTransaction) throw new ApiError(500, "Failed to create transaction entry");
+            if (!transaction) throw new ApiError(500, "Failed to create transaction entry");
 
             // Commit changes
             await dbSession.commitTransaction();

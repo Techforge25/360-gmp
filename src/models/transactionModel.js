@@ -1,7 +1,7 @@
 const { Schema, model } = require("mongoose");
 
 // Schema
-const walletTransactionSchema = new Schema({
+const transactionSchema = new Schema({
     // Owner reference
     ownerId:{ type:Schema.Types.ObjectId, required:true, refPath:"ownerModel" },
     ownerModel:{ type:String, required:true, enum:["BusinessProfile", "UserProfile"] },
@@ -17,6 +17,6 @@ const walletTransactionSchema = new Schema({
 }, { timestamps: true });
 
 // Model
-const WalletTransaction = model("WalletTransaction", walletTransactionSchema);
+const Transaction = model("Transaction", transactionSchema);
 
-module.exports = WalletTransaction;
+module.exports = Transaction;

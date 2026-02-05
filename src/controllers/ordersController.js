@@ -11,7 +11,7 @@ const Wallet = require("../models/walletModel");
 const BusinessProfile = require("../models/businessProfileSchema");
 const { emptyList } = require("../constants");
 const convertToMongoId = require("../utils/convertToMongoId");
-const WalletTransaction = require("../models/walletTransactionModel");
+const Transaction = require("../models/transactionModel");
 
 // Create order
 const createOrder = asyncHandler(async (request, response) => {
@@ -190,7 +190,7 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
         );
 
         // Update wallet transaction
-        await WalletTransaction.create([{
+        await Transaction.create([{
             ownerId: buyerUserProfileId, 
             ownerModel: "UserProfile",
             amount: amount,

@@ -6,7 +6,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const getMonthlySubscriptionDates = require("../utils/getSubscriptionDates");
 const Stripe = require("stripe");
 const convertToMongoId = require("../utils/convertToMongoId");
-const mongoose = require("mongoose");
+const sendNotification = require("../utils/sendNotification");
 
 // Create subscription via stripe
 const createSubscriptionStripe = asyncHandler(async (request, response) => {
@@ -108,6 +108,14 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
             });
             if(!trialSubscription) throw new ApiError(500, "Failed to create trial period");
 
+            // Send notification for trial
+            await sendNotification({ 
+                userOwnerId:userId,
+                title: "Subscription Activation",
+                content:"You have subscribed to our 14-days Trial period",
+                io: request.app.get("io")
+            });
+
             // Response for trial
             return response.status(303).redirect(redirectUrl);
         }
@@ -121,15 +129,32 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
             const { endDate } = getMonthlySubscriptionDates(existingSubscription.endDate);
             existingSubscription.endDate = endDate;
             await existingSubscription.save();
+
+            // Send notification for subscription extension 
+            await sendNotification({ 
+                userOwnerId:userId,
+                title: "Subscription Extended",
+                content:"Your subscription has been extended by 1 month",
+                io: request.app.get("io")
+            });
+
             return response.status(200).json(new ApiResponse(200, null, "Subscription extended by 1 month"));
-        }        
+        } 
 
         // Get subscription dates
-        const { startDate, endDate } = getMonthlySubscriptionDates();    
+        const { startDate, endDate } = getMonthlySubscriptionDates();
 
         // Upgrade subscription
         const subscription = await Subscription.create({ userId, planId, status:"active", startDate, endDate, stripeSubscriptionId:session.id });
         if(!subscription) throw new ApiError(400, "Failed to update subscription");
+
+        // Send notification
+        await sendNotification({ 
+            userOwnerId:userId,
+            title: "Subscription activation",
+            content: `You have successfully subscribed to ${planName}`,
+            io: request.app.get("io")
+        });
 
         // Response
         return response.status(303).redirect(redirectUrl);

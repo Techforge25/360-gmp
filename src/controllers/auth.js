@@ -10,6 +10,7 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const generateCode = require("../utils/generateCode");
 const { getUserProfile, getBusinessProfile } = require("../utils/getProfiles");
+const sendNotification = require("../utils/sendNotification");
 const validate = require("../utils/validate");
 const forgotPasswordSchema = require("../validations/forgotPasswordValidator");
 const resetPasswordSchema = require("../validations/resetPasswordValidator");
@@ -238,7 +239,7 @@ const resetPassword = asyncHandler(async (request, response) => {
     const { passwordResetToken } = request.params;
 
     // Find user
-    const user = await User.findOne({ passwordResetToken });
+    const user = await User.findOne({ passwordResetToken }).select("passwordHash passwordResetToken passwordResetTokenExpires");
     if(!user) throw new ApiError(400, "Invalid reset token");
 
     // Update password
@@ -246,6 +247,15 @@ const resetPassword = asyncHandler(async (request, response) => {
     user.passwordResetToken = null;
     user.passwordResetTokenExpires = null;
     await user.save();
+
+    // Send notification
+    await sendNotification({
+        userOwnerId: user._id,
+        title: "Password Changed Successfully",
+        content: "Your account password was just updated. If this wasn't you, please contact support immediately.",
+        type: "security",
+        io: request.app.get("io")
+    });
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Password has been reset successfully"));

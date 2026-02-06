@@ -1,5 +1,6 @@
 const { cookieOptions } = require("../constants");
 const BusinessProfile = require("../models/businessProfileSchema");
+const Notification = require("../models/notificationsModel");
 const UserProfile = require("../models/userProfile");
 const User = require("../models/users");
 const sendEmail = require("../service/email");
@@ -85,6 +86,16 @@ const verifyOTP = asyncHandler(async (request, response) => {
     user.status = "active";
     await user.save();
 
+    // Send notification to user upon account creation
+    const notification = await Notification.create({ 
+        userId, 
+        title: "Welcome to 360-GMP 🎉",  
+        content: `Your account has been successfully verified. Welcome to 360-GMP! You can now explore features, connect with others, and start using the platform.`,
+        type: "system"
+    });
+    const io = request.app.get("io");
+    io.to(`user:${userId}`).emit("notification", notification);
+
     // Response
     return response.status(200).json(new ApiResponse(200, user.email, "Your account has been activated"));
 });
@@ -104,7 +115,7 @@ const userLogin = asyncHandler(async (request, response) => {
     if(!isMatched) throw new ApiError(400, "Invalid credentials");
 
     // Only approved account can log in
-    if(user.status !== "active") throw new ApiError(400, "Your account is currently pending approval. Please wait until it is activated.");
+    if(user.status !== "active") throw new ApiError(400, "Your account is not activated yet. Please verify your identity via OTP.");
 
     // Find profiles
     const [businessProfile, userProfile] = await Promise.all([
@@ -118,6 +129,8 @@ const userLogin = asyncHandler(async (request, response) => {
     // Generate access token
     const accessToken = generateAccessToken(user);
     if(!accessToken) throw new ApiError(500, "Failed to generate access token");
+
+    // Response
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
     .json(new ApiResponse(200, { profilePayload, accessToken, role:user.role, isNewToPlatform:user.isNewToPlatform }, "Login successful"));

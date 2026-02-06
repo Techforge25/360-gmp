@@ -1,6 +1,7 @@
 const BusinessProfile = require("../models/businessProfileSchema");
 const JobApplication = require("../models/jobApplication");
 const Job = require("../models/jobsSchema");
+const Order = require("../models/orders");
 const Product = require("../models/products");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
@@ -338,6 +339,10 @@ const fetchTotalProductViews = asyncHandler(async (request, response) => {
     {
         startDate.setMonth(now.getMonth() - 1);
     } 
+    else if(range === "3m") 
+    {
+        startDate.setMonth(now.getMonth() - 3);
+    }     
     else 
     {
         throw new ApiError(400, "Invalid range. Use 7d or 1m");
@@ -370,5 +375,78 @@ const fetchTotalProductViews = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, { totalViews }, "Total product views fetched successfully"));
 });
 
-module.exports = { fetchViewsOverTime, fetchJobApplicationFunnel,
-fetchTopPerformingProducts, fetchCompetitorBenchMarking, fetchTotalProductViews };
+// Fetch revenue potential analytics
+const fetchRevenuePotential = asyncHandler(async (request, response) => {
+    const userId = convertToMongoId(request.user._id);
+    const { range = "7d" } = request.query;
+
+    // Calculate range
+    const now = new Date();
+    let startDate = new Date();
+
+    // Check range
+    if(range === "7d") startDate.setDate(now.getDate() - 7);
+    else if(range === "1m") startDate.setMonth(now.getMonth() - 1);
+    else if(range === "3m") startDate.setMonth(now.getMonth() - 3);
+    else throw new ApiError(400, "Invalid range. Use 7d or 1m");
+
+    // Find business profile
+    const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");
+    if(!business) throw new ApiError(404, "Business profile not found");
+
+    // Actual earned revenue
+    const revenueResult = await Order.aggregate([
+        {
+            $match: {
+                sellerBusinessId: business._id,
+                status: { $in: ["paid", "processing", "shipped", "delivered", "completed"] },
+                createdAt: { $gte: startDate }
+            }
+        },
+        {
+            $group: { _id: null, totalRevenue: { $sum: "$totalAmount" } }
+        }
+    ]);
+
+    // Get actual revenue
+    const actualRevenue = revenueResult.length ? revenueResult[0].totalRevenue : 0;
+
+    // Potential inventory revenue
+    const potentialResult = await Product.aggregate([
+        {
+            $match: {
+                businessId: business._id,
+                createdAt: { $gte: startDate }
+            }
+        },
+        {
+            $project: {
+                potentialValue: {
+                    $add: [
+                        { $multiply: ["$pricePerUnit", "$stockQty"] },
+                        "$shippingCost"
+                    ]
+                }
+            }
+        },
+        {
+            $group: { _id: null, totalPotentialRevenue: { $sum: "$potentialValue" } }
+        }
+    ]);
+
+    // Get potential value
+    const potentialRevenue = potentialResult.length ? potentialResult[0].totalPotentialRevenue : 0;
+
+    // Compute revenue potential percentage
+    let revenuePotentialPercent = 0;
+    if(potentialRevenue > 0) revenuePotentialPercent = ((actualRevenue / potentialRevenue) * 100).toFixed(2);
+    
+    // Prepare payload
+    const payload = { actualRevenue, potentialRevenue, revenuePotentialPercent };
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, payload, "Revenue potential analytics fetched"));
+});
+
+module.exports = { fetchViewsOverTime, fetchJobApplicationFunnel, fetchTopPerformingProducts, 
+fetchCompetitorBenchMarking, fetchTotalProductViews, fetchRevenuePotential };

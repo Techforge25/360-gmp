@@ -2,7 +2,8 @@ const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { fetchViewsOverTime, fetchJobApplicationFunnel, fetchTopPerformingProducts, 
 fetchCompetitorBenchMarking, 
-fetchTotalProductViews} = require("../controllers/analyticsOverviewController");
+fetchTotalProductViews,
+fetchRevenuePotential} = require("../controllers/analyticsOverviewController");
 
 // Router instance
 const analyticsOverviewRouter = Router();
@@ -26,5 +27,9 @@ analyticsOverviewRouter.route("/competitor-bench-marking")
 // Fetch total product views
 analyticsOverviewRouter.route("/product-total-views")
 .get(authentication, authorization(["business"]), fetchTotalProductViews);
+
+// Fetch revenue potential
+analyticsOverviewRouter.route("/revenue-potential")
+.get(authentication, authorization(["business"]), fetchRevenuePotential);
 
 module.exports = analyticsOverviewRouter;

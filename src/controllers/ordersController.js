@@ -199,9 +199,40 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
             paymentMethod:"stripe"
         }], { session:dbSession });
 
+        // Get parent user ids for socket event
+        const [userProfile, businessProfile] = await Promise.all([
+            UserProfile.findById(buyerUserProfileId).select("userId").lean(),
+            BusinessProfile.findById(sellerBusinessId).select("ownerUserId").lean()
+        ]);
+
+        // Create buyer notification
+        const [buyerNotification] = await Notification.create([{
+            userId: userProfile.userId, // Parent user's id
+            title: "Order Confirmed!",
+            content: "Your payment was successful and your order has been placed. The seller will process it soon.",
+            type: "payment"
+        }], { session:dbSession });
+
+        // Create seller notification
+        const [sellerNotification] = await Notification.create([{
+            userId: businessProfile.ownerUserId, // Parent user's id
+            title: "New Order Received!",
+            content: "You have received a new paid order. Please prepare the items for shipment.",
+            type: "order"
+        }], { session:dbSession });
+
         // Complete transaction
         await dbSession.commitTransaction();
         dbSession.endSession();
+
+        // Get socket instance
+        const io = request.app.get("io");
+
+        // Emit real-time to buyer
+        io.to(`user:${userProfile.userId}`).emit("notification", buyerNotification);
+
+        // Emit real-time to seller
+        io.to(`user:${businessProfile.ownerUserId}`).emit("notification", sellerNotification);         
 
         // Response
         return response.status(303).redirect(process.env.FRONTEND_URL);

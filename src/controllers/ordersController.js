@@ -22,8 +22,7 @@ const createOrder = asyncHandler(async (request, response) => {
     if(!userProfile) throw new ApiError(404, "User profile not found! Invalid user profile ID");
 
     // Validate request body
-    const { totalAmount, shippingAddress, items } = request.body;
-    if(!totalAmount) throw new ApiError(400, "Amount is required");
+    const { shippingAddress, items } = request.body;
     if(!shippingAddress) throw new ApiError(400, "Shipping address is required");
     if(!items || !items.length) throw new ApiError(400, "Product item is required");
 
@@ -63,9 +62,6 @@ const createOrder = asyncHandler(async (request, response) => {
         const itemTotal = Number(product.pricePerUnit) * Number(quantity) + Number(product.shippingCost);
         serverComputedTotal += itemTotal;
     }
-
-    // Final amount validation
-    if(Number(totalAmount) !== Number(serverComputedTotal)) throw new ApiError(400, "Invalid total amount");
 
     // Stripe instance
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -156,19 +152,22 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
             });
         }
 
+        // Type safety
+        const amount = Number(totalAmount);
+
         // Create order
         const [order] = await Order.create([{
             buyerUserProfileId,
             sellerBusinessId,
-            totalAmount,
+            totalAmount:amount,
             status: "paid",
             shippingAddress,
             items: itemsWithPrice
         }], { session:dbSession });
 
-        const amount = Number(totalAmount);
+        // Escrow calculation
         const platformFee = amount * 0.10; // 10% Fee
-        const netAmount = amount - platformFee; // Seller ka hissa
+        const netAmount = amount - platformFee; // Seller's share
 
         // Hold on escrow
         await EscrowTransaction.create([{
@@ -205,8 +204,7 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
         dbSession.endSession();
 
         // Response
-        // return response.status(201).json(new ApiResponse(201, order, "Order has been created"));
-        return response.status(303).redirect("https://github.com");
+        return response.status(303).redirect(process.env.FRONTEND_URL);
     } 
     catch(error) 
     {
@@ -225,7 +223,7 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
     if(!userProfile) throw new ApiError(404, "User profile not found");
 
     // Get payload
-    const { items, shippingAddress } = request.body;
+    const { shippingAddress, items } = request.body;
 
     // Validate shipping address and items
     if(!shippingAddress) throw new ApiError(400, "Shipping address is required");
@@ -265,7 +263,7 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
             throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
 
         // Compute total amount
-        const itemTotal = (product.pricePerUnit * quantity) + product.shippingCost;
+        const itemTotal = (product.pricePerUnit * quantity) + product.shippingCost || 0;
         serverComputedTotal += itemTotal;
     }
 
@@ -277,7 +275,7 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
     {
         const amount = Number(serverComputedTotal);
 
-        // Deduct buyer wallet balance
+        // Deduct balance from buyer wallet 
         const buyerWallet = await Wallet.findOneAndUpdate(
             { ownerId: userProfile._id, ownerModel: "UserProfile", availableBalance: { $gte: amount } },
             { $inc: { availableBalance: -amount } },
@@ -425,7 +423,7 @@ const completeOrder = asyncHandler(async (request, response) => {
     const buyerProfile = await UserProfile.findOne({ userId });
     if(!buyerProfile) throw new ApiError(404, "User profile not found");
 
-    // Check permissions
+    // Authorize owner
     if(buyerProfile._id.toString() !== order.buyerUserProfileId.toString()) throw new ApiError(403, "You are not authorized to complete this order");
     
     // Check current status
@@ -446,7 +444,7 @@ const completeOrder = asyncHandler(async (request, response) => {
         order.status = "completed";
         await order.save({ session:dbSession });
 
-        // Order escrow status
+        // Update escrow status
         escrow.status = "released";
         await escrow.save({ session:dbSession });
 

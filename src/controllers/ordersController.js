@@ -379,9 +379,38 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
             status: "completed"
         }], { session: dbSession });
 
+        // Get parent user ids for notifications
+        const [buyerUser, sellerBusiness] = await Promise.all([
+            UserProfile.findById(userProfile._id).select("userId").lean(),
+            BusinessProfile.findById(sellerBusinessId).select("ownerUserId").lean()
+        ]);
+
+        // Create buyer notification
+        const [buyerNotification] = await Notification.create([{
+            userId: buyerUser.userId,
+            title: "Order Confirmed!",
+            content: "Your wallet payment was successful and your order has been placed.",
+            type: "payment"
+        }], { session: dbSession });
+
+        // Create seller notification
+        const [sellerNotification] = await Notification.create([{
+            userId: sellerBusiness.ownerUserId,
+            title: "New Order Received!",
+            content: "You have received a new paid order via wallet. Please prepare it for shipment.",
+            type: "account"
+        }], { session: dbSession });
+
         // Commit db changes
         await dbSession.commitTransaction();
         dbSession.endSession();
+
+        // Get socket instance
+        const io = request.app.get("io");
+
+        // Emit real-time notifications
+        io.to(`user:${buyerUser.userId}`).emit("notification", buyerNotification);
+        io.to(`user:${sellerBusiness.ownerUserId}`).emit("notification", sellerNotification);
 
         // Response
         return response.status(201).json(new ApiResponse(201, order, "Order placed successfully using wallet"));

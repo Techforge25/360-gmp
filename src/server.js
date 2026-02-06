@@ -10,9 +10,7 @@ const socketAuthentication = require("./middlewares/socket");
 const server = http.createServer(app);
 
 // Socket.io setup
-const io = new Server(server,{
-    cors: corsOptions
-});
+const io = new Server(server, { cors:corsOptions });
 
 // Make io accessible to our app
 app.set("io", io);
@@ -29,8 +27,8 @@ io.on("connection", (socket) => {
     if(user) 
     {
         // Join user private room
-        socket.join(`user:${socket.user.id}`);
-        console.log(`User joined private room: ${socket.user.id}`);
+        socket.join(`user:${socket.user._id}`);
+        console.log(`User joined private room: ${socket.user._id}`);
     }
 
     // Join community room

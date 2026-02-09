@@ -1,5 +1,6 @@
 const { Router } = require("express");
-const { createReviewInvite, createTestimonial, fetchTestimonials, viewTestimonial } = require("../controllers/testimonialController");
+const { createReviewInvite, createTestimonial, fetchTestimonials, 
+viewTestimonial, flagTestimonial } = require("../controllers/testimonialController");
 const { authentication, authorization } = require("../middlewares/auth");
 
 // Router insatnce
@@ -23,5 +24,9 @@ testimonialRouter.route("/business/:businessId")
 // View single testimonial
 testimonialRouter.route("/:testimonialId")
 .get(authorization(["user", "business"]), viewTestimonial);
+
+// Flag testimonial
+testimonialRouter.route("/:testimonialId/flag")
+.patch(authorization(["business"]), flagTestimonial);
 
 module.exports = testimonialRouter;

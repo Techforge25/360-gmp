@@ -79,7 +79,7 @@ const fetchTestimonials = asyncHandler(async (request, response) => {
     if(!testimonials.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No testimonials found for this business"));
 
     // Response
-    return response.status(200).json(new ApiResponse(200, testimonials, "Testimonials fetched successfully"));
+    return response.status(200).json(new ApiResponse(200, testimonials, "Testimonials have been fetched"));
 });
 
 // View single testimonial
@@ -92,7 +92,31 @@ const viewTestimonial = asyncHandler(async (request, response) => {
     if(!testimonial) throw new ApiError(404, "Testimonial not found");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, testimonial, "Testimonial fetched successfully"));
+    return response.status(200).json(new ApiResponse(200, testimonial, "Testimonial has been fetched"));
 });
 
-module.exports = { createReviewInvite, createTestimonial, fetchTestimonials, viewTestimonial };
+// Flag testimonial
+const flagTestimonial = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const { testimonialId } = request.params;
+
+    // Find business profile
+    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId });
+    if(!businessProfile) throw new ApiError(404, "Business profile not found");
+
+    // Find testimonial
+    const testimonial = await Testimonial.findById(testimonialId);
+    if(!testimonial) throw new ApiError(404, "Testimonial not found");
+
+    // Check if testimonial belongs to the business
+    if(String(testimonial.businessId) !== String(businessProfile._id)) throw new ApiError(403, "You are not authorized to flag this testimonial");
+    
+    // Update testimonial status to flagged
+    testimonial.status = "flagged";
+    await testimonial.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Testimonial review has been flagged"));
+});
+
+module.exports = { createReviewInvite, createTestimonial, fetchTestimonials, viewTestimonial, flagTestimonial };

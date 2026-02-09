@@ -75,7 +75,10 @@ const fetchTestimonials = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
 
     // Fetch testimonials
-    const testimonials = await Testimonial.paginate({ businessId }, { page, limit });
+    const testimonials = await Testimonial.paginate(
+        { businessId }, 
+        { page, limit, select:"reviewerName reviewerEmail rating title description createdAt", sort:{ createdAt:-1 } 
+    });
     if(!testimonials.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No testimonials found for this business"));
 
     // Response
@@ -88,7 +91,7 @@ const viewTestimonial = asyncHandler(async (request, response) => {
 
     // Fetch testimonial
     const testimonial = await Testimonial.findById(testimonialId)
-    .select("reviewerName reviewerEmail rating title description createdAt status").lean();
+    .select("reviewerName reviewerEmail rating title description createdAt").lean();
     if(!testimonial) throw new ApiError(404, "Testimonial not found");
 
     // Response

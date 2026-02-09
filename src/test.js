@@ -1,12 +1,12 @@
 const { io } = require("socket.io-client");
 
 // Access token
-const TOKEN = "Access Token";
+const TOKEN = "";
 
 // Frontend socket configuration
 const socket = io("http://localhost:8000", {
     withCredentials: true,
-    autoConnect:false,
+    // autoConnect:false,
     auth: { authToken:TOKEN },
     transports:["websocket"]
 });
@@ -25,3 +25,6 @@ socket.on("disconnect", () => console.log("Disconnected from server"));
 
 // Listen for notification
 socket.on("notification", (data) => console.log("Notification recieved", data));
+
+// Listen for messages
+// socket.on("message", (data) => console.log("Message recieved", data));

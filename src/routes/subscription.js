@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
-const { createSubscriptionStripe, verifyStripePayment, getMySubscription, totalSpent } = require("../controllers/subscription");
+const { createSubscriptionStripe, verifyStripePayment, getMySubscription, 
+totalSpent, checkSubscriptionStatus } = require("../controllers/subscription");
 
 // Router instance
 const subscriptionRouter = Router();
@@ -14,5 +15,8 @@ subscriptionRouter.route("/").get(authentication, getMySubscription);
 
 // Total spent on subscriptions till now
 subscriptionRouter.route("/total-spent").get(authentication, totalSpent);
+
+// Check subscription status for a plan
+subscriptionRouter.route("/status/:planId").get(authentication, checkSubscriptionStatus);
 
 module.exports = subscriptionRouter;

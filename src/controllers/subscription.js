@@ -18,6 +18,10 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
     if(!profile) throw new ApiError(400, "Profile model is missing! Please specify 'business' or 'user'");
     if(!["business", "user"].includes(profile)) throw new ApiError(400, "Invalid profile model! Please use 'business' or 'user'");
 
+    // Check existing subscription
+    const existingSubscription = await Subscription.findOne({ userId, planId, status:"active", endDate:{ $gt:new Date() }});
+    if(existingSubscription) return response.status(200).json(new ApiResponse(200, null, "You already have an active subscription for this plan"));
+
     // Get plan
     const plan = await Plan.findById(planId).lean();
     if(!plan) throw new ApiError(404, "Plan not found! Invalid plan ID");
@@ -121,25 +125,25 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
         }
 
         // Check existing subscription
-        const existingSubscription = await Subscription.findOne({ userId, planId, status:"active", endDate:{ $gt:new Date() }});
+        // const existingSubscription = await Subscription.findOne({ userId, planId, status:"active", endDate:{ $gt:new Date() }});
 
         // Existing subscription extend by 1 month
-        if(existingSubscription) 
-        {
-            const { endDate } = getMonthlySubscriptionDates(existingSubscription.endDate);
-            existingSubscription.endDate = endDate;
-            await existingSubscription.save();
+        // if(existingSubscription) 
+        // {
+        //     const { endDate } = getMonthlySubscriptionDates(existingSubscription.endDate);
+        //     existingSubscription.endDate = endDate;
+        //     await existingSubscription.save();
 
-            // Send notification for subscription extension 
-            await sendNotification({ 
-                userOwnerId:userId,
-                title: "Subscription Extended",
-                content:"Your subscription has been extended by 1 month",
-                io: request.app.get("io")
-            });
+        //     // Send notification for subscription extension 
+        //     await sendNotification({ 
+        //         userOwnerId:userId,
+        //         title: "Subscription Extended",
+        //         content:"Your subscription has been extended by 1 month",
+        //         io: request.app.get("io")
+        //     });
 
-            return response.status(200).json(new ApiResponse(200, null, "Subscription extended by 1 month"));
-        } 
+        //     return response.status(200).json(new ApiResponse(200, null, "Subscription extended by 1 month"));
+        // } 
 
         // Get subscription dates
         const { startDate, endDate } = getMonthlySubscriptionDates();
@@ -230,4 +234,40 @@ const totalSpent = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, totalSpent, "Total subscription amount calculated"));
 });
 
-module.exports = { createSubscriptionStripe, verifyStripePayment, getMySubscription, totalSpent };
+// Check existing subscription and upgrade or downgrade
+const checkSubscriptionStatus = asyncHandler(async (request, response) => {
+    const userId = convertToMongoId(request.user._id);
+    const { planId } = request.params;
+
+    // Check if user has an active subscription for the given plan
+    const existingSubscription = await Subscription.findOne({ userId, status:"active", endDate:{ $gt:new Date() }});
+    if(!existingSubscription)
+    {
+        return response.status(200).json(new ApiResponse(200, { shouldUpgrade:true }, "No active subscription found"));
+    }
+    
+    // If user try to subscribe to the same plan
+    if(String(existingSubscription.planId) === String(planId)) 
+    {
+        // Message
+        const message = `You are already subscribed to this plan. Your current subscription is active until ${existingSubscription.endDate.toDateString()}. You can only subscribe to a different plan if you want to upgrade or downgrade.`;
+
+        // Response
+        return response.status(200).json(new ApiResponse(200, { isSamePlan:true }, message));
+    }
+
+    // If user try to updrade or downgrade
+    if(String(existingSubscription.planId) !== String(planId)) 
+    {
+        // Message for upgrade or downgrade
+        const message = `You already have an active subscription. If you choose a new plan, your current subscription access will end immediately, and access to the new plan will begin. The billing cycle for the new plan will start today, and next month's billing will follow the standard schedule. Unused days from your previous plan will not be carried over.`
+
+        // Response
+        return response.status(200).json(new ApiResponse(200, { canUpgrade:true }, message));
+    }
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, existingSubscription ? true : false, "Subscription status checked"));
+});
+
+module.exports = { createSubscriptionStripe, verifyStripePayment, getMySubscription, totalSpent, checkSubscriptionStatus };

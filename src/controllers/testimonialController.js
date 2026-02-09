@@ -82,4 +82,17 @@ const fetchTestimonials = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, testimonials, "Testimonials fetched successfully"));
 });
 
-module.exports = { createReviewInvite, createTestimonial, fetchTestimonials };
+// View single testimonial
+const viewTestimonial = asyncHandler(async (request, response) => {
+    const { testimonialId } = request.params;
+
+    // Fetch testimonial
+    const testimonial = await Testimonial.findById(testimonialId)
+    .select("reviewerName reviewerEmail rating title description createdAt status").lean();
+    if(!testimonial) throw new ApiError(404, "Testimonial not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, testimonial, "Testimonial fetched successfully"));
+});
+
+module.exports = { createReviewInvite, createTestimonial, fetchTestimonials, viewTestimonial };

@@ -9,10 +9,13 @@ const testimonialSchema = new Schema({
     reviewerName: { type:String, trim:true, required:true },
     reviewerEmail: { type:String, trim:true, required:true },
 
-    // 1–5 stars
+    // Review info
     rating: { type:Number, min:1, max:5, required:true },
     title: { type:String, trim:true },
-    description: { type:String, trim:true, required:true }
+    description: { type:String, trim:true, required:true },
+
+    // Status
+    status: { type:String, enum:["approved", "flagged"], default:"approved", index:true }
 }, { timestamps: true });
 
 // Inject plugin

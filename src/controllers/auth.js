@@ -175,12 +175,8 @@ const refreshToken = asyncHandler(async (request, response) => {
         UserProfile.findOne({ userId:user._id }).lean()
     ]);
 
-    console.log("Business", businessProfile);
-    console.log("User", userProfile);
-
     // Payload based on role
     const profilePayload = user.role === "user" ? userProfile : businessProfile;    
-    console.log("Profile payload", profilePayload);
 
     // Generate a new token
     const payload = { _id, role };

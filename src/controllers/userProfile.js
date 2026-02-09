@@ -514,7 +514,7 @@ const generateMyResume = asyncHandler(async (request, response) => {
     if(!fs.existsSync(resumeDir)) fs.mkdirSync(resumeDir, { recursive: true });
 
     // File path
-    const fileName = `${userProfile.fullName}-Resume-${Date.now()}-.pdf`;
+    const fileName = `${userProfile.fullName}-Resume-${Date.now()}.pdf`;
     const filePath = path.join(resumeDir, fileName);
 
     // Create PDF

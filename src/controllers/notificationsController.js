@@ -22,7 +22,7 @@ const createNotification = async (userId, title, content) => {
 // Fetch my notifications
 const fetchMyNotifications = asyncHandler(async (request, response) => {
     const userId = request.user._id;
-    const notifications = await Notification.find({ userId }).lean();
+    const notifications = await Notification.find({ userId }).sort({ createdAt:-1 }).lean();
 
     // Response
     return response.status(200).json(new ApiResponse(200, notifications, "Notifications have been fetched"));

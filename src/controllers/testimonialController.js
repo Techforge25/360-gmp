@@ -1,0 +1,69 @@
+const BusinessProfile = require("../models/businessProfileSchema");
+const ReviewInvite = require("../models/reviewInviteModel");
+const Testimonial = require("../models/testimonialModel");
+const UserProfile = require("../models/userProfile");
+const ApiError = require("../utils/ApiError");
+const ApiResponse = require("../utils/ApiResponse");
+const asyncHandler = require("../utils/asyncHandler");
+const crypto = require("crypto");
+const validate = require("../utils/validate");
+const { createTestimonialValidationSchema } = require("../validations/testimonialsValidator");
+
+// Create review invite
+const createReviewInvite = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Find business profile
+    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId });
+    if(!businessProfile) throw new ApiError(404, "Business profile not found");
+    
+    // Generate random invite token
+    const inviteToken = crypto.randomBytes(20).toString("hex");
+    if(!inviteToken) throw new ApiError(500, "Could not generate review invite token");
+
+    // Save to db
+    const reviewInvite = await ReviewInvite.create({ businessId:businessProfile._id, inviteToken });
+    if(!reviewInvite) throw new ApiError(500, "Could not create review invite");
+    
+    // Response
+    return response.status(201).json(new ApiResponse(201, { inviteToken }, "Review invite created successfully"));
+});
+
+// Crate testimonial
+const createTestimonial = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const { inviteToken } = request.params;
+
+    // Get validated payload
+    const { rating, title, description } = validate(createTestimonialValidationSchema, request.body) || {};
+
+    // Find user profile
+    const userProfile = await UserProfile.findOne({ userId }).select("fullName email").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Find review invite    
+    const reviewInvite = await ReviewInvite.findOne({ inviteToken, isUsed:false });
+    if(!reviewInvite) throw new ApiError(404, "Invalid or already used review invite");
+
+    // Create testimonial
+    const testimonial = await Testimonial.create({
+        businessId: reviewInvite.businessId,
+        reviewInviteId: reviewInvite._id,
+        reviewerName: userProfile.fullName,
+        reviewerEmail: userProfile.email,
+        rating, 
+        title, 
+        description
+    });
+    if(!testimonial) throw new ApiError(500, "Could not create testimonial");
+
+    // Mark invite as used
+    reviewInvite.isUsed = true;
+    reviewInvite.usedAt = new Date();
+    await reviewInvite.save();
+
+    // Response
+    return response.status(201).json(new ApiResponse(201, testimonial, "Testimonial created successfully"));
+}); 
+
+module.exports = { createReviewInvite, createTestimonial };

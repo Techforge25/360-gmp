@@ -127,4 +127,16 @@ const flagTestimonial = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Testimonial review has been flagged"));
 });
 
-module.exports = { createReviewInvite, createTestimonial, fetchTestimonials, viewTestimonial, flagTestimonial };
+// Delete testimonial
+const deleteTestimonial = asyncHandler(async (request, response) => {
+    const { testimonialId } = request.params;
+
+    // Find testimonial
+    const testimonial = await Testimonial.findByIdAndDelete(testimonialId).select("description").lean();
+    if(!testimonial) throw new ApiError(404, "Testimonial not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, testimonial, "Testimonial has been deleted"));
+});
+
+module.exports = { createReviewInvite, createTestimonial, fetchTestimonials, viewTestimonial, flagTestimonial, deleteTestimonial };

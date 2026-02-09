@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { createReviewInvite, createTestimonial, fetchTestimonials, 
-viewTestimonial, flagTestimonial } = require("../controllers/testimonialController");
+viewTestimonial, flagTestimonial, deleteTestimonial } = require("../controllers/testimonialController");
 const { authentication, authorization } = require("../middlewares/auth");
 
 // Router insatnce
@@ -28,5 +28,9 @@ testimonialRouter.route("/:testimonialId")
 // Flag testimonial
 testimonialRouter.route("/:testimonialId/flag")
 .patch(authorization(["business"]), flagTestimonial);
+
+// Delete testimonial
+testimonialRouter.route("/:testimonialId")
+.delete(authorization(["admin"]), deleteTestimonial);
 
 module.exports = testimonialRouter;

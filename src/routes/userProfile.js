@@ -5,7 +5,8 @@ updateUserProfileBasicInfo, updateUserProfileContactInfo, updateUserProfileLogo,
 updateUserProfileResume, updateUserProfileEducation,createWorkExperience, 
 fetchWorkExperiences, updateWorkExperience, deleteWorkExperience,fetchJobMatches, 
 updateUserProfileJobPreferences, createUserSocialLink, fetchUserSocialLinks,
-updateUserSocialLink, deleteUserSocialLink, updateUserProfileBanner} = require("../controllers/userProfile");
+updateUserSocialLink, deleteUserSocialLink, updateUserProfileBanner,
+generateMyResume} = require("../controllers/userProfile");
 
 // Router instance
 const userProfileRouter = Router();
@@ -81,5 +82,9 @@ userProfileRouter.route("/social/:socialId")
 .patch(authentication, authorization(["user"]), updateUserSocialLink)
 .delete(authentication, authorization(["user"]), deleteUserSocialLink);
 /* ======================= USER PROFILE SOCIAL LINK ENDS ======================= */
+
+// Generate my resume
+userProfileRouter.route("/generate-resume")
+.get(authentication, authorization(["user"]), generateMyResume);
 
 module.exports = userProfileRouter;

@@ -3,7 +3,7 @@ const { Schema, model } = require("mongoose");
 // Schema
 const reviewInviteSchema = new Schema({
     businessId: { type:Schema.Types.ObjectId, ref:"BusinessProfile", required:true, index:true },
-    token: { type:String, required:true, unique: true, index:true },
+    inviteToken: { type:String, required:true, unique: true, index:true },
 
     // Invite status
     isUsed: { type:Boolean, default:false },

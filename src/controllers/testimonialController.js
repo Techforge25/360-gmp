@@ -100,6 +100,10 @@ const flagTestimonial = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const { testimonialId } = request.params;
 
+    // Get flag reason
+    const { flagReason = null } = request.body || {};
+    if(!flagReason) throw new ApiError(400, "Flag reason is required to flag a testimonial");
+
     // Find business profile
     const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId });
     if(!businessProfile) throw new ApiError(404, "Business profile not found");
@@ -113,6 +117,7 @@ const flagTestimonial = asyncHandler(async (request, response) => {
     
     // Update testimonial status to flagged
     testimonial.status = "flagged";
+    testimonial.flagReason = flagReason;
     await testimonial.save();
 
     // Response

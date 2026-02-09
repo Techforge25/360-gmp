@@ -8,6 +8,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const { createCommunitySchema, updateCommunitySchema, approveMembershipSchema } = require("../validations/communityValidator");
 const { emptyList } = require("../constants");
 const UserSearch = require("../models/userSearchesModel");
+const sendNotification = require("../utils/sendNotification");
 
 // Helper function to get userProfileId from userId
 const getUserProfileId = async (userId) => {
@@ -180,51 +181,51 @@ const approveMembership = asyncHandler(async (request, response) => {
     const { error, value } = approveMembershipSchema.validate(request.body, { abortEarly: false });
     if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
 
-    // Get community
+    // Find community
     const community = await Community.findById(id);
     if(!community) throw new ApiError(404, "Community not found");
 
     // Verify user is business owner or admin
     const businessProfile = await BusinessProfile.findById(community.businessId);
-    if(businessProfile.ownerUserId.toString() !== request.user._id.toString()) {
+    if(String(businessProfile.ownerUserId) !== String(request.user._id)) 
+    {
         // Check if user is admin/moderator of the community
         const userProfileId = await getUserProfileId(request.user._id);
         const userMembership = await CommunityMembership.findOne({
-            communityId: id,
-            userProfileId: userProfileId,
-            role: { $in: ["owner", "admin", "moderator"] }
+            communityId:id,
+            userProfileId:userProfileId,
+            role:{ $in: ["owner", "admin", "moderator"] }
         });
-        if(!userMembership) {
-            throw new ApiError(403, "Only community owner/admins can approve memberships");
-        }
+        if(!userMembership) throw new ApiError(403, "Only community owner, admins and moderators can approve memberships");
     }
 
     // Find and update membership
     const membership = await CommunityMembership.findOneAndUpdate(
-        {
-            communityId: id,
-            userProfileId: value.userProfileId
-        },
-        { 
-            status: value.status,
-            joinedAt: value.status === "approved" ? new Date() : undefined
-        },
-        { new: true }
+        { communityId:id, userProfileId:value.userProfileId },
+        { status:value.status, joinedAt:value.status === "approved" ? new Date() : undefined },
+        { new:true }
     );
-
     if(!membership) throw new ApiError(404, "Membership request not found");
 
     // Update member count
-    if(value.status === "approved") {
-        community.memberCount += 1;
-    } else if(value.status === "rejected" && membership.status === "pending") {
-        // If rejecting a pending request, no change in count
-    }
+    if(value.status === "approved") community.memberCount += 1;
     await community.save();
 
-    return response.status(200).json(
-        new ApiResponse(200, membership, `Membership ${value.status} successfully`)
-    );
+    // Emit notification to user about approval/rejection
+    const userProfile = await UserProfile.findById(value.userProfileId).select("userId").lean();
+    if(userProfile) 
+    {
+        const notificationTitle = value.status === "approved" ? "Community Join Request Approved" : "Community Join Request Rejected";
+        await sendNotification({ 
+            userOwnerId: userProfile.userId, 
+            title: notificationTitle, 
+            content:`Your request to join the community "${community.name}" has been ${value.status}.`, 
+            io: request.app.get("io") 
+        });
+    }
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, membership, `Membership ${value.status} successfully`));
 });
 
 // Get Pending Join Requests (for private/featured communities)

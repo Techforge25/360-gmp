@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { createReviewInvite, createTestimonial } = require("../controllers/testimonialController");
+const { createReviewInvite, createTestimonial, fetchTestimonials } = require("../controllers/testimonialController");
 const { authentication, authorization } = require("../middlewares/auth");
 
 // Router insatnce
@@ -15,5 +15,9 @@ testimonialRouter.route("/invite")
 // Create testimonials
 testimonialRouter.route("/:inviteToken")
 .post(authorization(["user"]), createTestimonial);
+
+// Fetch testimonials for a business
+testimonialRouter.route("/business/:businessId")
+.get(authorization(["user", "business"]), fetchTestimonials);
 
 module.exports = testimonialRouter;

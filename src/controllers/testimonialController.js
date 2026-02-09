@@ -8,6 +8,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const crypto = require("crypto");
 const validate = require("../utils/validate");
 const { createTestimonialValidationSchema } = require("../validations/testimonialsValidator");
+const { emptyList } = require("../constants");
 
 // Create review invite
 const createReviewInvite = asyncHandler(async (request, response) => {
@@ -66,4 +67,19 @@ const createTestimonial = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, testimonial, "Testimonial created successfully"));
 }); 
 
-module.exports = { createReviewInvite, createTestimonial };
+// Fetch testimonials for a business
+const fetchTestimonials = asyncHandler(async (request, response) => {
+    const { businessId } = request.params;
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Fetch testimonials
+    const testimonials = await Testimonial.paginate({ businessId }, { page, limit });
+    if(!testimonials.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No testimonials found for this business"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, testimonials, "Testimonials fetched successfully"));
+});
+
+module.exports = { createReviewInvite, createTestimonial, fetchTestimonials };

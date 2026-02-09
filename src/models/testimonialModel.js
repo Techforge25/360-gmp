@@ -15,7 +15,10 @@ const testimonialSchema = new Schema({
     description: { type:String, trim:true, required:true },
 
     // Status
-    status: { type:String, enum:["approved", "flagged"], default:"approved", index:true }
+    status: { type:String, enum:["approved", "flagged"], default:"approved", index:true },
+
+    // Flag reason
+    flagReason: { type:String, trim:true, default:null }
 }, { timestamps: true });
 
 // Inject plugin

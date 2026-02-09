@@ -9,6 +9,8 @@ const crypto = require("crypto");
 const validate = require("../utils/validate");
 const { createTestimonialValidationSchema } = require("../validations/testimonialsValidator");
 const { emptyList } = require("../constants");
+const { send } = require("process");
+const sendNotification = require("../utils/sendNotification");
 
 // Create review invite
 const createReviewInvite = asyncHandler(async (request, response) => {
@@ -62,6 +64,18 @@ const createTestimonial = asyncHandler(async (request, response) => {
     reviewInvite.isUsed = true;
     reviewInvite.usedAt = new Date();
     await reviewInvite.save();
+
+    // Notify parent user about new testimonial
+    const businessProfile = await BusinessProfile.findById(reviewInvite.businessId).select("ownerUserId").lean();
+
+    // Send notification to business owner
+    await sendNotification({ 
+        userOwnerId:businessProfile.ownerUserId, 
+        title:"New Testimonial Received", 
+        content:`You have received a new testimonial from ${userProfile.fullName} with a rating of ${rating} stars.`, 
+        type:"testimonial", 
+        io: request.app.get("io") 
+    });
 
     // Response
     return response.status(201).json(new ApiResponse(201, testimonial, "Testimonial created successfully"));

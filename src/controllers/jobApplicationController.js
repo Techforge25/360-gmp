@@ -42,7 +42,7 @@ const fetchjobApplications = asyncHandler(async (request, response) => {
 
     // Find job applications for specific job posted by business
     const { page = 1, limit = 10 } = request.query;
-    const jobApplications = await JobApplication.paginate({ jobId }, { page, limit, populate:{ path:"userProfileId", select:"firstName lastName email phone city country" } });
+    const jobApplications = await JobApplication.paginate({ jobId }, { page, limit, populate:{ path:"userProfileId", select:"fullName email phone location" } });
     if(!jobApplications.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No job applications found at the moment"));
     return response.status(200).json(new ApiResponse(200, jobApplications, "Job applications have been fetched"));
 });

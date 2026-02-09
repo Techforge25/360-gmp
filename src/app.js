@@ -44,6 +44,7 @@ const notificationsRouter = require("./routes/notificationsRoute");
 const analyticsOverviewRouter = require("./routes/analyticsOverviewRoute");
 const supportRouter = require("./routes/supportRoute");
 const userSearchesRouter = require("./routes/userSearchesRoute");
+const testimonialRouter = require("./routes/testimonialRoute");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);
@@ -69,6 +70,7 @@ app.use("/api/v1/notifications", notificationsRouter);
 app.use("/api/v1/analytics-overview", analyticsOverviewRouter);
 app.use("/api/v1/support", supportRouter);
 app.use("/api/v1/userSearches", userSearchesRouter);
+app.use("/api/v1/testimonials", testimonialRouter);
 
 // API status route
 app.get("/", (request, response) => response.send(`Server is up and running at port ${port}`));

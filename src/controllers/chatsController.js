@@ -13,18 +13,23 @@ const generateConversationId = require("../utils/generateConversationId");
 const sendPrivateMessage = asyncHandler(async (request, response) => {
     const { senderId, senderModel, receiverId, receiverModel, message, messageType = "text", documentFileUrl = null } = request.body || {};
 
-    // Validation
+    // Validate sender
     if(!senderId) throw new ApiError(400, "Sender ID is missing");
     if(!senderModel) throw new ApiError(400, "Please specify sender model");
     if(senderModel !== "UserProfile" && senderModel !== "BusinessProfile") throw new ApiError(400, "Invalid sender model");
 
+    // Validate receiver
     if(!receiverId) throw new ApiError(400, "Receiver ID is missing");
     if(!receiverModel) throw new ApiError(400, "Please specify receiver model");
     if(receiverModel !== "UserProfile" && receiverModel !== "BusinessProfile") throw new ApiError(400, "Invalid reciever model");
 
+    // Restrict sending message to self
     if(receiverId === senderId) throw new ApiError(400, "You cannot send a message to yourself");
+
+    // Validate message
     if(!message) throw new ApiError(400, "Message is required");
-    if(messageType.toLowerCase() !== "text" && messageType.toLowerCase() !== "document" && messageType.toLowerCase() !== "customOffer") {
+    if(messageType.toLowerCase() !== "text" && messageType.toLowerCase() !== "document" && messageType.toLowerCase() !== "customOffer") 
+    {
         throw new ApiError(400, "Invalid message type");
     }
 
@@ -61,7 +66,7 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
 
         // Validate business profile and user profile
         const [businessProfile, userProfile] = await Promise.all([
-            BusinessProfile.findOne({ ownerUserId:senderId }).select("_id").lean(),
+            BusinessProfile.findById(senderId).select("_id").lean(),
             UserProfile.findById(receiverId).select("_id").lean()
         ]);
         if(!businessProfile) throw new ApiError(404, "Sender business profile not found");
@@ -69,9 +74,9 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
 
         // Create custom offer message content
         customOfferContent = {
-            sellerBusinessProfileId: businessProfile._id,
-            buyerUserProfileId: userProfile._id,
-            productId: product._id,
+            sellerBusinessProfileId: senderId,
+            buyerUserProfileId: receiverId,
+            productId: productId,
             quantity: Number(quantity),
             pricePerUnit: Number(pricePerUnit),
             subTotal: Number(subTotal),
@@ -95,7 +100,6 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
         messageType,
         documentFileUrl
     });
-
     if(!chat) throw new ApiError(400, "Failed to send a message");
 
     // Response
@@ -114,6 +118,8 @@ const fetchPrivateMessages = asyncHandler(async (request, response) => {
     // Find private chats
     const chats = await Chat.find({ conversationId }).lean(); 
     if(!chats.length) return response.status(200).json(new ApiResponse(200, [], "No messages yet"));
+
+    // Response
     return response.status(200).json(new ApiResponse(200, chats, "Messages has been fetched"));
 });
 

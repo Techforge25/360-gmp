@@ -8,7 +8,8 @@ const generateAccessToken = (payload) => {
     {
         return jwt.sign({
             _id:payload._id,
-            role:payload.role
+            role:payload.role,
+            profiles: payload.profiles || {}
         }, ACCESS_TOKEN_SECRET, { expiresIn:ACCESS_TOKEN_EXPIRY });
     } 
     catch(error) 

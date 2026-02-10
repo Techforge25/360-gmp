@@ -108,7 +108,7 @@ const userLogin = asyncHandler(async (request, response) => {
     if(!passwordHash) throw new ApiError(400, "Password is required");
 
     // Find user
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("_id status role passwordHash isNewToPlatform").lean();
     if(!user) throw new ApiError(400, "Invalid credentials");
 
     // Match password
@@ -128,7 +128,14 @@ const userLogin = asyncHandler(async (request, response) => {
     const profilePayload = user.role === "user" ? userProfile : businessProfile;
 
     // Generate access token
-    const accessToken = generateAccessToken(user);
+    const accessToken = generateAccessToken({ 
+        _id:user._id, 
+        role:user.role, 
+        profiles: {
+            businessProfileId: businessProfile?._id || null,
+            userProfileId: userProfile?._id || null
+        }
+    });
     if(!accessToken) throw new ApiError(500, "Failed to generate access token");
 
     // Response
@@ -179,13 +186,20 @@ const refreshToken = asyncHandler(async (request, response) => {
     const profilePayload = user.role === "user" ? userProfile : businessProfile;    
 
     // Generate a new token
-    const payload = { _id, role };
-    const accessToken = generateAccessToken(payload);
+    const accessToken = generateAccessToken({ 
+        _id: _id, 
+        role: role, 
+        profiles: {
+            businessProfileId: businessProfile?._id || null,
+            userProfileId: userProfile?._id || null
+        }
+    });
     if(!accessToken) throw new ApiError(500, "Failed to generate access token");
 
+    // Response
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
-    .json(new ApiResponse(200, { profilePayload }, `Access token has been refreshed! role has changed to ${role}`));
+    .json(new ApiResponse(200, { profilePayload, accessToken }, `Access token has been refreshed! role has changed to ${role}`));
 });
 
 // Forgot password

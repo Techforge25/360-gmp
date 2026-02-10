@@ -45,6 +45,8 @@ const BusinessProfileSchema = new Schema({
     isVerified: { type: Boolean, default: false },
     isLocked: { type: Boolean, default: true },
     mapURL: { type:String },
+    latitude: { type:Number, default:0 },
+    longitude: { type:Number, default:0 },
 
     // Views
     viewedBy: [{

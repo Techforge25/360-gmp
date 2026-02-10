@@ -22,13 +22,31 @@ io.use(socketAuthentication);
 io.on("connection", (socket) => {
     console.log("A user connected:", socket.id);
 
-    // Join user private room
+    // Get user payload from socket
     const { user } = socket;
+
+    // Join private rooms
     if(user) 
     {
-        // Join user private room
+        // Join parent user private room
         socket.join(`user:${socket.user._id}`);
         console.log(`User joined private room: ${socket.user._id}`);
+
+        const { businessProfileId, userProfileId } = user.profiles || {};
+
+        // Join business profile room if they exist
+        if(businessProfileId)
+        {
+            socket.join(`businessProfile:${businessProfileId}`);
+            console.log(`User joined business profile room: ${businessProfileId}`);
+        }
+
+        // Join user profile room if it exists
+        if(userProfileId)
+        {
+            socket.join(`userProfile:${userProfileId}`);
+            console.log(`User joined user profile room: ${userProfileId}`);
+        }
     }
 
     // Join community room

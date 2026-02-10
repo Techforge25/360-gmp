@@ -20,7 +20,7 @@ const createPostSchema = joi.object({
         description: joi.string().trim().label("Event Description"),
         date: joi.date().label("Event Date"),
         location: joi.string().trim().label("Event Location")
-    }).when('type', { is: 'event', then: joi.required(), otherwise: joi.forbidden() }),
+    }).when('type', { is: 'event', then: joi.required(), otherwise: joi.optional() }),
 
     images: joi.array().items(joi.string().trim()).default([]),
     docId: joi.string().trim().allow("", null)

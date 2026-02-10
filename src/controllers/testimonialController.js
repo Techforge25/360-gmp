@@ -32,6 +32,18 @@ const createReviewInvite = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, { inviteToken }, "Review invite created successfully"));
 });
 
+// Check invite token validity
+const checkInviteToken = asyncHandler(async (request, response) => {
+    const { inviteToken } = request.params;
+
+    // Find review invite
+    const reviewInvite = await ReviewInvite.findOne({ inviteToken, isUsed:false }).lean();
+    if(!reviewInvite) throw new ApiError(404, "Invalid or already used review invite");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, reviewInvite, "Review invite is valid"));
+});
+
 // Crate testimonial
 const createTestimonial = asyncHandler(async (request, response) => {
     const userId = request.user._id;
@@ -153,4 +165,5 @@ const deleteTestimonial = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, testimonial, "Testimonial has been deleted"));
 });
 
-module.exports = { createReviewInvite, createTestimonial, fetchTestimonials, viewTestimonial, flagTestimonial, deleteTestimonial };
+module.exports = { createReviewInvite, createTestimonial, fetchTestimonials, 
+viewTestimonial, flagTestimonial, deleteTestimonial, checkInviteToken };

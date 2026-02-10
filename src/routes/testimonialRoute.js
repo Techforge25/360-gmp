@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const { createReviewInvite, createTestimonial, fetchTestimonials, 
-viewTestimonial, flagTestimonial, deleteTestimonial } = require("../controllers/testimonialController");
+viewTestimonial, flagTestimonial, deleteTestimonial, 
+checkInviteToken} = require("../controllers/testimonialController");
 const { authentication, authorization } = require("../middlewares/auth");
 
 // Router insatnce
@@ -12,6 +13,10 @@ testimonialRouter.use(authentication);
 // Create review invite
 testimonialRouter.route("/invite")
 .get(authorization(["business"]), createReviewInvite);
+
+// Check invite token validity
+testimonialRouter.route("/invite/:inviteToken")
+.get(authorization(["user"]), checkInviteToken);
 
 // Create testimonials
 testimonialRouter.route("/:inviteToken")

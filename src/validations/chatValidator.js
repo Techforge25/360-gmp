@@ -1,7 +1,7 @@
 const joi = require("joi");
 
 // Validation schema for sending private message
-const sendPrivateMessageSchema = joi.object({
+const privateMessageValidationSchema = joi.object({
     // Sender details
     senderId: joi.string().required().label("Sender ID"),
     senderModel: joi.string().valid("UserProfile", "BusinessProfile").required().label("Sender Model"),
@@ -28,4 +28,4 @@ const sendPrivateMessageSchema = joi.object({
     }).when("messageType", { is:"customOffer", then:joi.required(), otherwise:joi.optional() }).label("Custom Offer Details")
 });
 
-module.exports = { sendPrivateMessageSchema };
+module.exports = { privateMessageValidationSchema };

@@ -15,7 +15,7 @@ const getUserProfileId = async (userId) => {
     return userProfile._id;
 };
 
-
+// Helper function to determine if user is business owner or normal user and return appropriate profile ID and model
 const getIdentity = async (userId, communityId) => {
     const community = await Community.findById(communityId);
     if (!community) throw new ApiError(404, "Community not found");
@@ -26,14 +26,13 @@ const getIdentity = async (userId, communityId) => {
         ownerUserId: userId 
     });
 
-    if (business) {
-        return { id: business._id, model: "BusinessProfile" };
-    }
+    if(business) return { id: business._id, model: "BusinessProfile" };
 
     // Otherwise, they must be a normal user
     const userProfile = await UserProfile.findOne({ userId });
-    if (!userProfile) throw new ApiError(404, "Please create a user profile first.");
+    if(!userProfile) throw new ApiError(404, "Please create a user profile first.");
 
+    // Return user profile ID and model
     return { id: userProfile._id, model: "UserProfile" };
 };
 
@@ -45,9 +44,8 @@ const checkCommunityMembership = async (communityId, profileId, profileModel) =>
         memberModel: profileModel,
         status: "approved"
     });
-    if (!membership) {
-        throw new ApiError(403, "You must be an approved member or owner of this community to perform this action.");
-    }
+    if(!membership) throw new ApiError(403, "You must be an approved member or owner of this community to perform this action.");
+    
     return membership;
 };
 
@@ -85,9 +83,8 @@ const createPost = asyncHandler(async (request, response) => {
     const io = request.app.get("io");
     io.to(value.communityId.toString()).emit("new_post", post); 
 
-    return response.status(201).json(
-        new ApiResponse(201, post, "Post created successfully")
-    );
+    // Response
+    return response.status(201).json(new ApiResponse(201, post, "Post created successfully"));
 });
 
 // Get All Posts in Community (with pagination)

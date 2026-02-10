@@ -7,11 +7,6 @@ const communityPostSchema = new Schema({
         ref: "Community",
         required: true 
     },
-    // authorUserProfileId: { 
-    //     type: Schema.Types.ObjectId, 
-    //     ref: "UserProfile",
-    //     required: true 
-    // },
     authorId: { 
         type: Schema.Types.ObjectId, 
         required: true,
@@ -27,6 +22,18 @@ const communityPostSchema = new Schema({
         required: true,
         trim: true
     },
+
+    // New Fields for Post Type & Privacy
+    type: { type: String, enum: ['post', 'document', 'event', 'poll', 'file'], default: 'post'},
+
+    // Files
+    file: {
+        url: { type: String },
+        name: { type: String },
+        size: { type: Number },
+        mimeType: { type: String },  
+    },
+
     images: {
         type: [String],
         default: []

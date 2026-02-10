@@ -43,7 +43,7 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
 
         // Validate product
         if(!productId) throw new ApiError(400, "Product ID is missing for custom offer");
-        const product = await Product.findById(productId).select("_id").lean();
+        const product = await Product.findById(productId).select("businessId").lean();
         if(!product) throw new ApiError(404, "Product not found");
 
         // check if porduct belongs to the sender business profile

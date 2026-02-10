@@ -20,7 +20,7 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
     if(receiverId === senderId) throw new ApiError(400, "You cannot send a message to yourself");
 
     // Restrict profile from sending messages to same level profile
-    if(senderModel === receiverModel) throw new ApiError(400, "You cannot send a message"); 
+    if(senderModel === receiverModel) throw new ApiError(400, "You cannot send a message to a same level profile"); 
     
     // Generate unique id for conversation thread
     const conversationId = generateConversationId(senderId, receiverId);

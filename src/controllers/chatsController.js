@@ -83,6 +83,24 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
     });
     if(!chat) throw new ApiError(400, "Failed to send a message");
 
+    // Get socket instance
+    const io = request.app.get("io");
+
+    // Helper function for room name
+    const getRoomName = (model, id) => {
+        if(model === "BusinessProfile") return `businessProfile:${id}`;
+        if(model === "UserProfile") return `userProfile:${id}`;
+        return null;
+    };
+
+    // Emit to sender
+    const senderRoom = getRoomName(senderModel, senderId);
+    if(senderRoom) io.to(senderRoom).emit("message", { chat, customOfferPayload });
+    
+    // Emit to receiver
+    const receiverRoom = getRoomName(receiverModel, receiverId);
+    if(receiverRoom) io.to(receiverRoom).emit("message", { chat, customOfferPayload });
+
     // Response
     return response.status(201).json(new ApiResponse(201, { chat, customOfferPayload }, "Message has been sent"));
 });

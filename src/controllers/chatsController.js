@@ -46,6 +46,12 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
         const product = await Product.findById(productId).select("_id").lean();
         if(!product) throw new ApiError(404, "Product not found");
 
+        // check if porduct belongs to the sender business profile
+        if(String(product.businessId) !== String(senderId))
+        {
+            throw new ApiError(403, "You are not allowed to create a custom offer for a product that does not belong to your business profile");
+        }
+
         // Validate business profile and user profile
         const [businessProfile, userProfile] = await Promise.all([
             BusinessProfile.findById(senderId).select("_id").lean(),

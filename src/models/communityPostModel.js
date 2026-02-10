@@ -24,10 +24,10 @@ const communityPostSchema = new Schema({
 
     // Event Details
     event: {
-        name: { type: String, required:true, trim: true },
+        name: { type: String, trim: true },
         description: { type: String, trim: true },
         date: { type: Date },
-        location: { type: String, required:true, trim: true }
+        location: { type: String, trim: true }
     },
 
     // Meta tags for mentioning fellows

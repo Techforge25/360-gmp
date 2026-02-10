@@ -37,8 +37,9 @@ const checkInviteToken = asyncHandler(async (request, response) => {
     const { inviteToken } = request.params;
 
     // Find review invite
-    const reviewInvite = await ReviewInvite.findOne({ inviteToken, isUsed:false }).lean();
-    if(!reviewInvite) throw new ApiError(404, "Invalid or already used review invite");
+    const reviewInvite = await ReviewInvite.findOne({ inviteToken }).select("isUsed").lean();
+    if(!reviewInvite) throw new ApiError(404, "Review invite not found");
+    if(reviewInvite.isUsed) throw new ApiError(400, "Review invite has already been used");
 
     // Response
     return response.status(200).json(new ApiResponse(200, reviewInvite, "Review invite is valid"));
@@ -57,8 +58,9 @@ const createTestimonial = asyncHandler(async (request, response) => {
     if(!userProfile) throw new ApiError(404, "User profile not found");
 
     // Find review invite    
-    const reviewInvite = await ReviewInvite.findOne({ inviteToken, isUsed:false });
-    if(!reviewInvite) throw new ApiError(404, "Invalid or already used review invite");
+    const reviewInvite = await ReviewInvite.findOne({ inviteToken });
+    if(!reviewInvite) throw new ApiError(404, "Review invite not found");
+    if(reviewInvite.isUsed) throw new ApiError(400, "Review invite has already been used");
 
     // Create testimonial
     const testimonial = await Testimonial.create({

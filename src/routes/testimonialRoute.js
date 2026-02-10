@@ -16,7 +16,7 @@ testimonialRouter.route("/invite")
 
 // Check invite token validity
 testimonialRouter.route("/invite/:inviteToken")
-.get(authorization(["user"]), checkInviteToken);
+.get(authorization(["business", "user"]), checkInviteToken);
 
 // Create testimonials
 testimonialRouter.route("/:inviteToken")

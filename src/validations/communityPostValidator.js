@@ -22,6 +22,9 @@ const createPostSchema = joi.object({
         location: joi.string().trim().label("Event Location")
     }).when('type', { is: 'event', then: joi.required(), otherwise: joi.optional() }),
 
+    shareTo: joi.string().valid("public", "private").default("public").label("Share To"),
+    tags: joi.string().trim().allow("", null).optional().label("Tags"),
+
     images: joi.array().items(joi.string().trim()).default([]),
     docId: joi.string().trim().allow("", null)
 });

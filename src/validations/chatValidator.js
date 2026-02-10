@@ -23,7 +23,7 @@ const privateMessageValidationSchema = joi.object({
         subTotal: joi.number().positive().required().label("Sub Total"),
         shippingCost: joi.number().positive().required().label("Shipping Cost"),
         shippingMethod: joi.string().trim().required().label("Shipping Method"),
-        estimatedDelivery: joi.date().required().label("Estimated Delivery"),
+        estimatedDelivery: joi.string().required().label("Estimated Delivery"),
         noteToBuyer: joi.string().trim().allow("").label("Note To Buyer")
     }).when("messageType", { is:"customOffer", then:joi.required(), otherwise:joi.optional() }).label("Custom Offer Details")
 });

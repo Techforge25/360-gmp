@@ -1,36 +1,46 @@
-const Joi = require("joi");
+const joi = require("joi");
 
 // Create Post schema
-const createPostSchema = Joi.object({
-    communityId: Joi.string().required().label("Community ID"),
-    content: Joi.string().min(1).max(5000).required().trim().label("Post Content"),
-    type: Joi.string().valid("post", "document", "event", "poll", "file").default("post").label("Post Type"),
+const createPostSchema = joi.object({
+    communityId: joi.string().required().label("Community ID"),
+    content: joi.string().min(1).max(5000).required().trim().label("Post Content"),
+    type: joi.string().valid("post", "document", "event", "poll", "file").default("post").label("Post Type"),
 
+    // File
     file: {
-        url: Joi.string().uri().label("File URL"),
-        name: Joi.string().trim().label("File Name"),
-        size: Joi.number().label("File Size"),
-        mimeType: Joi.string().trim().label("File MIME Type")
+        url: joi.string().uri().label("File URL"),
+        name: joi.string().trim().label("File Name"),
+        size: joi.number().label("File Size"),
+        mimeType: joi.string().trim().label("File MIME Type")
     },
-    images: Joi.array().items(Joi.string().trim()).default([]),
-    docId: Joi.string().trim().allow("", null)
+
+    // Event Details
+    event: joi.object({
+        name: joi.string().trim().label("Event Name"),
+        description: joi.string().trim().label("Event Description"),
+        date: joi.date().label("Event Date"),
+        location: joi.string().trim().label("Event Location")
+    }).when('type', { is: 'event', then: joi.required(), otherwise: joi.forbidden() }),
+
+    images: joi.array().items(joi.string().trim()).default([]),
+    docId: joi.string().trim().allow("", null)
 });
 
 // Update Post schema
-const updatePostSchema = Joi.object({
-    content: Joi.string().min(1).max(5000).trim().label("Post Content"),
-    images: Joi.array().items(Joi.string().trim())
+const updatePostSchema = joi.object({
+    content: joi.string().min(1).max(5000).trim().label("Post Content"),
+    images: joi.array().items(joi.string().trim())
 });
 
 // Like/Unlike Post schema
-const likePostSchema = Joi.object({
-    postId: Joi.string().required().label("Post ID")
+const likePostSchema = joi.object({
+    postId: joi.string().required().label("Post ID")
 });
 
 // Add Comment schema
-const addCommentSchema = Joi.object({
-    postId: Joi.string().required().label("Post ID"),
-    content: Joi.string().min(1).max(1000).required().trim().label("Comment Content")
+const addCommentSchema = joi.object({
+    postId: joi.string().required().label("Post ID"),
+    content: joi.string().min(1).max(1000).required().trim().label("Comment Content")
 });
 
 module.exports = { createPostSchema, updatePostSchema, likePostSchema, addCommentSchema };

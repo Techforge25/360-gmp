@@ -5,10 +5,13 @@ const { sendPrivateMessage, fetchPrivateMessages } = require("../controllers/cha
 // Router instance
 const chatRouter = Router();
 
+// Authentication required
+chatRouter.use(authentication);
+
 // Send private message
-chatRouter.route("/private-message").post(authentication, sendPrivateMessage);
+chatRouter.route("/private-message").post(sendPrivateMessage);
 
 // Get private messages
-chatRouter.route("/private-message").get(authentication, fetchPrivateMessages);
+chatRouter.route("/private-message").get(fetchPrivateMessages);
 
 module.exports = chatRouter;

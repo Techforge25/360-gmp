@@ -6,7 +6,7 @@ const socketAuthentication = (socket, next) => {
     try 
     {
         // Get token
-        const { authToken } = socket.handshake.auth;
+        const { authToken } = socket.handshake.auth || {};
         if(!authToken) throw new ApiError(401, "Socket authentication error: Token is missing");
 
         // Verify token

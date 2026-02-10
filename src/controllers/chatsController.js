@@ -11,7 +11,7 @@ const generateConversationId = require("../utils/generateConversationId");
 
 // Send private message
 const sendPrivateMessage = asyncHandler(async (request, response) => {
-    const { senderId, senderModel, receiverId, receiverModel, message, messageType = "text", documentFileUrl = null } = request.body || {};
+    const { senderId, senderModel, receiverId, receiverModel, message, messageType = "text", fileUrl = null } = request.body || {};
 
     // Validate sender
     if(!senderId) throw new ApiError(400, "Sender ID is missing");
@@ -28,13 +28,13 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
 
     // Validate message
     if(!message) throw new ApiError(400, "Message is required");
-    if(messageType.toLowerCase() !== "text" && messageType.toLowerCase() !== "document" && messageType.toLowerCase() !== "customOffer") 
+    if(messageType.toLowerCase() !== "text" && messageType.toLowerCase() !== "file" && messageType.toLowerCase() !== "customOffer") 
     {
         throw new ApiError(400, "Invalid message type");
     }
 
-    // If the message contains any document file
-    if(messageType.toLowerCase() === "document" && !documentFileUrl) throw new ApiError(400, "Document file is missing");
+    // If the message contains any file
+    if(messageType.toLowerCase() === "file" && !fileUrl) throw new ApiError(400, "File url is missing");
 
     // Restrict profile from sending messages to same level profile
     if(senderModel === receiverModel) throw new ApiError(400, "You cannot send a message"); 
@@ -98,7 +98,7 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
         conversationId,
         message,
         messageType,
-        documentFileUrl
+        fileUrl
     });
     if(!chat) throw new ApiError(400, "Failed to send a message");
 

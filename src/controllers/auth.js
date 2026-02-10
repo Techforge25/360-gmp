@@ -108,7 +108,7 @@ const userLogin = asyncHandler(async (request, response) => {
     if(!passwordHash) throw new ApiError(400, "Password is required");
 
     // Find user
-    const user = await User.findOne({ email }).select("_id status role passwordHash isNewToPlatform").lean();
+    const user = await User.findOne({ email }).select("_id status role passwordHash isNewToPlatform");
     if(!user) throw new ApiError(400, "Invalid credentials");
 
     // Match password

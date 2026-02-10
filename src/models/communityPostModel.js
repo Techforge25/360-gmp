@@ -2,28 +2,13 @@ const { Schema, model } = require("mongoose");
 
 // Schema
 const communityPostSchema = new Schema({
-    communityId: { 
-        type: Schema.Types.ObjectId, 
-        ref: "Community",
-        required: true 
-    },
-    authorId: { 
-        type: Schema.Types.ObjectId, 
-        required: true,
-        refPath: 'authorModel' 
-    },
-    authorModel: {
-        type: String,
-        required: true,
-        enum: ['UserProfile', 'BusinessProfile']  
-    },
-    content: {
-        type: String,
-        required: true,
-        trim: true
-    },
+    // References
+    communityId: { type:Schema.Types.ObjectId, ref:"Community", required:true },
+    authorId: { type:Schema.Types.ObjectId, required:true, refPath:'authorModel' },
+    authorModel: { type:String, required:true, enum:['UserProfile', 'BusinessProfile'] },
 
-    // New Fields for Post Type & Privacy
+    // Content
+    content: { type: String, required: true, trim: true },
     type: { type: String, enum: ['post', 'document', 'event', 'poll', 'file'], default: 'post'},
 
     // Files
@@ -34,36 +19,45 @@ const communityPostSchema = new Schema({
         mimeType: { type: String },  
     },
 
-    images: {
-        type: [String],
-        default: []
+    images: { type: [String], default: [] },
+    docId: { type:String },
+
+    // Event Details
+    event: {
+        name: { type: String },
+        description: { type: String, trim: true },
+        date: { type: Date },
+        location: { type: String, trim: true }
     },
-    docId: String,
+
+    // Meta tags for mentioning fellows
+    tags: { type: String, trim: true },
+
+    // Share to
+    shareTo: { type:String, enum:['public', 'private'], default: 'public' },
+
+    // Engagements
+    // Likes
     likes: [{
         userId: { type: Schema.Types.ObjectId, refPath: 'likes.onModel' },
         onModel: { type: String, enum: ['UserProfile', 'BusinessProfile'] },
         likedAt: { type: Date, default: Date.now }
     }],
     
+    // Comments
     comments: [{
         userId: { type: Schema.Types.ObjectId, refPath: 'comments.onModel' },
         onModel: { type: String, enum: ['UserProfile', 'BusinessProfile'] },
         content: String,
         commentedAt: { type: Date, default: Date.now }
     }],
-    likeCount: {
-        type: Number,
-        default: 0
-    },
-    commentCount: {
-        type: Number,
-        default: 0
-    },
-    isEdited: {
-        type: Boolean,
-        default: false
-    },
-    editedAt: Date
+
+    // Counters
+    likeCount: { type: Number, default: 0 },
+    commentCount: { type: Number, default: 0},
+
+    // Flag
+    isEdited: { type: Boolean, default: false }
 }, { timestamps: true });
 
 // Indexes

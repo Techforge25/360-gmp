@@ -73,7 +73,7 @@ const createTestimonial = asyncHandler(async (request, response) => {
         userOwnerId:businessProfile.ownerUserId, 
         title:"New Testimonial Received", 
         content:`You have received a new testimonial from ${userProfile.fullName} with a rating of ${rating} stars.`, 
-        type:"testimonial", 
+        type:"account", 
         io: request.app.get("io") 
     });
 

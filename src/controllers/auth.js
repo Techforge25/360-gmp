@@ -55,7 +55,7 @@ const userSignup = asyncHandler(async (request, response) => {
     if(!createdUser) throw new ApiError(500, "Unable to signup");    
 
     // Send email
-    const result = sendEmail(email, "Account Activation Token", 
+    const result = await sendEmail(email, "Account Activation Token", 
     `<p>Your OTP Token is: <strong>${accountVerificationToken}</strong></p>
     <p>Please use this token to activate your account.</p>`
     );
@@ -63,6 +63,36 @@ const userSignup = asyncHandler(async (request, response) => {
 
     // Response
     return response.status(200).json(new ApiResponse(200, createdUser._id, "Signup successful! We have sent you an OTP to your email"));     
+});
+
+// Resend OTP token for account verification
+const resendOTPToken = asyncHandler(async (request, response) => {
+    const { email } = request.body;
+    if(!email) throw new ApiError(400, "Email is required");
+
+    // Find user
+    const user = await User.findOne({ email });
+    if(!user) throw new ApiError(404, "User not found associated with this email");
+    if(user.status !== "pending") throw new ApiError(400, "Your account is already activated");
+
+    // Generate new OTP token
+    const { code:accountVerificationToken } = generateCode(6);
+    if(!accountVerificationToken) throw new ApiError(500, "Failed to generate OTP");
+
+    // Update user with new OTP token
+    user.accountVerificationToken = accountVerificationToken;
+    user.accountVerificationTokenExpires = Date.now() + 2 * 60 * 1000;
+    await user.save();
+
+    // Send email
+    const result = await sendEmail(email, "Account Activation Token", 
+        `<p>Your OTP Token is: <strong>${accountVerificationToken}</strong></p>
+        <p>Please use this token to activate your account.</p>`
+        );
+    if(!result) throw new ApiError(500, "Failed to send OTP");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "We have re-sent you an OTP to your email"));         
 });
 
 // Verify OTP
@@ -286,4 +316,4 @@ const googleLogin = async (request, response) => {
 }
 
 module.exports = { userSignup, userLogin, logout, refreshToken, forgotPassword, 
-verifyOTP, verifypasswordResetToken, resetPassword, googleLogin };
+resendOTPToken, verifyOTP, verifypasswordResetToken, resetPassword, googleLogin };

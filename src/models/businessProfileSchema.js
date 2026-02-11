@@ -54,6 +54,25 @@ const BusinessProfileSchema = new Schema({
         viewedAt: { type: Date, default: Date.now }
     }],
     viewsCount: { type:Number, default:0 },
+
+    // Gallery
+    gallery: [{
+      albumName: { type: String, trim: true },
+      description: { type: String, trim: true },
+
+      // Media files in the album
+      images: {
+        type: [String],
+
+        // Custom validator to limit the number of images to 8
+        validate: {
+          validator: function (value) {
+            return value.length <= 8;
+          },
+          message: "You can upload a maximum of 8 photos per album"
+        }
+      }
+    }]
 }, { timestamps: true });
 
 // Indexes that actually matter

@@ -88,9 +88,9 @@ const updateBusinessProfileSchema = Joi.object({
 
 // Gallery validation schema
 const galleryValidationSchema = Joi.object({
-    albumName: Joi.string().trim().allow("", null).label("Album Name"),
+    albumName: Joi.string().trim().required().label("Album Name"),
     description: Joi.string().trim().allow("", null).label("Album Description"),
-    images: Joi.array().items(Joi.string().uri().trim()).max(8).default([]).label("Album Images")
+    images: Joi.array().items(Joi.string().uri().trim()).min(1).max(8).default([]).label("Album Images")
 });
 
 module.exports = { createBusinessProfileSchema, updateBusinessProfileSchema, galleryValidationSchema };

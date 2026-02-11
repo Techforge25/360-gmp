@@ -2,7 +2,7 @@ const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
 const { createCommunity, getAllCommunities, getCommunityById, joinCommunity, approveMembership,
 getPendingRequests, getCommunityMembers, updateCommunity, deleteCommunity, leaveCommunity, 
-fetchSuggestedCommunities } = require("../controllers/communityController");
+fetchSuggestedCommunities,  fetchMyCommunities } = require("../controllers/communityController");
 
 // Router instance
 const communityRouter = Router();
@@ -39,5 +39,8 @@ communityRouter.route("/:id/members").get(authentication, getCommunityMembers);
 
 // Get suggested communities
 communityRouter.route("/suggestions/show").get(authentication, fetchSuggestedCommunities);
+
+// My communities
+communityRouter.route("/my-communities/show").get(authentication, fetchMyCommunities);
 
 module.exports = communityRouter;

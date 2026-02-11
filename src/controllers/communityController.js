@@ -442,6 +442,24 @@ const fetchSuggestedCommunities = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, communities, "Suggested communities have been fetched"));
 });
 
+// Fetch my communities
+const fetchMyCommunities = asyncHandler(async (request, response) => {
+    const { userProfileId, businessProfileId } = request.user.profiles || {};
+    if(!userProfileId && !businessProfileId) throw new ApiError(401, "User profile not found. Please create a profile to view your communities.");
+
+    // Get memberships for both user and business profiles
+    const memberships = await CommunityMembership.find({ 
+        memberId: { $in: [userProfileId, businessProfileId] },
+        status: "approved"
+    }).populate("communityId", "name profileImage memberCount type status").lean();
+
+    const communities = memberships.map(m => m.communityId);
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, communities, "My communities fetched successfully"));
+});
+
 module.exports = { createCommunity, getAllCommunities, getCommunityById, 
 joinCommunity, approveMembership, getPendingRequests, getCommunityMembers, 
-updateCommunity, deleteCommunity, leaveCommunity, fetchSuggestedCommunities };
+updateCommunity, deleteCommunity, leaveCommunity, fetchSuggestedCommunities, 
+fetchMyCommunities };

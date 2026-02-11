@@ -30,6 +30,16 @@ const communityPostSchema = new Schema({
         location: { type: String, trim: true }
     },
 
+    // Poll Details
+    poll: {
+        question: { type: String, trim: true },
+        options: [{
+            option: { type: String, trim: true },
+            votes: { type: Number, default: 0 }
+        }],
+        duration: { type:Date }, // Duration in (1 day, 2 days, 3 days, 1 week, 2 weeks)
+    },
+
     // Meta tags for mentioning fellows
     tags: { type: String, trim: true },
 

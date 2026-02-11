@@ -50,7 +50,7 @@ const userSignup = asyncHandler(async (request, response) => {
         passwordHash, 
         role:null,
         accountVerificationToken,
-        accountVerificationTokenExpires: Date.now() + 2 * 60 * 1000
+        accountVerificationTokenExpires: Date.now() + 1 * 60 * 1000
     });
     if(!createdUser) throw new ApiError(500, "Unable to signup");    
 
@@ -81,7 +81,7 @@ const resendOTPToken = asyncHandler(async (request, response) => {
 
     // Update user with new OTP token
     user.accountVerificationToken = accountVerificationToken;
-    user.accountVerificationTokenExpires = Date.now() + 2 * 60 * 1000;
+    user.accountVerificationTokenExpires = Date.now() + 1 * 60 * 1000;
     await user.save();
 
     // Send email

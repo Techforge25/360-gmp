@@ -48,4 +48,86 @@ const removeMemberFromCommunity = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Member removed successfully"));
 });
 
-module.exports = { removeMemberFromCommunity };
+// Make admin to member
+const makeAdmin = asyncHandler(async (request, response) => {
+    const { communityId, memberId } = request.params;
+
+    // Validate IDs
+    if(!isValidObjectId(communityId)) throw new ApiError(400, "Invalid communityId");
+    if(!isValidObjectId(memberId)) throw new ApiError(400, "Invalid memberId");
+
+    // Authentication check
+    const { userProfileId, businessProfileId } = request.user.profiles || {};
+    if(!userProfileId && !businessProfileId) throw new ApiError(401, "Unauthorized");
+
+    // Check target member exists
+    const targetMembership = await CommunityMembership.findOne({ memberId, communityId });
+    if(!targetMembership) throw new ApiError(404, "A Member you are trying to make admin is not found in this community");
+
+    // Owner cannot be made admin
+    if(targetMembership.role === "owner") throw new ApiError(403, "Community owner is already admin");
+    
+    // Find requester membership (from either profile)
+    const requesterMembership = await CommunityMembership.findOne({
+        communityId,
+        memberId: { $in: [userProfileId, businessProfileId] },
+        status: "approved"
+    });
+    if(!requesterMembership) throw new ApiError(403, "You are not a member of this community");
+
+    // Role check
+    if(requesterMembership.role !== "owner") throw new ApiError(403, "Only owner can make admin");
+
+    // Update role to admin
+    const updatedMembership = await CommunityMembership.updateOne(
+        { memberId, communityId },
+        { $set: { role: "admin" } }
+    );
+    if(updatedMembership.modifiedCount === 0) throw new ApiError(500, "Failed to update member role");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Member made admin successfully"));
+});
+
+// Demote admin to member
+const demoteAdmin = asyncHandler(async (request, response) => {
+    const { communityId, memberId } = request.params;
+
+    // Validate IDs
+    if(!isValidObjectId(communityId)) throw new ApiError(400, "Invalid communityId");
+    if(!isValidObjectId(memberId)) throw new ApiError(400, "Invalid memberId");
+
+    // Authentication check
+    const { userProfileId, businessProfileId } = request.user.profiles || {};
+    if(!userProfileId && !businessProfileId) throw new ApiError(401, "Unauthorized");
+    
+    // Check target member exists
+    const targetMembership = await CommunityMembership.findOne({ memberId, communityId });
+    if(!targetMembership) throw new ApiError(404, "A Member you are trying to demote is not found in this community");
+
+    // Owner cannot be demoted
+    if(targetMembership.role === "owner") throw new ApiError(403, "Community owner cannot be demoted");
+
+    // Find requester membership (from either profile)
+    const requesterMembership = await CommunityMembership.findOne({
+        communityId,
+        memberId: { $in: [userProfileId, businessProfileId] },
+        status: "approved"
+    });
+    if(!requesterMembership) throw new ApiError(403, "You are not a member of this community");
+
+    // Role check
+    if(requesterMembership.role !== "owner") throw new ApiError(403, "Only owner can demote admin");
+
+    // Update role to member
+    const updatedMembership = await CommunityMembership.updateOne(
+        { memberId, communityId },
+        { $set: { role: "member" } }
+    );
+    if(updatedMembership.modifiedCount === 0) throw new ApiError(500, "Failed to update member role");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Admin demoted to member successfully"));
+});
+
+module.exports = { removeMemberFromCommunity, makeAdmin, demoteAdmin };

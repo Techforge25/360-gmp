@@ -47,7 +47,8 @@ const createPostSchema = joi.object({
 
 // Update Post schema
 const updatePostSchema = joi.object({
-    // Post Type
+    // References
+    communityId: joi.string().required().label("Community ID"),
     type: joi.string().valid("post", "file", "document", "event", "poll").default("post").label("Post Type"),
 
     // Simple content for post

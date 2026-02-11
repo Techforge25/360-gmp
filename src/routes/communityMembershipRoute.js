@@ -1,6 +1,5 @@
 const { Router } = require("express");
 const { removeMemberFromCommunity } = require("../controllers/coomunityMembershipController");
-const { authenticate } = require("passport");
 const { authentication } = require("../middlewares/auth");
 
 // Router instance

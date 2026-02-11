@@ -3,10 +3,15 @@ const Community = require("../models/communityModel");
 const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
+const { isValidObjectId } = require("mongoose");
 
 // Remove member from community
 const removeMemberFromCommunity = asyncHandler(async (request, response) => {
     const { communityId, memberId } = request.params;
+
+    // Validate IDs
+    if(!isValidObjectId(communityId)) throw new ApiError(400, "Invalid communityId");
+    if(!isValidObjectId(memberId)) throw new ApiError(400, "Invalid memberId");
 
     // Authentication check
     const { userProfileId, businessProfileId } = request.user.profiles || {};

@@ -20,7 +20,18 @@ const createPostSchema = joi.object({
         description: joi.string().trim().label("Event Description"),
         date: joi.date().label("Event Date"),
         location: joi.string().trim().label("Event Location")
-    }).when('type', { is: 'event', then: joi.required(), otherwise: joi.optional() }),
+    }).when('type', { is: 'event', then: joi.required(), otherwise: joi.optional() }).label("Event Details"),
+
+    // Poll Details
+    poll: joi.object({
+        question: joi.string().trim().required().label("Poll Question"),
+
+        options: joi.array().items(joi.object({
+            option: joi.string().trim().label("Poll Option")
+        })).min(2).max(10).label("Poll Options"),
+
+        duration: joi.date().label("Poll Duration")
+    }).when('type', { is: 'poll', then: joi.required(), otherwise: joi.optional() }).label("Poll Details"),
 
     shareTo: joi.string().valid("public", "private").default("public").label("Share To"),
     tags: joi.string().trim().allow("", null).optional().label("Tags"),

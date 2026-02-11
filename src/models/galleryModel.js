@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const paginate = require("mongoose-paginate-v2");
 
 // Schema
 const gallerySchema = new Schema({
@@ -7,6 +8,9 @@ const gallerySchema = new Schema({
     description: { type: String, default:null },
     images: [{ type: String }]
 }, { timestamps: true });
+
+// Inject pagination plugin
+gallerySchema.plugin(paginate);
 
 // Model
 const Gallery = model("Gallery", gallerySchema);

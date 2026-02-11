@@ -4,19 +4,19 @@ const joi = require("joi");
 const createPostSchema = joi.object({
     // References
     communityId: joi.string().required().label("Community ID"),
-    type: joi.string().valid("post", "file", "document", "event", "poll").default("post").label("Post Type"),
+    type: joi.string().valid("post", "document", "event", "poll").default("post").label("Post Type"),
 
     // Simple content for post
     content: joi.string().min(1).max(5000).trim()
-    .when('type', { is: 'post', then: joi.required(), otherwise: joi.optional() }).label("Post Content"),
+    .when('type', { is: ['post', 'file'], then: joi.required(), otherwise: joi.forbidden() }).label("Post Content"),
 
     // File
-    file: {
-        url: joi.string().uri().label("File URL"),
-        name: joi.string().trim().label("File Name"),
-        size: joi.number().label("File Size"),
-        mimeType: joi.string().trim().label("File MIME Type")
-    },
+    file: joi.object({
+        url: joi.string().uri().required(),
+        name: joi.string().trim().required(),
+        size: joi.number().required(),
+        mimeType: joi.string().trim().required()
+    }).optional().when('type', { is: 'post', then: joi.optional(), otherwise: joi.forbidden() }).label("File"),
 
     // Event Details
     event: joi.object({
@@ -24,7 +24,7 @@ const createPostSchema = joi.object({
         description: joi.string().trim().label("Event Description"),
         date: joi.date().label("Event Date"),
         location: joi.string().trim().label("Event Location")
-    }).when('type', { is: 'event', then: joi.required(), otherwise: joi.optional() }).label("Event Details"),
+    }).when('type', { is: 'event', then: joi.required(), otherwise: joi.forbidden() }).label("Event Details"),
 
     // Poll Details
     poll: joi.object({
@@ -35,7 +35,7 @@ const createPostSchema = joi.object({
         })).min(2).max(10).label("Poll Options"),
 
         duration: joi.date().label("Poll Duration")
-    }).when('type', { is: 'poll', then: joi.required(), otherwise: joi.optional() }).label("Poll Details"),
+    }).when('type', { is: 'poll', then: joi.required(), otherwise: joi.forbidden() }).label("Poll Details"),
 
     // Post Sharing
     shareTo: joi.string().valid("public", "private").default("public").label("Share To"),

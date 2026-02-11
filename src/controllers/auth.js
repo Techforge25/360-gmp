@@ -67,7 +67,7 @@ const userSignup = asyncHandler(async (request, response) => {
 
 // Resend OTP token for account verification
 const resendOTPToken = asyncHandler(async (request, response) => {
-    const { email } = request.body;
+    const { email } = request.body || {};
     if(!email) throw new ApiError(400, "Email is required");
 
     // Find user

@@ -4,23 +4,22 @@ const { Schema, model } = require("mongoose");
 const communityPostSchema = new Schema({
     // References
     communityId: { type:Schema.Types.ObjectId, ref:"Community", required:true },
-    authorId: { type:Schema.Types.ObjectId, required:true, refPath:'authorModel' },
-    authorModel: { type:String, required:true, enum:['UserProfile', 'BusinessProfile'] },
+    authorId: { type:Schema.Types.ObjectId, refPath:'authorModel', required:true },
+    authorModel: { type:String, enum:['UserProfile', 'BusinessProfile'], required:true, index:true },
+
+    // Post Type
+    type: { type: String, enum: ['post', 'document', 'event', 'poll', 'file'], default:'post', required:true },
 
     // Content
-    content: { type: String, required: true, trim: true },
-    type: { type: String, enum: ['post', 'document', 'event', 'poll', 'file'], default: 'post'},
-
+    content: { type: String, trim:true },
+    
     // Files
     file: {
-        url: { type: String },
-        name: { type: String },
+        url: { type: String, trim: true },
+        name: { type: String, trim: true },
         size: { type: Number },
-        mimeType: { type: String },  
+        mimeType: { type: String, trim: true },  
     },
-
-    images: { type: [String], default: [] },
-    docId: { type:String },
 
     // Event Details
     event: {
@@ -43,10 +42,9 @@ const communityPostSchema = new Schema({
     // Meta tags for mentioning fellows
     tags: { type: String, trim: true },
 
-    // Share to
+    // Privacy
     shareTo: { type:String, enum:['public', 'private'], default: 'public' },
 
-    // Engagements
     // Likes
     likes: [{
         userId: { type: Schema.Types.ObjectId, refPath: 'likes.onModel' },
@@ -67,7 +65,11 @@ const communityPostSchema = new Schema({
     commentCount: { type: Number, default: 0},
 
     // Flag
-    isEdited: { type: Boolean, default: false }
+    isEdited: { type: Boolean, default: false },    
+
+    // Other fields added by another Dev
+    images: { type: [String], default: [] },
+    docId: { type:String },
 }, { timestamps: true });
 
 // Indexes

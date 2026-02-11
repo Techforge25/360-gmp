@@ -50,7 +50,7 @@ const userSignup = asyncHandler(async (request, response) => {
         passwordHash, 
         role:null,
         accountVerificationToken,
-        accountVerificationTokenExpires: Date.now() + 5 * 60 * 1000
+        accountVerificationTokenExpires: Date.now() + 2 * 60 * 1000
     });
     if(!createdUser) throw new ApiError(500, "Unable to signup");    
 

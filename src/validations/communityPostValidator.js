@@ -4,11 +4,11 @@ const joi = require("joi");
 const createPostSchema = joi.object({
     // References
     communityId: joi.string().required().label("Community ID"),
-    type: joi.string().valid("post", "document", "event", "poll").default("post").label("Post Type"),
+    type: joi.string().valid("post", "event", "poll").default("post").label("Post Type"),
 
     // Simple content for post
     content: joi.string().min(1).max(5000).trim()
-    .when('type', { is: ['post', 'file'], then: joi.required(), otherwise: joi.forbidden() }).label("Post Content"),
+    .when('type', { is: ['post'], then: joi.required(), otherwise: joi.forbidden() }).label("Post Content"),
 
     // File
     file: joi.object({
@@ -49,7 +49,7 @@ const createPostSchema = joi.object({
 const updatePostSchema = joi.object({
     // References
     communityId: joi.string().required().label("Community ID"),
-    type: joi.string().valid("post", "file", "document", "event", "poll").default("post").label("Post Type"),
+    type: joi.string().valid("post", "event", "poll").default("post").label("Post Type"),
 
     // Simple content for post
     content: joi.string().min(1).max(5000).trim().label("Post Content")

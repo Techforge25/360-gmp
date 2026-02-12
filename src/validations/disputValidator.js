@@ -13,4 +13,9 @@ const createDisputeSchema = joi.object({
     evidences: joi.array().items(joi.string()).min(1).max(5).label("Evidences")
 });
 
-module.exports = { createDisputeSchema };
+// Dispute status validation schema (for admin)
+const changeDisputeStatusSchema = joi.object({
+    status: joi.string().required().valid("under_review", "waiting_buyer", "waiting_seller", "resolved", "closed").label("Status")
+});
+
+module.exports = { createDisputeSchema, changeDisputeStatusSchema };

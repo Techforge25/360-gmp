@@ -6,7 +6,7 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
-const { createDisputeSchema } = require("../validations/disputValidator");
+const { createDisputeSchema, changeDisputeStatusSchema } = require("../validations/disputValidator");
 const { emptyList } = require("../constants");
 
 // Create dispute
@@ -85,4 +85,20 @@ const viewDisputeDetails = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, dispute, "Dispute details fetched successfully"));
 });
 
-module.exports = { createDispute, fetchDisputes, viewDisputeDetails };
+// Change dispute status (admin only) - can be used to implement resolution actions later
+const changeDisputeStatus = asyncHandler(async (request, response) => {
+    const { disputeId } = request.params;
+    if(!isValidObjectId(disputeId)) throw new ApiError(400, "Invalid disputeId");
+
+    // Validate new status
+    const { status } = validate(changeDisputeStatusSchema, request.body);
+
+    // Update dispute status
+    const updatedDispute = await Dispute.findByIdAndUpdate(disputeId, { status }, { new: true });
+    if(!updatedDispute) throw new ApiError(404, "Dispute not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, updatedDispute, "Dispute status updated successfully"));
+}); 
+
+module.exports = { createDispute, fetchDisputes, viewDisputeDetails, changeDisputeStatus };

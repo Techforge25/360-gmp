@@ -47,6 +47,7 @@ const userSearchesRouter = require("./routes/userSearchesRoute");
 const testimonialRouter = require("./routes/testimonialRoute");
 const galleryRouter = require("./routes/galleryRoute");
 const communityMembershipRouter = require("./routes/communityMembershipRoute");
+const disputeRouter = require("./routes/disputeRoute");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);
@@ -75,6 +76,7 @@ app.use("/api/v1/userSearches", userSearchesRouter);
 app.use("/api/v1/testimonials", testimonialRouter);
 app.use("/api/v1/gallery", galleryRouter);
 app.use("/api/v1/community-membership", communityMembershipRouter);
+app.use("/api/v1/dispute", disputeRouter);
 
 // API status route
 app.get("/", (request, response) => response.send(`Server is up and running at port ${port}`));

@@ -1,7 +1,7 @@
 const joi = require("joi");
 
 // Validation schema for creating a dispute
-const createDisputeSchema = joi.object({
+const createDisputeValidationSchema = joi.object({
     // IDs of related entities
     orderId: joi.string().required().trim().label("Order ID"),
     productId: joi.string().required().trim().label("Product ID"),
@@ -14,8 +14,21 @@ const createDisputeSchema = joi.object({
 });
 
 // Dispute status validation schema (for admin)
-const changeDisputeStatusSchema = joi.object({
+const changeDisputeStatusValidationSchema = joi.object({
     status: joi.string().required().valid("under_review", "waiting_buyer", "waiting_seller", "resolved", "closed").label("Status")
 });
 
-module.exports = { createDisputeSchema, changeDisputeStatusSchema };
+// Admin decision validation schema
+const adminDecisionValidationSchema = joi.object({
+    adminDecision: joi.string().required().valid("full_refund", "partial_refund", "reject").label("Admin Decision"),
+
+    refundAmount: joi.number().min(0).label("Refund Amount").when("adminDecision", {
+        is: ["full_refund", "partial_refund"],
+        then: joi.required(),
+        otherwise: joi.forbidden()
+    }),
+
+    adminNotes: joi.string().trim().max(2000).label("Admin Notes")
+});
+
+module.exports = { createDisputeValidationSchema, changeDisputeStatusValidationSchema, adminDecisionValidationSchema };

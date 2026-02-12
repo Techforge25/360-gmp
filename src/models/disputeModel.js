@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const paginate = require("mongoose-paginate-v2");
 
 // Schema
 const disputeSchema = new Schema({
@@ -36,6 +37,9 @@ const disputeSchema = new Schema({
     // Internal notes for admins
     adminNotes: { type: String, trim: true }
 }, { timestamps: true });
+
+// Apply pagination plugin
+disputeSchema.plugin(paginate);
 
 // Model
 const Dispute = model("Dispute", disputeSchema);

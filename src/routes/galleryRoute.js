@@ -18,6 +18,6 @@ galleryRouter.route("/album/:albumId")
 
 // Fetch albums
 galleryRouter.route("/albums/:businessProfileId")
-.get(authorization(["business"]), fetchAlbums);
+.get(authorization(["business", "user"]), fetchAlbums);
 
 module.exports = galleryRouter;

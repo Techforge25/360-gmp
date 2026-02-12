@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
-const { createDispute, fetchDisputes, viewDisputeDetails, changeDisputeStatus } = require("../controllers/disputController");
+const { createDispute, fetchDisputes, viewDisputeDetails, 
+changeDisputeStatus, adminDecision } = require("../controllers/disputController");
 
 // Router instance
 const disputeRouter = Router();
@@ -20,5 +21,9 @@ disputeRouter.route("/:disputeId")
 // Change dispute status (admin)
 disputeRouter.route("/:disputeId/status")
 .patch(authorization(["admin"]), changeDisputeStatus);
+
+// Admin decision (admin)
+disputeRouter.route("/:disputeId/decision")
+.patch(authorization(["admin"]), adminDecision);
 
 module.exports = disputeRouter;

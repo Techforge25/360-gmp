@@ -88,29 +88,32 @@ const getAllCommunities = asyncHandler(async (request, response) => {
 const getCommunityById = asyncHandler(async (request, response) => {
     const { id } = request.params;
 
+    // Find community
     const community = await Community.findById(id)
-        .populate("businessId", "companyName businessType primaryIndustry location logo banner website");
-
+    .populate("businessId", "companyName businessType primaryIndustry location logo banner website");
     if(!community) throw new ApiError(404, "Community not found");
 
     // Check if user is member (for private communities)
     let isMember = false;
     let membershipStatus = null;
-    if(request.user?._id) {
-        const userProfileId = await getUserProfileId(request.user._id);
+    if(request.user?._id) 
+    {
+        const { businessProfileId, userProfileId } = request.user.profiles || {};
         const membership = await CommunityMembership.findOne({
             communityId: id,
-            userProfileId: userProfileId
+            memberId: { $in:[userProfileId, businessProfileId] },
+            status:"approved"
         });
-        if(membership) {
+
+        if(membership) 
+        {
             isMember = true;
             membershipStatus = membership.status;
         }
     }
 
-    return response.status(200).json(
-        new ApiResponse(200, { community, isMember, membershipStatus }, "Community fetched successfully")
-    );
+    // Response
+    return response.status(200).json(new ApiResponse(200, { community, isMember, membershipStatus }, "Community fetched successfully"));
 });
 
 // Join Community

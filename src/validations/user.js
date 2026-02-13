@@ -1,21 +1,17 @@
 const Joi = require("joi");
 
 const userSignupSchema = Joi.object({
-    email: Joi.string()
-    .email()
-    .required()
-    .messages({
-        "string.email": "Invalid email format",
-        "any.required": "Email is required"
-    }),
-
+    email: Joi.string().trim().email().lowercase().required().label("Email"),
     passwordHash: Joi.string()
-    .min(8)
+    .min(8).max(128)
+    .pattern(new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&^#()[\\]{}|\\\\<>+=._-])[A-Za-z\\d@$!%*?&^#()[\\]{}|\\\\<>+=._-]+$"))
     .required()
     .messages({
-        "string.min": "Password must be at least 8 characters",
-        "any.required": "Password is required"
-    })
+        "string.pattern.base":
+            "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.",
+        "string.min":
+            "Password must be at least 8 characters long."
+    }).label("Password")
 });
 
 module.exports = { userSignupSchema };

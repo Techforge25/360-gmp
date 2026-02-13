@@ -1,3 +1,4 @@
+const { isValidObjectId } = require("mongoose");
 const { cookieOptions } = require("../constants");
 const BusinessProfile = require("../models/businessProfileSchema");
 const Notification = require("../models/notificationsModel");
@@ -315,5 +316,21 @@ const googleLogin = async (request, response) => {
     .redirect(`${process.env.FRONTEND_URL}/onboarding/role`);
 }
 
+// User existence
+const userExistence = asyncHandler(async (request, response) => {
+    const { userId } = request.body || {};
+
+    // Validate ID
+    if(!userId) throw new ApiError(400, "User ID is missing");
+    if(!isValidObjectId(userId)) throw new ApiError(400, "Invalid MongoDB ID");
+
+    // Find user
+    const user = await User.findById(userId).select("_id").lean();
+    if(!user) throw new ApiError(404, "User not found!");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, user._id, "User exists"));
+});
+
 module.exports = { userSignup, userLogin, logout, refreshToken, forgotPassword, 
-resendOTPToken, verifyOTP, verifypasswordResetToken, resetPassword, googleLogin };
+resendOTPToken, verifyOTP, verifypasswordResetToken, resetPassword, googleLogin, userExistence };

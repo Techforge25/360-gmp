@@ -11,7 +11,7 @@ const educationSchema = joi.object({
     }).label("Ending date"),
     
     isCurrent: joi.boolean().default(false),
-    description: joi.string().max(1000).allow("", null).label("Description"),
+    description: joi.string().trim().max(1000).optional().label("Educational description"),
     grade: joi.string().max(20).allow("", null)
 });
 
@@ -61,7 +61,7 @@ const updateEducationValidationSchema = joi.object({
     }).label("Ending date"),
 
     isCurrent: joi.boolean().default(false).label("Currently enrolled"),
-    description: joi.string().optional().label("Educational description"),
+    description: joi.string().trim().max(1000).optional().label("Educational description"),
     grade: joi.string().optional().label("Grade")
 });
 
@@ -81,7 +81,7 @@ const addWorkExperienceValidationSchema = joi.object({
     }).label("Ending date"),
 
     location: joi.string().trim().max(100).required().label("Location"),
-    description: joi.string().max(1000).optional().label("Description"),
+    description: joi.string().trim().max(1000).optional().label("Work Description"),
     isCurrentlyWorking: joi.boolean().default(false).label("Currently enrolled")
 });
 

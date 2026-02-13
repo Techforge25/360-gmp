@@ -232,7 +232,7 @@ const forgotPassword = asyncHandler(async (request, response) => {
 
     // Save token to db
     user.passwordResetToken = resetToken;
-    user.passwordResetTokenExpires = Date.now() + 2 * 60 * 1000; // 2 minutes from now
+    user.passwordResetTokenExpires = Date.now() + 1 * 60 * 1000; // 1 minutes from now
     await user.save();
 
     // Send email

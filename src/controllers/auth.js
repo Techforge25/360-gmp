@@ -79,7 +79,7 @@ const resendOTPToken = asyncHandler(async (request, response) => {
     if(!result) throw new ApiError(500, "Failed to send OTP");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, null, "We have re-sent you an OTP to your email"));         
+    return response.status(200).json(new ApiResponse(200, user._id, "We have re-sent you an OTP to your email"));         
 });
 
 // Verify OTP
@@ -88,6 +88,7 @@ const verifyOTP = asyncHandler(async (request, response) => {
 
     // Validate
     if(!userId) throw new ApiError(400, "User ID is missing");
+    if(!isValidObjectId(userId)) throw new ApiError(400, "User ID is not a valid MongoDB ID");
     if(!accountVerificationToken) throw new ApiError(400, "OTP Token is missing");
 
     // Find user

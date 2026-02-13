@@ -29,7 +29,7 @@ const createBusinessProfileSchema = Joi.object({
     certifications: Joi.array().items(Joi.string().trim()).min(1).max(3).default([]).label("Certification"),
     b2bContact: b2bContactSchema.allow(null).label("B2B Contact"),
     website: Joi.string().uri().max(100).trim().allow("", null).label("Website"),
-    description: Joi.string().trim().max(2000).allow("", null),
+    description: Joi.string().trim().max(5000).allow("", null).label("Business description"),
     
     // Media
     logo: Joi.string().trim().uri().allow("", null).label("Logo"),
@@ -52,7 +52,7 @@ const updateBusinessProfileSchema = Joi.object({
     website: Joi.string().uri().trim().max(100).allow("", null).label("Website"),
     
     // Description
-    description: Joi.string().max(5000).allow("", null),
+    description: Joi.string().trim().max(5000).allow("", null).label("Business description"),
     
     // Media
     logo: Joi.string().trim().uri().allow("", null).label("Logo"),

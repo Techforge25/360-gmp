@@ -24,26 +24,12 @@ const userSignup = asyncHandler(async (request, response) => {
     const { email, passwordHash } = validate(userSignupSchema, request.body);
 
     // Check if email exist
-    const user = await User.findOne({ email }).lean();
-    if(user && user.status !== "pending") throw new ApiError(400, "This email has already been taken");
+    const user = await User.findOne({ email }).select("_id email").lean();
+    if(user) throw new ApiError(400, "This email has already been taken");
 
     // Generate OTP token
     const { code:accountVerificationToken } = generateCode(6);
     if(!accountVerificationToken) throw new ApiError(500, "Failed to generate OTP");
-
-    // If user ask otp again (Re-send)
-    if(user && user.status === "pending")
-    {
-        // Send email
-        const result = sendEmail(email, "Account Activation Token", 
-        `<p>Your OTP Token is: <strong>${accountVerificationToken}</strong></p>
-        <p>Please use this token to activate your account.</p>`
-        );
-        if(!result) throw new ApiError(500, "Failed to send password reset email");
-
-        // Response
-        return response.status(200).json(new ApiResponse(200, null, "We have re-sent you an OTP to your email"));          
-    }
 
     // Create user
     const createdUser = await User.create({ 

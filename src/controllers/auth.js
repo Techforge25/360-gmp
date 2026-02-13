@@ -297,8 +297,14 @@ const googleLogin = async (request, response) => {
     const accessToken = generateAccessToken(request.user);
     if(!accessToken) throw new ApiError(400, "Failed to generate access token");
 
+    // Role based redirect for dashboard
+    const role = request.user.role;
+    const dashboardUrl = role === "user" ? `${process.env.FRONTEND_URL}/dashboard/user` : `${process.env.FRONTEND_URL}/dashboard/business`;
+
     // Decide redirect URL
-    const redirectUrl = request.user.isNewToPlatform ? `${process.env.FRONTEND_URL}/onboarding/role` : `${process.env.FRONTEND_URL}`;
+    const redirectUrl = request.user.isNewToPlatform 
+    ? `${process.env.FRONTEND_URL}/onboarding/role` 
+    : dashboardUrl;
 
     // Redirect to application
     return response.status(303)

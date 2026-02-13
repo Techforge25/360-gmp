@@ -99,7 +99,9 @@ const getJobById = asyncHandler(async (request, response) => {
     if(!job) throw new ApiError(404, "Job not found");
 
     // Find user profile
-    const userId = request.user._id;
+    const userId = request.user?._id || null;
+    if(!userId) throw new ApiError(400, "User ID is missing");
+    
     const [userProfile, businessProfile] = await Promise.all([
         UserProfile.findOne({ userId }).select("_id").lean(),
         BusinessProfile.findOne({ ownerUserId: userId })

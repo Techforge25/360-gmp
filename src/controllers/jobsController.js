@@ -7,6 +7,7 @@ const { createJobSchema, updateJobSchema } = require("../validations/jobValidato
 const UserProfile = require("../models/userProfile");
 const JobApplication = require("../models/jobApplication");
 const { emptyList } = require("../constants");
+const { isValidObjectId } = require("mongoose");
 
 // Create Job
 const createJob = asyncHandler(async (request, response) => {
@@ -92,6 +93,8 @@ const fetchLatestJobs = asyncHandler(async (request, response) => {
 // Get Job By ID
 const getJobById = asyncHandler(async (request, response) => { 
     const { id } = request.params;
+    if(!id) throw new ApiError(400, "Job ID is missing");
+    if(!isValidObjectId(id)) throw new ApiError(400, "Invalid MongoDB ID");
 
     // Find job
     const job = await Job.findById(id)
@@ -101,7 +104,7 @@ const getJobById = asyncHandler(async (request, response) => {
     // Find user profile
     const userId = request.user?._id || null;
     if(!userId) throw new ApiError(400, "User ID is missing");
-    
+
     const [userProfile, businessProfile] = await Promise.all([
         UserProfile.findOne({ userId }).select("_id").lean(),
         BusinessProfile.findOne({ ownerUserId: userId })

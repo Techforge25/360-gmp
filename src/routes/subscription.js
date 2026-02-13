@@ -9,6 +9,9 @@ const subscriptionRouter = Router();
 // Stripe
 subscriptionRouter.route("/stripe/create").post(authentication, createSubscriptionStripe);
 subscriptionRouter.route("/stripe/success").get(verifyStripePayment);
+subscriptionRouter.route("/stripe/cancel").get((request, response) => {
+    return response.status(303).redirect(`${process.env.FRONTEND_URL}/onboarding/plans`);
+});
 
 // Get my subscription
 subscriptionRouter.route("/").get(authentication, getMySubscription);

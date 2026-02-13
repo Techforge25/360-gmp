@@ -7,6 +7,7 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const { createPostSchema, updatePostSchema, likePostSchema, addCommentSchema } = require("../validations/communityPostValidator");
 const BusinessProfile = require("../models/businessProfileSchema");
+const { isValidObjectId } = require("mongoose");
 
 // Helper function to get userProfileId from userId
 const getUserProfileId = async (userId) => {
@@ -377,28 +378,29 @@ const addComment = asyncHandler(async (request, response) => {
 // Get Post Comments (with pagination)
 const getPostComments = asyncHandler(async (request, response) => {
     const { postId } = request.params;
+    if(!isValidObjectId(postId)) throw new ApiError(400, "Post ID is not a valid MongoDB ID");
+
+    // Pagination options
     const { page = 1, limit = 20 } = request.query;
 
-    // Get post
-    const post = await CommunityPost.findById(postId).select("comments");
-    if(!post) throw new ApiError(404, "Post not found");
-
-    // Pagination
+    // Parse pagination params
     const pageNumber = Number.parseInt(page, 10);
     const limitNumber = Number.parseInt(limit, 10);
     const skip = (pageNumber - 1) * limitNumber;
 
-    // Get comments (reverse to get oldest first, or slice and reverse for newest first)
-    const allComments = post.comments.reverse(); // Newest first
+    // Fetch post with populated comments.userId
+    const post = await CommunityPost.findById(postId).populate({ path: "comments.userId", select: "fullName title logo"}).select("comments");
+    if(!post) throw new ApiError(404, "Post not found");
+
+    // Reverse to get newest comments first without mutating DB
+    const allComments = [...post.comments].reverse();
     const totalComments = allComments.length;
     const totalPages = Math.ceil(totalComments / limitNumber);
+
+    // Slice comments for current page
     const comments = allComments.slice(skip, skip + limitNumber);
 
-    // Populate user profiles
-    for(let comment of comments) {
-        await comment.populate("userProfileId", "fullName title logo");
-    }
-
+    // Pagination info
     const paginationInfo = {
         currentPage: pageNumber,
         totalPages: totalPages,
@@ -408,10 +410,10 @@ const getPostComments = asyncHandler(async (request, response) => {
         limit: limitNumber
     };
 
-    return response.status(200).json(
-        new ApiResponse(200, { comments, pagination: paginationInfo }, "Comments fetched successfully")
-    );
+    // Response
+    return response.status(200).json(new ApiResponse(200, { comments, pagination: paginationInfo }, "Comments fetched successfully"));
 });
+
 
 module.exports = {
     createPost,

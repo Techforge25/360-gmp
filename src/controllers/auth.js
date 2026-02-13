@@ -310,10 +310,13 @@ const googleLogin = async (request, response) => {
     const accessToken = generateAccessToken(request.user);
     if(!accessToken) throw new ApiError(400, "Failed to generate access token");
 
+    // Decide redirect URL
+    const redirectUrl = request.user.isNewToPlatform ? `${process.env.FRONTEND_URL}/onboarding/role` : `${process.env.FRONTEND_URL}`;
+
     // Redirect to application
     return response.status(303)
     .cookie("accessToken", accessToken, cookieOptions)
-    .redirect(`${process.env.FRONTEND_URL}/onboarding/role`);
+    .redirect(redirectUrl);
 }
 
 // User existence

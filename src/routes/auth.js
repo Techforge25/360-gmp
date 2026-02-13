@@ -19,7 +19,7 @@ authRouter.route("/user/verify-otp").post(verifyOTP);
 authRouter.route("/user/login").post(userLogin);
 
 // User existence
-authRouter.route("/user/existence").get(userExistence);
+authRouter.route("/user/existence").post(userExistence);
 
 // Logout
 authRouter.route("/logout").get(logout);

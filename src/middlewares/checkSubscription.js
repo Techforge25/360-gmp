@@ -22,6 +22,7 @@ const checkSubscription = asyncHandler(async (request, response, next) => {
     // Attach subscription and plan info to request object
     request.user.subscription = subscription;
     request.user.plan = subscription.planId;
+    request.user.planName = subscription.planId?.name || null;
     request.user.allowsUserAccess = subscription.planId?.allowsUserAccess || false;
     request.user.allowsBusinessAccess = subscription.planId?.allowsBusinessAccess || false;
 
@@ -44,7 +45,21 @@ const checkBusinessAccess = asyncHandler(async (request, response, next) => {
     return next();
 });
 
-module.exports = { checkSubscription, checkUserAccess, checkBusinessAccess };
+// Restrict trial users from certain actions
+const restrictTrialUser = asyncHandler(async (request, response, next) => {
+    const { planName } = request.user || {};
+    if (!planName) throw new ApiError(401, "Unauthorized: Subscription plan information is missing.");
+
+    // Validate allowed plans
+    const allowedPlans = ["TRIAL", "SILVER", "PREMIUM"];
+    if(!allowedPlans.includes(planName)) throw new ApiError(400, "Invalid subscription plan.");
+    
+    // Restrict trial users
+    if(planName === "TRIAL") throw new ApiError(403, "Access denied. Please upgrade your plan to perform this action.");
+    return next();
+});
+
+module.exports = { checkSubscription, checkUserAccess, checkBusinessAccess, restrictTrialUser };
 
  
 

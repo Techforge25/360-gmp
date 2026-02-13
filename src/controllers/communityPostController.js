@@ -410,6 +410,10 @@ const getPostComments = asyncHandler(async (request, response) => {
         limit: limitNumber
     };
 
+    // If no comments found
+    if(!comments.length) return response.status(200)
+    .json(new ApiResponse(200, { comments, pagination: paginationInfo }, "No comments found under this post"));    
+
     // Response
     return response.status(200).json(new ApiResponse(200, { comments, pagination: paginationInfo }, "Comments fetched successfully"));
 });

@@ -113,8 +113,10 @@ const getJobById = asyncHandler(async (request, response) => {
     // Only user's views can be counted
     if(userProfile)
     {
-        await Job.findOneAndUpdate(
-            { _id:id, viewedBy:{ $ne:userId }, businessId:{ $ne:businessProfile._id } },
+        const searchFilter = { _id:id, viewedBy:{ $ne:userId } }
+        if(businessProfile) searchFilter.businessId = { $ne:businessProfile?._id };
+
+        await Job.findOneAndUpdate(searchFilter,
             {
                 $addToSet: { viewedBy:userId },
                 $inc:{ viewsCount:1 }

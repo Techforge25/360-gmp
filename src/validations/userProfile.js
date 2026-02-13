@@ -77,7 +77,7 @@ const addWorkExperienceValidationSchema = joi.object({
 
     endDate: joi.when("isCurrentlyWorking", { 
         is: false, then: joi.date().min(joi.ref("startDate")).required(),
-        otherwise: joi.valid(null, "", undefined).optional()
+        otherwise: joi.valid(null, "").optional()
     }).label("Ending date"),
 
     location: joi.string().trim().max(100).required().label("Location"),

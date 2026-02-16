@@ -134,7 +134,7 @@ const fetchPrivateMessages = asyncHandler(async (request, response) => {
     const conversationId = generateConversationId(senderId, receiverId);
 
     // Find private chats
-    const chats = await Chat.find({ conversationId }).lean(); 
+    const chats = await Chat.find({ conversationId }).populate("customOfferId").sort({ createdAt: -1 }).lean(); 
     if(!chats.length) return response.status(200).json(new ApiResponse(200, [], "No messages yet"));
 
     // Response

@@ -5,9 +5,6 @@ const { createCustomOffer, getCustomOffer, acceptCustomOffer } = require("../con
 // Router instance
 const customOfferRouter = Router();
 
-// Create custom offer
-customOfferRouter.route("/").post(authentication, authorization(["business"]), createCustomOffer);
-
 // Get custom offer
 customOfferRouter.route("/:customOfferId").get(authentication, authorization(["business", "user"]), getCustomOffer);
 

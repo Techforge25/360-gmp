@@ -5,6 +5,8 @@ const app = require("./app");
 const { port, corsOptions } = require("./constants");
 const connectDB = require("./database/connection");
 const socketAuthentication = require("./middlewares/socket");
+const Chat = require("./models/chatsModel");
+const ApiError = require("./utils/ApiError");
 
 // Create Http server 
 const server = http.createServer(app);
@@ -37,6 +39,7 @@ io.on("connection", (socket) => {
         // Join business profile room if they exist
         if(businessProfileId)
         {
+            socket.join(businessProfileId); // Without prefix
             socket.join(`businessProfile:${businessProfileId}`);
             console.log(`User joined business profile room: ${businessProfileId}`);
         }
@@ -44,6 +47,7 @@ io.on("connection", (socket) => {
         // Join user profile room if it exists
         if(userProfileId)
         {
+            socket.join(userProfileId); // Without prefix
             socket.join(`userProfile:${userProfileId}`);
             console.log(`User joined user profile room: ${userProfileId}`);
         }
@@ -58,6 +62,26 @@ io.on("connection", (socket) => {
     // Disonnect event
     socket.on("disconnect", () => {
         console.log("User disconnected");
+    });
+
+    // Read message
+    socket.on("read-message", async ({ messageId, senderId, receiverId }) => {
+        try 
+        {
+            // Mark as read in db
+            const message = await Chat.findByIdAndUpdate(messageId, { isRead:true });
+            if(!message) throw new ApiError(404, "Message not found! Failed to read");
+
+            console.log("Marking message as read on server.", messageId);
+            
+            // Emit read message
+            io.to(senderId).emit("read-message", { isRead:true });
+            io.to(receiverId).emit("read-message", { isRead:true });
+        } 
+        catch(error) 
+        {
+            throw error;
+        }
     });
 });
 

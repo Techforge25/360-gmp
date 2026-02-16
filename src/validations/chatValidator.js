@@ -25,7 +25,7 @@ const privateMessageValidationSchema = joi.object({
         shippingMethod: joi.string().trim().required().label("Shipping Method"),
         estimatedDelivery: joi.string().required().label("Estimated Delivery"),
         noteToBuyer: joi.string().trim().allow("").label("Note To Buyer")
-    }).when("messageType", { is:"customOffer", then:joi.required(), otherwise:joi.optional() }).label("Custom Offer Details")
+    }).when("messageType", { is:"customOffer", then:joi.required(), otherwise:joi.forbidden() }).label("Custom Offer Details")
 });
 
 module.exports = { privateMessageValidationSchema };

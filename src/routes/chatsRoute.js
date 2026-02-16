@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
-const { sendPrivateMessage, fetchPrivateMessages } = require("../controllers/chatsController");
+const { sendPrivateMessage, fetchPrivateMessages, fetchMyConversations } = require("../controllers/chatsController");
 const { checkSubscription } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -14,5 +14,8 @@ chatRouter.route("/private-message").post(checkSubscription, sendPrivateMessage)
 
 // Get private messages
 chatRouter.route("/private-message").get(fetchPrivateMessages);
+
+// Get private messages
+chatRouter.route("/my-conversations").get(fetchMyConversations);
 
 module.exports = chatRouter;

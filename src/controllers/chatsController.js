@@ -7,6 +7,7 @@ const UserProfile = require("../models/userProfile");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
+const convertToMongoId = require("../utils/convertToMongoId");
 const generateConversationId = require("../utils/generateConversationId");
 const validate = require("../utils/validate");
 const { privateMessageValidationSchema } = require("../validations/chatValidator");
@@ -141,4 +142,92 @@ const fetchPrivateMessages = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, chats, "Messages has been fetched"));
 });
 
-module.exports = { sendPrivateMessage, fetchPrivateMessages };
+// Fetch my conversations list
+const fetchMyConversations = asyncHandler(async (request, response) => {
+    const userProfileId = convertToMongoId(request.user.profiles.userProfileId) 
+    || convertToMongoId(request.user.profiles.businessProfileId);
+    if(!userProfileId) throw new ApiError(401, "Unauthorized");
+
+    // Aggregate conversations
+    const conversations = await Chat.aggregate([
+        // Match
+        {
+            $match: 
+            {
+                $or: [{ "sender.id": userProfileId }, { "receiver.id": userProfileId }]
+            }
+        },
+
+        // Sort
+        { $sort: { createdAt: -1 } },
+
+        // Group
+        {
+            $group: {
+                _id: "$conversationId",
+                lastMessage: { $first: "$$ROOT" },
+                unreadCount: {
+                    $sum: {
+                        $cond: [
+                            {
+                                $and: [
+                                    { $eq: ["$receiver.id", userProfileId] },
+                                    { $eq: ["$isRead", false] }
+                                ]
+                            },
+                            1,
+                            0
+                        ]
+                    }
+                }
+            }
+        },
+
+        // Sort by last message
+        { $sort: { "lastMessage.createdAt": -1 } }
+    ]);
+
+    // Format & attach profile info
+    const formatted = await Promise.all(
+        conversations.map(async (conv) => {
+
+            const chat = conv.lastMessage;
+
+            const isSender = String(chat.sender.id) === String(userProfileId);
+            const otherParticipant = isSender ? chat.receiver : chat.sender;
+
+            let profileData = null;
+
+            if(otherParticipant.model === "UserProfile") 
+            {
+                profileData = await UserProfile.findById(otherParticipant.id)
+                .select("fullName logo").lean();
+            }
+
+            if(otherParticipant.model === "BusinessProfile") 
+            {
+                profileData = await BusinessProfile.findById(otherParticipant.id)
+                .select("companyName logo").lean();
+            }
+
+            return {
+                conversationId: conv._id,
+                lastMessage: chat.message,
+                lastMessageType: chat.messageType,
+                lastMessageTime: chat.createdAt,
+                unreadCount: conv.unreadCount,
+                participant: {
+                    id: otherParticipant.id,
+                    model: otherParticipant.model,
+                    name: profileData?.fullName || profileData?.companyName || "Unknown",
+                    logo: profileData?.logo || null
+                }
+            };
+        })
+    );
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, formatted, "Conversations fetched successfully"));
+});
+
+module.exports = { sendPrivateMessage, fetchPrivateMessages, fetchMyConversations };

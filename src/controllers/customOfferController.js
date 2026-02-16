@@ -1,6 +1,4 @@
-const BusinessProfile = require("../models/businessProfileSchema");
 const CustomOffer = require("../models/customOfferModel");
-const Product = require("../models/products");
 const UserProfile = require("../models/userProfile");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
@@ -43,7 +41,7 @@ const acceptCustomOffer = asyncHandler(async (request, response) => {
     await customOffer.save();
 
     // Response
-    return response.status(200).json(new ApiResponse(200, null, `Custom offer ${status} successfully`));
+    return response.status(200).json(new ApiResponse(200, null, `Custom offer has been ${status}`));
 });
 
 module.exports = { getCustomOffer, acceptCustomOffer };

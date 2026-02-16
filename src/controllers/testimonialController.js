@@ -9,7 +9,6 @@ const crypto = require("crypto");
 const validate = require("../utils/validate");
 const { createTestimonialValidationSchema } = require("../validations/testimonialsValidator");
 const { emptyList } = require("../constants");
-const { send } = require("process");
 const sendNotification = require("../utils/sendNotification");
 
 // Create review invite

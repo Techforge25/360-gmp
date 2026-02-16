@@ -319,11 +319,13 @@ const googleLogin = async (request, response) => {
 
     // Role based redirect for dashboard
     const role = request.user.role;
-    const dashboardUrl = role === "user" ? `${process.env.FRONTEND_URL}/dashboard/user` : `${process.env.FRONTEND_URL}/dashboard/business`;
+    const dashboardUrl = role === "user" 
+    ? `${process.env.FRONTEND_URL}/dashboard/user` 
+    : `${process.env.FRONTEND_URL}/dashboard/business`;
 
     // Decide redirect URL
     const redirectUrl = request.user.isNewToPlatform 
-    ? `${process.env.FRONTEND_URL}/onboarding/role` 
+    ? `${process.env.FRONTEND_URL}/onboarding/role?accessToken=${accessToken}` 
     : dashboardUrl;
 
     // Redirect to application

@@ -12,10 +12,24 @@ const BusinessProfile = require("../models/businessProfileSchema");
 const { emptyList } = require("../constants");
 const convertToMongoId = require("../utils/convertToMongoId");
 const Transaction = require("../models/transactionModel");
+const TrialUsage = require("../models/trialUsageModel");
 
 // Create order - Purchase product using stripe payment
 const createOrder = asyncHandler(async (request, response) => {
     const userId = request.user._id;
+    const { planName } = request.user || {};
+    if(!planName) throw new ApiError(400, "No subscription plan name found");
+
+    // Track trial orders
+    if(planName === "TRIAL")
+    {
+        const trial = await TrialUsage.findOneAndUpdate(
+            { userId, ordersUsed: { $lt: 1 } },
+            { $inc: { ordersUsed: 1 }, $setOnInsert: { userId } },
+            { new:true, upsert:true }
+        );
+        if(!trial) throw new ApiError(403,"Trial users can place only one order. Please upgrade your plan.");
+    }
 
     // Get user profile
     const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();

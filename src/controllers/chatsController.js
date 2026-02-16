@@ -42,6 +42,7 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
     const conversationId = generateConversationId(senderId, receiverId);
     
     let customOfferPayload = null;
+    let customOfferId = null; // For referencing with chat model
 
     // Custom offer
     if(messageType === "customOffer")
@@ -86,12 +87,14 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
         // Save to custom offer collection
         const customOffer = await CustomOffer.create(customOfferPayload);
         if(!customOffer) throw new ApiError(500, "Failed to create custom offer");
+        customOfferId = customOffer._id;
     }
 
     // Save to db
     const chat = await Chat.create({ 
         sender:{ id:senderId, model:senderModel },
         receiver:{ id:receiverId, model:receiverModel },
+        customOfferId,
         conversationId,
         message,
         messageType,

@@ -106,14 +106,13 @@ const verifyOTP = asyncHandler(async (request, response) => {
     await user.save();
 
     // Send notification to user upon account creation
-    const notification = await Notification.create({ 
-        userId, 
+    await sendNotification({
+        userOwnerId:userId,
         title: "Welcome to 360-GMP 🎉",  
         content: `Your account has been successfully verified. Welcome to 360-GMP! You can now explore features, connect with others, and start using the platform.`,
-        type: "system"
+        type: "system",
+        io: request.app.get("io")
     });
-    const io = request.app.get("io");
-    io.to(`user:${userId}`).emit("notification", notification);
 
     // Response
     return response.status(200).json(new ApiResponse(200, user.email, "Your account has been activated"));

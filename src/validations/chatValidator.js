@@ -11,7 +11,7 @@ const privateMessageValidationSchema = joi.object({
     receiverModel: joi.string().valid("UserProfile", "BusinessProfile").required().label("Receiver Model"),
 
     // Message details
-    message: joi.string().trim().required().label("Message"),
+    message: joi.string().trim().max(5000).required().label("Message"),
     messageType: joi.string().valid("text", "file", "customOffer").default("text").label("Message Type"),
     fileUrl: joi.string().uri().when("messageType", { is:"file", then:joi.required(), otherwise:joi.optional() }).label("File URL"),
 

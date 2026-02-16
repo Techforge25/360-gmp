@@ -2,6 +2,7 @@ const BusinessProfile = require("../models/businessProfileSchema");
 const Chat = require("../models/chatsModel");
 const CustomOffer = require("../models/customOfferModel");
 const Product = require("../models/products");
+const TrialUsage = require("../models/trialUsageModel");
 const UserProfile = require("../models/userProfile");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
@@ -12,6 +13,21 @@ const { privateMessageValidationSchema } = require("../validations/chatValidator
 
 // Send private message
 const sendPrivateMessage = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Restrict trial user from sending messages more than 4
+    const { planName } = request.user || {};
+    if(!planName) throw new ApiError(400, "No subscription plan name found");
+    if(planName === "TRIAL")
+    {
+        const trial = await TrialUsage.findOneAndUpdate(
+            { userId, messagesUsed: { $lt: 4 } },
+            { $inc: { messagesUsed: 1 }, $setOnInsert: { userId } },
+            { new:true, upsert:true }
+        );
+        if(!trial) throw new ApiError(403,"Trial users can send only four messages. Please upgrade your plan.");
+    }
+
     // Validate payload
     const { senderId, senderModel, receiverId, receiverModel, message, messageType = "text", 
     fileUrl = null, customOfferDetails = null } = validate(privateMessageValidationSchema, request.body) || {};

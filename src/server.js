@@ -7,6 +7,7 @@ const connectDB = require("./database/connection");
 const socketAuthentication = require("./middlewares/socket");
 const Chat = require("./models/chatsModel");
 const ApiError = require("./utils/ApiError");
+const generateConversationId = require("./utils/generateConversationId");
 
 // Create Http server 
 const server = http.createServer(app);
@@ -83,6 +84,19 @@ io.on("connection", (socket) => {
             throw error;
         }
     });
+
+    /* Listen Start & Stop Typing For Private Chats */
+    // Start - Private
+    socket.on("private-typing:start", ({ senderId, senderName, receiverId }) => {
+        const conversationId = generateConversationId(senderId, receiverId);
+        socket.to(receiverId).emit("private-typing:start", { senderName, conversationId });
+    });
+
+    // Stop - Private
+    socket.on("private-typing:stop", ({ senderId, senderName, receiverId }) => {
+        const conversationId = generateConversationId(senderId, receiverId);
+        socket.to(receiverId).emit("private-typing:stop", { senderName, conversationId });
+    });    
 });
 
 // Connect db

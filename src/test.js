@@ -26,6 +26,11 @@ socket.on("disconnect", () => console.log("Disconnected from server"));
 // Listen for notification
 // socket.on("notification", (data) => console.log("Notification recieved", data));
 
+
+// Listen for messages
+// socket.on("message", (data) => console.log("Message recieved", data));
+
+
 // Seen message functionality
 // const messageId = '698ae6250f47b8d6ca276784';
 // const senderId = '698058aab04c746c04d0d61d';
@@ -36,6 +41,3 @@ socket.on("disconnect", () => console.log("Disconnected from server"));
 
 // // Listen-back for read message
 // socket.on("read-message", ({ isRead }) => console.log("Client received read flag from server:", isRead));
-
-// Listen for messages
-// socket.on("message", (data) => console.log("Message recieved", data));

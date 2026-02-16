@@ -293,8 +293,29 @@ const resetPassword = asyncHandler(async (request, response) => {
 const googleLogin = async (request, response) => {
     if(!request.user) throw new ApiError(404, "User not found");
 
+    // Get user id
+    const userId = request.user._id;
+    if(!userId) throw new ApiError(400, "Failed to fetch User ID on google login");
+
+    // Find profiles
+    const [user, businessProfile, userProfile] = await Promise.all([
+        User.findById(userId).lean(),
+        BusinessProfile.findOne({ ownerUserId:userId }).lean(),
+        UserProfile.findOne({ userId:userId }).lean()
+    ]);   
+    
+    // Validate
+    if(!user) throw new ApiError(400, "Failed to fetch user on google login!");
+
     // Generate access token
-    const accessToken = generateAccessToken(request.user);
+    const accessToken = generateAccessToken({ 
+        _id:user._id, 
+        role:user.role, 
+        profiles: {
+            businessProfileId: businessProfile?._id || null,
+            userProfileId: userProfile?._id || null
+        }
+    });
     if(!accessToken) throw new ApiError(400, "Failed to generate access token");
 
     // Role based redirect for dashboard

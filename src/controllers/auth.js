@@ -23,10 +23,10 @@ const userSignup = asyncHandler(async (request, response) => {
     const { email, passwordHash } = validate(userSignupSchema, request.body);
 
     // Check if email exist
-    const user = await User.findOne({ email: email.toLowerCase() }).select("_id email").lean();
+    const user = await User.findOne({ email: email.toLowerCase() }).select("_id email status").lean();
     if(user)
     {
-        if(user.status !== "active")
+        if(user.status === "pending")
         {
             throw new ApiError(400, "Your account is not activated yet. Please verify your identity via OTP.");
         }

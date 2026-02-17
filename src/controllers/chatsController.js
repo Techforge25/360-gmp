@@ -148,12 +148,19 @@ const fetchMyConversations = asyncHandler(async (request, response) => {
     || convertToMongoId(request.user.profiles.businessProfileId);
     if(!userProfileId) throw new ApiError(401, "Unauthorized");
 
+    // Validate filter
+    const { filter } = request.query || {};
+    if(filter)
+    {
+        if(!["read", "unread"].includes(filter)) throw new ApiError(400, "Invalid filter for conversation list");
+    }
+
+
     // Aggregate conversations
     const conversations = await Chat.aggregate([
         // Match
         {
-            $match: 
-            {
+            $match: {
                 $or: [{ "sender.id": userProfileId }, { "receiver.id": userProfileId }]
             }
         },
@@ -187,12 +194,16 @@ const fetchMyConversations = asyncHandler(async (request, response) => {
         { $sort: { "lastMessage.createdAt": -1 } }
     ]);
 
+    // Filter conversations based on query
+    let filteredConversations = conversations;
+    if(filter === "unread") filteredConversations = conversations.filter(conv => conv.unreadCount > 0);
+    if(filter === "read") filteredConversations = conversations.filter(conv => conv.unreadCount === 0);
+    
     // Format & attach profile info
     const formatted = await Promise.all(
-        conversations.map(async (conv) => {
+        filteredConversations.map(async (conv) => {
 
             const chat = conv.lastMessage;
-
             const isSender = String(chat.sender.id) === String(userProfileId);
             const otherParticipant = isSender ? chat.receiver : chat.sender;
 
@@ -225,6 +236,7 @@ const fetchMyConversations = asyncHandler(async (request, response) => {
             };
         })
     );
+    if(!formatted.length) return response.status(200).json(new ApiResponse(200, formatted, "No conversation list found"));
 
     // Response
     return response.status(200).json(new ApiResponse(200, formatted, "Conversations fetched successfully"));

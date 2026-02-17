@@ -23,7 +23,7 @@ const userSignup = asyncHandler(async (request, response) => {
     const { email, passwordHash } = validate(userSignupSchema, request.body);
 
     // Check if email exist
-    const user = await User.findOne({ email }).select("_id email").lean();
+    const user = await User.findOne({ email: email.toLowerCase() }).select("_id email").lean();
     if(user)
     {
         if(user.status === "pending")

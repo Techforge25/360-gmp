@@ -26,7 +26,7 @@ const userSignup = asyncHandler(async (request, response) => {
     const user = await User.findOne({ email: email.toLowerCase() }).select("_id email").lean();
     if(user)
     {
-        if(user.status === "pending")
+        if(user.status !== "active")
         {
             throw new ApiError(400, "Your account is not activated yet. Please verify your identity via OTP.");
         }

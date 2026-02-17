@@ -1,7 +1,6 @@
 const { isValidObjectId } = require("mongoose");
 const { cookieOptions } = require("../constants");
 const BusinessProfile = require("../models/businessProfileSchema");
-const Notification = require("../models/notificationsModel");
 const UserProfile = require("../models/userProfile");
 const User = require("../models/users");
 const sendEmail = require("../service/email");
@@ -42,7 +41,7 @@ const userSignup = asyncHandler(async (request, response) => {
     if(!createdUser) throw new ApiError(500, "Unable to signup");    
 
     // Send email
-    const result = await sendEmail(email, "Account Activation Token", 
+    const result = await sendEmail(createdUser.email, "Account Activation Token", 
     `<p>Your OTP Token is: <strong>${accountVerificationToken}</strong></p>
     <p>Please use this token to activate your account.</p>`
     );
@@ -56,9 +55,10 @@ const userSignup = asyncHandler(async (request, response) => {
 const resendOTPToken = asyncHandler(async (request, response) => {
     const { email } = request.body || {};
     if(!email) throw new ApiError(400, "Email is required");
+    const validEmail = email.toLowerCase();
 
     // Find user
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: validEmail });
     if(!user) throw new ApiError(404, "User not found associated with this email");
     if(user.status !== "pending") throw new ApiError(400, "Your account is already activated");
 
@@ -72,7 +72,7 @@ const resendOTPToken = asyncHandler(async (request, response) => {
     await user.save();
 
     // Send email
-    const result = await sendEmail(email, "Account Activation Token", 
+    const result = await sendEmail(validEmail, "Account Activation Token", 
         `<p>Your OTP Token is: <strong>${accountVerificationToken}</strong></p>
         <p>Please use this token to activate your account.</p>`
         );
@@ -125,7 +125,7 @@ const userLogin = asyncHandler(async (request, response) => {
     if(!passwordHash) throw new ApiError(400, "Password is required");
 
     // Find user
-    const user = await User.findOne({ email }).select("_id status role passwordHash isNewToPlatform");
+    const user = await User.findOne({ email: email.toLowerCase() }).select("_id status role passwordHash isNewToPlatform");
     if(!user) throw new ApiError(400, "Username or password is incorrect");
 
     // Match password
@@ -222,7 +222,9 @@ const refreshToken = asyncHandler(async (request, response) => {
 // Forgot password
 const forgotPassword = asyncHandler(async (request, response) => {
     const { email } = validate(forgotPasswordSchema, request.body) || {};
-    const user = await User.findOne({ email });
+    const validEmail = email.toLowerCase();
+
+    const user = await User.findOne({ email: validEmail });
     if(!user) throw new ApiError(404, "User not found associated with this email");
 
     // Generate a reset token
@@ -235,7 +237,7 @@ const forgotPassword = asyncHandler(async (request, response) => {
     await user.save();
 
     // Send email
-    const result = sendEmail(email, "Password Reset Request", 
+    const result = sendEmail(validEmail, "Password Reset Request", 
     `<p>Your password reset token is: <strong>${resetToken}</strong></p>
     <p>Please use this token to reset your password.</p>`
     );
@@ -249,7 +251,7 @@ const verifypasswordResetToken = asyncHandler(async (request, response) => {
     const { email, passwordResetToken } = validate(verifyPasswordResetTokenSchema, request.body);
 
     // Find user
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
     if(!user) throw new ApiError(404, "User not found associated with this email");
 
     // Validate token

@@ -126,11 +126,11 @@ const userLogin = asyncHandler(async (request, response) => {
 
     // Find user
     const user = await User.findOne({ email }).select("_id status role passwordHash isNewToPlatform");
-    if(!user) throw new ApiError(400, "Invalid credentials");
+    if(!user) throw new ApiError(400, "Username or password is incorrect");
 
     // Match password
     const isMatched = await user.matchPassword(passwordHash);
-    if(!isMatched) throw new ApiError(400, "Invalid credentials");
+    if(!isMatched) throw new ApiError(400, "Username or password is incorrect");
 
     // Only approved account can log in
     if(user.status !== "active") throw new ApiError(400, "Your account is not activated yet. Please verify your identity via OTP.");

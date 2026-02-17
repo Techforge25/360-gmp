@@ -24,7 +24,18 @@ const userSignup = asyncHandler(async (request, response) => {
 
     // Check if email exist
     const user = await User.findOne({ email }).select("_id email").lean();
-    if(user) throw new ApiError(400, "This email has already been taken");
+    if(user)
+    {
+        if(user.status === "pending")
+        {
+            throw new ApiError(400, "Your account is not activated yet. Please verify your identity via OTP.");
+        }
+        else
+        {
+            throw new ApiError(400, "This email has already been taken");
+        }
+    }
+    
 
     // Generate OTP token
     const { code:accountVerificationToken } = generateCode(6);
@@ -133,7 +144,7 @@ const userLogin = asyncHandler(async (request, response) => {
     if(!isMatched) throw new ApiError(400, "Username or password is incorrect");
 
     // Only approved account can log in
-    if(user.status !== "active") throw new ApiError(400, "Your account is not activated yet. Please verify your identity via OTP.");
+    if(user.status === "pending") throw new ApiError(400, "Your account is not activated yet. Please verify your identity via OTP.");
 
     // Find profiles
     const [businessProfile, userProfile] = await Promise.all([

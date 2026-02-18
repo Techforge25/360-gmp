@@ -6,6 +6,7 @@ const subscriptionSchema = new Schema({
     planId: { type:Schema.Types.ObjectId, ref:"Plan" },
     status: { type:String, enum: ["active", "canceled", "expired"], default: "active" },
     stripeSubscriptionId: { type:String, default:null },
+    stripeCustomerId: { type:String, default:null },
     startDate: { type:Date, required:true },
     endDate: { type:Date, required:true }
 });

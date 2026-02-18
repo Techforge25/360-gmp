@@ -35,7 +35,7 @@ const createJob = asyncHandler(async (request, response) => {
 // Get All Jobs with Pagination
 const getAllJobs = asyncHandler(async (request, response) => {
     const { businessId, status, jobCategory, employmentType,
-    page = 1, limit = 20, search, payRange, country, datePosted } = request.query;
+    page = 1, limit = 20, search, payRange, country, datePosted, sortedType = "newest" } = request.query;
 
     // Filter and searches
     const filter = {};
@@ -45,6 +45,10 @@ const getAllJobs = asyncHandler(async (request, response) => {
     if(jobCategory) filter.jobCategory = { $regex:jobCategory, $options:"i" };
     if(employmentType) filter.employmentType = { $regex:employmentType, $options:"i" };
     if(country) filter["location.country"] = { $regex:country, $options:"i" };
+
+    // Sorting configuration
+    const sortConfig = { createdAt:-1 }
+    if(sortedType !== "newest") sortConfig.createdAt = 1
 
     // Pay range (single value)
     if(payRange) 
@@ -70,7 +74,7 @@ const getAllJobs = asyncHandler(async (request, response) => {
     const jobs = await Job.paginate(filter, {
         page: Number(page),
         limit: Number(limit),
-        sort: { createdAt: -1 },
+        sort: sortConfig,
         populate: {
             path: "businessId",
             select: "companyName businessType primaryIndustry logo"

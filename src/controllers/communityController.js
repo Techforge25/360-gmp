@@ -29,23 +29,22 @@ const createCommunity = asyncHandler(async (request, response) => {
     if(!businessProfile) throw new ApiError(404, "Business profile not found. Invalid business ID");
     
     // Verify that the user is the owner of the business
-    if(businessProfile.ownerUserId.toString() !== userId.toString()) {
-        throw new ApiError(403, "Only business owner can create communities");
-    }
+    if(businessProfile.ownerUserId.toString() !== userId.toString()) throw new ApiError(403, "Only business owner can create communities");
 
     // Create community
     const community = await Community.create({ ...value, businessId:businessProfile._id });
     if(!community) throw new ApiError(500, "Failed to create community");
 
     // Create membership for owner
-    await CommunityMembership.create({
+    const membership = await CommunityMembership.create({
         communityId: community._id,
         userProfileId: null,
-        memberId: businessProfile.ownerUserId,
+        memberId: businessProfile._id,
         memberModel: "BusinessProfile",
         role: "owner",
         status: "approved"
     });
+    if(!membership) throw new ApiError(500, "Failed to create community membership");
 
     // Update member count
     community.memberCount = 1;

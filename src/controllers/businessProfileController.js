@@ -51,7 +51,7 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
     if(businessType) filter.businessType = { $regex: businessType, $options: "i" };
 
     // Fetch
-    const profiles = await BusinessProfile.paginate(filter, { page, limit });
+    const profiles = await BusinessProfile.paginate(filter, { page, limit, sort:{ createdAt:-1 } });
     if(!profiles.docs?.length) return response.status(200).json(new ApiResponse(200, profiles, "No business profiles found"));
 
     // Response

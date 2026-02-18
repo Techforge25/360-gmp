@@ -10,13 +10,17 @@ const Wallet = require("../models/walletModel");
 const createBusinessProfile = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
-    // Check if user has already created BusinessProfile
-    const existingProfile = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
-    if(existingProfile) throw new ApiError(400, "You have already created a business profile");
-
     // Validate
     const { error, value } = createBusinessProfileSchema.validate(request.body, { abortEarly: false });
     if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
+
+    // Check if user has already created BusinessProfile
+    const [existingProfile, existingName] = await Promise.all([
+        BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean(),
+        BusinessProfile.findOne({ companyName:value.companyName }).select("companyName").lean(),
+    ]);
+    if(existingProfile) throw new ApiError(400, "You have already created a business profile");
+    if(existingName) throw new ApiError(400, "This Company name has already been taken");
 
     // Prepare profile payload
     const profileData = { ...value, ownerUserId:userId };

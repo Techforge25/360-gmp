@@ -290,25 +290,24 @@ const likePost = asyncHandler(async (request, response) => {
     const post = await CommunityPost.findById(postId);
     if(!post) throw new ApiError(404, "Post not found");
 
-    // Get user profile
-    const userProfileId = await getUserProfileId(request.user._id);
-
     const identity = await getIdentity(request.user._id, post.communityId);
     await checkCommunityMembership(post.communityId, identity.id, identity.model);
 
     // Check existing like
     const existingLikeIndex = post.likes.findIndex(like => like.userId.toString() === identity.id.toString());
 
-    if(existingLikeIndex > -1) {
+    if(existingLikeIndex > -1) 
+    {
         // Unlike: Remove like
         post.likes.splice(existingLikeIndex, 1);
         post.likeCount = Math.max(0, post.likeCount - 1);
-    } else {
+    } 
+    else 
+    {
         // Like: Add like
         post.likes.push({ authorId:identity.id, onModel:identity.model });
         post.likeCount += 1;
     }
-
     await post.save();
 
     const io = request.app.get("io");

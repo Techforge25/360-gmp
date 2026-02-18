@@ -46,10 +46,6 @@ const getAllJobs = asyncHandler(async (request, response) => {
     if(employmentType) filter.employmentType = { $regex:employmentType, $options:"i" };
     if(country) filter["location.country"] = { $regex:country, $options:"i" };
 
-    // Sorting configuration
-    const sortConfig = { createdAt:-1 }
-    if(sortedType !== "newest") sortConfig.createdAt = 1
-
     // Pay range (single value)
     if(payRange) 
     {
@@ -69,6 +65,10 @@ const getAllJobs = asyncHandler(async (request, response) => {
     
     // Last 14 days
     if(datePosted === "14d") filter.createdAt = { $gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) };
+
+    // Sorting configuration
+    const sortConfig = { createdAt:-1 }
+    if(sortedType !== "newest") sortConfig.createdAt = 1;    
 
     // Find jobs
     const jobs = await Job.paginate(filter, {

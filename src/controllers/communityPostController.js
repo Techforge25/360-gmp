@@ -82,7 +82,7 @@ const createPost = asyncHandler(async (request, response) => {
     //await post.populate("authorUserProfileId", "fullName title logo");
 
     const io = request.app.get("io");
-    io.to(value.communityId.toString()).emit("new_post", post); 
+    io.to(value.communityId).emit("new_post", post); 
 
     // Response
     return response.status(201).json(new ApiResponse(201, post, "Post created successfully"));
@@ -102,10 +102,13 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
     let currentUserProfileId = null;
     let isMember = false;
     if(request.user?._id) {
-        const isBusinessOwner = community.businessId.ownerUserId.toString() === request.user._id.toString();
-        if (isBusinessOwner) {
+        const isBusinessOwner = community.businessId.ownerUserId === request.user._id;
+        if (isBusinessOwner) 
+        {
             hasAccess = true;
-        } else {
+        } 
+        else 
+        {
             try {
                 const userProfileId = await getUserProfileId(request.user._id);
                 const membership = await CommunityMembership.findOne({
@@ -147,7 +150,7 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
             // const userProfileId = await getUserProfileId(request.user._id);
             for(let post of posts) {
                 post.likedByUser = post.likes.some(
-                    like =>  like.userProfileId && like.userProfileId.toString() === currentUserProfileId.toString()
+                    like =>  like.userProfileId && like.userProfileId === currentUserProfileId
                 );
             }
         } catch(err) {
@@ -201,7 +204,7 @@ const getPostById = asyncHandler(async (request, response) => {
         try {
             const userProfileId = await getUserProfileId(request.user._id);
             post.likedByUser = post.likes.some(
-                like => like.userProfileId.toString() === userProfileId.toString()
+                like => like.userProfileId === userProfileId
             );
         } catch(err) {
             post.likedByUser = false;
@@ -229,9 +232,7 @@ const updatePost = asyncHandler(async (request, response) => {
     const identity = await getIdentity(request.user._id, post.communityId);
 
     // Check if user is the author
-    if (post.authorId.toString() !== identity.id.toString()) {
-        throw new ApiError(403, "Only the author can update this post");
-    }
+    if(post.authorId !== identity.id) throw new ApiError(403, "Only the author can update this post");
 
     // Update post
     const updatedPost = await CommunityPost.findByIdAndUpdate(
@@ -262,7 +263,7 @@ const deletePost = asyncHandler(async (request, response) => {
     const identity = await getIdentity(request.user._id, post.communityId);
 
     // Check if author OR Community Admin
-    const isAuthor = post.authorId.toString() === identity.id.toString();
+    const isAuthor = post.authorId === identity.id;
     
     const membership = await CommunityMembership.findOne({
         communityId: post.communityId,
@@ -294,7 +295,7 @@ const likePost = asyncHandler(async (request, response) => {
     await checkCommunityMembership(post.communityId, identity.id, identity.model);
 
     // Check existing like
-    const existingLikeIndex = post.likes.findIndex(like => like.userId.toString() === identity.id.toString());
+    const existingLikeIndex = post.likes.findIndex(like => like.userId === identity.id);
 
     if(existingLikeIndex > -1) 
     {
@@ -311,7 +312,7 @@ const likePost = asyncHandler(async (request, response) => {
     await post.save();
 
     const io = request.app.get("io");
-    io.to(post.communityId.toString()).emit("post_updated", {
+    io.to(post.communityId).emit("post_updated", {
         postId: post._id,
         likeCount: post.likeCount,
         action: "like"
@@ -364,7 +365,7 @@ const addComment = asyncHandler(async (request, response) => {
 
     // Socket Emit
     const io = request.app.get("io");
-    io.to(post.communityId.toString()).emit("new_comment", {
+    io.to(post.communityId).emit("new_comment", {
         postId: post._id,
         comment: latestComment,
         commentCount: post.commentCount

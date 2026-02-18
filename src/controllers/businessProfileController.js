@@ -41,7 +41,7 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
 
 // Fetch business profiles
 const fetchBusinessProfiles = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search, industry, country, businessType = "" } = request.query;
+    const { page = 1, limit = 10, search, industry, country, businessType } = request.query;
 
     // Filters
     const filter = {};

@@ -60,6 +60,7 @@ const createPost = asyncHandler(async (request, response) => {
     if(!community) throw new ApiError(404, "Community not found");
 
     const identity = await getIdentity(request.user._id, community._id);
+    console.log(identity);
 
     // 2. Check Membership (Using your requested method)
     await checkCommunityMembership(community._id, identity.id, identity.model);

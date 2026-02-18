@@ -39,12 +39,18 @@ const getIdentity = async (userId, communityId) => {
 
 // Helper function to check if user is member of community
 const checkCommunityMembership = async (communityId, profileId, profileModel) => {
+    console.log("communityId", communityId);
+    console.log("profileId", profileId);
+    console.log("profileModel", profileModel);
+
     const membership = await CommunityMembership.findOne({
         communityId: communityId,
         memberId: profileId,
         memberModel: profileModel,
         status: "approved"
     });
+
+    console.log("membership", membership);
     if(!membership) throw new ApiError(403, "You must be an approved member or owner of this community to perform this action.");
     
     return membership;
@@ -63,7 +69,7 @@ const createPost = asyncHandler(async (request, response) => {
     console.log(identity);
 
     // 2. Check Membership (Using your requested method)
-    await checkCommunityMembership(community._id, identity.id, identity.model);
+    await checkCommunityMembership(community._id, String(identity.id), identity.model);
 
     // Create post
     const post = await CommunityPost.create({

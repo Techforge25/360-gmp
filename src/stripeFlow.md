@@ -137,3 +137,169 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
     return response.status(303).redirect(redirectUrl);
 });
 ```
+
+---
+
+## Webhook
+
+- Now, I will implement webhook for secure payment and auto deduction with db tracking.
+
+### Step 01: Get Developer Access
+
+- Get dev access on stripe account from client
+
+- Login to stripe dashboard
+
+- Enable test mode. (Click toggle on top right corner)
+
+### Step 02: Product & Recurring Price Creation
+
+- Go to dashboard → Products → Add Product
+
+- Product Name: `Silver Plan`
+
+- Pricing:
+
+- Select Recurring
+
+- Billing period: Monthly
+
+- Amount: e.g. $10
+
+- Save
+
+- After saving, you will get `Stripe Price ID` that looks like `price_1Pxxxxxxx`
+
+- Copy it and paste into your plan collection's field, named as `stripePriceId`
+
+### Step 03: Add Webhook
+
+- Go to Dashboard → Developers → Webhooks → Click → Add Endpoint
+
+#### Endpoint
+```bash
+https://gmp-backend.techforgeinnovations.com/api/v1/subscription/webhook
+```
+
+- Select these 4 events:
+
+✅ **checkout.session.completed**
+
+✅ **invoice.payment_succeeded**
+
+✅ **invoice.payment_failed**
+
+✅ **customer.subscription.deleted**
+
+- Save
+
+### Step 04: Webhook Secret
+
+- Copy webhook secret that looks like `whsec_xxxxxxxxx`
+
+- Store in your .env file
+
+`.env`
+```javascript
+STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxx
+```
+
+### Step 05: Webhook Functionality
+
+```javascript
+// Stripe webhook
+subscriptionRouter.route("/webhook")
+.post(express.raw({ type: "application/json" }), stripeWebhook);
+```
+
+- `express.json()` won't work. You need to use `express.raw({ type: "application/json" })`
+
+```javascript
+// Stripe webhook controller (Handle recurring subscription lifecycle)
+const stripeWebhook = asyncHandler(async (request, response) => {
+    // Initialize stripe SDK
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+    // Get webhook signature
+    const signature = request.headers["stripe-signature"];
+
+    let event;
+
+    // Verify webhook signature
+    try 
+    {
+        event = stripe.webhooks.constructEvent(request.body, signature, process.env.STRIPE_WEBHOOK_SECRET);
+    } 
+    catch (error) 
+    {
+        return response.status(400).send(`Webhook Error: ${error.message}`);
+    }
+
+    // Extract event type
+    const eventType = event.type;
+
+    // Checkout session completed
+    if(eventType === "checkout.session.completed") console.log("Checkout session completed");
+
+    // Monthly recurring payment success
+    if(eventType === "invoice.payment_succeeded")
+    {
+        // Get subscription ID
+        const invoice = event.data.object;
+        const stripeSubscriptionId = invoice.subscription;
+        if(!stripeSubscriptionId) return response.status(200).json({ received:true });
+
+        // Find subscription in DB
+        const subscription = await Subscription.findOne({ stripeSubscriptionId });
+        if(subscription)
+        {
+            // Get updated period from Stripe
+            const stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+
+            // Save to db 
+            subscription.startDate = new Date(stripeSubscription.current_period_start * 1000);
+            subscription.endDate = new Date(stripeSubscription.current_period_end * 1000);
+            subscription.status = "active";
+            await subscription.save();
+
+            console.log("Subscription renewed successfully");
+        }
+    }
+
+    // Payment failed handling
+    if(eventType === "invoice.payment_failed")
+    {
+        // Get subscription ID
+        const invoice = event.data.object;
+        const stripeSubscriptionId = invoice.subscription;
+        if(!stripeSubscriptionId) return response.status(200).json({ received:true });
+
+        // Find subscription in DB
+        const subscription = await Subscription.findOne({ stripeSubscriptionId });
+        if(subscription)
+        {
+            subscription.status = "expired";
+            await subscription.save();
+
+            console.log("Subscription payment failed");
+        }
+    }
+    
+    // Subscription canceled from Stripe
+    if(eventType === "customer.subscription.deleted")
+    {
+        const stripeSubscription = event.data.object;
+        const subscription = await Subscription.findOne({ stripeSubscriptionId: stripeSubscription.id });
+        if(subscription)
+        {
+            subscription.status = "canceled";
+            await subscription.save();
+
+            console.log("Subscription canceled from Stripe");
+        }
+    }
+
+    // Return success response to Stripe
+    return response.status(200).json({ received: true });
+});
+```

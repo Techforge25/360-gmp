@@ -4,7 +4,7 @@ const paginate = require("mongoose-paginate-v2");
 const BusinessProfileSchema = new Schema({
     // Basic info
     ownerUserId: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true, index: true },
-    companyName: { type: String, required: true, trim: true },
+    companyName: { type: String, required: true, trim: true, unique:true },
     businessType: { type: String, trim: true },
     companySize: { type: String, trim: true },
     foundedDate: { type:Date },

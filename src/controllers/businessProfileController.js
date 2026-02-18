@@ -41,13 +41,14 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
 
 // Fetch business profiles
 const fetchBusinessProfiles = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search, industry, country, businessType } = request.query;
+    const { page = 1, limit = 10, search, industry, country, city, businessType } = request.query;
 
     // Filters
     const filter = {};
     if(search) filter.companyName = { $regex:search, $options:"i" };
     if(industry) filter.primaryIndustry = { $regex:industry, $options:"i" };
     if(country) filter["location.country"] = { $regex: country, $options: "i" };
+    if(city) filter["location.city"] = { $regex: city, $options: "i" };
     if(businessType) filter.businessType = { $regex: businessType, $options: "i" };
 
     // Fetch

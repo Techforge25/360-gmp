@@ -37,8 +37,7 @@ const createPostSchema = joi.object({
         duration: joi.date().label("Poll Duration")
     }).when('type', { is: 'poll', then: joi.required(), otherwise: joi.forbidden() }).label("Poll Details"),
 
-    // Post Sharing
-    shareTo: joi.string().valid("public", "private").default("public").label("Share To"),
+    // Meta tags
     tags: joi.string().trim().allow("", null).optional().label("Tags"),
 
     images: joi.array().items(joi.string().trim()).default([]),
@@ -72,8 +71,7 @@ const updatePostSchema = joi.object({
         duration: joi.date().label("Poll Duration")
     }).when('type', { is: 'poll', then: joi.required(), otherwise: joi.optional() }).label("Poll Details"),
 
-    // Post Sharing
-    shareTo: joi.string().valid("public", "private").default("public").label("Share To"),
+    // Meta tags
     tags: joi.string().trim().allow("", null).optional().label("Tags"),
 
     images: joi.array().items(joi.string().trim()).default([]),

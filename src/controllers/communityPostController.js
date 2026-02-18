@@ -5,7 +5,7 @@ const UserProfile = require("../models/userProfile");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
-const { createPostSchema, updatePostSchema, likePostSchema, addCommentSchema } = require("../validations/communityPostValidator");
+const { createPostSchema, updatePostSchema, addCommentSchema } = require("../validations/communityPostValidator");
 const BusinessProfile = require("../models/businessProfileSchema");
 const { isValidObjectId } = require("mongoose");
 

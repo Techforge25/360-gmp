@@ -42,9 +42,6 @@ const communityPostSchema = new Schema({
     // Meta tags for mentioning fellows
     tags: { type: String, trim: true },
 
-    // Privacy
-    shareTo: { type:String, enum:['public', 'private'], default: 'public' },
-
     // Likes
     likes: [{
         userId: { type: Schema.Types.ObjectId, refPath: 'likes.onModel' },

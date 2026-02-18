@@ -291,38 +291,65 @@ const likePost = asyncHandler(async (request, response) => {
     const post = await CommunityPost.findById(postId);
     if(!post) throw new ApiError(404, "Post not found");
 
+    // Get identity (UserProfile or BusinessProfile)
     const identity = await getIdentity(request.user._id, post.communityId);
+
+    // Check membership
     await checkCommunityMembership(post.communityId, identity.id, identity.model);
 
-    // Check existing like
-    const existingLikeIndex = post.likes.findIndex(like => like.userId === identity.id);
+    // Try to ADD like (ONLY if not already liked)
+    const likeResult = await CommunityPost.updateOne(
+        {
+            _id: postId,
+            "likes.userId": { $ne: identity.id }   // only if user has NOT liked already
+        },
+        {
+            $addToSet: {
+                likes: {
+                    userId: identity.id,
+                    onModel: identity.model,
+                    likedAt: new Date()
+                }
+            },
+            $inc: { likeCount: 1 }
+        }
+    );
 
-    if(existingLikeIndex > -1) 
+    let isLiked;
+
+    // If modifiedCount === 1 → Like added
+    if(likeResult.modifiedCount === 1) 
     {
-        // Unlike: Remove like
-        post.likes.splice(existingLikeIndex, 1);
-        post.likeCount = Math.max(0, post.likeCount - 1);
-    } 
+        isLiked = true;
+    }
     else 
     {
-        // Like: Add like
-        post.likes.push({ authorId:identity.id, onModel:identity.model });
-        post.likeCount += 1;
+        // Otherwise → Unlike (remove existing like)
+        await CommunityPost.updateOne(
+            { _id: postId },
+            {
+                $pull: { likes: { userId: identity.id } },
+                $inc: { likeCount: -1 }
+            }
+        );
+        isLiked = false;
     }
-    await post.save();
+
+    // Get updated post for accurate count
+    const updatedPost = await CommunityPost.findById(postId).select("likeCount");
 
     const io = request.app.get("io");
-    io.to(post.communityId).emit("post_updated", {
-        postId: post._id,
-        likeCount: post.likeCount,
+    io.to(post.communityId.toString()).emit("post_updated", {
+        postId: postId,
+        likeCount: updatedPost.likeCount,
         action: "like"
     });
 
-    return response.status(200).json(
-        new ApiResponse(200, { 
-            likeCount: post.likeCount, 
-            isLiked: existingLikeIndex === -1 
-        }, existingLikeIndex === -1 ? "Post liked successfully" : "Post unliked successfully")
+    // Response
+    return response.status(200).json(new ApiResponse(
+        200, 
+        { likeCount: updatedPost.likeCount, isLiked: isLiked }, 
+        isLiked ? "Post liked successfully" : "Post unliked successfully")
     );
 });
 

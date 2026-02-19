@@ -7,6 +7,7 @@ const productSchema = new Schema({
     businessId: { type: Schema.Types.ObjectId, ref: "BusinessProfile" },
     title: { type:String, required:true },
     image: { type:String, required:true },
+    groupImages: [{ type:String }],
     detail: { type:String, required:true },
     category: { type:String, required:true },
     pricePerUnit: { type:Number, required:true },

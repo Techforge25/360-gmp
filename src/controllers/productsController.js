@@ -12,11 +12,18 @@ const convertToMongoId = require("../utils/convertToMongoId");
 // Create product
 const createProduct = asyncHandler(async (request, response) => {
     const userId = request.user?._id;
+
+    // Get validated payload
+    const payload = validate(createProductSchema, request.body);
+
+    // Find business
     const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");
     if(!business) throw new ApiError(404, "Business not found");
 
-    const payload = validate(createProductSchema, request.body);
+    // Savve to db
     const product = await Product.create({ ...payload, businessId:business._id });
+
+    // Response
     return response.status(201).json(new ApiResponse(201, product, "Product created successfully"));
 });
 

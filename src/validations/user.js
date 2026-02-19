@@ -7,7 +7,8 @@ const userSignupSchema = Joi.object({
     .required().messages({
         "string.pattern.base": "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.",
         "string.min": "Password must be at least 8 characters long."
-    }).label("Password")
+    }).label("Password"),
+    confirmPassword: Joi.string().valid(Joi.ref("passwordHash")).required().label("Confirm Password")
 });
 
 module.exports = { userSignupSchema };

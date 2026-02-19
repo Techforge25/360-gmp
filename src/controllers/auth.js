@@ -20,7 +20,7 @@ const verifyPasswordResetTokenSchema = require("../validations/verifyPasswordRes
 // User signup
 const userSignup = asyncHandler(async (request, response) => {
     // Validate
-    const { email, passwordHash } = validate(userSignupSchema, request.body);
+    const { email, passwordHash } = validate(userSignupSchema, request.body) || {};
 
     // Check if email exist
     const user = await User.findOne({ email: email.toLowerCase() }).select("_id email status").lean();

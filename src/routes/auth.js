@@ -1,5 +1,7 @@
 const { Router } = require("express");
-const { userSignup, userLogin, logout, refreshToken, forgotPassword, verifypasswordResetToken, resetPassword, googleLogin, verifyOTP, resendOTPToken, userExistence } = require("../controllers/auth");
+const { userSignup, userLogin, logout, switchRole, forgotPassword, 
+verifypasswordResetToken, resetPassword, googleLogin, verifyOTP, 
+resendOTPToken, userExistence } = require("../controllers/auth");
 const { authentication } = require("../middlewares/auth");
 const passport = require("passport");
 
@@ -24,8 +26,8 @@ authRouter.route("/user/existence").post(userExistence);
 // Logout
 authRouter.route("/logout").get(logout);
 
-// Refresh token - (update user role)
-authRouter.route("/refreshToken/updateRole").get(authentication, refreshToken);
+// Refresh token - (switch user role)
+authRouter.route("/refreshToken/updateRole").get(authentication, switchRole);
 
 // Forgot password
 authRouter.route("/forgotPassword").post(forgotPassword);

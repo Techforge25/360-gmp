@@ -180,7 +180,7 @@ const logout = asyncHandler(async (request, response) => {
 });
 
 // Refresh token
-const refreshToken = asyncHandler(async (request, response) => {
+const switchRole = asyncHandler(async (request, response) => {
     const { _id } = request.user;
     const role = request.query?.role || null;
     if(!role) throw new ApiError(400, "Role is required for refreshing a token");
@@ -363,5 +363,5 @@ const userExistence = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, user._id, "User exists"));
 });
 
-module.exports = { userSignup, userLogin, logout, refreshToken, forgotPassword, 
+module.exports = { userSignup, userLogin, logout, switchRole, forgotPassword, 
 resendOTPToken, verifyOTP, verifypasswordResetToken, resetPassword, googleLogin, userExistence };

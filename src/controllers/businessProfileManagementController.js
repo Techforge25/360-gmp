@@ -115,7 +115,6 @@ const fetchLowStockProducts = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
     const products = await Product.paginate(searchFilter, { page, limit,
         sort: { stockQty:1 }, // most critical first
-        select: "title stockQty lowStockThreshold",
         lean: true
     });
 

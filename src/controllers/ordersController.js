@@ -580,7 +580,7 @@ const fetchInTransitOrders = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, orders, "In-transit orders have been fetch")); 
 });
 
-// Fetch in-transit orders
+// Fetch completed orders
 const fetchCompletedOrders = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
@@ -598,7 +598,7 @@ const fetchCompletedOrders = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, orders, "Completed orders have been fetch")); 
 });
 
-// Fetch in-transit orders
+// Fetch cancelled orders
 const fetchCancelledOrders = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();

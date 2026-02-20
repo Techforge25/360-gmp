@@ -1,16 +1,6 @@
 const { Schema, model } = require("mongoose");
 const paginate = require("mongoose-paginate-v2");
 
-// Schema
-// const orderSchema = new Schema({
-//     buyerUserProfileId: { type: Schema.Types.ObjectId, ref: "UserProfile" },
-//     sellerBusinessId: { type: Schema.Types.ObjectId, ref: "BusinessProfile" },
-//     conversationId: { type: Schema.Types.ObjectId, ref: "Conversation" },
-//     customOfferId: { type: Schema.Types.ObjectId, ref: "CustomOffer" },
-//     status: String,
-//     totalAmount: Number
-// }, { timestamps: true });
-
 // Updated Schema
 const orderSchema = new Schema({
     buyerUserProfileId: { type: Schema.Types.ObjectId, ref: "UserProfile" },
@@ -22,12 +12,20 @@ const orderSchema = new Schema({
         default: "pending" 
     },
     shippingAddress: { type:String },
-    items:[{
+    items: [{
         _id:false,
         productId: { type: Schema.Types.ObjectId, ref:"Product", required:[true, "Product ID is required"] },
         quantity: { type: Number, required:[true, "Please specify product quantity"] },
         priceAtPurchase: { type: Number, required:[true, "Please specify product price at purchase"] }
-    }]
+    }],
+
+    // Tracking info
+    tracking: {
+        trackingId: { type:String, default:null },
+        courierName: { type:String, default:null },
+        trackingUrl: { type:String, default:null },
+        shippedAt: { type:Date }
+    }    
 }, { timestamps: true });
 
 // Inject plugin

@@ -29,7 +29,7 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
     const profile = await BusinessProfile.create(profileData);
     if(!profile) throw new ApiError(500, "Failed to create business profile");
 
-    // Executes queries parallel
+    // Create wallet account, set role from null to business and mark "isNewToPlatform" as false
     const [wallet, user] = await Promise.all([
         Wallet.create({ ownerId:profile._id, ownerModel:"BusinessProfile" }),
         User.findByIdAndUpdate(userId, { role:"business", isNewToPlatform:false }, { new:true, lean:true })

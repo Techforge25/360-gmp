@@ -16,7 +16,10 @@ const userSchema = new Schema({
 
     // Forgot password
     passwordResetToken: { type:String, default:null },
-    passwordResetTokenExpires: { type:Date, default:null }
+    passwordResetTokenExpires: { type:Date, default:null },
+
+    // Refresh token
+    refreshToken: { type:String, default:null }
 }, { timestamps: true });
 
 // Hash password

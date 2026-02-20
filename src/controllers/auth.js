@@ -4,7 +4,7 @@ const BusinessProfile = require("../models/businessProfileSchema");
 const UserProfile = require("../models/userProfile");
 const User = require("../models/users");
 const sendEmail = require("../service/email");
-const { generateAccessToken } = require("../utils/accessToken");
+const { generateAccessToken, getRefreshToken, verifyRefreshToken, generateRefreshToken, generateTokens, getAccessToken } = require("../utils/accessToken");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
@@ -136,7 +136,8 @@ const userLogin = asyncHandler(async (request, response) => {
     if(!passwordHash) throw new ApiError(400, "Password is required");
 
     // Find user
-    const user = await User.findOne({ email: email.toLowerCase() }).select("_id status role passwordHash isNewToPlatform");
+    const user = await User.findOne({ email: email.toLowerCase() })
+    .select("_id status role passwordHash isNewToPlatform refreshToken");
     if(!user) throw new ApiError(400, "Username or password is incorrect");
 
     // Match password
@@ -155,7 +156,7 @@ const userLogin = asyncHandler(async (request, response) => {
     // Payload based on role
     const profilePayload = user.role === "user" ? userProfile : businessProfile;
 
-    // Generate access token
+    // Generate access token & refresh tokens
     const accessToken = generateAccessToken({ 
         _id:user._id, 
         role:user.role, 
@@ -164,22 +165,89 @@ const userLogin = asyncHandler(async (request, response) => {
             userProfileId: userProfile?._id || null
         }
     });
+    const refreshToken = generateRefreshToken({ _id:user._id });
+
+    // Validate
     if(!accessToken) throw new ApiError(500, "Failed to generate access token");
+    if(!refreshToken) throw new ApiError(500, "Failed to generate refresh token");
+
+    // Save refresh token to db
+    user.refreshToken = refreshToken;
+    await user.save();
 
     // Response
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
-    .json(new ApiResponse(200, { profilePayload, accessToken, role:user.role, isNewToPlatform:user.isNewToPlatform }, "Login successful"));
+    .cookie("refreshToken", refreshToken, cookieOptions)
+    .json(new ApiResponse(200, { profilePayload, accessToken, refreshToken, 
+    role:user.role, isNewToPlatform:user.isNewToPlatform }, "Login successful"));
 });
 
 // Logout
 const logout = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Clear refresh token from db
+    const user = await User.findByIdAndUpdate(userId, { refreshToken:null }, { new:true, lean:true }).select("_id");
+    if(!user) throw new ApiError(500, "Failed to clear refresh token from db"); 
+
+    // Response
     return response.status(200)
     .clearCookie("accessToken", cookieOptions)
+    .clearCookie("refreshToken", cookieOptions)
     .json(new ApiResponse(200, null, "Logout successful"));
 });
 
 // Refresh token
+const refreshToken = asyncHandler(async (request, response) => {
+    // Get token
+    const token = getRefreshToken(request);
+    if(!token) throw new ApiError(401, "Unauthorized! Refresh token is missing");
+
+    // Verify refresh token
+    const payload = verifyRefreshToken(token);
+    if(!payload) throw new ApiError(401, "Unauthorized! Invalid refresh token");
+
+    // Find user
+    const user = await User.findById(payload._id).select("_id refreshToken");
+    if(!user) throw new ApiError(404, "User not found associated with the provided refresh token");
+
+    // Compare tokens
+    if(user.refreshToken !== token) throw new ApiError(400, "Refresh token mismatch");
+
+    // Fetch child profiles
+    const [userProfile, businessProfile] = await Promise.all([
+        UserProfile.findOne({ userId:user._id }).select("_id").lean(),
+        BusinessProfile.findOne({ ownerUserId:user._id }).select("_id").lean()
+    ]);
+
+    // Generate tokens
+    const accessToken = generateAccessToken({
+        _id: user._id,
+        role: user.role,
+        profiles: {
+            businessProfileId: businessProfile?._id || null,
+            userProfileId: userProfile?._id || null
+        }            
+    });
+    const refreshToken = generateRefreshToken({ _id: user._id });
+
+    // Validate
+    if(!accessToken) throw new ApiError(400, "Failed to re-generate access token");
+    if(!refreshToken) throw new ApiError(400, "Failed to re-generate refresh token");
+
+    // Save to db
+    user.refreshToken = token;
+    await user.save(); 
+
+    // Response
+    return response.status(200)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", refreshToken, cookieOptions)
+    .json(new ApiResponse(200, { accessToken, refreshToken }, "Refresh token has been issued"));
+});
+
+// Switch role
 const switchRole = asyncHandler(async (request, response) => {
     const { _id } = request.user;
     const role = request.query?.role || null;
@@ -363,5 +431,5 @@ const userExistence = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, user._id, "User exists"));
 });
 
-module.exports = { userSignup, userLogin, logout, switchRole, forgotPassword, 
+module.exports = { userSignup, userLogin, logout, refreshToken, switchRole, forgotPassword, 
 resendOTPToken, verifyOTP, verifypasswordResetToken, resetPassword, googleLogin, userExistence };

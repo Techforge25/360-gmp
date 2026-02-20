@@ -24,7 +24,7 @@ authRouter.route("/user/login").post(userLogin);
 authRouter.route("/user/existence").post(userExistence);
 
 // Logout
-authRouter.route("/logout").get(logout);
+authRouter.route("/logout").get(authentication, logout);
 
 // Refresh token
 authRouter.route("/refreshToken").get(authentication, refreshToken);

@@ -8,7 +8,7 @@ const userProfileSchema = new Schema({
 
     // Contact info
     email:{ type:String, required:true, trim:true, lowercase:true, unique:[true, "This email has already been taken"] },
-    phone: { type:String },
+    phone: { type:String, trim:true, unique:[true, "This contact number has already been taken"] },
     location: { type:String, trim:true },
 
     // Media files url

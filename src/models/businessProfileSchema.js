@@ -29,7 +29,7 @@ const BusinessProfileSchema = new Schema({
     b2bContact: {
       name: { type: String, trim: true },
       title: { type: String, trim: true },
-      phone: { type: String, trim: true },
+      phone: { type: String, trim: true, unique:[true, "This contact number has already been taken"] },
       supportEmail: {
         type: String,
         trim: true,

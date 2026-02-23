@@ -13,6 +13,7 @@ const { emptyList } = require("../constants");
 const convertToMongoId = require("../utils/convertToMongoId");
 const Transaction = require("../models/transactionModel");
 const TrialUsage = require("../models/trialUsageModel");
+const Notification = require("../models/notificationsModel");
 
 // Create order - Purchase product using stripe payment
 const createOrder = asyncHandler(async (request, response) => {
@@ -23,12 +24,8 @@ const createOrder = asyncHandler(async (request, response) => {
     // Track trial orders
     if(planName === "TRIAL")
     {
-        const trial = await TrialUsage.findOneAndUpdate(
-            { userId, ordersUsed: { $lt: 1 } },
-            { $inc: { ordersUsed: 1 }, $setOnInsert: { userId } },
-            { new:true, upsert:true }
-        );
-        if(!trial) throw new ApiError(403,"Trial users can place only one order. Please upgrade your plan.");
+        const trial = await TrialUsage.findOne({ userId, ordersUsed:{ $gte:1 } });
+        if(trial && trial.ordersUsed >= 1) throw new ApiError(403, "Trial users can place only one order. Please upgrade your plan.");
     }
 
     // Get user profile
@@ -53,11 +50,17 @@ const createOrder = asyncHandler(async (request, response) => {
         if(!quantity || quantity <= 0) throw new ApiError(400, "Invalid product quantity");
 
         // Trial user cannot purchase in bulk
-        if(request.user.plan?.name === "TRIAL" && quantity > 1) throw new ApiError(400, "You cannot purchase in bulk within Trial period! Please upgrade");
+        if(planName === "TRIAL" && quantity > 1) throw new ApiError(400, "You cannot purchase in bulk within Trial period! Please upgrade");
 
         // Fetch product from DB (price & shipping must come from server)
-        const product = await Product.findById(productId).select("title stockQty pricePerUnit shippingCost businessId");
+        const product = await Product.findById(productId).select("title stockQty pricePerUnit shippingCost businessId isSingleProductAvailable");
         if(!product) throw new ApiError(404, "Product not found");
+
+        // Restrict single-item purchase if the product is available only for bulk orders
+        if(!product.isSingleProductAvailable && quantity <= 1)
+        {
+            throw new ApiError(400, `${product.title} is available for bulk purchase only. Single-item orders are not allowed.`);
+        }
 
         // Enforce single seller per order
         if(!sellerBusinessId)
@@ -101,11 +104,13 @@ const createOrder = asyncHandler(async (request, response) => {
             }
         ],
         metadata: {
-            buyerUserProfileId: userProfile._id.toString(),
-            sellerBusinessId,
+            userId: String(userId), // Sending parent user ID for marking trial usage after order completion
+            buyerUserProfileId: String(userProfile._id),
+            sellerBusinessId: String(sellerBusinessId),
             totalAmount: serverComputedTotal,
             shippingAddress,
-            items: JSON.stringify(items)
+            items: JSON.stringify(items),
+            planName
         },
         success_url: `${process.env.BACKEND_URL}/api/v1/orders/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.BACKEND_URL}/api/v1/orders/stripe/cancel`
@@ -135,7 +140,7 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
     dbSession.startTransaction();
     try 
     {
-        const { buyerUserProfileId, sellerBusinessId, totalAmount, shippingAddress, items } = stripeSession.metadata;
+        const { userId, buyerUserProfileId, sellerBusinessId, totalAmount, shippingAddress, items, planName } = stripeSession.metadata;
         const parsedItems = JSON.parse(items);
 
         // Stock deduction and prepare items with priceAtPurchase
@@ -212,6 +217,16 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
             status: "completed",
             paymentMethod:"stripe"
         }], { session:dbSession });
+
+        // Mark trial usage
+        if(planName === "TRIAL")
+        {
+            await TrialUsage.findOneAndUpdate(
+                { userId, ordersUsed:{ $lt:1 } }, 
+                { $set:{ ordersUsed:1 } },
+                { new:true, session:dbSession }
+            ); 
+        }
 
         // Get parent user ids for socket event
         const [userProfile, businessProfile] = await Promise.all([

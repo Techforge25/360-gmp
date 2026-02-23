@@ -11,13 +11,21 @@ const orderSchema = new Schema({
         enum: ["pending", "paid", "processing", "in-transit", "shipped", "delivered", "completed", "cancelled"],
         default: "pending" 
     },
-    shippingAddress: { type:String },
     items: [{
         _id:false,
         productId: { type: Schema.Types.ObjectId, ref:"Product", required:[true, "Product ID is required"] },
         quantity: { type: Number, required:[true, "Please specify product quantity"] },
         priceAtPurchase: { type: Number, required:[true, "Please specify product price at purchase"] }
     }],
+
+    // Shipping address info
+    shippingAddress: {
+        name: { type:String, trim:true, required:true },
+        phone: { type:String, trim:true, required:true },
+        lineAddress: [{ type:String, trim:true }],
+        province: { type:String, trim:true, required:true },
+        postalCode: { type:String, trim:true, required:true },
+    },
 
     // Tracking info
     tracking: {

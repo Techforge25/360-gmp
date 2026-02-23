@@ -14,6 +14,8 @@ const convertToMongoId = require("../utils/convertToMongoId");
 const Transaction = require("../models/transactionModel");
 const TrialUsage = require("../models/trialUsageModel");
 const Notification = require("../models/notificationsModel");
+const validate = require("../utils/validate");
+const { createOrderValidationSchema } = require("../validations/orderValidator");
 
 // Create order - Purchase product using stripe payment
 const createOrder = asyncHandler(async (request, response) => {
@@ -33,7 +35,7 @@ const createOrder = asyncHandler(async (request, response) => {
     if(!userProfile) throw new ApiError(404, "User profile not found! Invalid user profile ID");
 
     // Validate request body
-    const { shippingAddress, items } = request.body;
+    const { shippingAddress, items } = validate(createOrderValidationSchema, request.body);
     if(!shippingAddress) throw new ApiError(400, "Shipping address is required");
     if(!items || !items.length) throw new ApiError(400, "Product item is required");
 

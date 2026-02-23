@@ -179,7 +179,7 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
             buyerUserProfileId,
             sellerBusinessId,
             totalAmount:amount,
-            status: "paid",
+            status: "pending",
             shippingAddress,
             items: itemsWithPrice
         }], { session:dbSession });
@@ -278,6 +278,15 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
 // Purchase product using Wallet balance
 const createOrderWithWallet = asyncHandler(async (request, response) => {
     const userId = request.user._id;
+    const { planName } = request.user || {};
+    if(!planName) throw new ApiError(400, "No subscription plan name found");
+
+    // Track trial orders
+    if(planName === "TRIAL")
+    {
+        const trial = await TrialUsage.findOne({ userId, ordersUsed:{ $gte:1 } });
+        if(trial && trial.ordersUsed >= 1) throw new ApiError(403, "Trial users can place only one order. Please upgrade your plan.");
+    }    
 
     // Get buyer profile
     const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
@@ -302,12 +311,17 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
         if(!quantity || quantity <= 0) throw new ApiError(400, "Invalid product quantity");
 
         // Trial cannot purchase in bulk
-        if(request.user.plan?.name === "TRIAL" && quantity > 1)
-            throw new ApiError(400, "You cannot purchase in bulk within Trial period! Please upgrade");
+        if(planName === "TRIAL" && quantity > 1) throw new ApiError(400, "You cannot purchase in bulk within Trial period! Please upgrade");
 
         // Find each product by "id"
         const product = await Product.findById(productId).select("title stockQty pricePerUnit shippingCost businessId");
         if(!product) throw new ApiError(404, "Product not found");
+
+        // Restrict single-item purchase if the product is available only for bulk orders
+        if(!product.isSingleProductAvailable && quantity <= 1)
+        {
+            throw new ApiError(400, `${product.title} is available for bulk purchase only. Single-item orders are not allowed.`);
+        }
 
         // Prevent multiple sellers in single order
         if(!sellerBusinessId)
@@ -320,8 +334,7 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
         }
 
         // Compare stock quantity with demanded quantity
-        if(product.stockQty < quantity)
-            throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
+        if(product.stockQty < Number(quantity)) throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
 
         // Compute total amount
         const itemTotal = (product.pricePerUnit * quantity) + product.shippingCost || 0;
@@ -371,7 +384,7 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
             buyerUserProfileId: userProfile._id,
             sellerBusinessId,
             totalAmount: amount,
-            status: "paid",
+            status: "pending",
             shippingAddress,
             items: itemsWithPrice
         }], { session: dbSession });
@@ -408,6 +421,16 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
             paymentMethod: "wallet",
             status: "completed"
         }], { session: dbSession });
+
+        // Mark trial usage after successful payment
+        if(planName === "TRIAL")
+        {
+            await TrialUsage.findOneAndUpdate(
+                { userId },
+                { $set:{ ordersUsed:1 } },
+                { upsert:true, session:dbSession }
+            ); 
+        }        
 
         // Get parent user ids for notifications
         const [buyerUser, sellerBusiness] = await Promise.all([
@@ -486,7 +509,7 @@ const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
     if(!order) throw new ApiError(404, "Order not found");
 
     // Authorize owner
-    if(order.sellerBusinessId.toString() !== business._id.toString()) throw new ApiError(403, "You are not authorized to update the order status");
+    if(String(order.sellerBusinessId) !== String(business._id)) throw new ApiError(403, "You are not authorized to update the order status");
 
     // Seller cannot set status to "completed" or "paid"
     const allowedStatuses = ["processing", "shipped", "in-transit", "delivered"];
@@ -505,19 +528,20 @@ const completeOrder = asyncHandler(async (request, response) => {
     const { orderId } = request.params;
     const userId = request.user._id;
 
-    // Find order
-    const order = await Order.findById(orderId);
-    if(!order) throw new ApiError(404, "Order not found");
-
     // Find buyer profile
     const buyerProfile = await UserProfile.findOne({ userId });
     if(!buyerProfile) throw new ApiError(404, "User profile not found");
+
+    // Find order
+    const order = await Order.findById(orderId);
+    if(!order) throw new ApiError(404, "Order not found");
+    if(order.status === "completed") return response.status(200).json(new ApiResponse(200, null, "Order has already been completed"));
 
     // Authorize owner
     if(buyerProfile._id.toString() !== order.buyerUserProfileId.toString()) throw new ApiError(403, "You are not authorized to complete this order");
     
     // Check current status
-    const allowedCurrentStatuses = ["paid", "shipped", "delivered"];
+    const allowedCurrentStatuses = ["paid", "delivered"];
     if(!allowedCurrentStatuses.includes(order.status)) throw new ApiError(400, `Order cannot be completed in its current status: ${order.status}`);
 
     // Find escrow

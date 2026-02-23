@@ -269,7 +269,7 @@ const switchRole = asyncHandler(async (request, response) => {
     }    
 
     // Save to db
-    const user = await User.findByIdAndUpdate(_id, { role }, { new:true, lean:true }).select("role");
+    const user = await User.findByIdAndUpdate(_id, { role }, { new:true, lean:true }).select("_id role");
     if(!user) throw new ApiError(400, "Failed to update role in db.");
 
     // Find profiles
@@ -283,7 +283,7 @@ const switchRole = asyncHandler(async (request, response) => {
 
     // Generate a new token
     const accessToken = generateAccessToken({ 
-        _id: _id, 
+        _id: user._id, 
         role: role, 
         profiles: {
             businessProfileId: businessProfile?._id || null,

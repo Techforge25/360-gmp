@@ -222,10 +222,10 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
         if(planName === "TRIAL")
         {
             await TrialUsage.findOneAndUpdate(
-                { userId, ordersUsed:{ $lt:1 } }, 
+                { userId }, 
                 { $set:{ ordersUsed:1 } },
                 { new:true, session:dbSession }
-            ); 
+            );
         }
 
         // Get parent user ids for socket event

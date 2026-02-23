@@ -805,4 +805,4 @@ const viewOrder = asyncHandler(async (request, response) => {
 });
 
 module.exports = { createOrder, verifyStripePaymentForOrders, createOrderWithWallet, completeOrder, updateOrderStatusBySeller, 
-fetchAllOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, fetchCancelledOrders, viewOrder };
+fetchAllOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, fetchCancelledOrders, viewOrder, cancelOrder };

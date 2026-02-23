@@ -2,7 +2,7 @@ const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { createOrder, verifyStripePaymentForOrders, completeOrder, updateOrderStatusBySeller, 
 fetchAllOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, 
-fetchCancelledOrders, viewOrder, createOrderWithWallet } = require("../controllers/ordersController");
+fetchCancelledOrders, viewOrder, createOrderWithWallet, cancelOrder } = require("../controllers/ordersController");
 const { checkSubscription, checkUserAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -20,13 +20,17 @@ orderRouter.route("/stripe/success")
 orderRouter.route("/wallet")
 .post(authentication, authorization(["user"]), checkSubscription, checkUserAccess, createOrderWithWallet);
 
-// Complete order by buyer
-orderRouter.route("/:orderId/complete")
-.patch(authentication, completeOrder);
-
 // Update order status by seller
 orderRouter.route("/:orderId/status")
-.patch(authentication, updateOrderStatusBySeller);
+.patch(authentication, authorization(["business"]), updateOrderStatusBySeller);
+
+// Complete order by buyer
+orderRouter.route("/:orderId/complete")
+.patch(authentication, authorization(["user"]), completeOrder);
+
+// Cancel order by buyer
+orderRouter.route("/:orderId/cancel")
+.get(authentication, authorization(["user"]), cancelOrder);
 
 // Gets All Order of the user
 orderRouter.route("/user/all-orders")

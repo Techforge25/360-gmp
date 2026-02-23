@@ -13,10 +13,11 @@ const corsOptions = {
 // Cookie options
 const cookieOptions = {
     httpOnly:true,
-    secure:false,
-    maxAge: 1000 * 60 * 60 * 24 * 7,
+    secure:true,
     signed:true,
-    sameSite:"lax"
+    maxAge: 1000 * 60 * 60 * 24 * 90,
+    sameSite:"none",
+    domain: ".techforgeinnovations.com"
 };
 
 // Empty list

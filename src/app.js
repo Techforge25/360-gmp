@@ -13,6 +13,7 @@ const app = express();
 // Middlewares
 app.use(cors(corsOptions));
 app.use(cookieParser(process.env.COOKIE_PARSER_SECRET));
+app.set("trust proxy", 1);
 app.use(express.urlencoded({ extended: true, limit: "50kb" }));
 app.use(express.json({ limit: "50kb" }));
 app.use(passport.initialize());

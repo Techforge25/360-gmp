@@ -535,13 +535,13 @@ const completeOrder = asyncHandler(async (request, response) => {
     // Find order
     const order = await Order.findById(orderId);
     if(!order) throw new ApiError(404, "Order not found");
-    if(order.status === "completed") return response.status(200).json(new ApiResponse(200, null, "Order has already been completed"));
 
     // Authorize owner
-    if(buyerProfile._id.toString() !== order.buyerUserProfileId.toString()) throw new ApiError(403, "You are not authorized to complete this order");
+    if(String(buyerProfile._id) !== String(order.buyerUserProfileId)) throw new ApiError(403, "You are not authorized to complete this order");
     
     // Check current status
     const allowedCurrentStatuses = ["paid", "delivered"];
+    if(order.status === "completed") return response.status(200).json(new ApiResponse(200, null, "Order has already been completed"));
     if(!allowedCurrentStatuses.includes(order.status)) throw new ApiError(400, `Order cannot be completed in its current status: ${order.status}`);
 
     // Find escrow
@@ -582,6 +582,86 @@ const completeOrder = asyncHandler(async (request, response) => {
         dbSession.endSession();
         throw error;
     }
+});
+
+// Cancel order
+const cancelOrder = asyncHandler(async (request, response) => {
+    const { orderId } = request.params;
+    const userId = request.user._id;
+
+    // Find buyer profile
+    const buyerProfile = await UserProfile.findOne({ userId }).lean();
+    if(!buyerProfile) throw new ApiError(404, "User profile not found");
+
+    // Find order
+    const order = await Order.findById(orderId);
+    if(!order) throw new ApiError(404, "Order not found");
+
+    // Authorize owner
+    if(String(buyerProfile._id) !== String(order.buyerUserProfileId)) throw new ApiError(403, "You are not authorized to cancel this order");
+    
+    // Validate current status
+    const allowedCurrentStatuses = ["pending", "processing"];
+    if(order.status === "cancel") return response.status(200).json(new ApiResponse(200, null, "Order has already been cancelled"));
+    if(!allowedCurrentStatuses.includes(order.status)) throw new ApiError(400, `Order cannot be cancelled in its current status: ${order.status}`);
+
+    // Start db transaction
+    const dbSession = await mongoose.startSession();
+    dbSession.startTransaction();
+
+    try
+    {
+        // Set order status
+        order.status = "cancelled";
+        await order.save({ session:dbSession });
+
+        // Update escrow transaction
+        const escrow = await EscrowTransaction.findOneAndUpdate(
+            { orderId }, 
+            { 
+                $inc:{ totalAmount: -order.totalAmount }, 
+                $set:{ status:"refunded" } 
+            }, 
+            { new:true, session:dbSession }
+        );
+        if(!escrow) throw new ApiError(500, "Failed to update status in escrow transaction");
+
+        // Deduct net amount from seller's wallet
+        await Wallet.findOneAndUpdate(
+            { ownerId: order.sellerBusinessId, ownerModel:"BusinessProfile" },
+            { $inc: { pendingBalance: -escrow.netAmount } },
+            { upsert:true, session:dbSession }
+        );
+
+        // Refund amount to buyer's wallet
+        await Wallet.findOneAndUpdate(
+            { ownerId: order.buyerUserProfileId, ownerModel:"UserProfile" },
+            { $inc: { availableBalance: escrow.netAmount } },
+            { upsert:true, session:dbSession }
+        );        
+
+        // Update transaction
+        const transaction = await Transaction.findOneAndUpdate(
+            { OwnerId:userId, ownerModel:"UserProfile" },
+            { $set:{ type:"refund" } },
+            { new:true, session:dbSession }
+        );
+        if(!transaction) throw new ApiError(500, "Failed to update transaction");
+
+        // Complete transaction
+        await dbSession.commitTransaction();
+        dbSession.endSession();   
+
+        // Response
+        return response.status(200).json(new ApiResponse(200, null, "Order has been cancelled"));
+    }
+    catch(error)
+    {
+        await dbSession.abortTransaction();
+        dbSession.endSession();
+        throw error;
+    }
+
 });
 
 // Fetch processing orders

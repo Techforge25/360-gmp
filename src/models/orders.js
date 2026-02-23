@@ -3,8 +3,8 @@ const paginate = require("mongoose-paginate-v2");
 
 // Updated Schema
 const orderSchema = new Schema({
-    buyerUserProfileId: { type: Schema.Types.ObjectId, ref: "UserProfile" },
-    sellerBusinessId: { type: Schema.Types.ObjectId, ref: "BusinessProfile" },
+    buyerUserProfileId: { type: Schema.Types.ObjectId, ref: "UserProfile", required:[true, "Buyer user profile ID is required"] },
+    sellerBusinessId: { type: Schema.Types.ObjectId, ref: "BusinessProfile", required:[true, "Seller business profile ID is required"] },
     totalAmount: { type: Number },
     status: { 
         type: String,

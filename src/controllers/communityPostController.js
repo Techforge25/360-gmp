@@ -265,22 +265,21 @@ const deletePost = asyncHandler(async (request, response) => {
     // Check if author OR Community Admin
     const isAuthor = post.authorId === identity.id;
     
+    // Find membership
     const membership = await CommunityMembership.findOne({
         communityId: post.communityId,
         memberId: identity.id,
-        role: { $in: ["owner", "admin", "moderator"] }
-        });
+        role: { $in: ["owner", "admin"] }
+    });
 
-    if(!isAuthor && !membership) {
-        throw new ApiError(403, "Only post author or community admins can delete the post");
-    }
+    // Check authorization
+    if(!isAuthor && !membership) throw new ApiError(403, "Only post author or community admins can delete the post");
 
     // Delete post
     await CommunityPost.findByIdAndDelete(postId);
 
-    return response.status(200).json(
-        new ApiResponse(200, null, "Post deleted successfully")
-    );
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Post deleted successfully"));
 });
 
 // Like/Unlike Post

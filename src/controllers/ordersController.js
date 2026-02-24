@@ -519,8 +519,12 @@ const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
     const allowedStatuses = ["processing", "shipped", "in-transit", "delivered"];
     if(!allowedStatuses.includes(status)) throw new ApiError(400, "Invalid status update.");
 
-    // Save status
+    // Prevent duplicate status update
+    if(status === order.status) return response.status(200).json(new ApiResponse(200, null, `The order status is already ${status}`));
+
+    // Save status and delivered timestamp
     order.status = status;
+    if(status === "delivered") order.tracking.deliveredAt = new Date();
     await order.save();
 
     // Response

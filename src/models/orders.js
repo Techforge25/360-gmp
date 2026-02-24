@@ -32,7 +32,8 @@ const orderSchema = new Schema({
         trackingId: { type:String, default:null },
         courierName: { type:String, default:null },
         trackingUrl: { type:String, default:null },
-        shippedAt: { type:Date }
+        shippedAt: { type:Date },
+        deliveredAt: { type:Date } // Delivered timestamp (For auto fund release after 14 days)
     }    
 }, { timestamps: true });
 

@@ -644,7 +644,7 @@ const cancelOrder = asyncHandler(async (request, response) => {
 
         // Update transaction
         const transaction = await Transaction.findOneAndUpdate(
-            { OwnerId: order.buyerUserProfileId, ownerModel:"UserProfile" },
+            { ownerId: order.buyerUserProfileId, ownerModel:"UserProfile" },
             { $set:{ type:"refund" } },
             { new:true, session:dbSession }
         );

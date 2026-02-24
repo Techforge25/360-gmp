@@ -213,6 +213,7 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
         await Transaction.create([{
             ownerId: buyerUserProfileId, 
             ownerModel: "UserProfile",
+            orderId: order._id,
             amount: amount,
             type: "buy",
             stripeSessionId: stripeSession.id,
@@ -418,6 +419,7 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
         await Transaction.create([{
             ownerId: userProfile._id,
             ownerModel: "UserProfile",
+            orderId: order._id,
             amount,
             type: "buy",
             paymentMethod: "wallet",
@@ -604,7 +606,7 @@ const cancelOrder = asyncHandler(async (request, response) => {
     
     // Validate current status
     const allowedCurrentStatuses = ["pending", "processing"];
-    if(order.status === "cancel") return response.status(200).json(new ApiResponse(200, null, "Order has already been cancelled"));
+    if(order.status === "cancelled") return response.status(200).json(new ApiResponse(200, null, "Order has already been cancelled"));
     if(!allowedCurrentStatuses.includes(order.status)) throw new ApiError(400, `Order cannot be cancelled in its current status: ${order.status}`);
 
     // Start db transaction
@@ -617,16 +619,21 @@ const cancelOrder = asyncHandler(async (request, response) => {
         order.status = "cancelled";
         await order.save({ session:dbSession });
 
-        // Update escrow transaction
-        const escrow = await EscrowTransaction.findOneAndUpdate(
-            { orderId }, 
-            { 
-                $inc:{ totalAmount: -order.totalAmount }, 
-                $set:{ status:"refunded" } 
-            }, 
+        // Mark transaction as refund
+        const transaction = await Transaction.findOneAndUpdate(
+            { orderId },
+            { $set:{ type:"refund", status:"completed" } },
             { new:true, session:dbSession }
         );
-        if(!escrow) throw new ApiError(500, "Failed to update status in escrow transaction");
+        if(!transaction) throw new ApiError(500, "Failed to update transaction");        
+
+        // Mark escrow transaction as refunded
+        const escrow = await EscrowTransaction.findOneAndUpdate(
+            { orderId }, 
+            { $set:{ status:"refunded" } }, 
+            { new:true, session:dbSession }
+        );
+        if(!escrow) throw new ApiError(404, "Escrow record not found in escrow transaction");
 
         // Deduct net amount from seller's wallet
         await Wallet.findOneAndUpdate(
@@ -638,17 +645,9 @@ const cancelOrder = asyncHandler(async (request, response) => {
         // Refund amount to buyer's wallet
         await Wallet.findOneAndUpdate(
             { ownerId: order.buyerUserProfileId, ownerModel:"UserProfile" },
-            { $inc: { availableBalance: escrow.netAmount } },
+            { $inc: { availableBalance: escrow.totalAmount } },
             { upsert:true, session:dbSession }
-        );        
-
-        // Update transaction
-        const transaction = await Transaction.findOneAndUpdate(
-            { ownerId: order.buyerUserProfileId, ownerModel:"UserProfile" },
-            { $set:{ type:"refund" } },
-            { new:true, session:dbSession }
         );
-        if(!transaction) throw new ApiError(500, "Failed to update transaction");
 
         // Complete transaction
         await dbSession.commitTransaction();
@@ -663,7 +662,6 @@ const cancelOrder = asyncHandler(async (request, response) => {
         dbSession.endSession();
         throw error;
     }
-
 });
 
 // Fetch processing orders

@@ -2,9 +2,12 @@ const { Schema, model } = require("mongoose");
 
 // Schema
 const transactionSchema = new Schema({
-    // Owner reference
+    // Owner dynamic reference
     ownerId:{ type:Schema.Types.ObjectId, required:true, refPath:"ownerModel" },
     ownerModel:{ type:String, required:true, enum:["BusinessProfile", "UserProfile"] },
+
+    // Order reference (Optional when deposit)
+    orderId: { type:Schema.Types.ObjectId, ref:"Order", default:null },
 
     // Balance info
     amount:{ type:Number, required:true },

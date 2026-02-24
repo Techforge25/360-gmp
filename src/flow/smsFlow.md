@@ -1,4 +1,4 @@
-# SMS USING TWILIO FLOW
+# SMS FLOW USING TWILIO
 
 ### Installation
 ```bash

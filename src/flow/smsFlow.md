@@ -28,7 +28,7 @@ const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 const sendSMS = async (to, message) => {
     client.messages.create({
         from: TWILIO_PHONE_NUMBER,
-        to:to,
+        to: to,
         body: message
     })
     .then(message => console.log(message.sid))

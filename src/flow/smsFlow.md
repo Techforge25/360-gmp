@@ -31,7 +31,7 @@ const sendSMS = async (to, message) => {
         to: to,
         body: message
     })
-    .then(message => console.log(message.sid))
+    .then(response => console.log(response.sid))
     .catch(error => console.error(error)); 
 };
 

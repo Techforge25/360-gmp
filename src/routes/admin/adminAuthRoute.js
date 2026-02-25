@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { adminLogin, adminLogout } = require("../../controllers/admin/adminAuthController");
+const { adminLogin, adminLogout, adminRefreshToken } = require("../../controllers/admin/adminAuthController");
 const { adminAuthentication } = require("../../middlewares/adminAuth");
 
 // Router instance
@@ -10,5 +10,8 @@ adminAuthRouter.route("/login").post(adminLogin);
 
 // Admin logout
 adminAuthRouter.route("/logout").get(adminAuthentication, adminLogout);
+
+// Admin refresh token
+adminAuthRouter.route("/refreshToken").get(adminAuthentication, adminRefreshToken);
 
 module.exports = adminAuthRouter;

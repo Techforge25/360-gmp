@@ -81,9 +81,11 @@ app.use("/api/v1/dispute", disputeRouter);
 
 // Import Admin Routes
 const adminAuthRouter = require("./routes/admin/adminAuthRoute");
+const dashboardRouter = require("./routes/admin/dashboardRoute");
 
 // Registered Admin Routes
 app.use("/api/v1/admin/auth", adminAuthRouter);
+app.use("/api/v1/admin/dashboard", dashboardRouter);
 
 // API status route
 app.get("/", (request, response) => response.send(`Server is up and running at port ${port}`));

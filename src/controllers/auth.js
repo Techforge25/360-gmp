@@ -209,7 +209,7 @@ const refreshToken = asyncHandler(async (request, response) => {
     if(!payload) throw new ApiError(401, "Unauthorized! Invalid refresh token");
 
     // Find user
-    const user = await User.findById(payload._id).select("_id refreshToken");
+    const user = await User.findById(payload._id).select("_id role refreshToken");
     if(!user) throw new ApiError(404, "User not found associated with the provided refresh token");
 
     // Compare tokens

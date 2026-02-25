@@ -28,7 +28,7 @@ const adminLogin = asyncHandler(async (request, response) => {
     if(!accessToken) throw new ApiError(500, "Failed to generate admin access token");
     if(!refreshToken) throw new ApiError(500, "Failed to generate admin refresh token");
 
-    // Save refresh token
+    // Save refresh token in db
     admin.refreshToken = refreshToken;
     await admin.save();
 
@@ -39,4 +39,19 @@ const adminLogin = asyncHandler(async (request, response) => {
     .json(new ApiResponse(200, { username: admin.username, accessToken, refreshToken }, "Admin login successful"));
 });
 
-module.exports = { adminLogin };
+// Admin logout
+const adminLogout = asyncHandler(async (request, response) => {
+    const adminId = request.admin._id;
+
+    // Clear refresh token in db
+    const admin = await Admin.findByIdAndUpdate(adminId, { refreshToken:null }, { new:true, lean:true }).select("_id");
+    if(!admin) throw new ApiError(500, "Failed to clear refresh token from db");
+
+    // Response
+    return response.status(200)
+    .clearCookie("accessToken", cookieOptions)
+    .clearCookie("refreshToken", cookieOptions)
+    .json(new ApiResponse(200, null, "Logout successful"));
+});
+
+module.exports = { adminLogin, adminLogout };

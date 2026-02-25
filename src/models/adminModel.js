@@ -5,7 +5,8 @@ const bcrypt = require("bcrypt");
 const adminSchema = new Schema({
     username: { type:String, trim:true, lowercase:true, required:true, unique:[true, "This username has already been taken by another admin"] },
     password: { type:String, trim:true, required:true },
-    role: { type:String, enum:["admin"], default:"admin" }
+    role: { type:String, enum:["admin"], default:"admin" },
+    refreshToken: { type:String, default:null }
 });
 
 // Hash password

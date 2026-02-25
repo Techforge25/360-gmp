@@ -79,6 +79,12 @@ app.use("/api/v1/gallery", galleryRouter);
 app.use("/api/v1/community-membership", communityMembershipRouter);
 app.use("/api/v1/dispute", disputeRouter);
 
+// Import Admin Routes
+const adminAuthRouter = require("./routes/admin/adminAuthRoute");
+
+// Registered Admin Routes
+app.use("/api/v1/admin/auth", adminAuthRouter);
+
 // API status route
 app.get("/", (request, response) => response.send(`Server is up and running at port ${port}`));
 

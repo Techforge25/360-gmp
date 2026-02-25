@@ -237,8 +237,8 @@ const refreshToken = asyncHandler(async (request, response) => {
     if(!refreshToken) throw new ApiError(400, "Failed to re-generate refresh token");
 
     // Save to db
-    user.refreshToken = token;
-    await user.save(); 
+    user.refreshToken = refreshToken;
+    await user.save();
 
     // Response
     return response.status(200)

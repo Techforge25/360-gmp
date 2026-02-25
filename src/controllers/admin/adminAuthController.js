@@ -81,7 +81,7 @@ const adminRefreshToken = asyncHandler(async (request, response) => {
     if(!refreshToken) throw new ApiError(400, "Failed to re-generate admin refresh token");
 
     // Save to db
-    admin.refreshToken = token;
+    admin.refreshToken = refreshToken;
     await admin.save(); 
 
     // Response

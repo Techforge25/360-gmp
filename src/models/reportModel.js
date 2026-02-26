@@ -4,7 +4,7 @@ const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 // Schema
 const reportSchema = new Schema({
     // Reference
-    reporterId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    reporterId: { type: Schema.Types.ObjectId, ref: "User", required: true, index:true },
     reportedModel: { type: String, required:true, enum: ["Job", "Community", "CommunityPost"] },
     reportedContentId: { type: Schema.Types.ObjectId, required:true, refPath:"reportedModel" },
     reportedCommentId: { type: Schema.Types.ObjectId, default: null },

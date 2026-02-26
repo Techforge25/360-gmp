@@ -37,7 +37,7 @@ const adminLogin = asyncHandler(async (request, response) => {
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .json(new ApiResponse(200, { username: admin.username, accessToken, refreshToken }, "Admin login successful"));
+    .json(new ApiResponse(200, { username: admin.username }, "Admin login successful"));
 });
 
 // Admin logout
@@ -88,7 +88,7 @@ const adminRefreshToken = asyncHandler(async (request, response) => {
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .json(new ApiResponse(200, { accessToken, refreshToken }, "Refresh token for admin has been issued"));
+    .json(new ApiResponse(200, null, "Refresh token for admin has been issued"));
 });
 
 module.exports = { adminLogin, adminLogout, adminRefreshToken };

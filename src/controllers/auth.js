@@ -179,8 +179,7 @@ const userLogin = asyncHandler(async (request, response) => {
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .json(new ApiResponse(200, { profilePayload, accessToken, refreshToken, 
-    role:user.role, isNewToPlatform:user.isNewToPlatform }, "Login successful"));
+    .json(new ApiResponse(200, { profilePayload, role:user.role, isNewToPlatform:user.isNewToPlatform }, "Login successful"));
 });
 
 // Logout
@@ -244,7 +243,7 @@ const refreshToken = asyncHandler(async (request, response) => {
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .json(new ApiResponse(200, { accessToken, refreshToken }, "Refresh token has been issued"));
+    .json(new ApiResponse(200, null, "Refresh token has been issued"));
 });
 
 // Switch role

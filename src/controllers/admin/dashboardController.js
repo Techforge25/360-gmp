@@ -1,5 +1,6 @@
 const EscrowTransaction = require("../../models/escrowTrasanction");
 const Plan = require("../../models/plan");
+const Report = require("../../models/reportModel");
 const Subscription = require("../../models/subscription");
 const ApiError = require("../../utils/ApiError");
 const ApiResponse = require("../../utils/ApiResponse");
@@ -58,4 +59,13 @@ const fetchTotalTrialUsers = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, totalTrialUsers || 0, "Total trial users have been fetched"));
 });
 
-module.exports = { fetchTotalPlatformRevenue, fetchTotalHeldAmount, fetchTotalTrialUsers };
+// Fetch total reported jobs
+const fetchTotalReportedJobs = asyncHandler(async (request, response) => {
+    // Count reported jobs
+    const reportedJobs = await Report.countDocuments({ reportedModel:"Job" });
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, reportedJobs || 0, "Total reported jobs have been fetched"));
+});
+
+module.exports = { fetchTotalPlatformRevenue, fetchTotalHeldAmount, fetchTotalTrialUsers, fetchTotalReportedJobs };

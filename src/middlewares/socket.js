@@ -20,6 +20,7 @@ const socketAuthentication = (socket, next) => {
     catch (error) 
     {
         console.log(error.message);
+        throw error;
     }
 };
 

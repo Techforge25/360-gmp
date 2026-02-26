@@ -2,7 +2,7 @@ const { Schema, model } = require("mongoose");
 
 // Schema
 const planSchema = new Schema({
-    name: { type:String, required:true },
+    name: { type:String, required:true, index:true },
     price: { type:Number },
     description: { type:String },
     features:[{ type:String }],

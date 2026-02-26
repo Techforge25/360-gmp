@@ -300,9 +300,8 @@ const switchRole = asyncHandler(async (request, response) => {
 // Forgot password
 const forgotPassword = asyncHandler(async (request, response) => {
     const { email } = validate(forgotPasswordSchema, request.body) || {};
-    const validEmail = email.toLowerCase();
 
-    const user = await User.findOne({ email: validEmail });
+    const user = await User.findOne({ email });
     if(!user) throw new ApiError(404, "User not found associated with this email");
 
     // Generate a reset token
@@ -311,11 +310,11 @@ const forgotPassword = asyncHandler(async (request, response) => {
 
     // Save token to db
     user.passwordResetToken = resetToken;
-    user.passwordResetTokenExpires = Date.now() + 1 * 60 * 1000; // 1 minutes from now
+    user.passwordResetTokenExpires = Date.now() + 5 * 60 * 1000; // 5 minutes from now
     await user.save();
 
     // Send email
-    const result = await sendEmail(validEmail, "Password Reset Request", 
+    const result = await sendEmail(email, "Password Reset Request", 
     `<p>Your password reset token is: <strong>${resetToken}</strong></p>
     <p>Please use this token to reset your password.</p>`
     );

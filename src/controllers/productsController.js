@@ -201,9 +201,24 @@ const setFeaturedProduct = asyncHandler(async (request, response) => {
 
 // Delete product
 const deleteProduct = asyncHandler(async (request, response) => {
+    const userId = request.user._id
     const { productId } = request.params;
-    const product = await Product.findByIdAndDelete(productId).lean();
+
+    // Find business
+    const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
+    if(!business) throw new ApiError(404, "Business not found");
+
+    // Find product
+    const product = await Product.findById(productId).select("_id").lean();
     if(!product) throw new ApiError(404, "Product not found");
+
+    // Check authorization
+    if(String(business._id) !== String(product.businessId))
+    {
+        throw new ApiError(403, "Unauthorized! You cannot delete this product");
+    }
+
+    // Response
     return response.status(200).json(new ApiResponse(200, product, "Product has been deleted"));
 });
 

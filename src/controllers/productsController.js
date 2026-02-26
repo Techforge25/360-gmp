@@ -155,9 +155,22 @@ const updateProduct = asyncHandler(async (request, response) => {
     const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");
     if(!business) throw new ApiError(404, "Business not found");
 
+    // Find product
+    const product = await Product.findById(productId);
+    if(!product) throw new ApiError(404, "Product not found");
+
+    // Check authorization
+    if(product.businessId !== business._id) throw new ApiError(403, "Unauthorized! You cannot update this product");
+
+    // Get validated payload
     const payload = validate(createProductSchema, request.body);
-    const product = await Product.findByIdAndUpdate(productId, payload, { new:true, lean:true });
-    return response.status(200).json(new ApiResponse(200, product, "Product created successfully"));
+
+    // Update
+    const updateProduct = await Product.findByIdAndUpdate(productId, payload, { new:true, lean:true });
+    if(!updateProduct) throw new ApiError(500, "Failed to update product");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, updateProduct, "Product created successfully"));
 });
 
 // Set to featured product

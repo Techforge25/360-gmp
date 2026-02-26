@@ -1,13 +1,13 @@
 const { Router } = require("express");
 const { createPlan, fetchAllPlans } = require("../controllers/plan");
-const { authentication } = require("../middlewares/auth");
+const { adminAuthentication, adminAuthorization } = require("../middlewares/adminAuth");
 
 // Router instance
 const planRouter = Router();
 
 // Save plan / Fetch all plans
 planRouter.route("/")
-.post(authentication, createPlan)
+.post(adminAuthentication, adminAuthorization(["admin"]), createPlan)
 .get(fetchAllPlans);
 
 module.exports = planRouter;

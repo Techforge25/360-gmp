@@ -110,7 +110,7 @@ const createOrder = asyncHandler(async (request, response) => {
             buyerUserProfileId: String(userProfile._id),
             sellerBusinessId: String(sellerBusinessId),
             totalAmount: serverComputedTotal,
-            shippingAddress,
+            shippingAddress: JSON.stringify(shippingAddress),
             items: JSON.stringify(items),
             planName
         },
@@ -182,7 +182,7 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
             sellerBusinessId,
             totalAmount:amount,
             status: "pending",
-            shippingAddress,
+            shippingAddress: JSON.parse(shippingAddress),
             items: itemsWithPrice
         }], { session:dbSession });
 

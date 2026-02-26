@@ -11,7 +11,7 @@ userSearchesRouter.route("/")
 
 // Fetch single user searches
 userSearchesRouter.route("/user/:userId")
-.get(authentication, authorization(["admin", "user", "business"]), fetchSingleUserSearches)
+.get(authentication, authorization(["admin"]), fetchSingleUserSearches)
 
 // Fetch my searhces
 userSearchesRouter.route("/my")

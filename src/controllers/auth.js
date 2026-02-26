@@ -315,7 +315,7 @@ const forgotPassword = asyncHandler(async (request, response) => {
     await user.save();
 
     // Send email
-    const result = sendEmail(validEmail, "Password Reset Request", 
+    const result = await sendEmail(validEmail, "Password Reset Request", 
     `<p>Your password reset token is: <strong>${resetToken}</strong></p>
     <p>Please use this token to reset your password.</p>`
     );

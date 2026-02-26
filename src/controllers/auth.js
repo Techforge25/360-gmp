@@ -349,6 +349,7 @@ const resetPassword = asyncHandler(async (request, response) => {
     // Find user
     const user = await User.findOne({ passwordResetToken }).select("passwordHash passwordResetToken passwordResetTokenExpires");
     if(!user) throw new ApiError(400, "Invalid reset token");
+    if(user.passwordResetTokenExpires < Date.now()) throw new ApiError(400, "Reset token has expired");
 
     // Update password
     user.passwordHash = newPassword;

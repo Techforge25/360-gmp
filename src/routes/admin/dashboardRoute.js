@@ -18,7 +18,7 @@ dashboardRouter.route("/heldAmount")
 dashboardRouter.route("/totalTrialUsers")
 .get(adminAuthentication, fetchTotalTrialUsers);
 
-// Fetch total trial users
+// Fetch total reported jobs
 dashboardRouter.route("/totalReportedJobs")
 .get(adminAuthentication, fetchTotalReportedJobs);
 

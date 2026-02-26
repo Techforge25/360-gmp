@@ -35,8 +35,8 @@ const adminLogin = asyncHandler(async (request, response) => {
 
     // Response
     return response.status(200)
-    .cookie("accessToken", accessToken, cookieOptions)
-    .cookie("refreshToken", refreshToken, cookieOptions)
+    .cookie("adminAccessToken", accessToken, cookieOptions)
+    .cookie("adminRefreshToken", refreshToken, cookieOptions)
     .json(new ApiResponse(200, { username: admin.username }, "Admin login successful"));
 });
 
@@ -50,8 +50,8 @@ const adminLogout = asyncHandler(async (request, response) => {
 
     // Response
     return response.status(200)
-    .clearCookie("accessToken", cookieOptions)
-    .clearCookie("refreshToken", cookieOptions)
+    .clearCookie("adminAccessToken", cookieOptions)
+    .clearCookie("adminRefreshToken", cookieOptions)
     .json(new ApiResponse(200, null, "Logout successful"));
 });
 
@@ -86,8 +86,8 @@ const adminRefreshToken = asyncHandler(async (request, response) => {
 
     // Response
     return response.status(200)
-    .cookie("accessToken", accessToken, cookieOptions)
-    .cookie("refreshToken", refreshToken, cookieOptions)
+    .cookie("adminAccessToken", accessToken, cookieOptions)
+    .cookie("adminRefreshToken", refreshToken, cookieOptions)
     .json(new ApiResponse(200, null, "Refresh token for admin has been issued"));
 });
 

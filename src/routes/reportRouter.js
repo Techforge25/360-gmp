@@ -27,14 +27,14 @@ reportRouter.route("/type/community-post-comment")
 
 // View report
 reportRouter.route("/:reportId")
-.get(authentication, authorization(["user", "business", "admin"]), viewReport);
+.get(authentication, authorization(["admin"]), viewReport);
 
 // Resolve report
 reportRouter.route("/:reportId/resolve")
-.get(authentication, authorization(["user", "business", "admin"]), resolveReport);
+.get(authentication, authorization(["admin"]), resolveReport);
 
 // Reject report
 reportRouter.route("/:reportId/reject")
-.get(authentication, authorization(["user", "business", "admin"]), rejectReport);
+.get(authentication, authorization(["admin"]), rejectReport);
 
 module.exports = reportRouter;

@@ -407,7 +407,7 @@ const googleLogin = async (request, response) => {
 
     // Decide redirect URL
     const redirectUrl = request.user.isNewToPlatform 
-    ? `${process.env.FRONTEND_URL}/onboarding/role?accessToken=${accessToken}` 
+    ? `${process.env.FRONTEND_URL}/onboarding/role`
     : dashboardUrl;
 
     // Redirect to application

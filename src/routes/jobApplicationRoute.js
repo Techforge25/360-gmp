@@ -7,8 +7,8 @@ const jobApplicationRouter = Router();
 
 // Create job application / Fetch job applications for specific job
 jobApplicationRouter.route("/:jobId")
-.post(authentication, createJobApplicatiion)
-.get(authentication, fetchjobApplications);
+.post(authentication, authorization(["user"]), createJobApplicatiion)
+.get(authentication, authorization(["business"]), fetchjobApplications);
 
 // View job Application
 jobApplicationRouter.route("/:jobApplicationId/view/")

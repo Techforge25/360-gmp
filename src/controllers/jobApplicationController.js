@@ -36,8 +36,11 @@ const createJobApplicatiion = asyncHandler(async (request, response) => {
 const fetchjobApplications = asyncHandler(async (request, response) => {
     const { jobId } = request.params;
 
+    // Get authorize business
+    const businessId = request.user.profiles.businessProfileId;
+
     // Find job
-    const job = await Job.findById(jobId).select("_id").lean();
+    const job = await Job.findOne({ _id:jobId, businessId }).select("_id").lean();
     if(!job) throw new ApiError(404, "Job not found! Invalid job ID");
 
     // Find job applications for specific job posted by business

@@ -186,17 +186,19 @@ const setFeaturedProduct = asyncHandler(async (request, response) => {
     const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");
     if(!business) throw new ApiError(404, "Business not found");
 
-    // Update product
-    const product = await Product.findByIdAndUpdate(productId, { isFeatured }, { new:true, lean:true })
-    .select("title isFeatured businessId");
-    if(!product) throw new ApiError(404, "Product not found");
+    // Update with authorization check
+    const product = await Product.findOneAndUpdate(
+        { _id: productId, businessId: business._id },
+        { isFeatured },
+        { new:true, lean:true }
+    ).select("title isFeatured businessId");
+    if(!product) throw new ApiError(404, "Product not found or unauthorized");
 
-    // Verify product ownership
-    if(product.businessId.toString() !== business._id.toString()) throw new ApiError(403, "You are not authorized to update this product");
+    // Response message
+    const responseMessage = isFeatured ? "Product has been marked as featured" : "Product has been unmarked as featured";
 
     // Response
-    const responseMessage = isFeatured ? "Product has been marked as featured" : "Product has been unmarked as featured";
-    return response.status(200).json(new ApiResponse(200, product, responseMessage));
+    return response.status(200).json(new ApiResponse(200, updateProduct, responseMessage));
 });
 
 // Delete product

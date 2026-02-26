@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { adminAuthentication } = require("../../middlewares/adminAuth");
-const { fetchTotalPlatformRevenue, fetchTotalHeldAmount } = require("../../controllers/admin/dashboardController");
+const { fetchTotalPlatformRevenue, fetchTotalHeldAmount, fetchTotalTrialUsers } = require("../../controllers/admin/dashboardController");
 
 // Router instance
 const dashboardRouter = Router();
@@ -12,5 +12,9 @@ dashboardRouter.route("/totalPlatformRevenue")
 // Fetch total held amount
 dashboardRouter.route("/heldAmount")
 .get(adminAuthentication, fetchTotalHeldAmount);
+
+// Fetch total trial users
+dashboardRouter.route("/totalTrialUsers")
+.get(adminAuthentication, fetchTotalTrialUsers);
 
 module.exports = dashboardRouter;

@@ -1,4 +1,7 @@
 const EscrowTransaction = require("../../models/escrowTrasanction");
+const Plan = require("../../models/plan");
+const Subscription = require("../../models/subscription");
+const ApiError = require("../../utils/ApiError");
 const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
 
@@ -42,4 +45,17 @@ const fetchTotalHeldAmount = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, heldAmount, "Total held amount has been fetched"));
 });
 
-module.exports = { fetchTotalPlatformRevenue, fetchTotalHeldAmount };
+// Fetch total trial users
+const fetchTotalTrialUsers = asyncHandler(async (request, response) => {
+    // Find trial plan
+    const plan = await Plan.findOne({ name:"TRIAL" }).select("_id name").lean();
+    if(!plan) throw new ApiError(404, "No trial plan found");
+
+    // Count trial users
+    const totalTrialUsers = await Subscription.countDocuments({ planId:plan._id });
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, totalTrialUsers || 0, "Total trial users have been fetched"));
+});
+
+module.exports = { fetchTotalPlatformRevenue, fetchTotalHeldAmount, fetchTotalTrialUsers };

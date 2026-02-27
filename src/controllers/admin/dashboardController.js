@@ -49,7 +49,7 @@ const fetchTotalPlatformRevenue = asyncHandler(async (request, response) => {
     ]);
 
     // Extract result
-    const totalPlatformRevenue = result?.totalPlatformRevenue || 0;
+    const totalPlatformRevenue = Number(result?.totalPlatformRevenue?.toFixed(2)) || 0;
 
     // Response
     return response.status(200).json(new ApiResponse(200, totalPlatformRevenue, "Total platform revenue has been fetched"));
@@ -76,7 +76,7 @@ const fetchTotalHeldAmount = asyncHandler(async (request, response) => {
     ]);
 
     // Extract result
-    const heldAmount = result?.heldAmount || 0;
+    const heldAmount = Number(result?.heldAmount?.toFixed(2)) || 0;
 
     // Response
     return response.status(200).json(new ApiResponse(200, heldAmount, "Total held amount has been fetched"));
@@ -116,7 +116,6 @@ const fetchTotalReportedJobs = asyncHandler(async (request, response) => {
 
     // Response
     return response.status(200).json(new ApiResponse(200, reportedJobs || 0, "Total reported jobs have been fetched"));
-
 });
 
 module.exports = { fetchTotalPlatformRevenue, fetchTotalHeldAmount, fetchTotalTrialUsers, fetchTotalReportedJobs };

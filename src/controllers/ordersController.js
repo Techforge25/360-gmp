@@ -268,7 +268,8 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
         io.to(`user:${businessProfile.ownerUserId}`).emit("notification", sellerNotification);         
 
         // Response
-        return response.status(303).redirect(process.env.FRONTEND_URL);
+        // return response.status(303).redirect(process.env.FRONTEND_URL);
+        return response.status(303).redirect(`http://localhost:3000/dashboard/user/orders/OrderTrackingPage/${order._id}`);
     } 
     catch(error) 
     {

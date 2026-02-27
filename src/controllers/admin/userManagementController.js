@@ -49,11 +49,36 @@ const fetchTotalUsers = asyncHandler(async (request, response) => {
         // Match
         { $match: filter },
 
+        // Lookup
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "userId",
+                as:"subscription",
+                pipeline: [
+                    {
+                        $lookup:{
+                            from: "plans",
+                            localField: "planId",
+                            foreignField: "_id",
+                            as:"plan",
+                        },
+                    },
+                    { $unwind: "$plan" },
+                    { $project: { _id:0, plan: "$plan.name" } }
+                ]
+            }
+        },
+
+        // Unwind
+        { $unwind: "$subscription" },
+
         // Sort
         { $sort:{ createdAt:-1 } },
 
         // Projection
-        { $project:{ email:1, status:1, createdAt:1 } }
+        { $project:{ email:1, subscriptionType:"$subscription.plan", status:1, createdAt:1 } }
     ]);
 
     // Execute query

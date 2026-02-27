@@ -6,7 +6,7 @@ const userSchema = new Schema({
     gid:{ type:String, unqiue:true },
     email: { type: String, unique:[true, "This email has already been registered"], required:true },
     passwordHash: { type: String, required: true },
-    status: { type: String, default: "pending", enum:["pending", "active"] },
+    status: { type: String, default: "pending", enum:["pending", "active", "flagged"] },
     role: { type:String, enum:["user", "business"], default:"user" },
     isNewToPlatform: { type:Boolean, default:true },
 

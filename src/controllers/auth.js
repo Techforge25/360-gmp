@@ -146,6 +146,7 @@ const userLogin = asyncHandler(async (request, response) => {
 
     // Only approved account can log in
     if(user.status === "pending") throw new ApiError(400, "Your account is not activated yet. Please verify your identity via OTP.");
+    if(user.status === "flagged") throw new ApiError(400, "Your account is flagged. You cannot log-in to your account");
 
     // Find profiles
     const [businessProfile, userProfile] = await Promise.all([

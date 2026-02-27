@@ -770,7 +770,7 @@ const viewOrder = asyncHandler(async (request, response) => {
                 from:"businessprofiles",
                 localField:"sellerBusinessId",
                 foreignField:"_id",
-                as:"buisnessProfile",
+                as:"businessProfile",
                 pipeline:[
                     { $project:{ companyName:1 } }
                 ]
@@ -792,12 +792,12 @@ const viewOrder = asyncHandler(async (request, response) => {
 
         // Unwind
         { $unwind:"$userProfile" },
-        { $unwind:"$buisnessProfile" },
+        { $unwind:"$businessProfile" },
 
         // Final projection
         { 
             $project:{ totalAmount:1, status:1, shippingAddress:1, items:1, 
-            createdAt:1, userProfile:1, buisnessProfile:1, products:1 } 
+            createdAt:1, userProfile:1, businessProfile:1, products:1 } 
         }
     ]);
     if(!orderDetails.length) throw new ApiError(404, "No order found");

@@ -5,7 +5,7 @@ const User = require("../../models/users");
 const Subscription = require("../../models/subscription");
 const Plan = require("../../models/plan");
 
-// Fetch total users, trial users, and paid users
+// Fetch total users, trial users, and paid users count
 const fetchTotalUsers = asyncHandler(async (request, response) => {
     // Count users
     const totalUsers = await User.countDocuments({});
@@ -22,7 +22,14 @@ const fetchTotalUsers = asyncHandler(async (request, response) => {
 
     // Response
     return response.status(200).json(new ApiResponse(200, { totalUsers, trialUsers, paidUsers }, "User stats have been fetched"));
-
 });
 
-module.exports = { fetchTotalUsers };
+// Fetch pending users count
+const fetchPendingUsers = asyncHandler(async (request, response) => {
+    const pendingusers = await User.countDocuments({ status:"pending" });
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, pendingusers || 0, "Total pending users have been fetched"));
+});
+
+module.exports = { fetchTotalUsers, fetchPendingUsers };

@@ -34,11 +34,15 @@ const fetchUsersStats = asyncHandler(async (request, response) => {
 
 // Fetch total user
 const fetchTotalUsers = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search = "" } = request.query;
+    const { page = 1, limit = 10, search = "", status } = request.query;
+
+    // Validate status type
+    if(status && (!["pending", "flagged"].includes(status))) throw new ApiError(400, "Invalid status type");
 
     // Search filter
     const filter = {};
     if(search) filter.email = { $regex:search, $options:"i" };
+    if(status) filter.status = status;
 
     // Aggregation
     const aggregate = User.aggregate([
@@ -60,32 +64,4 @@ const fetchTotalUsers = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, users, "All users have been fetched"));
 });
 
-// Fetch pending user
-const fetchPendingUsers = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search = "" } = request.query;
-
-    // Search filter
-    const filter = { status:"pending" };
-    if(search) filter.email = { $regex:search, $options:"i" };
-
-    // Aggregation
-    const aggregate = User.aggregate([
-        // Match
-        { $match: filter },
-
-        // Sort
-        { $sort:{ createdAt:-1 } },
-
-        // Projection
-        { $project:{ email:1, status:1, createdAt:1 } }
-    ]);
-
-    // Execute query
-    const users = await User.aggregatePaginate(aggregate, { page, limit });
-    if(!users.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No pending users found"));
-
-    // Response
-    return response.status(200).json(new ApiResponse(200, users, "Pending users have been fetched"));
-});
-
-module.exports = { fetchUsersStats, fetchTotalUsers, fetchPendingUsers };
+module.exports = { fetchUsersStats, fetchTotalUsers };

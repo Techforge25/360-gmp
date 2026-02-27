@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { adminAuthentication } = require("../../middlewares/adminAuth");
-const { fetchUsersStats, fetchTotalUsers, fetchPendingUsers } = require("../../controllers/admin/userManagementController");
+const { fetchUsersStats, fetchTotalUsers } = require("../../controllers/admin/userManagementController");
 
 // Router instance
 const userManagementRouter = Router();
@@ -12,9 +12,5 @@ userManagementRouter.route("/usersStats")
 // Fetch total user
 userManagementRouter.route("/totalUsers")
 .get(adminAuthentication, fetchTotalUsers);
-
-// Fetch pending user
-userManagementRouter.route("/pendingUsers")
-.get(adminAuthentication, fetchPendingUsers);
 
 module.exports = userManagementRouter;

@@ -1,7 +1,6 @@
 const asyncHandler = require("../../utils/asyncHandler");
 const ApiError = require("../../utils/ApiError");
 const ApiResponse = require("../../utils/ApiResponse");
-
 const User = require("../../models/users");
 const Subscription = require("../../models/subscription");
 const Plan = require("../../models/plan");

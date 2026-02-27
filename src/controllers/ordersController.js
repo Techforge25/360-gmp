@@ -785,7 +785,7 @@ const viewOrder = asyncHandler(async (request, response) => {
                 foreignField:"_id",
                 as:"products",
                 pipeline:[
-                    { $project:{ title:1 } }
+                    { $project:{ title:1, image:1, detail:1, category:1, pricePerUnit:1 } }
                 ]
             }
         },         

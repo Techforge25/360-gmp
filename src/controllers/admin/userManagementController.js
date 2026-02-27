@@ -4,8 +4,9 @@ const ApiResponse = require("../../utils/ApiResponse");
 const User = require("../../models/users");
 const Subscription = require("../../models/subscription");
 const Plan = require("../../models/plan");
+const { emptyList } = require("../../constants");
 
-// Fetch total users, trial users, and paid users count
+// Fetch users stats
 const fetchUsersStats = asyncHandler(async (request, response) => {
     const [totalUsers, pendingUsers, flaggedUsers, trialPlan] = await Promise.all([
         // Count total, pending and flagged users
@@ -31,4 +32,60 @@ const fetchUsersStats = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "User stats have been fetched"));
 });
 
-module.exports = { fetchUsersStats };
+// Fetch total user
+const fetchTotalUsers = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10, search = "" } = request.query;
+
+    // Search filter
+    const filter = {};
+    if(search) filter.email = { $regex:search, $options:"i" };
+
+    // Aggregation
+    const aggregate = User.aggregate([
+        // Match
+        { $match: filter },
+
+        // Sort
+        { $sort:{ createdAt:-1 } },
+
+        // Projection
+        { $project:{ email:1, status:1, createdAt:1 } }
+    ]);
+
+    // Execute query
+    const users = await User.aggregatePaginate(aggregate, { page, limit });
+    if(!users.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No users found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, users, "All users have been fetched"));
+});
+
+// Fetch pending user
+const fetchPendingUsers = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10, search = "" } = request.query;
+
+    // Search filter
+    const filter = { status:"pending" };
+    if(search) filter.email = { $regex:search, $options:"i" };
+
+    // Aggregation
+    const aggregate = User.aggregate([
+        // Match
+        { $match: filter },
+
+        // Sort
+        { $sort:{ createdAt:-1 } },
+
+        // Projection
+        { $project:{ email:1, status:1, createdAt:1 } }
+    ]);
+
+    // Execute query
+    const users = await User.aggregatePaginate(aggregate, { page, limit });
+    if(!users.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No pending users found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, users, "Pending users have been fetched"));
+});
+
+module.exports = { fetchUsersStats, fetchTotalUsers, fetchPendingUsers };

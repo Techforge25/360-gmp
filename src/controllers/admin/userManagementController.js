@@ -6,12 +6,16 @@ const Subscription = require("../../models/subscription");
 const Plan = require("../../models/plan");
 
 // Fetch total users, trial users, and paid users count
-const fetchTotalUsers = asyncHandler(async (request, response) => {
-    // Count users
-    const totalUsers = await User.countDocuments({});
+const fetchUsersStats = asyncHandler(async (request, response) => {
+    const [totalUsers, pendingUsers, flaggedUsers, trialPlan] = await Promise.all([
+        // Count total, pending and flagged users
+        User.countDocuments({}),
+        User.countDocuments({ status:"pending" }),
+        User.countDocuments({ status:"flagged" }),
 
-    // Find trial plan
-    const trialPlan = await Plan.findOne({ name:"TRIAL" }).select("_id").lean();
+        // Find trial plan
+        Plan.findOne({ name:"TRIAL" }).select("_id").lean()
+    ]);
     if(!trialPlan) throw new ApiError(404, "No trial plan found");
 
     // Get trial users
@@ -20,16 +24,11 @@ const fetchTotalUsers = asyncHandler(async (request, response) => {
     // Get paid users
     const paidUsers = await Subscription.countDocuments({ planId: { $ne: trialPlan._id } });
 
-    // Response
-    return response.status(200).json(new ApiResponse(200, { totalUsers, trialUsers, paidUsers }, "User stats have been fetched"));
-});
-
-// Fetch pending users count
-const fetchPendingUsers = asyncHandler(async (request, response) => {
-    const pendingusers = await User.countDocuments({ status:"pending" });
+    // Prepare payload
+    const payload = { totalUsers, trialUsers, paidUsers, pendingUsers, flaggedUsers  };
 
     // Response
-    return response.status(200).json(new ApiResponse(200, pendingusers || 0, "Total pending users have been fetched"));
+    return response.status(200).json(new ApiResponse(200, payload, "User stats have been fetched"));
 });
 
-module.exports = { fetchTotalUsers, fetchPendingUsers };
+module.exports = { fetchUsersStats };

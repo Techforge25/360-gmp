@@ -10,17 +10,17 @@ const productsRouter = Router();
 
 // Create product / Fetch all products
 productsRouter.route("/")
-.post(authentication, checkSubscription, checkBusinessAccess, createProduct)
-.get(authentication, checkSubscription, fetchAllProducts);
+.post(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, createProduct)
+.get(authentication, fetchAllProducts);
 
 // Fetch featured products
 productsRouter.route("/featured").get(authentication, fetchFeaturedProducts);
 
 // Fetch business products
-productsRouter.route("/business/:businessId").get(authentication, checkSubscription, fetchBusinessProducts);
+productsRouter.route("/business/:businessId").get(authentication, fetchBusinessProducts);
 
 // Fetch business featured products
-productsRouter.route("/business/:businessId/featured").get(authentication, checkSubscription, fetchBusinessFeaturedProducts);
+productsRouter.route("/business/:businessId/featured").get(authentication, fetchBusinessFeaturedProducts);
 
 // Fetch top ranking products (top-selling) (Market place)
 productsRouter.route("/top-ranking").get(authentication, fetchTopRankingProducts);
@@ -33,7 +33,7 @@ productsRouter.route("/top-deals").get(authentication, fetchNewProducts);
 
 // View product / Update product / Delete product
 productsRouter.route("/:productId")
-.get(authentication, checkSubscription, viewProduct)
+.get(authentication, viewProduct)
 .put(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, updateProduct)
 .delete(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, deleteProduct);
 

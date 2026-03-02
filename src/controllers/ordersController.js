@@ -75,9 +75,15 @@ const createOrder = asyncHandler(async (request, response) => {
             throw new ApiError(400, "Multiple sellers in one order are not allowed");
         }
 
-        // Stock check
+        // Compare stock quantity with demanded quantity
         if(product.stockQty < Number(quantity)) throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
-        if(product.minOrderQty > Number(quantity)) throw new ApiError(400, `Minimum order quantity is ${product.minOrderQty}. Please increase the quantity for "${product.title}"`);
+
+        // Validate min order quantity
+        if(product.minOrderQty > Number(quantity))
+        {
+            const message = `Minimum order quantity for "${product.title}" is ${product.minOrderQty}. Please increase the quantity for "${product.title}"`
+            throw new ApiError(400, message);
+        }
 
         // Compute item total (SERVER TRUSTED)
         const itemTotal = Number(product.pricePerUnit) * Number(quantity) + Number(product.shippingCost);
@@ -342,7 +348,13 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
 
         // Compare stock quantity with demanded quantity
         if(product.stockQty < Number(quantity)) throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
-        if(product.minOrderQty > Number(quantity)) throw new ApiError(400, `Minimum order quantity is ${product.minOrderQty}. Please increase the quantity for "${product.title}"`);
+
+        // Validate min order quantity
+        if(product.minOrderQty > Number(quantity))
+        {
+            const message = `Minimum order quantity for "${product.title}" is ${product.minOrderQty}. Please increase the quantity for "${product.title}"`
+            throw new ApiError(400, message);
+        }
 
         // Compute total amount
         const itemTotal = (product.pricePerUnit * quantity) + product.shippingCost || 0;

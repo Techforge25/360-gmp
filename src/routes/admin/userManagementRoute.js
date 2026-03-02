@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { adminAuthentication } = require("../../middlewares/adminAuth");
-const { fetchUsersStats, fetchTotalUsers } = require("../../controllers/admin/userManagementController");
+const { fetchUsersStats, fetchAllUsers } = require("../../controllers/admin/userManagementController");
 
 // Router instance
 const userManagementRouter = Router();
@@ -9,8 +9,8 @@ const userManagementRouter = Router();
 userManagementRouter.route("/usersStats")
 .get(adminAuthentication, fetchUsersStats);
 
-// Fetch total user
-userManagementRouter.route("/totalUsers")
-.get(adminAuthentication, fetchTotalUsers);
+// Fetch all users
+userManagementRouter.route("/allUsers")
+.get(adminAuthentication, fetchAllUsers);
 
 module.exports = userManagementRouter;

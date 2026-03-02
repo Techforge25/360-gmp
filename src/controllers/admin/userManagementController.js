@@ -32,8 +32,8 @@ const fetchUsersStats = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "User stats have been fetched"));
 });
 
-// Fetch total user
-const fetchTotalUsers = asyncHandler(async (request, response) => {
+// Fetch all users
+const fetchAllUsers = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10, search = "", status } = request.query;
 
     // Validate status type
@@ -89,4 +89,4 @@ const fetchTotalUsers = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, users, "All users have been fetched"));
 });
 
-module.exports = { fetchUsersStats, fetchTotalUsers };
+module.exports = { fetchUsersStats, fetchAllUsers };

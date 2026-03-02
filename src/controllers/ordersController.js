@@ -77,7 +77,7 @@ const createOrder = asyncHandler(async (request, response) => {
 
         // Stock check
         if(product.stockQty < Number(quantity)) throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
-        if(product.minOrderQty < Number(quantity)) throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
+        if(product.minOrderQty > Number(quantity)) throw new ApiError(400, `Minimum order quantity is ${product.minOrderQty}. Please increase the quantity for "${product.title}"`);
 
         // Compute item total (SERVER TRUSTED)
         const itemTotal = Number(product.pricePerUnit) * Number(quantity) + Number(product.shippingCost);
@@ -320,7 +320,8 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
         if(planName === "TRIAL" && quantity > 1) throw new ApiError(400, "You cannot purchase in bulk within Trial period! Please upgrade");
 
         // Find each product by "id"
-        const product = await Product.findById(productId).select("title stockQty pricePerUnit shippingCost businessId");
+        const product = await Product.findById(productId)
+        .select("title stockQty minOrderQty pricePerUnit shippingCost businessId");
         if(!product) throw new ApiError(404, "Product not found");
 
         // Restrict single-item purchase if the product is available only for bulk orders
@@ -341,6 +342,7 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
 
         // Compare stock quantity with demanded quantity
         if(product.stockQty < Number(quantity)) throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
+        if(product.minOrderQty > Number(quantity)) throw new ApiError(400, `Minimum order quantity is ${product.minOrderQty}. Please increase the quantity for "${product.title}"`);
 
         // Compute total amount
         const itemTotal = (product.pricePerUnit * quantity) + product.shippingCost || 0;

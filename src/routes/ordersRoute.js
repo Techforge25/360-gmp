@@ -1,8 +1,8 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { createOrder, verifyStripePaymentForOrders, completeOrder, updateOrderStatusBySeller, 
-fetchAllOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, 
-fetchCancelledOrders, viewOrder, createOrderWithWallet, cancelOrder } = require("../controllers/ordersController");
+fetchAllUserOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, 
+fetchCancelledOrders, viewOrder, createOrderWithWallet, cancelOrder, fetchAllBusinessOrders } = require("../controllers/ordersController");
 const { checkSubscription, checkUserAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -32,9 +32,13 @@ orderRouter.route("/:orderId/complete")
 orderRouter.route("/:orderId/cancel")
 .get(authentication, authorization(["user"]), cancelOrder);
 
-// Gets All Order of the user
+// Fetch all order of the user
 orderRouter.route("/user/all-orders")
-.get(authentication, authorization(["user"]), fetchAllOrders);
+.get(authentication, authorization(["user"]), fetchAllUserOrders);
+
+// Fetch all orders of the business
+orderRouter.route("/business/all-orders")
+.get(authentication, authorization(["business"]), fetchAllBusinessOrders);
 
 // Fetch processing orders
 orderRouter.route("/user/processing-orders")

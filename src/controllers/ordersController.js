@@ -55,7 +55,8 @@ const createOrder = asyncHandler(async (request, response) => {
         if(planName === "TRIAL" && quantity > 1) throw new ApiError(400, "You cannot purchase in bulk within Trial period! Please upgrade");
 
         // Fetch product from DB (price & shipping must come from server)
-        const product = await Product.findById(productId).select("title stockQty pricePerUnit shippingCost businessId isSingleProductAvailable");
+        const product = await Product.findById(productId)
+        .select("title stockQty minOrderQty pricePerUnit shippingCost businessId isSingleProductAvailable");
         if(!product) throw new ApiError(404, "Product not found");
 
         // Restrict single-item purchase if the product is available only for bulk orders
@@ -76,6 +77,7 @@ const createOrder = asyncHandler(async (request, response) => {
 
         // Stock check
         if(product.stockQty < Number(quantity)) throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
+        if(product.minOrderQty < Number(quantity)) throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
 
         // Compute item total (SERVER TRUSTED)
         const itemTotal = Number(product.pricePerUnit) * Number(quantity) + Number(product.shippingCost);
@@ -481,9 +483,11 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
     }
 });
 
-// Fetch all orders
-const fetchAllOrders = asyncHandler(async (request, response) => {
+// Fetch all user orders
+const fetchAllUserOrders = asyncHandler(async (request, response) => {
     const userId = request.user._id;
+
+    // Find user
     const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
     if(!userProfile) throw new ApiError(404, "User profile not found! Invalid user profile ID");
 
@@ -496,7 +500,27 @@ const fetchAllOrders = asyncHandler(async (request, response) => {
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No orders found"));
 
     // Response
-    return response.status(200).json(new ApiResponse(200, orders, "Order Fetch SuccessFully"));
+    return response.status(200).json(new ApiResponse(200, orders, "User rrders fetch successfully"));
+});
+
+// Fetch all business orders
+const fetchAllBusinessOrders = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Find business
+    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
+    if(!businessProfile) throw new ApiError(404, "Business profile not found! Invalid business profile ID");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Find orders
+    const orders = await Order.paginate({ sellerBusinessId:businessProfile._id }, 
+    { page, limit, lean:true, select:"-updatedAt -__v" });
+    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No orders found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, orders, "Business orders fetch successfully"));
 });
 
 // Update order status by seller
@@ -808,4 +832,5 @@ const viewOrder = asyncHandler(async (request, response) => {
 });
 
 module.exports = { createOrder, verifyStripePaymentForOrders, createOrderWithWallet, completeOrder, updateOrderStatusBySeller, 
-fetchAllOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, fetchCancelledOrders, viewOrder, cancelOrder };
+fetchAllUserOrders, fetchAllBusinessOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, fetchCancelledOrders, 
+viewOrder, cancelOrder };

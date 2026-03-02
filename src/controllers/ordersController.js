@@ -503,26 +503,6 @@ const fetchAllUserOrders = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, orders, "User rrders fetch successfully"));
 });
 
-// Fetch all business orders
-const fetchAllBusinessOrders = asyncHandler(async (request, response) => {
-    const userId = request.user._id;
-
-    // Find business
-    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
-    if(!businessProfile) throw new ApiError(404, "Business profile not found! Invalid business profile ID");
-
-    // Pagination options
-    const { page = 1, limit = 10 } = request.query;
-
-    // Find orders
-    const orders = await Order.paginate({ sellerBusinessId:businessProfile._id }, 
-    { page, limit, lean:true, select:"-updatedAt -__v" });
-    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No orders found"));
-
-    // Response
-    return response.status(200).json(new ApiResponse(200, orders, "Business orders fetch successfully"));
-});
-
 // Update order status by seller
 const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
     const userId = request.user._id;
@@ -693,7 +673,9 @@ const cancelOrder = asyncHandler(async (request, response) => {
     }
 });
 
-// Fetch processing orders
+// ===================== USER SIDE STARTED ===================== //
+
+// Fetch processing orders for users
 const fetchProcessingOrders = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
@@ -711,7 +693,7 @@ const fetchProcessingOrders = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, orders, "Processing order have been fetch"));    
 });
 
-// Fetch in-transit orders
+// Fetch in-transit orders for users
 const fetchInTransitOrders = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
@@ -729,7 +711,7 @@ const fetchInTransitOrders = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, orders, "In-transit orders have been fetch")); 
 });
 
-// Fetch completed orders
+// Fetch completed orders for users
 const fetchCompletedOrders = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
@@ -747,7 +729,7 @@ const fetchCompletedOrders = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, orders, "Completed orders have been fetch")); 
 });
 
-// Fetch cancelled orders
+// Fetch cancelled orders for user
 const fetchCancelledOrders = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
@@ -764,6 +746,104 @@ const fetchCancelledOrders = asyncHandler(async (request, response) => {
     // Response
     return response.status(200).json(new ApiResponse(200, orders, "Cancelled orders have been fetch")); 
 });
+
+// ===================== USER SIDE ENDED ===================== //
+
+// ===================== BUSINESS SIDE STARTED ===================== //
+
+// Fetch all business orders
+const fetchAllBusinessOrders = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Find business
+    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
+    if(!businessProfile) throw new ApiError(404, "Business profile not found! Invalid business profile ID");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Find orders
+    const orders = await Order.paginate({ sellerBusinessId:businessProfile._id }, 
+    { page, limit, lean:true, select:"-updatedAt -__v" });
+    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No orders found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, orders, "Business orders fetch successfully"));
+});
+
+// Fetch processing orders for business
+const fetchBusinessProcessingOrders = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
+    if(!businessProfile) throw new ApiError(404, "Business profile not found! Invalid business profile ID");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Find orders
+    const orders = await Order.paginate({ sellerBusinessId:businessProfile._id, status:{ $in: ["pending", "processing"] } }, 
+    { page, limit, lean:true, select:"-updatedAt -__v" });
+    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No processing orders found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, orders, "Processing order have been fetch")); 
+});
+
+// Fetch in-transit orders for business
+const fetchBsuinessInTransitOrders = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
+    if(!businessProfile) throw new ApiError(404, "Business profile not found! Invalid business profile ID");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Find orders
+    const orders = await Order.paginate({ sellerBusinessId:businessProfile._id, status:"in-transit" }, 
+    { page, limit, lean:true, select:"-updatedAt -__v" });
+    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No in-transit orders found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, orders, "In-transit orders have been fetch")); 
+});
+
+// Fetch completed orders for business
+const fetchBusinessCompletedOrders = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
+    if(!businessProfile) throw new ApiError(404, "Business profile not found! Invalid business profile ID");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Find orders
+    const orders = await Order.paginate({ sellerBusinessId:businessProfile._id, status:"completed" }, 
+    { page, limit, lean:true, select:"-updatedAt -__v" });
+    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No completed orders found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, orders, "Completed orders have been fetch")); 
+});
+
+// Fetch cancelled orders for business
+const fetchBusinessCancelledOrders = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
+    if(!businessProfile) throw new ApiError(404, "Business profile not found! Invalid business profile ID");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Find orders
+    const orders = await Order.paginate({ sellerBusinessId:businessProfile._id, status:"cancelled" }, 
+    { page, limit, lean:true, select:"-updatedAt -__v" });
+    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No cancelled orders found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, orders, "Cancelled orders have been fetch")); 
+});
+
+// ===================== BUSINESS SIDE ENDED ===================== //
 
 // View order
 const viewOrder = asyncHandler(async (request, response) => {
@@ -832,5 +912,6 @@ const viewOrder = asyncHandler(async (request, response) => {
 });
 
 module.exports = { createOrder, verifyStripePaymentForOrders, createOrderWithWallet, completeOrder, updateOrderStatusBySeller, 
-fetchAllUserOrders, fetchAllBusinessOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, fetchCancelledOrders, 
+fetchAllUserOrders, fetchAllBusinessOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, fetchCancelledOrders,
+fetchBusinessProcessingOrders, fetchBsuinessInTransitOrders, fetchBusinessCompletedOrders, fetchBusinessCancelledOrders,
 viewOrder, cancelOrder };

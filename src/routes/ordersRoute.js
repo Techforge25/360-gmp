@@ -2,7 +2,11 @@ const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { createOrder, verifyStripePaymentForOrders, completeOrder, updateOrderStatusBySeller, 
 fetchAllUserOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, 
-fetchCancelledOrders, viewOrder, createOrderWithWallet, cancelOrder, fetchAllBusinessOrders } = require("../controllers/ordersController");
+fetchCancelledOrders, viewOrder, createOrderWithWallet, cancelOrder, fetchAllBusinessOrders, 
+fetchBusinessProcessingOrders,
+fetchBsuinessInTransitOrders,
+fetchBusinessCompletedOrders,
+fetchBusinessCancelledOrders} = require("../controllers/ordersController");
 const { checkSubscription, checkUserAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -32,29 +36,50 @@ orderRouter.route("/:orderId/complete")
 orderRouter.route("/:orderId/cancel")
 .get(authentication, authorization(["user"]), cancelOrder);
 
+// ===================== USER SIDE STARTED ===================== //
 // Fetch all order of the user
 orderRouter.route("/user/all-orders")
 .get(authentication, authorization(["user"]), fetchAllUserOrders);
 
+// Fetch processing orders for user
+orderRouter.route("/user/processing-orders")
+.get(authentication, authorization(["user"]), fetchProcessingOrders);
+
+// Fetch in-transit orders for user
+orderRouter.route("/user/in-transit-orders")
+.get(authentication, authorization(["user"]), fetchInTransitOrders);
+
+// Fetch completed orders for user
+orderRouter.route("/user/completed-orders")
+.get(authentication, authorization(["user"]), fetchCompletedOrders);
+
+// Fetch cancelled orders for user
+orderRouter.route("/user/cancelled-orders")
+.get(authentication, authorization(["user"]), fetchCancelledOrders);
+// ===================== USER SIDE ENDED ===================== //
+
+
+// ===================== BUSINESS SIDE STARTED ===================== // 
 // Fetch all orders of the business
 orderRouter.route("/business/all-orders")
 .get(authentication, authorization(["business"]), fetchAllBusinessOrders);
 
-// Fetch processing orders
-orderRouter.route("/user/processing-orders")
-.get(authentication, authorization(["user"]), fetchProcessingOrders);
+// Fetch processing orders for business
+orderRouter.route("/business/processing-orders")
+.get(authentication, authorization(["business"]), fetchBusinessProcessingOrders);
 
-// Fetch in-transit orders
-orderRouter.route("/user/in-transit-orders")
-.get(authentication, authorization(["user"]), fetchInTransitOrders);
+// Fetch in-transit orders for business
+orderRouter.route("/business/in-transit-orders")
+.get(authentication, authorization(["business"]), fetchBsuinessInTransitOrders);
 
-// Fetch completed orders
-orderRouter.route("/user/completed-orders")
-.get(authentication, authorization(["user"]), fetchCompletedOrders);
+// Fetch completed orders for business
+orderRouter.route("/business/completed-orders")
+.get(authentication, authorization(["business"]), fetchBusinessCompletedOrders);
 
-// Fetch cancelled orders
-orderRouter.route("/user/cancelled-orders")
-.get(authentication, authorization(["user"]), fetchCancelledOrders);
+// Fetch cancelled orders for business
+orderRouter.route("/business/cancelled-orders")
+.get(authentication, authorization(["business"]), fetchBusinessCancelledOrders);
+// ===================== BUSINESS SIDE ENDED ===================== // 
 
 // View order
 orderRouter.route("/:orderId/view")

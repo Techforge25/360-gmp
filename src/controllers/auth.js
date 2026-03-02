@@ -408,7 +408,7 @@ const googleLogin = async (request, response) => {
     if(role === null) redirectUrl = `${process.env.FRONTEND_URL}/onboarding/role`;
 
     // Redirect to application
-    return response.status(303)
+    return response.status(300)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
     .redirect(redirectUrl);

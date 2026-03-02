@@ -59,6 +59,14 @@ const createOrder = asyncHandler(async (request, response) => {
         .select("title stockQty minOrderQty pricePerUnit shippingCost businessId isSingleProductAvailable");
         if(!product) throw new ApiError(404, "Product not found");
 
+        // User cannot purchase his own product from his own business profile
+        const businessProfile = await BusinessProfile.findById(product.businessId).select("ownerUserId").lean();
+        if(!businessProfile) throw new ApiError(404, "Product owner not found");
+        if(String(businessProfile.ownerUserId) === String(userId))
+        {
+            throw new ApiError(400, "You cannot purchase product from your own business profile");
+        }
+
         // Restrict single-item purchase if the product is available only for bulk orders
         if(!product.isSingleProductAvailable && quantity <= 1)
         {
@@ -329,6 +337,14 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
         const product = await Product.findById(productId)
         .select("title stockQty minOrderQty pricePerUnit shippingCost businessId");
         if(!product) throw new ApiError(404, "Product not found");
+
+        // User cannot purchase his own product from his own business profile
+        const businessProfile = await BusinessProfile.findById(product.businessId).select("ownerUserId").lean();
+        if(!businessProfile) throw new ApiError(404, "Product owner not found");
+        if(String(businessProfile.ownerUserId) === String(userId))
+        {
+            throw new ApiError(400, "You cannot purchase product from your own business profile");
+        }        
 
         // Restrict single-item purchase if the product is available only for bulk orders
         if(!product.isSingleProductAvailable && quantity <= 1)

@@ -3,10 +3,8 @@ const { authentication, authorization } = require("../middlewares/auth");
 const { createOrder, verifyStripePaymentForOrders, completeOrder, updateOrderStatusBySeller, 
 fetchAllUserOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, 
 fetchCancelledOrders, viewOrder, createOrderWithWallet, cancelOrder, fetchAllBusinessOrders, 
-fetchBusinessProcessingOrders,
-fetchBsuinessInTransitOrders,
-fetchBusinessCompletedOrders,
-fetchBusinessCancelledOrders} = require("../controllers/ordersController");
+fetchBusinessProcessingOrders, fetchBsuinessInTransitOrders, fetchBusinessCompletedOrders,
+fetchBusinessCancelledOrders } = require("../controllers/ordersController");
 const { checkSubscription, checkUserAccess } = require("../middlewares/checkSubscription");
 
 // Router instance

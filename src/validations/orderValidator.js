@@ -18,4 +18,13 @@ const createOrderValidationSchema = joi.object({
     }))
 });
 
-module.exports = { createOrderValidationSchema };
+// Update order status
+const updateOrderStatusValidationSchema = joi.object({
+    status: joi.string().trim().valid("processing", "shipped", "in-transit", "delivered").required().label("Order status"),
+    tracking: joi.object({
+        trackingId: joi.string().trim().label("Tracking ID"),
+        courierName: joi.string().trim().label("Courier partner name")
+    }).when("status", { is:"shipped", then:joi.required(), otherwise:joi.forbidden() }).label("Tracking info")
+});
+
+module.exports = { createOrderValidationSchema, updateOrderStatusValidationSchema };

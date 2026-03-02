@@ -15,7 +15,7 @@ const Transaction = require("../models/transactionModel");
 const TrialUsage = require("../models/trialUsageModel");
 const Notification = require("../models/notificationsModel");
 const validate = require("../utils/validate");
-const { createOrderValidationSchema } = require("../validations/orderValidator");
+const { createOrderValidationSchema, updateOrderStatusValidationSchema } = require("../validations/orderValidator");
 
 // Create order - Purchase product using stripe payment
 const createOrder = asyncHandler(async (request, response) => {
@@ -537,7 +537,7 @@ const fetchAllUserOrders = asyncHandler(async (request, response) => {
 const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const { orderId } = request.params;
-    const { status } = request.body; 
+    const { status, tracking } = validate(updateOrderStatusValidationSchema, request.body);
 
     // Find business
     const business = await BusinessProfile.findOne({ ownerUserId:userId });
@@ -550,16 +550,19 @@ const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
     // Authorize owner
     if(String(order.sellerBusinessId) !== String(business._id)) throw new ApiError(403, "You are not authorized to update the order status");
 
-    // Seller cannot set status to "completed" or "paid"
-    const allowedStatuses = ["processing", "shipped", "in-transit", "delivered"];
-    if(!allowedStatuses.includes(status)) throw new ApiError(400, "Invalid status update.");
-
     // Prevent duplicate status update
     if(status === order.status) return response.status(200).json(new ApiResponse(200, null, `The order status is already ${status}`));
 
-    // Save status and delivered timestamp
-    order.status = status;
+    // Handle delivered and shipped statuses
     if(status === "delivered") order.tracking.deliveredAt = new Date();
+    if(status === "shipped")
+    {
+        order.tracking = tracking;
+        order.tracking.shippedAt = new Date();
+    }
+
+    // Save status
+    order.status = status;
     await order.save();
 
     // Response

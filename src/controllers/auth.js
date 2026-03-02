@@ -387,7 +387,7 @@ const googleLogin = async (request, response) => {
     // Validate
     if(!user) throw new ApiError(400, "Failed to fetch user on google login!");
 
-    // Generate access token
+    // Generate access & refresh tokens
     const accessToken = generateAccessToken({ 
         _id:user._id, 
         role:user.role, 
@@ -396,7 +396,9 @@ const googleLogin = async (request, response) => {
             userProfileId: userProfile?._id || null
         }
     });
+    const refreshToken = generateRefreshToken({ _id:user._id });
     if(!accessToken) throw new ApiError(400, "Failed to generate access token");
+    if(!refreshToken) throw new ApiError(400, "Failed to generate refresh token");
 
     // Role based redirect
     const role = request.user.role;
@@ -408,6 +410,7 @@ const googleLogin = async (request, response) => {
     // Redirect to application
     return response.status(303)
     .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", refreshToken, cookieOptions)
     .redirect(redirectUrl);
 }
 

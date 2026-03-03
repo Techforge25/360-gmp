@@ -3,12 +3,11 @@ const Subscription = require("../models/subscription");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
-const getMonthlySubscriptionDates = require("../utils/getSubscriptionDates");
 const Stripe = require("stripe");
 const convertToMongoId = require("../utils/convertToMongoId");
 const sendNotification = require("../utils/sendNotification");
 
-// Create subscription via stripe
+// Create subscription via stripe (Recurring Monthly + Trial Support)
 const createSubscriptionStripe = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const { planId, profile } = request.query;
@@ -18,52 +17,43 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
     if(!profile) throw new ApiError(400, "Profile model is missing! Please specify 'business' or 'user'");
     if(!["business", "user"].includes(profile)) throw new ApiError(400, "Invalid profile model! Please use 'business' or 'user'");
 
-    // Check existing subscription
-    const existingSubscription = await Subscription.findOne({ userId, planId, status:"active", endDate:{ $gt:new Date() }});
-    if(existingSubscription) return response.status(200).json(new ApiResponse(200, null, "You already have an active subscription for this plan"));
-
-    // Get plan
+    // Check plan
     const plan = await Plan.findById(planId).lean();
     if(!plan) throw new ApiError(404, "Plan not found! Invalid plan ID");
-    const { name, price } = plan;
 
-    // If business try to select trial period
-    if(name === "TRIAL" && profile === "business") throw new ApiError(400, "Business profile cannot select trial period");
-    
+    // Extract plan name and "Stripe Price ID"
+    const { name, stripePriceId } = plan;
+    if(!stripePriceId) throw new ApiError(400, "Stripe price ID not configured for this plan");
+
+    // Prevent duplicate active subscription
+    const existingSubscription = await Subscription.findOne({ userId, planId, status:"active", endDate:{ $gt:new Date() } });
+    if(existingSubscription) return response.status(200).json(new ApiResponse(200, null, "You already have an active subscription for this plan"));
+
     // Stripe instance
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-    // Create session
-    const session = await stripe.checkout.sessions.create({
+    // Common session config
+    let sessionConfig = {
         payment_method_types: ["card"],
-        mode: "payment",
-        line_items: [{
-            price_data: {
-                currency: "usd",
-                unit_amount: Number(price) * 100,
-                product_data: { 
-                    name: `${name} Plan`,
-                    metadata:{
-                        brand: "360-GMP",
-                        category: "Monthly Subscription"
-                    }
-                },
-            },
-            quantity: 1,
-        }],
+        mode: "subscription", // For subscription based (Auto deduction)
+        line_items: [{ price: stripePriceId, quantity: 1 }],
         metadata: { userId, planId, planName:name },
         success_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/cancel`
-    });
+    };
 
-    // Validate
+    // If trial plan selected → apply 14 days trial
+    if(name === "TRIAL") sessionConfig.subscription_data = { trial_period_days: 14 }; // Auto charge after 14 days
+
+    // Create checkout session
+    const session = await stripe.checkout.sessions.create(sessionConfig);
     if(!session) throw new ApiError(400, "Stripe session creation failed");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, session.url, "Checkout url generated"));    
+    return response.status(200).json(new ApiResponse(200, session.url, "Checkout url generated"));
 });
 
-// Verify stripe payment
+// Verify stripe subscription payment
 const verifyStripePayment = asyncHandler(async (request, response) => {
     const { session_id } = request.query;
     if(!session_id) throw new ApiError(400, "Session ID is missing");
@@ -71,102 +61,186 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
     // Initialize stripe SDK
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-    // Get checkout session details
+    // Retrieve checkout session
     const session = await stripe.checkout.sessions.retrieve(session_id);
-
-    // Validate session
     if(!session || !session.id) throw new ApiError(404, "Session not found");
 
-    // Prevent dual payment for single session
-    const existing = await Subscription.findOne({ stripeSubscriptionId:session.id });
+    // Prevent duplicate processing
+    const existing = await Subscription.findOne({ stripeSubscriptionId: session.subscription });
     if(existing) return response.status(200).json(new ApiResponse(200, null, "Payment already processed"));
 
-    // Check payment status
-    if(session.payment_status === "paid") 
+    // Check subscription mode
+    if(session.mode !== "subscription") throw new ApiError(400, "Invalid session mode");
+
+    // Get stripe subscription details
+    const stripeSubscription = await stripe.subscriptions.retrieve(session.subscription);
+    if(!stripeSubscription) throw new ApiError(404, "Stripe subscription not found");
+
+    // Check subscription status
+    if(!["active", "trialing"].includes(stripeSubscription.status)) throw new ApiError(400, "Subscription not active");
+
+    // Extract metadata
+    const { userId, planId, planName } = session.metadata;
+
+    // Get subscription period dates from Stripe
+    const startDate = new Date(stripeSubscription.current_period_start * 1000);
+    const endDate = new Date(stripeSubscription.current_period_end * 1000);
+
+    // Create subscription record
+    const subscription = await Subscription.create({
+        userId,
+        planId,
+        status:"active",
+        startDate,
+        endDate,
+        stripeSubscriptionId: stripeSubscription.id,
+        stripeCustomerId: stripeSubscription.customer
+    });
+    if(!subscription) throw new ApiError(400, "Failed to create subscription");
+
+    // Send notification
+    await sendNotification({
+        userOwnerId:userId,
+        title: "Subscription Activation",
+        content: stripeSubscription.status === "trialing"
+            ? `Your trial has started. You will be charged after 14 days`
+            : `You have successfully subscribed to ${planName}`,
+        io: request.app.get("io")
+    });
+
+    // Redirect to frontend
+    const redirectUrl = `${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`;
+    return response.status(303).redirect(redirectUrl);
+});
+
+// Stripe webhook (Handle recurring subscription lifecycle)
+const stripeWebhook = asyncHandler(async (request, response) => {
+
+    // Initialize stripe SDK
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+    // Get webhook signature
+    const signature = request.headers["stripe-signature"];
+
+    let event;
+
+    // Verify webhook signature
+    try 
     {
-        // Get subscription amount from stripe session
-        // const subscriptionAmount = session.amount_total / 100;
-
-        // Redirect url
-        const redirectUrl = `${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`;
-
-        // Get metadata
-        const { userId, planId, planName } = session.metadata;
-        
-        // If trial selected
-        if(planName === "TRIAL")
-        {
-            // Calculate for trial period
-            const startDate = new Date();
-            const endDate = new Date();
-            endDate.setDate(endDate.getDate() + 14);
-            
-            // Create trial period
-            const trialSubscription = await Subscription.create({ 
-                userId, 
-                planId, 
-                status:"active", 
-                startDate, 
-                endDate,
-                stripeSubscriptionId:session.id
-            });
-            if(!trialSubscription) throw new ApiError(500, "Failed to create trial period");
-
-            // Send notification for trial
-            await sendNotification({ 
-                userOwnerId:userId,
-                title: "Subscription Activation",
-                content:"You have subscribed to our 14-days Trial period",
-                io: request.app.get("io")
-            });
-
-            // Response for trial
-            return response.status(303).redirect(redirectUrl);
-        }
-
-        // Check existing subscription
-        // const existingSubscription = await Subscription.findOne({ userId, planId, status:"active", endDate:{ $gt:new Date() }});
-
-        // Existing subscription extend by 1 month
-        // if(existingSubscription) 
-        // {
-        //     const { endDate } = getMonthlySubscriptionDates(existingSubscription.endDate);
-        //     existingSubscription.endDate = endDate;
-        //     await existingSubscription.save();
-
-        //     // Send notification for subscription extension 
-        //     await sendNotification({ 
-        //         userOwnerId:userId,
-        //         title: "Subscription Extended",
-        //         content:"Your subscription has been extended by 1 month",
-        //         io: request.app.get("io")
-        //     });
-
-        //     return response.status(200).json(new ApiResponse(200, null, "Subscription extended by 1 month"));
-        // } 
-
-        // Get subscription dates
-        const { startDate, endDate } = getMonthlySubscriptionDates();
-
-        // Upgrade subscription
-        const subscription = await Subscription.create({ userId, planId, status:"active", startDate, endDate, stripeSubscriptionId:session.id });
-        if(!subscription) throw new ApiError(400, "Failed to update subscription");
-
-        // Send notification
-        await sendNotification({ 
-            userOwnerId:userId,
-            title: "Subscription activation",
-            content: `You have successfully subscribed to ${planName}`,
-            io: request.app.get("io")
-        });
-
-        // Response
-        return response.status(303).redirect(redirectUrl);
+        event = stripe.webhooks.constructEvent(request.body, signature, process.env.STRIPE_WEBHOOK_SECRET);
     } 
-    else 
+    catch (error) 
     {
-        throw new ApiError(400, "Payment not completed");
+        return response.status(400).send(`Webhook Error: ${error.message}`);
     }
+
+    // Extract event type
+    const eventType = event.type;
+
+    // Checkout completed (New Subscription)
+    if(eventType === "checkout.session.completed")
+    {
+        const session = event.data.object;
+
+        // Only subscription checkout
+        if(session.mode !== "subscription") return response.status(200).json({ received:true });
+
+        // Get subscription id
+        const stripeSubscriptionId = session.subscription;
+        if(!stripeSubscriptionId) return response.status(200).json({ received:true });
+
+        // Get subscription from stripe
+        const stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+
+        // Extract data from metadata
+        const { userId, planId } = session.metadata;
+        if(!userId) return response.status(200).json({ received:true });
+
+        // Check if already exists
+        let subscription = await Subscription.findOne({ userId });
+
+        if(subscription)
+        {
+            subscription.stripeSubscriptionId = stripeSubscriptionId;
+            subscription.planId = planId;
+            subscription.startDate = new Date(stripeSubscription.current_period_start * 1000);
+            subscription.endDate = new Date(stripeSubscription.current_period_end * 1000);
+            subscription.status = "active";
+
+            // Save
+            await subscription.save();
+            console.log("Subscription updated after checkout");
+        }
+        else
+        {
+            await Subscription.create({
+                userId,
+                stripeSubscriptionId,
+                planId,
+                startDate: new Date(stripeSubscription.current_period_start * 1000),
+                endDate: new Date(stripeSubscription.current_period_end * 1000),
+                status: "active"
+            });
+            console.log("Subscription created after checkout");
+        }
+    }
+
+    // Recurring Payment Success
+    if(eventType === "invoice.payment_succeeded")
+    {
+        const invoice = event.data.object;
+        const stripeSubscriptionId = invoice.subscription;
+        if(!stripeSubscriptionId) return response.status(200).json({ received:true });
+
+        // Find subscription
+        const subscription = await Subscription.findOne({ stripeSubscriptionId });
+        if(subscription)
+        {
+            const stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+
+            // Set new dates
+            subscription.startDate = new Date(stripeSubscription.current_period_start * 1000);
+            subscription.endDate = new Date(stripeSubscription.current_period_end * 1000);
+            subscription.status = "active";
+
+            // Save
+            await subscription.save();
+            console.log("Subscription renewed successfully");
+        }
+    }
+
+    // Payment Failed
+    if(eventType === "invoice.payment_failed")
+    {
+        const invoice = event.data.object;
+        const stripeSubscriptionId = invoice.subscription;
+        if(!stripeSubscriptionId) return response.status(200).json({ received:true });
+
+        // Find subscription
+        const subscription = await Subscription.findOne({ stripeSubscriptionId });
+        if(subscription)
+        {
+            subscription.status = "expired";
+            await subscription.save();
+            console.log("Subscription payment failed");
+        }
+    }
+
+    // Subscription Cancelled
+    if(eventType === "customer.subscription.deleted")
+    {
+        const stripeSubscription = event.data.object;
+        const subscription = await Subscription.findOne({ stripeSubscriptionId: stripeSubscription.id });
+        if(subscription)
+        {
+            subscription.status = "canceled";
+            await subscription.save();
+            console.log("Subscription canceled from Stripe");
+        }
+    }
+
+    // Success response
+    return response.status(200).json({ received:true });
 });
 
 // Get my subscription
@@ -270,4 +344,5 @@ const checkSubscriptionStatus = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, existingSubscription ? true : false, "Subscription status checked"));
 });
 
-module.exports = { createSubscriptionStripe, verifyStripePayment, getMySubscription, totalSpent, checkSubscriptionStatus };
+module.exports = { createSubscriptionStripe, verifyStripePayment, stripeWebhook, 
+getMySubscription, totalSpent, checkSubscriptionStatus };

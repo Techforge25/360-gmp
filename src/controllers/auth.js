@@ -430,5 +430,14 @@ const userExistence = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, user._id, "User exists"));
 });
 
+// User auth check
+const userAuthCheck = asyncHandler(async (request, response) => {
+    const { _id:userId, role } = request.user;
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { userId, role }, "Authenticated!"));
+});
+
 module.exports = { userSignup, userLogin, logout, refreshToken, switchRole, forgotPassword, 
-resendOTPToken, verifyOTP, verifypasswordResetToken, resetPassword, googleLogin, userExistence };
+resendOTPToken, verifyOTP, verifypasswordResetToken, resetPassword, googleLogin, userExistence,
+userAuthCheck };

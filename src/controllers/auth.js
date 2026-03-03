@@ -401,11 +401,11 @@ const googleLogin = async (request, response) => {
     if(!refreshToken) throw new ApiError(400, "Failed to generate refresh token");
 
     // Role based redirect
-    const role = request.user.role;
-    let redirectUrl;
-    if(role === "user") redirectUrl = `${process.env.FRONTEND_URL}/dashboard/user`;
-    if(role === "business") redirectUrl = `${process.env.FRONTEND_URL}/dashboard/business`;
-    if(role === null) redirectUrl = `${process.env.FRONTEND_URL}/onboarding/role`;
+    // const role = request.user.role;
+    const redirectUrl = `${process.env.FRONTEND_URL}/authSuccess`;
+    // if(role === "user") redirectUrl = `${process.env.FRONTEND_URL}/dashboard/user`;
+    // if(role === "business") redirectUrl = `${process.env.FRONTEND_URL}/dashboard/business`;
+    // if(role === null) redirectUrl = `${process.env.FRONTEND_URL}/onboarding/role`;
 
     // Redirect to application
     return response.status(303)

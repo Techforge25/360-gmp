@@ -285,7 +285,7 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
 
         // Response
         // return response.status(303).redirect(process.env.FRONTEND_URL);
-        return response.status(303).redirect(`http://localhost:3000/dashboard/user/orders/OrderTrackingPage/${order._id}`);
+        return response.status(303).redirect(`https://360-gmp-front-end.vercel.app/dashboard/user/orders/OrderTrackingPage/${order._id}`);
     } 
     catch(error) 
     {

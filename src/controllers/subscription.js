@@ -87,6 +87,13 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
     const startDate = new Date(stripeSubscription.current_period_start * 1000);
     const endDate = new Date(stripeSubscription.current_period_end * 1000);
 
+    // Logs
+    console.log("Session mode", session.mode);
+    console.log("Subscription status", stripeSubscription.status);
+    console.log("Start date", startDate);
+    console.log("End date", endDate);
+    console.log("Stripe subscription", stripeSubscription);
+
     // Create subscription record
     const subscription = await Subscription.create({
         userId,
@@ -162,10 +169,36 @@ const stripeWebhook = asyncHandler(async (request, response) => {
 
         if(subscription)
         {
+            // Get dates for db
+            const startTimestamp = Number(
+                stripeSubscription.current_period_start ||
+                stripeSubscription.start_date ||
+                stripeSubscription.billing_cycle_anchor
+            );
+            if(!startTimestamp)
+            {
+                console.log("Timestamp missing", stripeSubscription);
+                return response.status(200).json({ received:true });
+            }
+
+            const startDate = new Date(startTimestamp * 1000);
+
+            let endDate;
+            if(stripeSubscription.current_period_end)
+            {
+                endDate = new Date(stripeSubscription.current_period_end * 1000);
+            }
+            else
+            {
+                // Monthly fallback (accurate)
+                endDate = new Date(startDate);
+                endDate.setMonth(endDate.getMonth() + 1);
+            }        
+
             subscription.stripeSubscriptionId = stripeSubscriptionId;
             subscription.planId = planId;
-            subscription.startDate = new Date(stripeSubscription.current_period_start * 1000);
-            subscription.endDate = new Date(stripeSubscription.current_period_end * 1000);
+            subscription.startDate = startDate;
+            subscription.endDate = endDate;
             subscription.status = "active";
 
             // Save
@@ -174,12 +207,38 @@ const stripeWebhook = asyncHandler(async (request, response) => {
         }
         else
         {
+            // Get dates for db
+            const startTimestamp = Number(
+                stripeSubscription.current_period_start ||
+                stripeSubscription.start_date ||
+                stripeSubscription.billing_cycle_anchor
+            );
+            if(!startTimestamp)
+            {
+                console.log("Timestamp missing", stripeSubscription);
+                return response.status(200).json({ received:true });
+            }
+
+            const startDate = new Date(startTimestamp * 1000);
+
+            let endDate;
+            if(stripeSubscription.current_period_end)
+            {
+                endDate = new Date(stripeSubscription.current_period_end * 1000);
+            }
+            else
+            {
+                // Monthly fallback (accurate)
+                endDate = new Date(startDate);
+                endDate.setMonth(endDate.getMonth() + 1);
+            } 
+
             await Subscription.create({
                 userId,
                 stripeSubscriptionId,
                 planId,
-                startDate: new Date(stripeSubscription.current_period_start * 1000),
-                endDate: new Date(stripeSubscription.current_period_end * 1000),
+                startDate: startDate,
+                endDate: endDate,
                 status: "active"
             });
             console.log("Subscription created after checkout");
@@ -198,10 +257,36 @@ const stripeWebhook = asyncHandler(async (request, response) => {
         if(subscription)
         {
             const stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+            
+            // Get dates for db
+            const startTimestamp = Number(
+                stripeSubscription.current_period_start ||
+                stripeSubscription.start_date ||
+                stripeSubscription.billing_cycle_anchor
+            );
+            if(!startTimestamp)
+            {
+                console.log("Timestamp missing", stripeSubscription);
+                return response.status(200).json({ received:true });
+            }
+
+            const startDate = new Date(startTimestamp * 1000);
+
+            let endDate;
+            if(stripeSubscription.current_period_end)
+            {
+                endDate = new Date(stripeSubscription.current_period_end * 1000);
+            }
+            else
+            {
+                // Monthly fallback (accurate)
+                endDate = new Date(startDate);
+                endDate.setMonth(endDate.getMonth() + 1);
+            } 
 
             // Set new dates
-            subscription.startDate = new Date(stripeSubscription.current_period_start * 1000);
-            subscription.endDate = new Date(stripeSubscription.current_period_end * 1000);
+            subscription.startDate = startDate;
+            subscription.endDate = endDate;
             subscription.status = "active";
 
             // Save

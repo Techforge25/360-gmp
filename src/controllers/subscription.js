@@ -24,6 +24,7 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
     // Extract plan name and "Stripe Price ID"
     const { name, stripePriceId } = plan;
     if(!stripePriceId) throw new ApiError(400, "Stripe price ID not configured for this plan");
+    if(name === "TRIAL" && profile === "business") throw new ApiError(400, "Business cannot select Trial plan");
 
     // Prevent duplicate active subscription
     const existingSubscription = await Subscription.findOne({ userId, planId, status:"active", endDate:{ $gt:new Date() } });

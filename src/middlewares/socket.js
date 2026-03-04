@@ -1,26 +1,33 @@
-const ApiError = require("../utils/ApiError");
 const { verifyAccessToken } = require("../utils/accessToken");
+const cookie = require("cookie");
 
 // Socket authentication
 const socketAuthentication = (socket, next) => {
     try 
     {
-        // Get token
-        const { authToken } = socket.handshake.auth || {};
-        if(!authToken) throw new ApiError(401, "Socket authentication error: Token is missing");
+        // Get cookies
+        const rawCookies = socket.handshake.headers.cookie;
+        if(!rawCookies) return next();
+
+        // Parse cookie
+        const parsedCookies = cookie.parse(rawCookies);
+        const accessToken = parsedCookies.accessToken;
+        if(!accessToken) return next();
 
         // Verify token
-        const user = verifyAccessToken(authToken);
-        if(!user) throw new ApiError(401, "Socket authentication error: Invalid token");
+        const user = verifyAccessToken(accessToken);
+        if(!user) return next();
 
-        // Pass to connection
-        socket.user = user || null;
+        // Inject user
+        socket.user = user;
         return next();
     } 
-    catch (error) 
+    catch(error) 
     {
-        console.log(error.message);
-        // throw error;
+        console.log("Socket auth error:", error.message);
+
+        // Never block connection
+        return next();
     }
 };
 

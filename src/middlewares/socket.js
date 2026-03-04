@@ -11,6 +11,9 @@ const socketAuthentication = (socket, next) => {
 
         // Parse cookie
         const parsedCookies = cookie.parse(rawCookies);
+        if(!parsedCookies) return next();
+
+        // Extract access token
         const accessToken = parsedCookies.accessToken;
         if(!accessToken) return next();
 
@@ -25,8 +28,6 @@ const socketAuthentication = (socket, next) => {
     catch(error) 
     {
         console.log("Socket auth error:", error.message);
-
-        // Never block connection
         return next();
     }
 };

@@ -565,6 +565,10 @@ const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
     order.status = status;
     await order.save();
 
+    // Emit event real-time
+    const io = request.app.get("io");
+    io.to(order.buyerUserProfileId).emit("update-order-status", { orderId:order._id, status:order.status });
+
     // Response
     return response.status(200).json(new ApiResponse(200, order, `Status updated to ${status}`));
 });
@@ -618,6 +622,10 @@ const completeOrder = asyncHandler(async (request, response) => {
         // Commit changes
         await dbSession.commitTransaction();
         dbSession.endSession();
+
+        // Emit event real-time
+        const io = request.app.get("io");
+        io.to(order.sellerBusinessId).emit("update-order-status", { orderId:order._id, status:order.status });        
 
         // Response
         return response.status(200).json(new ApiResponse(200, {}, "Order completed successfully"));

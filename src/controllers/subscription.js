@@ -7,6 +7,15 @@ const Stripe = require("stripe");
 const convertToMongoId = require("../utils/convertToMongoId");
 const sendNotification = require("../utils/sendNotification");
 
+// Helper function to get 
+const getSubscriptionDates = (startingDate) => {
+    const startDate = new Date(Number(startingDate) * 1000);
+    const endDate = new Date(startDate);
+    endDate.setMonth(endDate.getMonth() + 1);
+    
+    return { startDate, endDate };
+};
+
 // Create subscription via stripe (Recurring Monthly + Trial Support)
 const createSubscriptionStripe = asyncHandler(async (request, response) => {
     const userId = request.user._id;
@@ -55,69 +64,72 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
 });
 
 // Verify stripe subscription payment
+// const verifyStripePayment = asyncHandler(async (request, response) => {
+//     const { session_id } = request.query;
+//     if(!session_id) throw new ApiError(400, "Session ID is missing");
+
+//     // Initialize stripe SDK
+//     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+//     // Retrieve checkout session
+//     const session = await stripe.checkout.sessions.retrieve(session_id);
+//     if(!session || !session.id) throw new ApiError(404, "Session not found");
+
+//     // Prevent duplicate processing
+//     const existing = await Subscription.findOne({ stripeSubscriptionId: session.subscription });
+//     if(existing) return response.status(200).json(new ApiResponse(200, null, "Payment already processed"));
+
+//     // Check subscription mode
+//     if(session.mode !== "subscription") throw new ApiError(400, "Invalid session mode");
+
+//     // Get stripe subscription details
+//     const stripeSubscription = await stripe.subscriptions.retrieve(session.subscription);
+//     if(!stripeSubscription) throw new ApiError(404, "Stripe subscription not found");
+
+//     // Check subscription status
+//     if(!["active", "trialing"].includes(stripeSubscription.status)) throw new ApiError(400, "Subscription not active");
+
+//     // Extract metadata
+//     const { userId, planId, planName } = session.metadata;
+
+//     // Get subscription period dates from Stripe
+//     const { startDate, endDate } = getSubscriptionDates(stripeSubscription.start_date);
+
+//     // Create subscription record
+//     const subscription = await Subscription.create({
+//         userId,
+//         planId,
+//         status:"active",
+//         startDate,
+//         endDate,
+//         stripeSubscriptionId: stripeSubscription.id,
+//         stripeCustomerId: stripeSubscription.customer
+//     });
+//     if(!subscription) throw new ApiError(400, "Failed to create subscription");
+
+//     // Send notification
+//     await sendNotification({
+//         userOwnerId:userId,
+//         title: "Subscription Activation",
+//         content: stripeSubscription.status === "trialing"
+//             ? `Your trial has started. You will be charged after 14 days`
+//             : `You have successfully subscribed to ${planName}`,
+//         io: request.app.get("io")
+//     });
+
+//     // Redirect to frontend
+//     const redirectUrl = `${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`;
+//     return response.status(303).redirect(redirectUrl);
+// });
+
+// Verify stripe subscription payment
 const verifyStripePayment = asyncHandler(async (request, response) => {
+    // Get session for payment verification
     const { session_id } = request.query;
     if(!session_id) throw new ApiError(400, "Session ID is missing");
 
-    // Initialize stripe SDK
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-    // Retrieve checkout session
-    const session = await stripe.checkout.sessions.retrieve(session_id);
-    if(!session || !session.id) throw new ApiError(404, "Session not found");
-
-    // Prevent duplicate processing
-    const existing = await Subscription.findOne({ stripeSubscriptionId: session.subscription });
-    if(existing) return response.status(200).json(new ApiResponse(200, null, "Payment already processed"));
-
-    // Check subscription mode
-    if(session.mode !== "subscription") throw new ApiError(400, "Invalid session mode");
-
-    // Get stripe subscription details
-    const stripeSubscription = await stripe.subscriptions.retrieve(session.subscription);
-    if(!stripeSubscription) throw new ApiError(404, "Stripe subscription not found");
-
-    // Check subscription status
-    if(!["active", "trialing"].includes(stripeSubscription.status)) throw new ApiError(400, "Subscription not active");
-
-    // Extract metadata
-    const { userId, planId, planName } = session.metadata;
-
-    // Get subscription period dates from Stripe
-    const startDate = new Date(stripeSubscription.current_period_start * 1000);
-    const endDate = new Date(stripeSubscription.current_period_end * 1000);
-
-    // Logs
-    console.log("Session mode", session.mode);
-    console.log("Subscription status", stripeSubscription.status);
-    console.log("Start date", startDate);
-    console.log("End date", endDate);
-    console.log("Stripe subscription", stripeSubscription);
-
-    // Create subscription record
-    const subscription = await Subscription.create({
-        userId,
-        planId,
-        status:"active",
-        startDate,
-        endDate,
-        stripeSubscriptionId: stripeSubscription.id,
-        stripeCustomerId: stripeSubscription.customer
-    });
-    if(!subscription) throw new ApiError(400, "Failed to create subscription");
-
-    // Send notification
-    await sendNotification({
-        userOwnerId:userId,
-        title: "Subscription Activation",
-        content: stripeSubscription.status === "trialing"
-            ? `Your trial has started. You will be charged after 14 days`
-            : `You have successfully subscribed to ${planName}`,
-        io: request.app.get("io")
-    });
-
     // Redirect to frontend
-    const redirectUrl = `${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`;
+    const redirectUrl = `https://360-gmp-front-end.vercel.app/subscription/success?session_id=${session_id}`;
     return response.status(303).redirect(redirectUrl);
 });
 
@@ -170,30 +182,7 @@ const stripeWebhook = asyncHandler(async (request, response) => {
         if(subscription)
         {
             // Get dates for db
-            const startTimestamp = Number(
-                stripeSubscription.current_period_start ||
-                stripeSubscription.start_date ||
-                stripeSubscription.billing_cycle_anchor
-            );
-            if(!startTimestamp)
-            {
-                console.log("Timestamp missing", stripeSubscription);
-                return response.status(200).json({ received:true });
-            }
-
-            const startDate = new Date(startTimestamp * 1000);
-
-            let endDate;
-            if(stripeSubscription.current_period_end)
-            {
-                endDate = new Date(stripeSubscription.current_period_end * 1000);
-            }
-            else
-            {
-                // Monthly fallback (accurate)
-                endDate = new Date(startDate);
-                endDate.setMonth(endDate.getMonth() + 1);
-            }        
+            const { startDate, endDate } = getSubscriptionDates(stripeSubscription.start_date);
 
             subscription.stripeSubscriptionId = stripeSubscriptionId;
             subscription.planId = planId;
@@ -208,30 +197,7 @@ const stripeWebhook = asyncHandler(async (request, response) => {
         else
         {
             // Get dates for db
-            const startTimestamp = Number(
-                stripeSubscription.current_period_start ||
-                stripeSubscription.start_date ||
-                stripeSubscription.billing_cycle_anchor
-            );
-            if(!startTimestamp)
-            {
-                console.log("Timestamp missing", stripeSubscription);
-                return response.status(200).json({ received:true });
-            }
-
-            const startDate = new Date(startTimestamp * 1000);
-
-            let endDate;
-            if(stripeSubscription.current_period_end)
-            {
-                endDate = new Date(stripeSubscription.current_period_end * 1000);
-            }
-            else
-            {
-                // Monthly fallback (accurate)
-                endDate = new Date(startDate);
-                endDate.setMonth(endDate.getMonth() + 1);
-            } 
+            const { startDate, endDate } = getSubscriptionDates(stripeSubscription.start_date);
 
             await Subscription.create({
                 userId,
@@ -257,32 +223,9 @@ const stripeWebhook = asyncHandler(async (request, response) => {
         if(subscription)
         {
             const stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
-            
+
             // Get dates for db
-            const startTimestamp = Number(
-                stripeSubscription.current_period_start ||
-                stripeSubscription.start_date ||
-                stripeSubscription.billing_cycle_anchor
-            );
-            if(!startTimestamp)
-            {
-                console.log("Timestamp missing", stripeSubscription);
-                return response.status(200).json({ received:true });
-            }
-
-            const startDate = new Date(startTimestamp * 1000);
-
-            let endDate;
-            if(stripeSubscription.current_period_end)
-            {
-                endDate = new Date(stripeSubscription.current_period_end * 1000);
-            }
-            else
-            {
-                // Monthly fallback (accurate)
-                endDate = new Date(startDate);
-                endDate.setMonth(endDate.getMonth() + 1);
-            } 
+            const { startDate, endDate } = getSubscriptionDates(stripeSubscription.start_date);
 
             // Set new dates
             subscription.startDate = startDate;

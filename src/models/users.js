@@ -8,7 +8,7 @@ const userSchema = new Schema({
     email: { type: String, unique:[true, "This email has already been registered"], required:true },
     passwordHash: { type: String, required: true },
     status: { type: String, default: "pending", enum:["pending", "active", "flagged"] },
-    role: { type:String, enum:["user", "business"], default:"user" },
+    role: { type:String, enum:["user", "business"], default:null },
     isNewToPlatform: { type:Boolean, default:true },
 
     // Account verification otp

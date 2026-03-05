@@ -12,26 +12,19 @@ const socketAuthentication = (socket, next) => {
 
         // Parse cookie
         const parsedCookies = cookie.parse(rawCookies);
-        console.log("okay.....", cookie.parseCookie(rawCookies));
-        console.log("Parsed cookies:", parsedCookies);
         if(!parsedCookies) return next();
 
-        // Extract access token
+        // Extract access token and remove "s:" prefix and signature
         let accessToken = parsedCookies.accessToken;
-        if(accessToken?.startsWith("s:"))
-        {
-            // Remove "s:" prefix and signature
-            accessToken = cookieParser.signedCookie(accessToken, process.env.COOKIE_PARSER_SECRET);
-        }
-
+        if(accessToken?.startsWith("s:")) accessToken = cookieParser.signedCookie(accessToken, process.env.COOKIE_PARSER_SECRET);
         if(!accessToken) return next();
 
         // Verify token
         const user = verifyAccessToken(accessToken);
-        console.log("Decoded payload:", user);
         if(!user) return next();
 
         // Inject user
+        console.log("User payload:", user);
         socket.user = user;
         return next();
     } 

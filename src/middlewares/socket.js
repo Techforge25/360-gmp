@@ -8,12 +8,11 @@ const socketAuthentication = (socket, next) => {
     {
         // Get cookies
         const rawCookies = socket.handshake.headers.cookie;
-        console.log("socket.handshake.headers:", socket.handshake.headers);
-        console.log("Raw cookies:", rawCookies);
         if(!rawCookies) return next();
 
         // Parse cookie
         const parsedCookies = cookie.parse(rawCookies);
+        console.log("okay.....", cookie.parseCookie(rawCookies));
         console.log("Parsed cookies:", parsedCookies);
         if(!parsedCookies) return next();
 
@@ -25,7 +24,6 @@ const socketAuthentication = (socket, next) => {
             accessToken = cookieParser.signedCookie(accessToken, process.env.COOKIE_PARSER_SECRET);
         }
 
-        console.log("accessToken:", accessToken);
         if(!accessToken) return next();
 
         // Verify token

@@ -4,7 +4,7 @@ const BusinessProfile = require("../models/businessProfileSchema");
 const UserProfile = require("../models/userProfile");
 const User = require("../models/users");
 const sendEmail = require("../service/email");
-const { generateAccessToken, getRefreshToken, verifyRefreshToken, generateRefreshToken, generateTokens, getAccessToken } = require("../utils/accessToken");
+const { generateAccessToken, getRefreshToken, verifyRefreshToken, generateRefreshToken } = require("../utils/accessToken");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
@@ -251,7 +251,7 @@ const refreshAccessToken = asyncHandler(async (request, response) => {
 const switchRole = asyncHandler(async (request, response) => {
     const { _id } = request.user;
     const role = request.query?.role || null;
-    if(!role) throw new ApiError(400, "Role is required for refreshing a token");
+    if(!role) throw new ApiError(400, "Role is required for switching a profile");
     if(role.toLowerCase() !== "user" && role.toLowerCase() !== "business") throw new ApiError(400, "Invalid role");
 
     // Check if user profile actually exist before switching
@@ -397,21 +397,16 @@ const googleLogin = async (request, response) => {
         }
     });
     const refreshToken = generateRefreshToken({ _id:user._id });
+
+    // Validate
     if(!accessToken) throw new ApiError(400, "Failed to generate access token");
     if(!refreshToken) throw new ApiError(400, "Failed to generate refresh token");
-
-    // Role based redirect
-    // const role = request.user.role;
-    const redirectUrl = `${process.env.FRONTEND_URL}/authSuccess`;
-    // if(role === "user") redirectUrl = `${process.env.FRONTEND_URL}/dashboard/user`;
-    // if(role === "business") redirectUrl = `${process.env.FRONTEND_URL}/dashboard/business`;
-    // if(role === null) redirectUrl = `${process.env.FRONTEND_URL}/onboarding/role`;
 
     // Redirect to application
     return response.status(303)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .redirect(redirectUrl);
+    .redirect(`${process.env.FRONTEND_URL}/authSuccess`);
 }
 
 // User existence

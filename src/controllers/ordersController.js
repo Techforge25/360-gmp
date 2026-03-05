@@ -9,7 +9,7 @@ const mongoose = require("mongoose");
 const EscrowTransaction = require("../models/escrowTrasanction");
 const Wallet = require("../models/walletModel");
 const BusinessProfile = require("../models/businessProfileSchema");
-const { emptyList } = require("../constants");
+const { emptyList, frontendUrl } = require("../constants");
 const convertToMongoId = require("../utils/convertToMongoId");
 const Transaction = require("../models/transactionModel");
 const TrialUsage = require("../models/trialUsageModel");
@@ -285,7 +285,7 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
 
         // Response
         // return response.status(303).redirect(process.env.FRONTEND_URL);
-        return response.status(303).redirect(`https://360-gmp-front-end.vercel.app/dashboard/user/orders/OrderTrackingPage/${order._id}`);
+        return response.status(303).redirect(`${frontendUrl}/dashboard/user/orders/OrderTrackingPage/${order._id}`);
     } 
     catch(error) 
     {

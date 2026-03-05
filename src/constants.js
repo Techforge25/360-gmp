@@ -1,6 +1,7 @@
 // Port and environment
 const port = process.env.PORT || 8000;
 const isProduction = process.env.NODE_ENV === "production";
+const frontendUrl = isProduction ? process.env.FRONTEND_URL : "http://localhost:3000";
 
 // Cors options
 const corsOptions = {
@@ -26,6 +27,7 @@ const emptyList = { docs:[], totalPages:0, totalDocs:0 };
 module.exports = {
     port,
     isProduction,
+    frontendUrl,
     corsOptions,
     cookieOptions,
     emptyList

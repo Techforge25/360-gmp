@@ -37,6 +37,8 @@ io.on("connection", (socket) => {
 
         const { businessProfileId, userProfileId } = user.profiles || {};
 
+        console.log("User Profiles:", user.profiles);
+
         // Join business profile room if they exist
         if(businessProfileId)
         {

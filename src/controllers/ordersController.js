@@ -551,8 +551,8 @@ const updateOrderTrackingInfo = asyncHandler(async (request, response) => {
     if(String(order.sellerBusinessId) !== String(business._id)) throw new ApiError(403, "You are not authorized to update the tracking info");
 
     // Save to db
-    order.tracking?.courierName = courierName;
-    order.tracking?.trackingId = trackingId;
+    order.tracking.courierName = courierName;
+    order.tracking.trackingId = trackingId;
     await order.save();
 
     // Response

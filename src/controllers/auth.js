@@ -281,7 +281,7 @@ const switchRole = asyncHandler(async (request, response) => {
     // Payload based on role
     const profilePayload = user.role === "user" ? userProfile : businessProfile;    
 
-    // Generate  new tokens
+    // Generate new token with updated role
     const accessToken = generateAccessToken({ 
         _id: user._id, 
         role: role, 
@@ -290,16 +290,11 @@ const switchRole = asyncHandler(async (request, response) => {
             userProfileId: userProfile?._id || null
         }
     });
-    const refreshToken = generateRefreshToken({ _id: user._id });
-
-    // Validate
     if(!accessToken) throw new ApiError(400, "Failed to re-generate access token");
-    if(!refreshToken) throw new ApiError(400, "Failed to re-generate refresh token");
 
     // Response
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
-    .cookie("refreshToken", refreshToken, cookieOptions)
     .json(new ApiResponse(200, { profilePayload }, `Access token has been refreshed! role has changed to ${role}`));
 });
 

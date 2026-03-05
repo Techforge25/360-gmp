@@ -968,7 +968,7 @@ const viewOrder = asyncHandler(async (request, response) => {
 
         // Final projection
         { 
-            $project:{ totalAmount:1, status:1, shippingAddress:1, items:1, 
+            $project:{ totalAmount:1, status:1, shippingAddress:1, items:1, tracking:1, 
             createdAt:1, userProfile:1, businessProfile:1, products:1 } 
         }
     ]);

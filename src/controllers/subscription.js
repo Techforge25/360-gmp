@@ -6,6 +6,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const Stripe = require("stripe");
 const convertToMongoId = require("../utils/convertToMongoId");
 const sendNotification = require("../utils/sendNotification");
+const { frontendUrl } = require("../constants");
 
 // Helper function to get 
 const getSubscriptionDates = (startingDate) => {
@@ -129,7 +130,7 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
     if(!session_id) throw new ApiError(400, "Session ID is missing");
 
     // Redirect to frontend
-    const redirectUrl = `https://360-gmp-front-end.vercel.app/subscription/success?session_id=${session_id}`;
+    const redirectUrl = `${frontendUrl}/subscription/success?session_id=${session_id}`;
     return response.status(303).redirect(redirectUrl);
 });
 
@@ -179,26 +180,31 @@ const stripeWebhook = asyncHandler(async (request, response) => {
         // Check if already exists
         let subscription = await Subscription.findOne({ userId });
 
+        // Get dates for db
+        const { startDate, endDate } = getSubscriptionDates(stripeSubscription.start_date);
+
         if(subscription)
         {
-            // Get dates for db
-            const { startDate, endDate } = getSubscriptionDates(stripeSubscription.start_date);
-
+            // Save to db
             subscription.stripeSubscriptionId = stripeSubscriptionId;
             subscription.planId = planId;
             subscription.startDate = startDate;
             subscription.endDate = endDate;
             subscription.status = "active";
-
-            // Save
             await subscription.save();
-            console.log("Subscription updated after checkout");
+
+            // Notification
+            await sendNotification({
+                userOwnerId: userId,
+                title: "Subscription Updated",
+                content: "Your subscription has been updated successfully",
+                type:"payment",
+                io: request.app.get("io")
+            });
         }
         else
         {
-            // Get dates for db
-            const { startDate, endDate } = getSubscriptionDates(stripeSubscription.start_date);
-
+            // Created 1st time
             await Subscription.create({
                 userId,
                 stripeSubscriptionId,
@@ -207,13 +213,22 @@ const stripeWebhook = asyncHandler(async (request, response) => {
                 endDate: endDate,
                 status: "active"
             });
-            console.log("Subscription created after checkout");
+
+            // Notification
+            await sendNotification({
+                userOwnerId: userId,
+                title: "Subscription Activated",
+                content: "You have successfully subscribed to your plan",
+                type:"payment",
+                io: request.app.get("io")
+            });
         }
     }
 
     // Recurring Payment Success
     if(eventType === "invoice.payment_succeeded")
     {
+        // Get invoice event object
         const invoice = event.data.object;
         const stripeSubscriptionId = invoice.subscription;
         if(!stripeSubscriptionId) return response.status(200).json({ received:true });
@@ -224,23 +239,30 @@ const stripeWebhook = asyncHandler(async (request, response) => {
         {
             const stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
 
-            // Get dates for db
+            // Get date for db
             const { startDate, endDate } = getSubscriptionDates(stripeSubscription.start_date);
 
-            // Set new dates
+            // Save to db
             subscription.startDate = startDate;
             subscription.endDate = endDate;
             subscription.status = "active";
-
-            // Save
             await subscription.save();
-            console.log("Subscription renewed successfully");
+
+            // Notification
+            await sendNotification({
+                userOwnerId: subscription.userId,
+                title: "Subscription Renewed",
+                content: "Your subscription has been renewed successfully",
+                type:"payment",
+                io: request.app.get("io")
+            });
         }
     }
 
     // Payment Failed
     if(eventType === "invoice.payment_failed")
     {
+        // Get invoice event object
         const invoice = event.data.object;
         const stripeSubscriptionId = invoice.subscription;
         if(!stripeSubscriptionId) return response.status(200).json({ received:true });
@@ -249,26 +271,47 @@ const stripeWebhook = asyncHandler(async (request, response) => {
         const subscription = await Subscription.findOne({ stripeSubscriptionId });
         if(subscription)
         {
+            // Save to db
             subscription.status = "expired";
             await subscription.save();
-            console.log("Subscription payment failed");
+
+            // Notification
+            await sendNotification({
+                userOwnerId: subscription.userId,
+                title: "Subscription Payment Failed",
+                content: "Your subscription payment has failed. Please update your payment method.",
+                type:"payment",
+                io: request.app.get("io")
+            });
         }
     }
 
     // Subscription Cancelled
     if(eventType === "customer.subscription.deleted")
     {
+        // Get customer event object
         const stripeSubscription = event.data.object;
+
+        // Find subscription
         const subscription = await Subscription.findOne({ stripeSubscriptionId: stripeSubscription.id });
         if(subscription)
         {
+            // Sve to db
             subscription.status = "canceled";
             await subscription.save();
-            console.log("Subscription canceled from Stripe");
+
+            // Notification
+            await sendNotification({
+                userOwnerId: subscription.userId,
+                title: "Subscription Canceled",
+                content: "Your subscription has been canceled",
+                type:"payment",
+                io: request.app.get("io")
+            });
         }
     }
 
-    // Success response
+    // Response
     return response.status(200).json({ received:true });
 });
 

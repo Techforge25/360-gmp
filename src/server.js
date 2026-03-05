@@ -27,6 +27,7 @@ io.on("connection", (socket) => {
 
     // Get user payload from socket
     const { user } = socket;
+    console.log("User log:", user);
 
     // Join private rooms
     if(user) 

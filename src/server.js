@@ -13,7 +13,7 @@ const generateConversationId = require("./utils/generateConversationId");
 const server = http.createServer(app);
 
 // Socket.io setup
-const io = new Server(server, { cors:corsOptions });
+const io = new Server(server, { cors:corsOptions, cookie:true });
 
 // Make io accessible to our app
 app.set("io", io);

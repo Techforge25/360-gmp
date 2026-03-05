@@ -1,4 +1,5 @@
 const { verifyAccessToken } = require("../utils/accessToken");
+const cookieParser = require("cookie-parser");
 const cookie = require("cookie");
 
 // Socket authentication
@@ -17,7 +18,13 @@ const socketAuthentication = (socket, next) => {
         if(!parsedCookies) return next();
 
         // Extract access token
-        const accessToken = parsedCookies.accessToken;
+        let accessToken = parsedCookies.accessToken;
+        if(accessToken?.startsWith("s:"))
+        {
+            // Remove "s:" prefix and signature
+            accessToken = cookieParser.signedCookie(accessToken, process.env.COOKIE_PARSER_SECRET);
+        }
+
         console.log("accessToken:", accessToken);
         if(!accessToken) return next();
 

@@ -198,8 +198,8 @@ const logout = asyncHandler(async (request, response) => {
     .json(new ApiResponse(200, null, "Logout successful"));
 });
 
-// Refresh token
-const refreshToken = asyncHandler(async (request, response) => {
+// Refresh access token
+const refreshAccessToken = asyncHandler(async (request, response) => {
     // Get token
     const token = getRefreshToken(request);
     if(!token) throw new ApiError(401, "Unauthorized! Refresh token is missing");
@@ -281,7 +281,7 @@ const switchRole = asyncHandler(async (request, response) => {
     // Payload based on role
     const profilePayload = user.role === "user" ? userProfile : businessProfile;    
 
-    // Generate a new token
+    // Generate  new tokens
     const accessToken = generateAccessToken({ 
         _id: user._id, 
         role: role, 
@@ -290,12 +290,17 @@ const switchRole = asyncHandler(async (request, response) => {
             userProfileId: userProfile?._id || null
         }
     });
-    if(!accessToken) throw new ApiError(500, "Failed to generate access token");
+    const refreshToken = generateRefreshToken({ _id: user._id });
+
+    // Validate
+    if(!accessToken) throw new ApiError(400, "Failed to re-generate access token");
+    if(!refreshToken) throw new ApiError(400, "Failed to re-generate refresh token");
 
     // Response
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
-    .json(new ApiResponse(200, { profilePayload, accessToken }, `Access token has been refreshed! role has changed to ${role}`));
+    .cookie("refreshToken", refreshToken, cookieOptions)
+    .json(new ApiResponse(200, { profilePayload }, `Access token has been refreshed! role has changed to ${role}`));
 });
 
 // Forgot password
@@ -438,6 +443,6 @@ const userAuthCheck = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, { userId, role }, "Authenticated!"));
 });
 
-module.exports = { userSignup, userLogin, logout, refreshToken, switchRole, forgotPassword, 
+module.exports = { userSignup, userLogin, logout, refreshAccessToken, switchRole, forgotPassword, 
 resendOTPToken, verifyOTP, verifypasswordResetToken, resetPassword, googleLogin, userExistence,
 userAuthCheck };

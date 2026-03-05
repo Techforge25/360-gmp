@@ -23,6 +23,7 @@ const socketAuthentication = (socket, next) => {
 
         // Verify token
         const user = verifyAccessToken(accessToken);
+        console.log("Decoded payload:", user);
         if(!user) return next();
 
         // Inject user

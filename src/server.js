@@ -27,7 +27,6 @@ io.on("connection", (socket) => {
 
     // Get user payload from socket
     const { user } = socket;
-    console.log("User log:", user);
 
     // Join private rooms
     if(user) 
@@ -37,8 +36,6 @@ io.on("connection", (socket) => {
         console.log(`User joined private room: ${socket.user._id}`);
 
         const { businessProfileId, userProfileId } = user.profiles || {};
-
-        console.log("User Profiles:", user.profiles);
 
         // Join business profile room if they exist
         if(businessProfileId)

@@ -15,7 +15,7 @@ const Transaction = require("../models/transactionModel");
 const TrialUsage = require("../models/trialUsageModel");
 const Notification = require("../models/notificationsModel");
 const validate = require("../utils/validate");
-const { createOrderValidationSchema, updateOrderStatusValidationSchema } = require("../validations/orderValidator");
+const { createOrderValidationSchema, updateOrderStatusValidationSchema, updateTrackingInfoValidationSchema } = require("../validations/orderValidator");
 
 // Create order - Purchase product using stripe payment
 const createOrder = asyncHandler(async (request, response) => {
@@ -530,7 +530,33 @@ const fetchAllUserOrders = asyncHandler(async (request, response) => {
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No orders found"));
 
     // Response
-    return response.status(200).json(new ApiResponse(200, orders, "User rrders fetch successfully"));
+    return response.status(200).json(new ApiResponse(200, orders, "User orders fetch successfully"));
+});
+
+// Update order tracking info
+const updateOrderTrackingInfo = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const { orderId } = request.params;
+    const { courierName, trackingId } = validate(updateTrackingInfoValidationSchema, request.body) || {};
+
+    // Find business
+    const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
+    if(!business) throw new ApiError(404, "Business profile not found");
+
+    // Find order
+    const order = await Order.findById(orderId).select("sellerBusinessId tracking");
+    if(!order) throw new ApiError(404, "Order not found");
+
+    // Authorize owner
+    if(String(order.sellerBusinessId) !== String(business._id)) throw new ApiError(403, "You are not authorized to update the tracking info");
+
+    // Save to db
+    order.tracking?.courierName = courierName;
+    order.tracking?.trackingId = trackingId;
+    await order.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, order.tracking, "Order tracking info has been updated"));
 });
 
 // Update order status by seller
@@ -955,4 +981,4 @@ const viewOrder = asyncHandler(async (request, response) => {
 module.exports = { createOrder, verifyStripePaymentForOrders, createOrderWithWallet, completeOrder, updateOrderStatusBySeller, 
 fetchAllUserOrders, fetchAllBusinessOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, fetchCancelledOrders,
 fetchBusinessProcessingOrders, fetchBsuinessInTransitOrders, fetchBusinessCompletedOrders, fetchBusinessCancelledOrders,
-viewOrder, cancelOrder };
+viewOrder, cancelOrder, updateOrderTrackingInfo };

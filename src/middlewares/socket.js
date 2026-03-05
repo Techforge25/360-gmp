@@ -7,6 +7,7 @@ const socketAuthentication = (socket, next) => {
     {
         // Get cookies
         const rawCookies = socket.handshake.headers.cookie;
+        console.log("socket.handshake.headers:", socket.handshake.headers);
         console.log("Raw cookies:", rawCookies);
         if(!rawCookies) return next();
 

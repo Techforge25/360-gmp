@@ -4,7 +4,12 @@ const Joi = require("joi");
 const locationSchema = Joi.object({
     country: Joi.string().max(100).trim().allow("", null).label("Country"),
     city: Joi.string().max(100).trim().allow("", null).label("City"),
-    addressLine: Joi.string().max(1000).trim().allow("", null).label("Address line")
+    addressLine: Joi.string().max(1000).trim().allow("", null).label("Address line"),
+    warehouseAddress: Joi.string().max(1000).trim().allow("", null).label("Warehouse Address"),
+    additionalWarehouseAddress: Joi.string().max(1000).trim().allow("", null).label("Additional Warehouse Address"),
+    mandatoryPickupAddress: Joi.string().max(1000).trim().allow("", null).label("Mandatory Pickup Address"),
+    businessRegistrationAddress: Joi.string().max(1000).trim().allow("", null).label("Business Registration Address"),
+    internationalOffices: Joi.array().items(Joi.string()).label("International Offices")
 });
 
 // B2B Contact schema
@@ -19,13 +24,36 @@ const b2bContactSchema = Joi.object({
 
 // Create Business Profile schema
 const createBusinessProfileSchema = Joi.object({
+    ownerName: Joi.string().min(3).max(200).required().trim().label("Owner name"),
+    identificationOfBusinessOwner: Joi.string().min(3).max(200).required().trim().label("Identification of business owner"),
     companyName: Joi.string().min(5).max(200).required().trim().label("Business name"),
+    tradeName: Joi.string().max(200).trim().optional().label("Trade name"),
     businessType: Joi.string().max(50).trim().allow("", null).label("Business type"),
     companySize: Joi.string().trim().allow("", null).label("Company size"),
     foundedDate: Joi.date().allow(null).label("Founded date"),
     primaryIndustry: Joi.string().max(500).trim().allow("", null).label("Primary industry"),
     operationHour: Joi.string().max(50).trim().allow("", null).label("Operation hours"),
     location: locationSchema.allow(null).label("Location"),
+    incoterms: Joi.string().max(500).trim().allow("", null).label("International Commercial Terms"),
+
+    // Shipping info
+    shipping: {
+        capabilities:Joi.array().items(Joi.string()).max(10).label("Shipping Capabilities"),
+        exportExperience: Joi.boolean().required().label("Export experience")
+    },
+
+    // Ownership & Leadership
+    executiveLeadership: Joi.array().items(Joi.string()).max(50).label("Executive Leadership"),
+    stakeholderDisclosure: Joi.object({
+        name: Joi.string().trim().min(3).required().label("Stake holder name"),
+        ownershipPercentage: Joi.number().min(0).max(100).positive().label("Ownership percentage")
+    }),
+
+    // Operational & Trade Profile   
+    regionOfOperations: Joi.array().items(Joi.string()).label("Region of operations"),  
+    productionCapacity: Joi.string().trim().max(1000).optional().label("Production capacity"),   
+    tradeAffiliations: Joi.array().items(Joi.string()).label("Trade Affiliations"),
+
     certifications: Joi.array().items(Joi.string().trim()).min(1).max(3).default([]).label("Certification"),
     b2bContact: b2bContactSchema.allow(null).label("B2B Contact"),
     website: Joi.string().uri().max(100).trim().allow("", null).label("Website"),
@@ -38,13 +66,36 @@ const createBusinessProfileSchema = Joi.object({
 
 // Update Business Profile schema (all fields optional)
 const updateBusinessProfileSchema = Joi.object({
+    ownerName: Joi.string().min(3).max(200).trim().label("Owner name"),
+    identificationOfBusinessOwner: Joi.string().min(3).max(200).trim().label("Identification of business owner"),
     companyName: Joi.string().min(5).max(200).trim().label("Company name"),
+    tradeName: Joi.string().max(200).trim().optional().label("Trade name"),
     businessType: Joi.string().max(50).trim().allow("", null).label("Business type"),
     companySize: Joi.string().trim().allow("", null).label("Company size"),
     foundedDate: Joi.date().allow(null),
     primaryIndustry: Joi.string().trim().allow("", null),
     operationHour: Joi.string().trim().allow("", null),
     location: locationSchema.allow(null),
+    incoterms: Joi.string().max(500).trim().allow("", null).label("International Commercial Terms"),
+
+    // Shipping info
+    shipping: {
+        capabilities:Joi.array().items(Joi.string()).max(10).label("Shipping Capabilities"),
+        exportExperience: Joi.boolean().label("Export experience")
+    },
+
+    // Ownership & Leadership
+    executiveLeadership: Joi.array().items(Joi.string()).max(50).label("Executive Leadership"),
+    stakeholderDisclosure: Joi.object({
+        name: Joi.string().trim().min(3).label("Stake holder name"),
+        ownershipPercentage: Joi.number().min(0).max(100).positive().label("Ownership percentage")
+    }),  
+    
+    // Operational & Trade Profile   
+    regionOfOperations: Joi.array().items(Joi.string()).label("Region of operations"),  
+    productionCapacity: Joi.string().trim().max(1000).optional().label("Production capacity"),  
+    tradeAffiliations: Joi.array().items(Joi.string()).label("Trade Affiliations"),
+
     certifications: Joi.array().items(Joi.string().trim()),
     b2bContact: b2bContactSchema.allow(null),
     

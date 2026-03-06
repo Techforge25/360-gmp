@@ -31,7 +31,7 @@ const BusinessProfileSchema = new Schema({
       additionalWarehouseAddress: { type: String, trim: true }, // New
       mandatoryPickupAddress: { type: String, trim: true, required:true }, // New
       businessRegistrationAddress: { type: String, trim: true, required:true }, // New
-      internationOffices: { type:[String] },
+      internationalOffices: { type:[String] },
     },
     incoterms: { type: String, trim: true }, // New (International Commercial Terms)
 

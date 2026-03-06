@@ -12,7 +12,7 @@ const businessProfileRouter = Router();
 
 // Create business profile
 businessProfileRouter.route("/")
-.post(authentication, checkSubscription, checkBusinessAccess, createBusinessProfile);
+.post(authentication, checkSubscription, createBusinessProfile);
 
 // Fetch business profiles
 businessProfileRouter.route("/")

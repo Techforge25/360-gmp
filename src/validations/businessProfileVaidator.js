@@ -33,7 +33,18 @@ const createBusinessProfileSchema = Joi.object({
     foundedDate: Joi.date().allow(null).label("Founded date"),
     primaryIndustry: Joi.string().max(500).trim().allow("", null).label("Primary industry"),
     operationHour: Joi.string().max(50).trim().allow("", null).label("Operation hours"),
+    conutryOfRegistration: Joi.string().max(50).trim().allow("", null).label("Country of registration"),
+
+    // Legal & Compliance
+    businessRegistrationNumber: Joi.string().max(100).trim().allow("", null).label("Business registration number"),
+    taxIdentificationNumber: Joi.string().max(100).trim().allow("", null).label("Tax identification number"),
+    dunsNumber: Joi.string().max(100).trim().allow("", null).label("Data Universal Numbering System"),
+    complianceScreeningStatus: Joi.boolean().default(true).label("Compliance screening status"),
+
+    // Location info
     location: locationSchema.allow(null).label("Location"),
+
+    // International Commercial Terms
     incoterms: Joi.string().max(500).trim().allow("", null).label("International Commercial Terms"),
 
     // Shipping info
@@ -44,10 +55,10 @@ const createBusinessProfileSchema = Joi.object({
 
     // Ownership & Leadership
     executiveLeadership: Joi.array().items(Joi.string()).max(50).label("Executive Leadership"),
-    stakeholderDisclosure: Joi.object({
+    stakeholderDisclosure: Joi.array().items(Joi.object({
         name: Joi.string().trim().min(3).required().label("Stake holder name"),
         ownershipPercentage: Joi.number().min(0).max(100).positive().label("Ownership percentage")
-    }),
+    })),
 
     // Operational & Trade Profile   
     regionOfOperations: Joi.array().items(Joi.string()).label("Region of operations"),  
@@ -94,7 +105,18 @@ const updateBusinessProfileSchema = Joi.object({
     foundedDate: Joi.date().allow(null),
     primaryIndustry: Joi.string().trim().allow("", null),
     operationHour: Joi.string().trim().allow("", null),
-    location: locationSchema.allow(null),
+    conutryOfRegistration: Joi.string().max(50).trim().allow("", null).label("Country of registration"),
+
+    // Legal & Compliance
+    businessRegistrationNumber: Joi.string().max(100).trim().allow("", null).label("Business registration number"),
+    taxIdentificationNumber: Joi.string().max(100).trim().allow("", null).label("Tax identification number"),
+    dunsNumber: Joi.string().max(100).trim().allow("", null).label("Data Universal Numbering System"),
+    complianceScreeningStatus: Joi.boolean().default(true).label("Compliance screening status"),
+
+    // Location info
+    location: locationSchema.allow(null).label("Location"),
+
+    // International Commercial Terms
     incoterms: Joi.string().max(500).trim().allow("", null).label("International Commercial Terms"),
 
     // Shipping info
@@ -105,10 +127,10 @@ const updateBusinessProfileSchema = Joi.object({
 
     // Ownership & Leadership
     executiveLeadership: Joi.array().items(Joi.string()).max(50).label("Executive Leadership"),
-    stakeholderDisclosure: Joi.object({
+    stakeholderDisclosure: Joi.array().items(Joi.object({
         name: Joi.string().trim().min(3).label("Stake holder name"),
         ownershipPercentage: Joi.number().min(0).max(100).positive().label("Ownership percentage")
-    }),  
+    })),  
     
     // Operational & Trade Profile   
     regionOfOperations: Joi.array().items(Joi.string()).label("Region of operations"),  

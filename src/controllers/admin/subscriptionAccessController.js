@@ -1,4 +1,5 @@
 const Subscription = require("../../models/subscription");
+const User = require("../../models/users");
 const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
 
@@ -34,4 +35,84 @@ const fetchSubscriptionStats = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, subscriptions, "Subscription stats have been fetched"));
 });
 
-module.exports = { fetchSubscriptionStats };
+// Fetch trial users
+const fetchTrialUsers = asyncHandler(async (request, response) => {
+
+    // Calculate days and message
+    const today = new Date();
+    const messageLimit = 4;
+
+    // Fetch
+    const users = await User.aggregate([
+        // Lookup on subscription
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "userId",
+                as: "subscription"
+            }
+        },
+        { $unwind: "$subscription" },
+
+        // Lookup on plan
+        {
+            $lookup: {
+                from: "plans",
+                localField: "subscription.planId",
+                foreignField: "_id",
+                as: "plan"
+            }
+        },
+        { $unwind: "$plan" },
+
+        // Trial plan filter
+        {
+            $match: { "plan.price": 0 }
+        },
+
+        {
+            $lookup: {
+                from: "trialusages",
+                localField: "_id",
+                foreignField: "userId",
+                as: "trialUsage"
+            }
+        },
+        {
+            $unwind: {
+                path: "$trialUsage",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+
+        {
+            $addFields: {
+                daysRemaining: {
+                    $ceil: {
+                        $divide: [
+                            { $subtract: ["$subscription.endDate", today] },
+                            1000 * 60 * 60 * 24
+                        ]
+                    }
+                }
+            }
+        },
+
+        // Projection
+        {
+            $project: {
+                email: 1,
+                subscriptionStatus: "$plan.name",
+                daysRemaining: 1,
+                messagesUsed: { $ifNull: ["$trialUsage.messagesUsed", 0] },
+                messageLimit: { $literal: messageLimit }
+            }
+        }
+    ]);
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, users, "Trial users have been fetched"));    
+});
+
+module.exports = { fetchSubscriptionStats, fetchTrialUsers };

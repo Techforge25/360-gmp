@@ -2,7 +2,7 @@ const { Schema, model } = require("mongoose");
 
 // Schema
 const usageLimitSchema = new Schema({
-    subscriptionId: { type: Schema.Types.ObjectId, ref: "Subscription" },
+    planId: { type: Schema.Types.ObjectId, ref: "Plan" },
     feature: String,
     maxAllowed: Number,
     usedCount: { type: Number, default: 0 }

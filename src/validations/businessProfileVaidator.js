@@ -54,8 +54,27 @@ const createBusinessProfileSchema = Joi.object({
     productionCapacity: Joi.string().trim().max(1000).optional().label("Production capacity"),   
     tradeAffiliations: Joi.array().items(Joi.string()).label("Trade Affiliations"),
 
+    // Financial & Regulatory Data
+    annualRevenueRange: Joi.string().trim().optional().label("Annual revenue range"),
+    auditingAgency: Joi.string().trim().optional().label("Auditing agency"),
+
+    // Documentation & Verification Assets
+    certificateOfIncorporation: Joi.string().trim().optional().label("Certificate of incorporation"),
+    taxRegistrationCertificate: Joi.string().trim().optional().label("Certificate of tax registration"),
+
+    // Product Packaging Defaults (Logistics Prep)
+    standardProductDimensions: Joi.object({
+        length: Joi.number().min(0).default(0).label("Product dimension length"),
+        width: Joi.number().min(0).default(0).label("Product dimension width"),
+        height: Joi.number().min(0).default(0).label("Product dimension height"),
+        weight: Joi.number().min(0).default(0).label("Product dimension weight"),
+    }),
+
+    // Other Certifications & B2B Contact
     certifications: Joi.array().items(Joi.string().trim()).min(1).max(3).default([]).label("Certification"),
     b2bContact: b2bContactSchema.allow(null).label("B2B Contact"),
+
+    // Website & description
     website: Joi.string().uri().max(100).trim().allow("", null).label("Website"),
     description: Joi.string().trim().max(5000).allow("", null).label("Business description"),
     
@@ -96,13 +115,28 @@ const updateBusinessProfileSchema = Joi.object({
     productionCapacity: Joi.string().trim().max(1000).optional().label("Production capacity"),  
     tradeAffiliations: Joi.array().items(Joi.string()).label("Trade Affiliations"),
 
+    // Financial & Regulatory Data
+    annualRevenueRange: Joi.string().trim().optional().label("Annual revenue range"),
+    auditingAgency: Joi.string().trim().optional().label("Auditing agency"),   
+    
+    // Documentation & Verification Assets
+    certificateOfIncorporation: Joi.string().trim().optional().label("Certificate of incorporation"),
+    taxRegistrationCertificate: Joi.string().trim().optional().label("Certificate of tax registration"),    
+
+    // Product Packaging Defaults (Logistics Prep)
+    standardProductDimensions: Joi.object({
+        length: Joi.number().min(0).default(0).label("Product dimension length"),
+        width: Joi.number().min(0).default(0).label("Product dimension width"),
+        height: Joi.number().min(0).default(0).label("Product dimension height"),
+        weight: Joi.number().min(0).default(0).label("Product dimension weight"),
+    }),    
+
+    // Other Certifications & B2B Contact
     certifications: Joi.array().items(Joi.string().trim()),
     b2bContact: b2bContactSchema.allow(null),
     
-    // Website
+    // Website & description
     website: Joi.string().uri().trim().max(100).allow("", null).label("Website"),
-    
-    // Description
     description: Joi.string().trim().max(5000).allow("", null).label("Business description"),
     
     // Media

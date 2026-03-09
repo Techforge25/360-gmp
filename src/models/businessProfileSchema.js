@@ -69,6 +69,9 @@ const BusinessProfileSchema = new Schema({
         weight: { type: Number, default: 0 },
     }, // New
 
+    // Other certifications (ISO 9001)
+    certifications:{ type:[String], default:[] },
+
     // B2B contact  
     b2bContact: {
       name: { type: String, trim: true },

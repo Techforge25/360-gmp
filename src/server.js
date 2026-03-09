@@ -106,26 +106,3 @@ connectDB()
     server.listen(port, "0.0.0.0", () => console.log(`Server is up and running on port ${port}`));
 })
 .catch(error => console.log("Failed to connect with database", error.message));
-
-
-///Frontend for testing 
-/*
-import { io } from "socket.io-client";
-const socket = io("http://localhost:8000");
-
-// Jab user kisi community page par jaye
-useEffect(() => {
-    socket.emit("join_community", communityId);
-
-    // Nayi post ka intezar karein
-    socket.on("new_post", (newPost) => {
-        setPosts((prev) => [newPost, ...prev]); // State update karein
-    });
-
-    // Like ya Comment update sun-ne ke liye
-    socket.on("post_updated", (data) => {
-        // Find post by ID and update its likes in UI
-    });
-
-    return () => socket.off("new_post"); // Cleanup
-}, [communityId])*/

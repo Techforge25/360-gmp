@@ -654,7 +654,7 @@ const completeOrder = asyncHandler(async (request, response) => {
         io.to(order.sellerBusinessId).emit("update-order-status", { orderId:order._id, status:order.status });        
 
         // Response
-        return response.status(200).json(new ApiResponse(200, {}, "Order completed successfully"));
+        return response.status(200).json(new ApiResponse(200, { orderId:order._id, status:order.status }, "Order completed successfully"));
     } 
     catch(error) 
     {
@@ -729,8 +729,12 @@ const cancelOrder = asyncHandler(async (request, response) => {
         await dbSession.commitTransaction();
         dbSession.endSession();   
 
+        // Emit event real-time
+        const io = request.app.get("io");
+        io.to(order.sellerBusinessId).emit("update-order-status", { orderId:order._id, status:order.status });         
+
         // Response
-        return response.status(200).json(new ApiResponse(200, null, "Order has been cancelled"));
+        return response.status(200).json(new ApiResponse(200, { orderId:order._id, status:order.status }, "Order has been cancelled"));
     }
     catch(error)
     {

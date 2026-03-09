@@ -4,8 +4,7 @@ const { createOrder, verifyStripePaymentForOrders, completeOrder, updateOrderSta
 fetchAllUserOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, 
 fetchCancelledOrders, viewOrder, createOrderWithWallet, cancelOrder, fetchAllBusinessOrders, 
 fetchBusinessProcessingOrders, fetchBsuinessInTransitOrders, fetchBusinessCompletedOrders,
-fetchBusinessCancelledOrders, 
-updateOrderTrackingInfo} = require("../controllers/ordersController");
+fetchBusinessCancelledOrders, updateOrderTrackingInfo, fetchNewOrders, fetchBusinessNewOrders } = require("../controllers/ordersController");
 const { checkSubscription, checkUserAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -44,6 +43,10 @@ orderRouter.route("/:orderId/cancel")
 orderRouter.route("/user/all-orders")
 .get(authentication, authorization(["user"]), fetchAllUserOrders);
 
+// Fetch all order of the user
+orderRouter.route("/user/new-orders")
+.get(authentication, authorization(["user"]), fetchNewOrders);
+
 // Fetch processing orders for user
 orderRouter.route("/user/processing-orders")
 .get(authentication, authorization(["user"]), fetchProcessingOrders);
@@ -66,6 +69,10 @@ orderRouter.route("/user/cancelled-orders")
 // Fetch all orders of the business
 orderRouter.route("/business/all-orders")
 .get(authentication, authorization(["business"]), fetchAllBusinessOrders);
+
+// Fetch all orders of the business
+orderRouter.route("/business/new-orders")
+.get(authentication, authorization(["business"]), fetchBusinessNewOrders);
 
 // Fetch processing orders for business
 orderRouter.route("/business/processing-orders")

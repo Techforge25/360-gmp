@@ -742,6 +742,24 @@ const cancelOrder = asyncHandler(async (request, response) => {
 
 // ===================== USER SIDE STARTED ===================== //
 
+// Fetch new orders for users
+const fetchNewOrders = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found! Invalid user profile ID");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Find orders
+    const orders = await Order.paginate({ buyerUserProfileId:userProfile._id, status:{ $in: ["pending"] } }, 
+    { page, limit, lean:true, select:"-updatedAt -__v" });
+    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No new orders found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, orders, "New orders have been fetch"));    
+});
+
 // Fetch processing orders for users
 const fetchProcessingOrders = asyncHandler(async (request, response) => {
     const userId = request.user._id;
@@ -752,12 +770,12 @@ const fetchProcessingOrders = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
 
     // Find orders
-    const orders = await Order.paginate({ buyerUserProfileId:userProfile._id, status:{ $in: ["pending", "processing"] } }, 
+    const orders = await Order.paginate({ buyerUserProfileId:userProfile._id, status:{ $in: ["processing"] } }, 
     { page, limit, lean:true, select:"-updatedAt -__v" });
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No processing orders found"));
 
     // Response
-    return response.status(200).json(new ApiResponse(200, orders, "Processing order have been fetch"));    
+    return response.status(200).json(new ApiResponse(200, orders, "Processing orders have been fetch"));    
 });
 
 // Fetch in-transit orders for users
@@ -838,6 +856,24 @@ const fetchAllBusinessOrders = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, orders, "Business orders fetch successfully"));
 });
 
+// Fetch new orders for business
+const fetchBusinessNewOrders = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
+    if(!businessProfile) throw new ApiError(404, "Business profile not found! Invalid business profile ID");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Find orders
+    const orders = await Order.paginate({ sellerBusinessId:businessProfile._id, status:{ $in: ["pending"] } }, 
+    { page, limit, lean:true, select:"-updatedAt -__v" });
+    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No new orders found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, orders, "New orders have been fetch")); 
+});
+
 // Fetch processing orders for business
 const fetchBusinessProcessingOrders = asyncHandler(async (request, response) => {
     const userId = request.user._id;
@@ -848,12 +884,12 @@ const fetchBusinessProcessingOrders = asyncHandler(async (request, response) => 
     const { page = 1, limit = 10 } = request.query;
 
     // Find orders
-    const orders = await Order.paginate({ sellerBusinessId:businessProfile._id, status:{ $in: ["pending", "processing"] } }, 
+    const orders = await Order.paginate({ sellerBusinessId:businessProfile._id, status:{ $in: ["processing"] } }, 
     { page, limit, lean:true, select:"-updatedAt -__v" });
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No processing orders found"));
 
     // Response
-    return response.status(200).json(new ApiResponse(200, orders, "Processing order have been fetch")); 
+    return response.status(200).json(new ApiResponse(200, orders, "Processing orders have been fetch")); 
 });
 
 // Fetch in-transit orders for business
@@ -981,4 +1017,4 @@ const viewOrder = asyncHandler(async (request, response) => {
 module.exports = { createOrder, verifyStripePaymentForOrders, createOrderWithWallet, completeOrder, updateOrderStatusBySeller, 
 fetchAllUserOrders, fetchAllBusinessOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, fetchCancelledOrders,
 fetchBusinessProcessingOrders, fetchBsuinessInTransitOrders, fetchBusinessCompletedOrders, fetchBusinessCancelledOrders,
-viewOrder, cancelOrder, updateOrderTrackingInfo };
+viewOrder, cancelOrder, updateOrderTrackingInfo, fetchNewOrders, fetchBusinessNewOrders };

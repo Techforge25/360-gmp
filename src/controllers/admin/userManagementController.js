@@ -65,14 +65,14 @@ const fetchAllUsers = asyncHandler(async (request, response) => {
                             as:"plan",
                         },
                     },
-                    { $unwind: "$plan" },
-                    { $project: { _id:0, plan: "$plan.name" } }
+                    { $unwind: { path:"$plan", preserveNullAndEmptyArrays:true } },
+                    { $project: { _id:0, plan:"$plan.name" } }
                 ]
             }
         },
 
         // Unwind
-        { $unwind: "$subscription" },
+        { $unwind: { path:"$subscription", preserveNullAndEmptyArrays:true } },
 
         // Sort
         { $sort:{ createdAt:-1 } },

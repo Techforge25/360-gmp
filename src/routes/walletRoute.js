@@ -38,7 +38,7 @@ walletRouter.route("/user/add-funds/cancel")
 walletRouter.route("/business/analytics")
 .get(authentication, authorization(["business"]), fetchBusinessWalletAnalytics);
 
-// Fetch wallet analytics (for business)
+// Fetch wallet analytics (for user)
 walletRouter.route("/user/analytics")
 .get(authentication, authorization(["user"]), fetchUserWalletAnalytics);
 

@@ -4,7 +4,8 @@ const { createOrder, verifyStripePaymentForOrders, completeOrder, updateOrderSta
 fetchAllUserOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, 
 fetchCancelledOrders, viewOrder, createOrderWithWallet, cancelOrder, fetchAllBusinessOrders, 
 fetchBusinessProcessingOrders, fetchBsuinessInTransitOrders, fetchBusinessCompletedOrders,
-fetchBusinessCancelledOrders, updateOrderTrackingInfo, fetchNewOrders, fetchBusinessNewOrders } = require("../controllers/ordersController");
+fetchBusinessCancelledOrders, updateOrderTrackingInfo, fetchNewOrders, fetchBusinessNewOrders, 
+fetchDeliveredOrders, fetchBusinessDeliveredOrders } = require("../controllers/ordersController");
 const { checkSubscription, checkUserAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -55,6 +56,10 @@ orderRouter.route("/user/processing-orders")
 orderRouter.route("/user/in-transit-orders")
 .get(authentication, authorization(["user"]), fetchInTransitOrders);
 
+// Fetch delivered orders for user
+orderRouter.route("/user/delivered-orders")
+.get(authentication, authorization(["user"]), fetchDeliveredOrders);
+
 // Fetch completed orders for user
 orderRouter.route("/user/completed-orders")
 .get(authentication, authorization(["user"]), fetchCompletedOrders);
@@ -81,6 +86,10 @@ orderRouter.route("/business/processing-orders")
 // Fetch in-transit orders for business
 orderRouter.route("/business/in-transit-orders")
 .get(authentication, authorization(["business"]), fetchBsuinessInTransitOrders);
+
+// Fetch delivered orders for business
+orderRouter.route("/business/delivered-orders")
+.get(authentication, authorization(["business"]), fetchBusinessDeliveredOrders);
 
 // Fetch completed orders for business
 orderRouter.route("/business/completed-orders")

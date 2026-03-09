@@ -800,6 +800,24 @@ const fetchInTransitOrders = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, orders, "In-transit orders have been fetch")); 
 });
 
+// Fetch delivered orders for users
+const fetchDeliveredOrders = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+    if(!userProfile) throw new ApiError(404, "User profile not found! Invalid user profile ID");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Find orders
+    const orders = await Order.paginate({ buyerUserProfileId:userProfile._id, status:"delivered" }, 
+    { page, limit, lean:true, select:"-updatedAt -__v" });
+    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No delivered orders found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, orders, "Delivered orders have been fetch")); 
+});
+
 // Fetch completed orders for users
 const fetchCompletedOrders = asyncHandler(async (request, response) => {
     const userId = request.user._id;
@@ -915,6 +933,24 @@ const fetchBsuinessInTransitOrders = asyncHandler(async (request, response) => {
 });
 
 // Fetch completed orders for business
+const fetchBusinessDeliveredOrders = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
+    if(!businessProfile) throw new ApiError(404, "Business profile not found! Invalid business profile ID");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Find orders
+    const orders = await Order.paginate({ sellerBusinessId:businessProfile._id, status:"delivered" }, 
+    { page, limit, lean:true, select:"-updatedAt -__v" });
+    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No delivered orders found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, orders, "Delivered orders have been fetch")); 
+});
+
+// Fetch completed orders for business
 const fetchBusinessCompletedOrders = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
@@ -1021,4 +1057,4 @@ const viewOrder = asyncHandler(async (request, response) => {
 module.exports = { createOrder, verifyStripePaymentForOrders, createOrderWithWallet, completeOrder, updateOrderStatusBySeller, 
 fetchAllUserOrders, fetchAllBusinessOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, fetchCancelledOrders,
 fetchBusinessProcessingOrders, fetchBsuinessInTransitOrders, fetchBusinessCompletedOrders, fetchBusinessCancelledOrders,
-viewOrder, cancelOrder, updateOrderTrackingInfo, fetchNewOrders, fetchBusinessNewOrders };
+viewOrder, cancelOrder, updateOrderTrackingInfo, fetchNewOrders, fetchBusinessNewOrders, fetchDeliveredOrders, fetchBusinessDeliveredOrders };

@@ -125,7 +125,7 @@ const viewProduct = asyncHandler(async (request, response) => {
     // Find product and business profile
     const [product, businessProfile] = await Promise.all([
         Product.findById(productId),
-        BusinessProfile.findOne({ ownerUserId:userId }).select("_id")
+        BusinessProfile.findOne({ ownerUserId:userId }).select("_id companyName")
     ]);
     if(!product) throw new ApiError(404, "Product not found");
 
@@ -145,7 +145,7 @@ const viewProduct = asyncHandler(async (request, response) => {
     }
 
     // Response
-    return response.status(200).json(new ApiResponse(200, product, "Product has been fetched"));
+    return response.status(200).json(new ApiResponse(200, { product, companyName:businessProfile.businessProfile }, "Product has been fetched"));
 });
 
 // Update product

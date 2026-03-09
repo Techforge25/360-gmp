@@ -5,8 +5,6 @@ const asyncHandler = require("../../utils/asyncHandler");
 // Fetch subscription stats
 const fetchSubscriptionStats = asyncHandler(async (request, response) => {
     const subscriptions = await Subscription.aggregate([
-        { $match:{} },
-
         // Lookup
         {
             $lookup:{
@@ -23,8 +21,13 @@ const fetchSubscriptionStats = asyncHandler(async (request, response) => {
         // Unwind
         { $unwind: { path:"$plan", preserveNullAndEmptyArrays:true } },
 
-        // Projection
-        { $project:{ plan:"$plan.name" } }
+        // Group
+        {
+            $group:{
+                _id:"$plan.name",
+                count:{ $sum:1 }
+            }
+        },
     ]);
 
     // Response

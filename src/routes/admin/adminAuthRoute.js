@@ -12,6 +12,6 @@ adminAuthRouter.route("/login").post(adminLogin);
 adminAuthRouter.route("/logout").get(adminAuthentication, adminLogout);
 
 // Admin refresh token
-adminAuthRouter.route("/refreshToken").get(adminAuthentication, adminRefreshToken);
+adminAuthRouter.route("/refreshToken").get(adminRefreshToken);
 
 module.exports = adminAuthRouter;

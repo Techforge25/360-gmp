@@ -652,7 +652,7 @@ const completeOrder = asyncHandler(async (request, response) => {
 
         // Emit event real-time
         const io = request.app.get("io");
-        io.to(String(order.sellerBusinessId)).emit("update-order-status", { orderId:order._id, status:order.status, orderDetails:order });       
+        io.to(String(order.sellerBusinessId)).emit("update-order-status", { orderDetails:order });       
 
         // Response
         return response.status(200).json(new ApiResponse(200, { orderId:order._id, status:order.status }, "Order completed successfully"));

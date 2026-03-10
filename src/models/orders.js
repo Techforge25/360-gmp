@@ -34,7 +34,10 @@ const orderSchema = new Schema({
         trackingUrl: { type:String, default:null },
         shippedAt: { type:Date },
         deliveredAt: { type:Date } // Delivered timestamp (For auto fund release after 14 days)
-    }    
+    },
+
+    // Timestamp tracker upon order completion
+    completedAt: { type:Date },
 }, { timestamps: true });
 
 // Inject plugin

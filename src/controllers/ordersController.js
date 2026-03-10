@@ -632,6 +632,7 @@ const completeOrder = asyncHandler(async (request, response) => {
     {
         // Update order status
         order.status = "completed";
+        order.completedAt = new Date();
         await order.save({ session:dbSession });
 
         // Update escrow status

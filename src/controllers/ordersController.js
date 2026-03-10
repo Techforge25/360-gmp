@@ -579,6 +579,9 @@ const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
     // Prevent duplicate status update
     if(status === order.status) return response.status(200).json(new ApiResponse(200, null, `The order status is already ${status}`));
 
+    // Cannot update status after it is cancelled
+    if(order.status === "cancelled") throw new ApiError(400, "This order has been cancelled by customer");
+
     // Handle delivered and shipped statuses
     if(status === "delivered") order.tracking.deliveredAt = new Date();
     if(status === "shipped")

@@ -757,7 +757,7 @@ const fetchNewOrders = asyncHandler(async (request, response) => {
 
     // Find orders
     const orders = await Order.paginate({ buyerUserProfileId:userProfile._id, status:{ $in: ["pending"] } }, 
-    { page, limit, lean:true, select:"-updatedAt -__v" });
+    { page, limit, lean:true, select:"-updatedAt -__v", sort:{ createdAt:-1 } });
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No new orders found"));
 
     // Response
@@ -775,7 +775,7 @@ const fetchProcessingOrders = asyncHandler(async (request, response) => {
 
     // Find orders
     const orders = await Order.paginate({ buyerUserProfileId:userProfile._id, status:{ $in: ["processing"] } }, 
-    { page, limit, lean:true, select:"-updatedAt -__v" });
+    { page, limit, lean:true, select:"-updatedAt -__v", sort:{ createdAt:-1 } });
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No processing orders found"));
 
     // Response
@@ -793,7 +793,7 @@ const fetchInTransitOrders = asyncHandler(async (request, response) => {
 
     // Find orders
     const orders = await Order.paginate({ buyerUserProfileId:userProfile._id, status:"in-transit" }, 
-    { page, limit, lean:true, select:"-updatedAt -__v" });
+    { page, limit, lean:true, select:"-updatedAt -__v", sort:{ createdAt:-1 } });
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No in-transit orders found"));
 
     // Response
@@ -811,7 +811,7 @@ const fetchDeliveredOrders = asyncHandler(async (request, response) => {
 
     // Find orders
     const orders = await Order.paginate({ buyerUserProfileId:userProfile._id, status:"delivered" }, 
-    { page, limit, lean:true, select:"-updatedAt -__v" });
+    { page, limit, lean:true, select:"-updatedAt -__v", sort:{ createdAt:-1 } });
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No delivered orders found"));
 
     // Response
@@ -829,7 +829,7 @@ const fetchCompletedOrders = asyncHandler(async (request, response) => {
 
     // Find orders
     const orders = await Order.paginate({ buyerUserProfileId:userProfile._id, status:"completed" }, 
-    { page, limit, lean:true, select:"-updatedAt -__v" });
+    { page, limit, lean:true, select:"-updatedAt -__v", sort:{ createdAt:-1 } });
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No completed orders found"));
 
     // Response
@@ -847,7 +847,7 @@ const fetchCancelledOrders = asyncHandler(async (request, response) => {
 
     // Find orders
     const orders = await Order.paginate({ buyerUserProfileId:userProfile._id, status:"cancelled" }, 
-    { page, limit, lean:true, select:"-updatedAt -__v" });
+    { page, limit, lean:true, select:"-updatedAt -__v", sort:{ createdAt:-1 } });
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No cancelled orders found"));
 
     // Response
@@ -871,7 +871,7 @@ const fetchAllBusinessOrders = asyncHandler(async (request, response) => {
 
     // Find orders
     const orders = await Order.paginate({ sellerBusinessId:businessProfile._id }, 
-    { page, limit, lean:true, select:"-updatedAt -__v" });
+    { page, limit, lean:true, select:"-updatedAt -__v", sort:{ createdAt:-1 } });
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No orders found"));
 
     // Response
@@ -889,7 +889,7 @@ const fetchBusinessNewOrders = asyncHandler(async (request, response) => {
 
     // Find orders
     const orders = await Order.paginate({ sellerBusinessId:businessProfile._id, status:{ $in: ["pending"] } }, 
-    { page, limit, lean:true, select:"-updatedAt -__v" });
+    { page, limit, lean:true, select:"-updatedAt -__v", sort:{ createdAt:-1 } });
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No new orders found"));
 
     // Response
@@ -907,7 +907,7 @@ const fetchBusinessProcessingOrders = asyncHandler(async (request, response) => 
 
     // Find orders
     const orders = await Order.paginate({ sellerBusinessId:businessProfile._id, status:{ $in: ["processing"] } }, 
-    { page, limit, lean:true, select:"-updatedAt -__v" });
+    { page, limit, lean:true, select:"-updatedAt -__v", sort:{ createdAt:-1 } });
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No processing orders found"));
 
     // Response
@@ -925,7 +925,7 @@ const fetchBsuinessInTransitOrders = asyncHandler(async (request, response) => {
 
     // Find orders
     const orders = await Order.paginate({ sellerBusinessId:businessProfile._id, status:"in-transit" }, 
-    { page, limit, lean:true, select:"-updatedAt -__v" });
+    { page, limit, lean:true, select:"-updatedAt -__v", sort:{ createdAt:-1 } });
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No in-transit orders found"));
 
     // Response
@@ -943,7 +943,7 @@ const fetchBusinessDeliveredOrders = asyncHandler(async (request, response) => {
 
     // Find orders
     const orders = await Order.paginate({ sellerBusinessId:businessProfile._id, status:"delivered" }, 
-    { page, limit, lean:true, select:"-updatedAt -__v" });
+    { page, limit, lean:true, select:"-updatedAt -__v", sort:{ createdAt:-1 } });
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No delivered orders found"));
 
     // Response
@@ -961,7 +961,7 @@ const fetchBusinessCompletedOrders = asyncHandler(async (request, response) => {
 
     // Find orders
     const orders = await Order.paginate({ sellerBusinessId:businessProfile._id, status:"completed" }, 
-    { page, limit, lean:true, select:"-updatedAt -__v" });
+    { page, limit, lean:true, select:"-updatedAt -__v", sort:{ createdAt:-1 } });
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No completed orders found"));
 
     // Response
@@ -979,7 +979,7 @@ const fetchBusinessCancelledOrders = asyncHandler(async (request, response) => {
 
     // Find orders
     const orders = await Order.paginate({ sellerBusinessId:businessProfile._id, status:"cancelled" }, 
-    { page, limit, lean:true, select:"-updatedAt -__v" });
+    { page, limit, lean:true, select:"-updatedAt -__v", sort:{ createdAt:-1 } });
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No cancelled orders found"));
 
     // Response

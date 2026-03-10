@@ -526,7 +526,7 @@ const fetchAllUserOrders = asyncHandler(async (request, response) => {
 
     // Find orders
     const orders = await Order.paginate({ buyerUserProfileId:userProfile._id }, 
-    { page, limit, lean:true, select:"-updatedAt -__v" });
+    { page, limit, lean:true, select:"-updatedAt -__v", sort:{ createdAt:-1 } });
     if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No orders found"));
 
     // Response

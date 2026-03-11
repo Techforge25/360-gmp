@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { adminAuthentication } = require("../../middlewares/adminAuth");
-const { sumTotalSales, sumPendingProducts } = require("../../controllers/admin/marketPlaceController");
+const { sumTotalSales, sumPendingProducts } = require("../../controllers/admin/marketplaceController");
 
 // Router instance
 const marketPlaceRouter = Router();

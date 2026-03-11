@@ -1,6 +1,7 @@
 const { emptyList } = require("../../constants");
 const Dispute = require("../../models/disputeModel");
 const EscrowTransaction = require("../../models/escrowTrasanction");
+const Order = require("../../models/orders");
 const Product = require("../../models/products");
 const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
@@ -59,4 +60,86 @@ const sumDisputedOrders = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Sum of disputed orders have been fetched"));   
 });
 
-module.exports = { sumTotalSales, sumPendingProducts, sumDisputedOrders };
+// Fetch order logs
+const fetchOrderLogs = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10 } = request.query;
+
+    // Pagination options
+    const options = {
+        page: Number(page),
+        limit: Number(limit),
+    };
+
+    // Aggregate
+    const aggregate = Order.aggregate([
+        { $sort: { createdAt: -1 } },
+        // Projection
+        { $project:{ createdAt:1, buyerUserProfileId:1, items:1, totalAmount:1 } },
+
+        // Lookup inside user profile
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "buyerUserProfileId",
+                foreignField: "_id",
+                as: "userProfile",
+                pipeline:[
+                    { $project:{ _id:0, fullName:1, logo:1 } }
+                ]
+            }
+        },
+
+        // Lookup inside escrow transaction to get payment status
+        {
+            $lookup: {
+                from: "escrowtransactions",
+                localField: "_id",
+                foreignField: "orderId",
+                as: "escrowTransaction"
+            }
+        },
+
+        // Unwind
+        { $unwind: "$userProfile" },
+        { $unwind: "$escrowTransaction" },
+
+        // Final projection
+        {
+            $project:{
+                createdAt:1,
+                buyerInfo:"$userProfile",
+                orderType:{
+                    $cond:[
+                        {
+                            $gt:[
+                                {
+                                    $size:{
+                                        $filter:{
+                                            input:"$items",
+                                            as:"item",
+                                            cond:{ $gt:["$$item.quantity", 1] }
+                                        }
+                                    }
+                                },
+                                0
+                            ]
+                        },
+                        "bulk",
+                        "single"
+                    ]
+                },
+                paymentType:"$escrowTransaction.status",
+                totalAmount:1
+            }
+        }
+    ]);
+
+    // Execute query
+    const orders = await Order.aggregatePaginate(aggregate, options);
+    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No order logs found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, orders, "Order logs have been fetched"));
+});
+
+module.exports = { sumTotalSales, sumPendingProducts, sumDisputedOrders, fetchOrderLogs };

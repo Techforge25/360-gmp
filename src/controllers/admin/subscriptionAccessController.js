@@ -132,7 +132,7 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
     if(!trialUsers.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No trial users found"));
 
     // Response
-    return response.status(200).json(new ApiResponse(200, users, "Trial users have been fetched"));    
+    return response.status(200).json(new ApiResponse(200, trialUsers, "Trial users have been fetched"));    
 });
 
 // Fetch premium users

@@ -185,7 +185,77 @@ const fetchProductAudits = asyncHandler(async (request, response) => {
     if(!products.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No product audits found"));
 
     // Response
-    return response.status(200).json(new ApiResponse(200, products, "Order logs have been fetched"));    
+    return response.status(200).json(new ApiResponse(200, products, "Product audits have been fetched"));    
 });
 
-module.exports = { sumTotalSales, sumPendingProducts, sumDisputedOrders, fetchOrderLogs, fetchProductAudits };
+// Fetch disputed order logs
+const fetchDisputedOrders = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10 } = request.query;
+
+    // Pagination options
+    const options = {
+        page: Number(page),
+        limit: Number(limit),
+    };
+
+    // Aggregate
+    const aggregate = Order.aggregate([
+        // Sort
+        { $sort:{ createdAt: -1 } },
+
+        // Projection
+        { $project:{ createdAt:1, totalAmount:1, buyerUserProfileId:1, sellerBusinessId:1 } },
+
+        // Lookup inside escrow transaction
+        {
+            $lookup: {
+                from: "escrowtransactions",
+                localField: "_id",
+                foreignField: "orderId",
+                as: "escrow"
+            }
+        },
+
+        // Lookup inside user profile (Buyer)
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "buyerUserProfileId",
+                foreignField: "_id",
+                as: "buyer"
+            }
+        },      
+        
+        // Lookup inside business profile (Seller)
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "sellerBusinessId",
+                foreignField: "_id",
+                as: "seller"
+            }
+        },         
+
+        // Unwind
+        { $unwind: "$escrow" },
+        { $unwind: "$buyer" },
+        { $unwind: "$seller" },
+
+        // Final projection
+        {
+            $project:{ createdAt:1, totalAmount:1, escrowId:"$escrow._id", status:"$escrow.status",
+                buyer:"$buyer.fullName", seller:"$seller.companyName"
+            }
+        }
+    ]);
+
+    // // Execute query
+    const orders = await Order.aggregatePaginate(aggregate, options);
+    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No disputed order logs found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, orders, "Disputed order logs have been fetched"));    
+});
+
+module.exports = { sumTotalSales, sumPendingProducts, sumDisputedOrders, 
+fetchOrderLogs, fetchProductAudits, fetchDisputedOrders };

@@ -1,4 +1,5 @@
 const { emptyList } = require("../../constants");
+const Dispute = require("../../models/disputeModel");
 const EscrowTransaction = require("../../models/escrowTrasanction");
 const Product = require("../../models/products");
 const ApiResponse = require("../../utils/ApiResponse");
@@ -44,4 +45,18 @@ const sumPendingProducts = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Sum of total pending products have been fetched"));    
 });
 
-module.exports = { sumTotalSales, sumPendingProducts };
+// Sum disputed orders
+const sumDisputedOrders = asyncHandler(async (request, response) => {
+    // Fetch
+    const disputedOrdersCount = await Dispute.countDocuments({ 
+        status: { $in:["open", "under_review", "waiting_buyer", "waiting_seller"] } 
+    });
+
+    // Prepare payload
+    const payload = { totalDisputedOrders: Number(disputedOrdersCount) || 0 };
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, payload, "Sum of disputed orders have been fetched"));   
+});
+
+module.exports = { sumTotalSales, sumPendingProducts, sumDisputedOrders };

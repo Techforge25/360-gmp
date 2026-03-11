@@ -68,9 +68,7 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
         { $unwind: "$plan" },
 
         // Trial plan filter
-        {
-            $match: { "plan.price": 0 }
-        },
+        { $match: { "plan.price": 0 } },
 
         {
             $lookup: {
@@ -104,10 +102,10 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
         {
             $project: {
                 email: 1,
-                subscriptionStatus: "$plan.name",
                 daysRemaining: 1,
-                messagesUsed: { $ifNull: ["$trialUsage.messagesUsed", 0] },
-                messageLimit: { $literal: messageLimit }
+                messageLimit: { $literal: messageLimit },
+                status: "$subscription.status",
+                messagesUsed: { $ifNull: ["$trialUsage.messagesUsed", 0] }
             }
         }
     ]);
@@ -176,7 +174,7 @@ const fetchPremiumUsers = asyncHandler(async (request, response) => {
 
         // Final projection
         {
-            $project: { email:1, subscriptionTier: "$subscription.plan.name", joinDate:"$createdAt", subscriptionStatus:"$subscription.status" }
+            $project: { email:1, subscriptionTier: "$subscription.plan.name", joinDate:"$createdAt", status:"$subscription.status" }
         }
     ]);
 
@@ -222,7 +220,7 @@ const fetchExpiringSubscriptions = asyncHandler(async (request, response) => {
                     // Match subscriptions ending within threshold
                     { $match: { endDate: { $lte: thresholdDate } } },
 
-                    { $project: { _id:0, planId:1, status:1, endDate:1, startDate:1 } },
+                    { $project: { _id:0, planId:1, endDate:1, startDate:1 } },
 
                     // Lookup inside plans
                     {

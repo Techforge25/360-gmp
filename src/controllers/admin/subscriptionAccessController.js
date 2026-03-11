@@ -1,3 +1,4 @@
+const { emptyList } = require("../../constants");
 const Subscription = require("../../models/subscription");
 const User = require("../../models/users");
 const ApiResponse = require("../../utils/ApiResponse");
@@ -115,4 +116,76 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, users, "Trial users have been fetched"));    
 });
 
-module.exports = { fetchSubscriptionStats, fetchTrialUsers };
+// Fetch premium users
+const fetchPremiumUsers = asyncHandler(async (request, response) => {
+    // Pagination options
+    const { page = 1, limit = 10, search = "" } = request.query;
+
+    const options = {
+        page: Number(page),
+        limit: Number(limit),
+    };
+
+    // Base filter
+    const baseFilter = {};
+    if(search) baseFilter.email = { $regex:search, $options:"i" };
+
+    // Fetch
+    const aggregate = User.aggregate([
+        // Match
+        { $match:baseFilter },
+
+        // Sort
+        { $sort:{ createdAt:-1 } },
+
+        // Projection
+        { $project: { email:1, createdAt:1 } },
+
+        // Lookup inside subscription
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "userId",
+                as:"subscription",
+                pipeline: [
+                    { $project:{ _id:0, planId:1, status:1 } },
+
+                    // Lookup inside plans
+                    {
+                        $lookup:{
+                            from: "plans",
+                            localField: "planId",
+                            foreignField: "_id",
+                            as: "plan",
+                            pipeline:[
+                                { $project:{ _id:0, name:1 } }
+                            ]
+                        }
+                    }
+                ]
+            },
+        },
+
+        // Unwind
+        { $unwind: "$subscription" },
+        { $unwind: "$subscription.plan" },
+
+        // Match
+        { $match:{ "subscription.plan.name": "PREMIUM" } },
+
+        // Final projection
+        {
+            $project: { email:1, subscriptionTier: "$subscription.plan.name", joinDate:"$createdAt", subscriptionStatus:"$subscription.status" }
+        }
+    ]);
+
+    // Execute query
+    const premiumUsers = await User.aggregatePaginate(aggregate, options);
+    if(!premiumUsers.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No premium users found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, premiumUsers, "Premium users have been fetched"));
+});
+
+module.exports = { fetchSubscriptionStats, fetchTrialUsers, fetchPremiumUsers };

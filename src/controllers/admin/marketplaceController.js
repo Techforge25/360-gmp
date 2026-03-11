@@ -155,7 +155,7 @@ const fetchProductAudits = asyncHandler(async (request, response) => {
     // Aggregate
     const aggregate = Product.aggregate([
         // Pending
-        // { $match:{ status: "pending" } },
+        { $match:{ status: "pending" } },
 
         // Sort
         { $sort:{ createdAt: -1 } },

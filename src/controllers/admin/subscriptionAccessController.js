@@ -118,9 +118,9 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
 
 // Fetch premium users
 const fetchPremiumUsers = asyncHandler(async (request, response) => {
-    // Pagination options
     const { page = 1, limit = 10, search = "" } = request.query;
 
+    // Pagination options
     const options = {
         page: Number(page),
         limit: Number(limit),
@@ -188,4 +188,89 @@ const fetchPremiumUsers = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, premiumUsers, "Premium users have been fetched"));
 });
 
-module.exports = { fetchSubscriptionStats, fetchTrialUsers, fetchPremiumUsers };
+// Fetch subscriptions expiring soon users
+const fetchExpiringSubscriptions = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10, search = "", days = 7 } = request.query;
+
+    // Pagination options
+    const options = {
+        page: Number(page),
+        limit: Number(limit),
+    };
+
+    // Base filter
+    const baseFilter = {};
+    if(search) baseFilter.email = { $regex: search, $options:"i" };
+
+    // Calculate date threshold
+    const now = new Date();
+    const thresholdDate = new Date(now.getTime() + Number(days) * 24 * 60 * 60 * 1000);
+
+    // Fetch
+    const aggregate = User.aggregate([
+        // Match
+        { $match: baseFilter },
+
+        // Lookup inside subscription
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "userId",
+                as: "subscription",
+                pipeline: [
+                    // Match subscriptions ending within threshold
+                    { $match: { endDate: { $lte: thresholdDate } } },
+
+                    { $project: { _id:0, planId:1, status:1, endDate:1, startDate:1 } },
+
+                    // Lookup inside plans
+                    {
+                        $lookup: {
+                            from: "plans",
+                            localField: "planId",
+                            foreignField: "_id",
+                            as: "plan",
+                            pipeline: [
+                                { $project: { _id:0, name:1 } }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+
+        // Unwind
+        { $unwind: "$subscription" },
+        { $unwind: "$subscription.plan" },
+
+        // Final projection
+        {
+            $project: {
+                email:1,
+                subscriptionTier: "$subscription.plan.name",
+                subscriptionStatus: "$subscription.status",
+                timeRemaining: {
+                    $ceil: {
+                        $divide: [
+                            { $subtract: ["$subscription.endDate", now] },
+                            1000 * 60 * 60 * 24
+                        ]
+                    }
+                }
+            }
+        },
+
+        // Sort by soonest to expire
+        { $sort: { "timeRemaining": 1 } }
+    ]);
+
+    // Execute query
+    const expiringSubscriptions = await User.aggregatePaginate(aggregate, options);
+    if(!expiringSubscriptions.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No expiring subscriptions found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, expiringSubscriptions, "Expiring subscriptions have been fetched"));
+});
+
+module.exports = { fetchSubscriptionStats, fetchTrialUsers, fetchPremiumUsers, fetchExpiringSubscriptions };

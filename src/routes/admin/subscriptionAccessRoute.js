@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const { adminAuthentication } = require("../../middlewares/adminAuth");
-const { fetchSubscriptionStats, fetchTrialUsers, fetchPremiumUsers } = require("../../controllers/admin/subscriptionAccessController");
+const { fetchSubscriptionStats, fetchTrialUsers, 
+fetchPremiumUsers, fetchExpiringSubscriptions } = require("../../controllers/admin/subscriptionAccessController");
 
 // Router instance
 const subscriptionAccessRouter = Router();
@@ -16,5 +17,9 @@ subscriptionAccessRouter.route("/trialUsers")
 // Fetch premium users
 subscriptionAccessRouter.route("/premiumUsers")
 .get(adminAuthentication, fetchPremiumUsers);
+
+// Fetch subscriptions expiring soon users
+subscriptionAccessRouter.route("/expiringSoon")
+.get(adminAuthentication, fetchExpiringSubscriptions);
 
 module.exports = subscriptionAccessRouter;

@@ -142,4 +142,50 @@ const fetchOrderLogs = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, orders, "Order logs have been fetched"));
 });
 
-module.exports = { sumTotalSales, sumPendingProducts, sumDisputedOrders, fetchOrderLogs };
+// Fetch product audits
+const fetchProductAudits = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10 } = request.query;
+
+    // Pagination options
+    const options = {
+        page: Number(page),
+        limit: Number(limit),
+    };
+
+    // Aggregate
+    const aggregate = Product.aggregate([
+        // Pending
+        // { $match:{ status: "pending" } },
+
+        // Sort
+        { $sort:{ createdAt: -1 } },
+
+        // Lookup inside business profile
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "businessId",
+                foreignField: "_id",
+                as: "businessProfile",
+                pipeline:[
+                    { $project:{ _id:0, companyName:1, logo:1 } }
+                ]
+            }
+        },
+
+        // Unwind
+        { $unwind: "$businessProfile" },
+
+        // Projection
+        { $project:{ title:1, createdAt:1, sellerInfo:"$businessProfile", category:1, status:1 } }
+    ]);
+
+    // Execute query
+    const products = await Product.aggregatePaginate(aggregate, options);
+    if(!products.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No product audits found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, products, "Order logs have been fetched"));    
+});
+
+module.exports = { sumTotalSales, sumPendingProducts, sumDisputedOrders, fetchOrderLogs, fetchProductAudits };

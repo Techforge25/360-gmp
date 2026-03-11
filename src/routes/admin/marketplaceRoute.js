@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const { adminAuthentication } = require("../../middlewares/adminAuth");
 const { sumTotalSales, sumPendingProducts, sumDisputedOrders, 
-fetchOrderLogs } = require("../../controllers/admin/marketplaceController");
+fetchOrderLogs, fetchProductAudits } = require("../../controllers/admin/marketplaceController");
 
 // Router instance
 const marketPlaceRouter = Router();
@@ -21,5 +21,9 @@ marketPlaceRouter.route("/disputedOrders")
 // Fetch order logs
 marketPlaceRouter.route("/orderLogs")
 .get(adminAuthentication, fetchOrderLogs);
+
+// Fetch order logs
+marketPlaceRouter.route("/productAudits")
+.get(adminAuthentication, fetchProductAudits);
 
 module.exports = marketPlaceRouter;

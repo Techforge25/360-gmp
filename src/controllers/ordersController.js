@@ -277,14 +277,16 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
         // Get socket instance
         const io = request.app.get("io");
 
-        // Emit real-time to buyer
-        io.to(`user:${userProfile.userId}`).emit("notification", buyerNotification);
+        // Emit real-time notification to buyer
+        io.to(`user:${String(userProfile.userId)}`).emit("notification", buyerNotification);
 
-        // Emit real-time to seller
-        io.to(`user:${businessProfile.ownerUserId}`).emit("notification", sellerNotification);         
+        // Emit real-time notification to seller
+        io.to(`user:${String(businessProfile.ownerUserId)}`).emit("notification", sellerNotification);
+        
+        // Emit real-time event to business profile for order creation
+        io.to(String(businessProfile._id)).emit("order-creation", order);
 
         // Response
-        // return response.status(303).redirect(process.env.FRONTEND_URL);
         return response.status(303).redirect(`${frontendUrl}/dashboard/user/orders/OrderTrackingPage/${order._id}`);
     } 
     catch(error) 
@@ -498,9 +500,12 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
         // Get socket instance
         const io = request.app.get("io");
 
-        // Emit real-time notifications
-        io.to(`user:${buyerUser.userId}`).emit("notification", buyerNotification);
-        io.to(`user:${sellerBusiness.ownerUserId}`).emit("notification", sellerNotification);
+        // Emit real-time notifications to buyer and seller
+        io.to(`user:${String(buyerUser.userId)}`).emit("notification", buyerNotification);
+        io.to(`user:${String(sellerBusiness.ownerUserId)}`).emit("notification", sellerNotification);
+
+        // Emit real-time event to business profile for order creation
+        io.to(String(sellerBusiness._id)).emit("order-creation", order);        
 
         // Response
         return response.status(201).json(new ApiResponse(201, order, "Order placed successfully using wallet"));

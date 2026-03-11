@@ -85,7 +85,7 @@ const adminAuthRouter = require("./routes/admin/adminAuthRoute");
 const dashboardRouter = require("./routes/admin/dashboardRoute");
 const userManagementRouter = require("./routes/admin/userManagementRoute");
 const subscriptionAccessRouter = require("./routes/admin/subscriptionAccessRoute");
-const marketPlaceRouter = require("./routes/admin/marketPlaceRoute");
+const marketPlaceRouter = require("./routes/admin/marketplaceRoute");
 
 // Registered Admin Routes
 app.use("/api/v1/admin/auth", adminAuthRouter);

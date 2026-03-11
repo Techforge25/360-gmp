@@ -1,5 +1,6 @@
 const { Schema, model } = require("mongoose");
 const paginate = require("mongoose-paginate-v2");
+const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
 // Updated Schema
 const orderSchema = new Schema({
@@ -42,6 +43,7 @@ const orderSchema = new Schema({
 
 // Inject plugin
 orderSchema.plugin(paginate);
+orderSchema.plugin(aggregatePaginate);
 
 // Model
 const Order = model("Order", orderSchema);

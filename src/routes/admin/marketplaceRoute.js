@@ -1,6 +1,7 @@
 const { Router } = require("express");
 const { adminAuthentication } = require("../../middlewares/adminAuth");
-const { sumTotalSales, sumPendingProducts, sumDisputedOrders } = require("../../controllers/admin/marketplaceController");
+const { sumTotalSales, sumPendingProducts, sumDisputedOrders, 
+fetchOrderLogs } = require("../../controllers/admin/marketplaceController");
 
 // Router instance
 const marketPlaceRouter = Router();
@@ -16,5 +17,9 @@ marketPlaceRouter.route("/pendingProducts")
 // Sum disputed orders
 marketPlaceRouter.route("/disputedOrders")
 .get(adminAuthentication, sumDisputedOrders);
+
+// Fetch order logs
+marketPlaceRouter.route("/orderLogs")
+.get(adminAuthentication, fetchOrderLogs);
 
 module.exports = marketPlaceRouter;

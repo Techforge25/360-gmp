@@ -38,13 +38,30 @@ const fetchSubscriptionStats = asyncHandler(async (request, response) => {
 
 // Fetch trial users
 const fetchTrialUsers = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10, search = "" } = request.query;
+
+    // Pagination options
+    const options = {
+        page: Number(page),
+        limit: Number(limit),
+    };
+
+    // Base filter
+    const baseFilter = {};
+    if(search) baseFilter.email = { $regex:search, $options:"i" };
 
     // Calculate days and message
     const today = new Date();
     const messageLimit = 4;
 
     // Fetch
-    const users = await User.aggregate([
+    const aggregate = User.aggregate([
+        // Match
+        { $match:baseFilter },
+
+        // Sort
+        { $sort:{ createdAt:-1 } },       
+
         // Lookup on subscription
         {
             $lookup: {
@@ -109,6 +126,10 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
             }
         }
     ]);
+
+    // Execute query
+    const trialUsers = await User.aggregatePaginate(aggregate, options);
+    if(!trialUsers.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No trial users found"));
 
     // Response
     return response.status(200).json(new ApiResponse(200, users, "Trial users have been fetched"));    
@@ -198,7 +219,7 @@ const fetchExpiringSubscriptions = asyncHandler(async (request, response) => {
 
     // Base filter
     const baseFilter = {};
-    if(search) baseFilter.email = { $regex: search, $options:"i" };
+    if(search) baseFilter.email = { $regex: search, $options:"i" };    
 
     // Calculate date threshold
     const now = new Date();
@@ -208,6 +229,9 @@ const fetchExpiringSubscriptions = asyncHandler(async (request, response) => {
     const aggregate = User.aggregate([
         // Match
         { $match: baseFilter },
+
+        // Sort
+        { $sort:{ createdAt:-1 } },        
 
         // Lookup inside subscription
         {

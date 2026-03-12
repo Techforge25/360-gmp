@@ -111,4 +111,29 @@ const fetchBusinessRecentTransactions = asyncHandler(async (request, response) =
     return response.status(200).json(new ApiResponse(200, transactions, "Recent transactions for business have been fetched"));
 });
 
-module.exports = { fetchBusinessWalletAnalytics, fetchBusinessRecentTransactions };
+// Fetch business earnings
+const fetchBusinessEarnings = asyncHandler(async (request, response) => {
+    // Get business profile ID
+    const { businessProfileId } = request.user.profiles;
+
+    // Query options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Pagination options
+    const options = {
+        page: Number(page),
+        limit: Number(limit),
+        select:"orderId createdAt totalAmount platformFee netAmount status -_id",
+        lean: true,
+        sort: { createdAt: -1 }
+    };    
+
+    // Fetch
+    const escrow = await EscrowTransaction.paginate({ sellerId:businessProfileId }, options);
+    if(!escrow.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No business earnings"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, escrow, "Business earnings have been fetched"));    
+});
+
+module.exports = { fetchBusinessWalletAnalytics, fetchBusinessRecentTransactions, fetchBusinessEarnings };

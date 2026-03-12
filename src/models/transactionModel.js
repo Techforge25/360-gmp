@@ -11,7 +11,7 @@ const transactionSchema = new Schema({
 
     // Balance info
     amount:{ type:Number, required:true },
-    type:{ type:String, default:"deposit", enum:["buy", "deposit", "refund"] },
+    type:{ type:String, default:"deposit", enum:["buy", "sale", "deposit", "refund"] },
 
     // Transaction details
     paymentMethod:{ type:String, default:"stripe", enum:["stripe", "wallet"] },

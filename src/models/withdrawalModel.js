@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const paginate = require("mongoose-paginate-v2");
 
 // Schema
 const withdrawalSchema = new Schema({
@@ -9,6 +10,9 @@ const withdrawalSchema = new Schema({
     stripeTransferId: String,
     status: { type: String, enum: ["pending", "completed", "failed"], default: "pending" }
 }, { timestamps: true });
+
+// Paginate
+withdrawalSchema.plugin(paginate);
 
 // Model
 const Withdrawal = model("Withdrawal", withdrawalSchema);

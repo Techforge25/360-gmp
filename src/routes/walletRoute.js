@@ -1,7 +1,8 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
-const { connectStripeAccount, WithdrawFunds, fetchBusinessWalletAnalytics } = require("../controllers/walletController");
+const { connectStripeAccount, WithdrawFunds } = require("../controllers/walletController");
 const { addFundsUser, verifyAddFundsUser, fetchUserWalletAnalytics } = require("../controllers/userWalletController");
+const { fetchBusinessWalletAnalytics } = require("../controllers/businessWalletController");
 
 // Router instance
 const walletRouter = Router();

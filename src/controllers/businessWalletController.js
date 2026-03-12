@@ -227,11 +227,36 @@ const fetchBusinessEarnings = asyncHandler(async (request, response) => {
 
     // Fetch
     const escrow = await EscrowTransaction.paginate({ sellerId:businessProfileId }, options);
-    if(!escrow.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No business earnings"));
+    if(!escrow.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No business earnings found"));
 
     // Response
     return response.status(200).json(new ApiResponse(200, escrow, "Business earnings have been fetched"));    
 });
 
+// Fetch business withdrawals
+const fetchBusinessWithdrawal = asyncHandler(async (request, response) => {
+    // Get business profile ID
+    const { businessProfileId } = request.user.profiles;
+
+    // Query options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Pagination options
+    const options = {
+        page: Number(page),
+        limit: Number(limit),
+        select:"amount currency status",
+        lean: true,
+        sort: { createdAt: -1 }
+    };    
+
+    // Fetch
+    const withdrawal = await Withdrawal.paginate({ ownerId:businessProfileId, ownerModel:"BusinessProfile" }, options);
+    if(!withdrawal.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No business withdrawals found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, withdrawal, "Business withdrawals have been fetched"));    
+});
+
 module.exports = { fetchBusinessWalletAnalytics, fetchBusinessRecentTransactions, 
-fetchBusinessFinancialPerformance, fetchBusinessEarnings };
+fetchBusinessFinancialPerformance, fetchBusinessEarnings, fetchBusinessWithdrawal };

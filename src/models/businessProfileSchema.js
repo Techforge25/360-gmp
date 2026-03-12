@@ -1,5 +1,6 @@
 const { Schema, model } = require("mongoose");
 const paginate = require("mongoose-paginate-v2");
+const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
 const BusinessProfileSchema = new Schema({
     // Basic info
@@ -128,6 +129,7 @@ BusinessProfileSchema.index({ isVerified: 1 });
 
 // Inject plugin
 BusinessProfileSchema.plugin(paginate);
+BusinessProfileSchema.plugin(aggregatePaginate);
 
 // Model
 const BusinessProfile = model("BusinessProfile", BusinessProfileSchema);

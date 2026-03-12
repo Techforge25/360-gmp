@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const paginate = require("mongoose-paginate-v2");
 
 // Schema
 const transactionSchema = new Schema({
@@ -18,6 +19,9 @@ const transactionSchema = new Schema({
     stripeSessionId: { type:String, default:null },
     status:{ type:String, default:"pending", enum:["pending", "failed", "completed"] }
 }, { timestamps: true });
+
+// Add pagination plugin
+transactionSchema.plugin(paginate);
 
 // Model
 const Transaction = model("Transaction", transactionSchema);

@@ -229,4 +229,105 @@ const fetchUserPurchases = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, transactions, responseMessage));
 });
 
-module.exports = { addFundsUser, verifyAddFundsUser, fetchUserWalletAnalytics, fetchUserPurchases };
+// Fetch spending activity
+const fetchUserSpendingActivity = asyncHandler(async (request, response) => {
+    const { userProfileId } = request.user.profiles;
+
+    // Current date
+    const now = new Date();
+
+    // Calculate start of week (Monday)
+    const day = now.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() + diff);
+    startOfWeek.setHours(0,0,0,0);
+
+    // End of week (Sunday)
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23,59,59,999);
+
+    // Aggregate weekly spending
+    const weeklySpending = await Transaction.aggregate([
+        // Match
+        {
+            $match:{
+                ownerId: convertToMongoId(userProfileId),
+                ownerModel:"UserProfile",
+                type:"buy",
+                status:"completed",
+                createdAt:{ $gte:startOfWeek, $lte:endOfWeek }
+            }
+        },
+
+        // Group by weekday
+        {
+            $group:{
+                _id:{ $dayOfWeek:"$createdAt" },
+                spending:{ $sum:"$amount" }
+            }
+        }
+    ]);
+
+    // Aggregate totals
+    const totals = await Transaction.aggregate([
+        // Match
+        {
+            $match:{
+                ownerId: convertToMongoId(userProfileId),
+                ownerModel:"UserProfile",
+                status:"completed"
+            }
+        },
+
+        // Group
+        {
+            $group:{
+                _id:null,
+                totalSpend:{
+                    $sum:{
+                        $cond:[{ $eq:["$type","buy"] }, "$amount", 0]
+                    }
+                },
+                totalRefund:{
+                    $sum:{
+                        $cond:[{ $eq:["$type","refund"] }, "$amount", 0]
+                    }
+                }
+            }
+        }
+    ]);
+
+    // Prepare weekly graph payload
+    const weekMap = { 
+        2:"monday", 3:"tuesday", 4:"wednesday", 5:"thursday",
+        6:"friday", 7:"saturday", 1:"sunday"
+    };
+
+    // Grapgh
+    const graph = {
+        monday:0, tuesday:0, wednesday:0, thursday:0,
+        friday:0, saturday:0, sunday:0
+    };
+
+    // Weekly spending
+    weeklySpending.forEach(item => {
+        const day = weekMap[item._id];
+        if(day) graph[day] = item.spending;
+    });
+
+    // Prepare totals payload
+    const payload = {
+        graph,
+        totalSpend: totals[0]?.totalSpend || 0,
+        totalRefund: totals[0]?.totalRefund || 0
+    };
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, payload, "User spending activity has been fetched"));
+});
+
+module.exports = { addFundsUser, verifyAddFundsUser, fetchUserWalletAnalytics, 
+fetchUserPurchases, fetchUserSpendingActivity };

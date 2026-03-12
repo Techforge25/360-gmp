@@ -1,7 +1,8 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { connectStripeAccount, WithdrawFunds } = require("../controllers/walletController");
-const { addFundsUser, verifyAddFundsUser, fetchUserWalletAnalytics, fetchUserPurchases } = require("../controllers/userWalletController");
+const { addFundsUser, verifyAddFundsUser, fetchUserWalletAnalytics, 
+fetchUserPurchases, fetchUserSpendingActivity } = require("../controllers/userWalletController");
 const { fetchBusinessWalletAnalytics, fetchBusinessRecentTransactions, fetchBusinessEarnings, 
 fetchBusinessFinancialPerformance, fetchBusinessWithdrawal } = require("../controllers/businessWalletController");
 
@@ -44,6 +45,10 @@ walletRouter.route("/user/analytics")
 // Fetch wallet analytics
 walletRouter.route("/user/purchases")
 .get(authentication, authorization(["user"]), fetchUserPurchases);
+
+// Fetch spending activity
+walletRouter.route("/user/spending-activity")
+.get(authentication, authorization(["user"]), fetchUserSpendingActivity);
 
 
 // ********************* FOR BUSINESS PROFILE ********************* //

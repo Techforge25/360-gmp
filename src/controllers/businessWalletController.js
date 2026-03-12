@@ -92,7 +92,14 @@ const fetchBusinessRecentTransactions = asyncHandler(async (request, response) =
     const { businessProfileId } = request.user.profiles;
 
     // Query options
-    const { page = 1, limit = 10 } = request.query;
+    const { page = 1, limit = 10, status } = request.query;
+
+    // Validate status type
+    if(status && (!["pending", "failed", "completed"].includes(status))) throw new ApiError(400, "Invalid status type");
+
+    // Base filter
+    const baseFilter = { ownerId:businessProfileId, ownerModel:"BusinessProfile" };
+    if(status) baseFilter.status = status;
 
     // Pagination options
     const options = {
@@ -104,7 +111,7 @@ const fetchBusinessRecentTransactions = asyncHandler(async (request, response) =
     };
 
     // Fetch
-    const transactions = await Transaction.paginate({ ownerId:businessProfileId, ownerModel:"BusinessProfile" }, options);
+    const transactions = await Transaction.paginate(baseFilter, options);
     if(!transactions.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No transactions found for business profile"));
 
     // Response

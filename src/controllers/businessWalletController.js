@@ -13,6 +13,7 @@ const Withdrawal = require("../models/withdrawalModel");
 const User = require("../models/users");
 const Transaction = require("../models/transactionModel");
 const convertToMongoId = require("../utils/convertToMongoId");
+const { emptyList } = require("../constants");
 
 // Fetch wallet analytics for business
 const fetchBusinessWalletAnalytics = asyncHandler(async (request, response) => {
@@ -85,4 +86,29 @@ const fetchBusinessWalletAnalytics = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Wallet analytics for business fetched successfully"));
 });
 
-module.exports = { fetchBusinessWalletAnalytics };
+// Fetch recent transactions
+const fetchBusinessRecentTransactions = asyncHandler(async (request, response) => {
+    // Get business profile ID
+    const { businessProfileId } = request.user.profiles;
+
+    // Query options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Pagination options
+    const options = {
+        page: Number(page),
+        limit: Number(limit),
+        select:"orderId createdAt paymentMethod status amount -_id",
+        lean: true,
+        sort: { createdAt: -1 }
+    };
+
+    // Fetch
+    const transactions = await Transaction.paginate({ ownerId:businessProfileId, ownerModel:"BusinessProfile" }, options);
+    if(!transactions.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No transactions found for business profile"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, transactions, "Recent transactions for business have been fetched"));
+});
+
+module.exports = { fetchBusinessWalletAnalytics, fetchBusinessRecentTransactions };

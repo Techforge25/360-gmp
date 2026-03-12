@@ -2,7 +2,7 @@ const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { connectStripeAccount, WithdrawFunds } = require("../controllers/walletController");
 const { addFundsUser, verifyAddFundsUser, fetchUserWalletAnalytics } = require("../controllers/userWalletController");
-const { fetchBusinessWalletAnalytics } = require("../controllers/businessWalletController");
+const { fetchBusinessWalletAnalytics, fetchBusinessRecentTransactions,  } = require("../controllers/businessWalletController");
 
 // Router instance
 const walletRouter = Router();
@@ -34,12 +34,18 @@ walletRouter.route("/user/add-funds/success")
 walletRouter.route("/user/add-funds/cancel")
 .get((req, res) => res.json({ message:"Add funds has been cancelled" }));
 
-// Fetch wallet analytics (for business)
-walletRouter.route("/business/analytics")
-.get(authentication, authorization(["business"]), fetchBusinessWalletAnalytics);
-
 // Fetch wallet analytics (for user)
 walletRouter.route("/user/analytics")
 .get(authentication, authorization(["user"]), fetchUserWalletAnalytics);
+
+
+// ********************* BUSINESS ********************* //
+// Fetch wallet analytics
+walletRouter.route("/business/analytics")
+.get(authentication, authorization(["business"]), fetchBusinessWalletAnalytics);
+
+// Fetch recent transaction
+walletRouter.route("/business/recent-transaction")
+.get(authentication, authorization(["business"]), fetchBusinessRecentTransactions);
 
 module.exports = walletRouter;

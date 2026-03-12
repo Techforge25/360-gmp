@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const paginate = require("mongoose-paginate-v2");
 
 // Schema
 const escrowTransactionSchema = new Schema({
@@ -16,6 +17,9 @@ const escrowTransactionSchema = new Schema({
     status: { type:String, enum:['held', 'released', 'refunded'], default:'held' },
     paymentMethod: { type:String, required:true, enum:["stripe", "wallet"] }
 }, { timestamps: true });
+
+// Paginate
+escrowTransactionSchema.plugin(paginate);
 
 // Model
 const EscrowTransaction = model("EscrowTransaction", escrowTransactionSchema);

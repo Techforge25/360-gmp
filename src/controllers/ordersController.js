@@ -225,7 +225,7 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
             { upsert:true, session:dbSession }
         );
 
-        // Update wallet transaction
+        // Transaction for user profile
         await Transaction.create([{
             ownerId: buyerUserProfileId, 
             ownerModel: "UserProfile",
@@ -237,6 +237,17 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
             paymentMethod:"stripe"
         }], { session:dbSession });
 
+        // Transaction for business profile
+        await Transaction.create([{
+            ownerId: sellerBusinessId, 
+            ownerModel: "BusinessProfile",
+            orderId: order._id,
+            amount: amount,
+            type: "sale",
+            stripeSessionId: stripeSession.id,
+            status: "completed",
+            paymentMethod:"stripe"
+        }], { session:dbSession });        
 
         // Mark trial usage after successful payment
         if(planName === "TRIAL")
@@ -442,6 +453,7 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
             status: "held",
             paymentMethod: "wallet"
         }], { session: dbSession });
+        
 
         // Increase seller pending balance
         await Wallet.findOneAndUpdate(
@@ -460,6 +472,17 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
             paymentMethod: "wallet",
             status: "completed"
         }], { session: dbSession });
+
+        // Log seller wallet transaction
+        await Transaction.create([{
+            ownerId: sellerBusinessId,
+            ownerModel: "BusinessProfile",
+            orderId: order._id,
+            amount,
+            type: "sale",
+            paymentMethod: "wallet",
+            status: "completed"
+        }], { session: dbSession });      
 
         // Mark trial usage after successful payment
         if(planName === "TRIAL")

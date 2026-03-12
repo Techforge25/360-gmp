@@ -10,6 +10,7 @@ const Withdrawal = require("../models/withdrawalModel");
 const User = require("../models/users");
 const Transaction = require("../models/transactionModel");
 const convertToMongoId = require("../utils/convertToMongoId");
+const { emptyList } = require("../constants");
 
 // Add funds
 const addFundsUser = asyncHandler(async (request, response) => {
@@ -190,4 +191,32 @@ const fetchUserWalletAnalytics = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "User wallet analytics have been fetched"))
 });
 
-module.exports = { addFundsUser, verifyAddFundsUser, fetchUserWalletAnalytics };
+// Fetch user purchases
+const fetchUserPurchases = asyncHandler(async (request, response) => {
+    // Get user profile ID
+    const { userProfileId } = request.user.profiles;
+
+    // Query options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Base filter
+    const baseFilter = { ownerId:userProfileId, ownerModel:"UserProfile", type:"buy" };
+
+    // Pagination options
+    const options = {
+        page: Number(page),
+        limit: Number(limit),
+        select:"orderId createdAt status amount -_id",
+        lean: true,
+        sort: { createdAt: -1 }
+    };
+
+    // Fetch
+    const transactions = await Transaction.paginate(baseFilter, options);
+    if(!transactions.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No purchases found for users profile"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, transactions, "Purchases for users have been fetched"));
+});
+
+module.exports = { addFundsUser, verifyAddFundsUser, fetchUserWalletAnalytics, fetchUserPurchases };

@@ -1,10 +1,9 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { connectStripeAccount, WithdrawFunds } = require("../controllers/walletController");
-const { addFundsUser, verifyAddFundsUser, fetchUserWalletAnalytics } = require("../controllers/userWalletController");
+const { addFundsUser, verifyAddFundsUser, fetchUserWalletAnalytics, fetchUserPurchases } = require("../controllers/userWalletController");
 const { fetchBusinessWalletAnalytics, fetchBusinessRecentTransactions, fetchBusinessEarnings, 
-fetchBusinessFinancialPerformance, 
-fetchBusinessWithdrawal} = require("../controllers/businessWalletController");
+fetchBusinessFinancialPerformance, fetchBusinessWithdrawal } = require("../controllers/businessWalletController");
 
 // Router instance
 const walletRouter = Router();
@@ -24,6 +23,8 @@ walletRouter.route("/success")
 walletRouter.route("/withdraw")
 .post(authentication, authorization(["user", "business", "admin"]), WithdrawFunds);
 
+
+// ********************* FOR USER PROFILE ********************* //
 // Add funds
 walletRouter.route("/user/add-funds")
 .post(authentication, authorization(["user"]), addFundsUser);
@@ -36,12 +37,16 @@ walletRouter.route("/user/add-funds/success")
 walletRouter.route("/user/add-funds/cancel")
 .get((req, res) => res.json({ message:"Add funds has been cancelled" }));
 
-// Fetch wallet analytics (for user)
+// Fetch wallet analytics
 walletRouter.route("/user/analytics")
 .get(authentication, authorization(["user"]), fetchUserWalletAnalytics);
 
+// Fetch wallet analytics
+walletRouter.route("/user/purchases")
+.get(authentication, authorization(["user"]), fetchUserPurchases);
 
-// ********************* BUSINESS ********************* //
+
+// ********************* FOR BUSINESS PROFILE ********************* //
 // Fetch wallet analytics
 walletRouter.route("/business/analytics")
 .get(authentication, authorization(["business"]), fetchBusinessWalletAnalytics);

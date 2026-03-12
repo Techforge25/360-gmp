@@ -111,6 +111,96 @@ const fetchBusinessRecentTransactions = asyncHandler(async (request, response) =
     return response.status(200).json(new ApiResponse(200, transactions, "Recent transactions for business have been fetched"));
 });
 
+// Fetch financial performance for business
+const fetchBusinessFinancialPerformance = asyncHandler(async (request, response) => {
+    // Get business profile ID
+    const { businessProfileId } = request.user.profiles;
+
+    // Current date
+    const now = new Date();
+
+    // Calculate start of week (Monday)
+    const day = now.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() + diff);
+    startOfWeek.setHours(0,0,0,0);
+
+    // End of week (Sunday)
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23,59,59,999);
+
+    // Aggregate weekly earnings
+    const weeklyEarnings = await EscrowTransaction.aggregate([
+        // Match
+        {
+            $match:{
+                sellerId: convertToMongoId(businessProfileId),
+                createdAt:{ $gte:startOfWeek, $lte:endOfWeek },
+                status:"released"
+            }
+        },
+
+        // Group by weekday
+        {
+            $group:{
+                _id:{ $dayOfWeek:"$createdAt" },
+                earning:{ $sum:"$netAmount" }
+            }
+        }
+    ]);
+
+    // Aggregate totals
+    const totals = await EscrowTransaction.aggregate([
+        // Match
+        {
+            $match:{
+                sellerId: convertToMongoId(businessProfileId),
+                status:"released"
+            }
+        },
+
+        // Group
+        {
+            $group:{
+                _id:null,
+                totalEscrowVolume:{ $sum:"$totalAmount" },
+                netEarning:{ $sum:"$netAmount" }
+            }
+        }
+    ]);
+
+    // Prepare weekly graph payload
+    const weekMap = { 
+        2:"monday", 3:"tuesday", 4:"wednesday", 5:"thursday",
+        6:"friday", 7:"saturday", 1:"sunday" 
+    };
+
+    // Grapgh
+    const graph = {
+        monday:0, tuesday:0, wednesday:0, thursday:0,
+        friday:0, saturday:0, sunday:0
+    };
+
+    // Weekly earnings
+    weeklyEarnings.forEach(item => {
+        const day = weekMap[item._id];
+        if(day) graph[day] = item.earning;
+    });
+
+    // Prepare totals payload
+    const payload = {
+        graph,
+        totalEscrowVolume: totals[0]?.totalEscrowVolume || 0,
+        netEarning: totals[0]?.netEarning || 0
+    };
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, payload, "Business financial performance has been fetched"));
+});
+
 // Fetch business earnings
 const fetchBusinessEarnings = asyncHandler(async (request, response) => {
     // Get business profile ID
@@ -136,4 +226,5 @@ const fetchBusinessEarnings = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, escrow, "Business earnings have been fetched"));    
 });
 
-module.exports = { fetchBusinessWalletAnalytics, fetchBusinessRecentTransactions, fetchBusinessEarnings };
+module.exports = { fetchBusinessWalletAnalytics, fetchBusinessRecentTransactions, 
+fetchBusinessFinancialPerformance, fetchBusinessEarnings };

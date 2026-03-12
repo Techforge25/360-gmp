@@ -98,7 +98,7 @@ const fetchBusinessRecentTransactions = asyncHandler(async (request, response) =
     if(status && (!["pending", "failed", "completed"].includes(status))) throw new ApiError(400, "Invalid status type");
 
     // Base filter
-    const baseFilter = { ownerId:businessProfileId, ownerModel:"BusinessProfile" };
+    const baseFilter = { ownerId:businessProfileId, ownerModel:"BusinessProfile", type:"sale" };
     if(status) baseFilter.status = status;
 
     // Pagination options

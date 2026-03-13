@@ -86,9 +86,6 @@ const verifyAddFundsUser = asyncHandler(async (request, response) => {
     // Check payment status
     if(session.payment_status === "paid") 
     {
-        // Redirect url
-        const redirectUrl = `${process.env.FRONTEND_URL}`;
-
         // Get metadata
         const { userProfileId } = session.metadata;
         if (!userProfileId) throw new ApiError(400, "User profile ID is missing in stripe metadata");
@@ -132,10 +129,10 @@ const verifyAddFundsUser = asyncHandler(async (request, response) => {
 
             // Commit changes
             await dbSession.commitTransaction();
-            dbSession.endSession();
+            dbSession.endSession();           
 
             // Response
-            return response.status(303).redirect(redirectUrl);
+            return response.status(303).redirect(`${process.env.FRONTEND_URL}/wallet/user`);
         }
         catch (error) 
         {

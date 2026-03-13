@@ -210,7 +210,7 @@ const fetchUserPurchases = asyncHandler(async (request, response) => {
     const options = {
         page: Number(page),
         limit: Number(limit),
-        select:"orderId createdAt status amount type -_id",
+        select:"orderId createdAt status amount -_id",
         lean: true,
         sort: { createdAt: -1 }
     };

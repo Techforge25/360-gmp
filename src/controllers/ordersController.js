@@ -214,7 +214,7 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
             totalAmount: amount,
             platformFee: Number(platformFee),
             netAmount: Number(netAmount),
-            status: 'held', // Paisa hold ho gaya
+            status: 'held', // Amount held
             paymentMethod:"stripe"
         }], { session:dbSession });
 

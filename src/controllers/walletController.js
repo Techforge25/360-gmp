@@ -14,6 +14,7 @@ const User = require("../models/users");
 // Connect Stripe account (onboarding)
 const connectStripeAccount = asyncHandler(async (request, response) => {
     const userId = request.user._id;
+    const role = request.user.role;
 
     // Get parent user's email for stripe dashboard
     const user = await User.findById(userId).select("email").lean();
@@ -33,9 +34,9 @@ const connectStripeAccount = asyncHandler(async (request, response) => {
     // Business profile
     if(ownerModel === "BusinessProfile") 
     {
-        owner = await BusinessProfile.findOne({ ownerUserId:userId });
+        owner = await BusinessProfile.findOne({ ownerUserId:userId }).select("stripeConnectId");
         if(!owner) throw new ApiError(404, "Business profile not found");
-        stripeAccountId = owner.stripeConnectId;
+        stripeAccountId = owner.stripeConnectId;      
     }
 
     // User profile
@@ -66,7 +67,7 @@ const connectStripeAccount = asyncHandler(async (request, response) => {
     const accountLink = await stripe.accountLinks.create({
         account: stripeAccountId,
         refresh_url: `${process.env.FRONTEND_URL}/stripe/onboarding/refresh`,
-        return_url: `${process.env.FRONTEND_URL}/stripe/onboarding/success`,
+        return_url: `${process.env.FRONTEND_URL}/wallet/${role}`,
         type: "account_onboarding"
     });
 
@@ -109,8 +110,8 @@ const WithdrawFunds = asyncHandler(async (request, response) => {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
     // Check payout account verification
-    // const account = await stripe.accounts.retrieve(owner.stripeConnectId);
-    // if(!account.payouts_enabled) throw new ApiError(400, "Your payout account is not verified yet");
+    const account = await stripe.accounts.retrieve(owner.stripeConnectId);
+    if(!account.payouts_enabled) throw new ApiError(400, "Your payout account is not verified yet");
 
     // Start db session
     const session = await mongoose.startSession();
@@ -152,7 +153,7 @@ const WithdrawFunds = asyncHandler(async (request, response) => {
     {
         const transfer = await stripe.transfers.create({
             amount: Math.round(amount * 100),
-            currency: wallet.currency.toLowerCase(),
+            currency: wallet.currency,
             destination: owner.stripeConnectId,
             description: `Wallet withdrawal`,
             metadata: { withdrawalId: withdrawalDoc[0]._id.toString() }

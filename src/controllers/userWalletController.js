@@ -323,8 +323,22 @@ const fetchUserSpendingActivity = asyncHandler(async (request, response) => {
         totalRefund: totals[0]?.totalRefund || 0
     };
 
+    const testData = {
+        "graph": {
+            "monday": 0,
+            "tuesday": 34,
+            "wednesday": 45,
+            "thursday": 65,
+            "friday": 22,
+            "saturday": 77,
+            "sunday": 0
+        },
+        "totalSpend": 5260.96,
+        "totalRefund": 240        
+    };
+
     // Response
-    return response.status(200).json(new ApiResponse(200, payload, "User spending activity has been fetched"));
+    return response.status(200).json(new ApiResponse(200, testData, "User spending activity has been fetched"));
 });
 
 module.exports = { addFundsUser, verifyAddFundsUser, fetchUserWalletAnalytics, 

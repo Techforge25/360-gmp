@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
-const { connectStripeAccount, WithdrawFunds } = require("../controllers/walletController");
+const { connectStripeAccount, WithdrawFunds, viewTransactionDetails } = require("../controllers/walletController");
 const { addFundsUser, verifyAddFundsUser, fetchUserWalletAnalytics, 
 fetchUserPurchases, fetchUserSpendingActivity } = require("../controllers/userWalletController");
 const { fetchBusinessWalletAnalytics, fetchBusinessRecentTransactions, fetchBusinessEarnings, 
@@ -23,6 +23,10 @@ walletRouter.route("/success")
 // Withdraw funds from wallet to Stripe account
 walletRouter.route("/withdraw")
 .post(authentication, authorization(["user", "business", "admin"]), WithdrawFunds);
+
+// View transaction details
+walletRouter.route("/:orderId/transaction-details")
+.get(authentication, authorization(["user", "business", "admin"]), viewTransactionDetails);
 
 
 // ********************* FOR USER PROFILE ********************* //

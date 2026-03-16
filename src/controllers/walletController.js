@@ -10,6 +10,8 @@ const withdrawFundsValidationSchema = require("../validations/withdrawFundValida
 const UserProfile = require("../models/userProfile");
 const Withdrawal = require("../models/withdrawalModel");
 const User = require("../models/users");
+const Order = require("../models/orders");
+const convertToMongoId = require("../utils/convertToMongoId");
 
 // Connect Stripe account (onboarding)
 const connectStripeAccount = asyncHandler(async (request, response) => {
@@ -180,4 +182,62 @@ const WithdrawFunds = asyncHandler(async (request, response) => {
     }
 });
 
-module.exports = { connectStripeAccount, WithdrawFunds };
+// View transaction detials
+const viewTransactionTimeline = asyncHandler(async (request, response) => {
+    const { orderId } = request.params;
+    
+    // Fetch transaction timeline
+    const timeline = await Order.aggregate([
+        // Match order
+        { $match: { _id: convertToMongoId(orderId) } },
+
+        // Lookup inside escrow transaction
+        {
+            $lookup:{
+                from: "escrowtransactions",
+                localField: "_id",
+                foreignField: "orderId",
+                as: "escrow"
+            }
+        },
+
+        // Lookup inside user profile
+        {
+            $lookup:{
+                from: "userprofiles",
+                localField: "buyerUserProfileId",
+                foreignField: "_id",
+                as: "userProfile"
+            }
+        },        
+
+        // Unwind
+        { $unwind:{ path:"$escrow", preserveNullAndEmptyArrays:true } },
+        { $unwind:{ path:"$userProfile", preserveNullAndEmptyArrays:true } },
+
+        // Projection
+        {
+            $project:{ 
+                status:1,
+                orderPlacedAt: "$createdAt", 
+                shippedAt: "$tracking.shippedAt", 
+                deliveredAt: "$tracking.deliveredAt",
+                completedAt: "$completedAt",
+                grossSaleAmount: "$escrow.totalAmount",
+                platformFee: "$escrow.platformFee",
+                netAmount: "$escrow.netAmount",
+                shippingAddress:{ lineAddresses:"$shippingAddress.lineAddress" },
+                buyerDetails:{ name: "$userProfile.fullName", email: "$userProfile.email" },
+                paymentMethod: "$escrow.paymentMethod",
+            }
+        }
+    ]);
+
+    // Validate
+    if(!timeline.length) throw new ApiError(404, "Order not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, timeline[0], "Transaction timeline has been fetched"));
+});
+
+module.exports = { connectStripeAccount, WithdrawFunds, viewTransactionTimeline };

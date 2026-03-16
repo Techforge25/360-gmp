@@ -124,7 +124,7 @@ const viewProduct = asyncHandler(async (request, response) => {
 
     // Find product and business profile
     const [product, businessProfile] = await Promise.all([
-        Product.findById(productId).populate({ path:"businessId", select:"-_id companyName foundedDate logo" }),
+        Product.findById(productId).populate({ path:"businessId", select:"companyName foundedDate logo" }),
         BusinessProfile.findOne({ ownerUserId:userId }).select("_id")
     ]);
     if(!product) throw new ApiError(404, "Product not found");

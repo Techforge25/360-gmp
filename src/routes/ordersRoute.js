@@ -37,7 +37,7 @@ orderRouter.route("/:orderId/complete")
 
 // Cancel order by buyer
 orderRouter.route("/:orderId/cancel")
-.get(authentication, authorization(["user"]), cancelOrder);
+.patch(authentication, authorization(["user"]), cancelOrder);
 
 // ===================== USER SIDE STARTED ===================== //
 // Fetch all order of the user

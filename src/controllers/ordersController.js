@@ -15,7 +15,7 @@ const Transaction = require("../models/transactionModel");
 const TrialUsage = require("../models/trialUsageModel");
 const Notification = require("../models/notificationsModel");
 const validate = require("../utils/validate");
-const { createOrderValidationSchema, updateOrderStatusValidationSchema, updateTrackingInfoValidationSchema } = require("../validations/orderValidator");
+const { createOrderValidationSchema, updateOrderStatusValidationSchema, updateTrackingInfoValidationSchema, cancelOrderValidationSchema } = require("../validations/orderValidator");
 
 // Create order - Purchase product using stripe payment
 const createOrder = asyncHandler(async (request, response) => {
@@ -737,7 +737,11 @@ const cancelOrder = asyncHandler(async (request, response) => {
             );
         }
 
+        // Get validated payload
+        const { cancellation } = validate(cancelOrderValidationSchema, request.body);
+
         // Set order status
+        order.cancellation = cancellation; // Reason
         order.status = "cancelled";
         await order.save({ session:dbSession });
 

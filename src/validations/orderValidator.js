@@ -36,8 +36,12 @@ const updateTrackingInfoValidationSchema = joi.object({
 // Cancel order validation schema
 const cancelOrderValidationSchema = joi.object({
     cancellation: joi.object({
-        reason: joi.string().trim().required().label("Cancellation reason"),
-        other: joi.string().trim().optional().allow(null, "").label("Other details"),
+        reason: joi.string().trim()
+        .valid("Changed Mind", "Found a Better Option", "Wrong Item Ordered", "Delayed Delivery", "Other")
+        .required().label("Cancellation reason"),
+
+        other: joi.string().trim()
+        .when("reason", { is:"Other", then:joi.required(), otherwise:joi.forbidden() }).label("Other details")
     }).label("Cancellation")
 });
 

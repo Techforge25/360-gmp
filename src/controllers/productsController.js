@@ -145,7 +145,7 @@ const viewProduct = asyncHandler(async (request, response) => {
     }
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { product, isOwner }, "Product has been fetched"));
+    return response.status(200).json(new ApiResponse(200, { ...product.toObject(), isOwner }, "Product has been fetched"));
 });
 
 // Update product

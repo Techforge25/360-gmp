@@ -1,6 +1,7 @@
 const Joi = require("joi");
 
 const createProductSchema = Joi.object({
+    // Basic info
     title: Joi.string().trim().min(3).max(150).required().label("Product title"),
     image: Joi.string().uri().required().label("Main image"),
     groupImages: Joi.array().items(Joi.string().uri()).max(3).label("Group images"),
@@ -8,11 +9,13 @@ const createProductSchema = Joi.object({
     category: Joi.string().required().label("Product category"),
     pricePerUnit: Joi.number().positive().required().label("Price per unit"),
 
-    tieredPricing: Joi.object().pattern(
-        Joi.string().pattern(/^\d+(-\d+)?|\d+\+$/), // e.g. "1-10", "11-50", "51+"
-        Joi.number().positive()
-    ).allow(null).label("Tiered pricing"),
+    // Tiered pricing
+    tieredPricing: Joi.array().items(Joi.object({
+        qty: Joi.string().trim().max(100).required().label("Tiered pricing quantity"),
+        price: Joi.number().min(1).positive().required().label("Price")
+    })).optional().label("Tiered pricing"),
 
+    // Quantity and stocks
     minOrderQty: Joi.number().integer().min(1).required().label("Minimum order quantity"),
     stockQty: Joi.number().integer().min(Joi.ref("minOrderQty")).required().label("Stock quantity"),
     lowStockThreshold: Joi.number().integer().min(1).allow(null).label("Lock threeshold"),    

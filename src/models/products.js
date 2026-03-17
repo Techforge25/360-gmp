@@ -11,7 +11,10 @@ const productSchema = new Schema({
     detail: { type:String, required:true },
     category: { type:String, required:true },
     pricePerUnit: { type:Number, required:true },
-    tieredPricing: { type:Map, of:Number }, // e.g. { "1-10": 10, "11-50": 9, "51+": 8 }
+    tieredPricing: [{
+        qty: { type:String, trim:true },
+        price: { type:Number, min:0 }
+    }],
     minOrderQty: { type:Number, required:true, default:1 },
     stockQty: { type:Number, required:true, default:0 },
     lowStockThreshold: { type:Number, default:5 }, // For critical stock alert

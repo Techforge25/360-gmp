@@ -723,6 +723,20 @@ const cancelOrder = asyncHandler(async (request, response) => {
 
     try
     {
+        // Restore stock quantities
+        for(const item of order.items)
+        {
+            // Get each product ID and quantity
+            const { productId, quantity } = item;
+
+            // Update
+            await Product.findByIdAndUpdate(
+                productId,
+                { $inc:{ stockQty: Number(quantity) } },
+                { session:dbSession }
+            );
+        }
+
         // Set order status
         order.status = "cancelled";
         await order.save({ session:dbSession });

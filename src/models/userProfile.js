@@ -39,7 +39,12 @@ const userProfileSchema = new Schema({
       description: String,
       grade: String
     },
-    isVerified: { type: Boolean, default: false }
+    isVerified: { type: Boolean, default: false },
+
+    // Account restriction
+    cancellationCount: { type:Number, default:0 }, // Consecutive cancellations
+    lastCancellationAt: { type:Date, default:null }, // Last cancel time
+    accountFrozenUntil: { type:Date, default:null } // Freeze expiry    
 }, { timestamps: true });
 
 // Model

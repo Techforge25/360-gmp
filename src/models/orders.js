@@ -39,6 +39,9 @@ const orderSchema = new Schema({
 
     // Timestamp tracker upon order completion
     completedAt: { type:Date },
+
+    // Order cancellation reasoning
+    cancellationReason: { type:String, trim:true }
 }, { timestamps: true });
 
 // Inject plugin

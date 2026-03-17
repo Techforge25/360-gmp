@@ -42,7 +42,7 @@ const orderSchema = new Schema({
 
     // Order cancellation reasoning
     cancellation: {
-        reason: { type:String, trim:true }, // Dropdown
+        reason: { type:String, enum:["Changed Mind", "Found a Better Option", "Wrong Item Ordered", "Delayed Preparing Time", "Other"] },
         other: { type:String, trim:true }
     }
 }, { timestamps: true });

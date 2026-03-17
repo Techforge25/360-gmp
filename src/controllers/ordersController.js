@@ -702,7 +702,7 @@ const cancelOrder = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Find buyer profile
-    const buyerProfile = await UserProfile.findOne({ userId }).lean();
+    const buyerProfile = await UserProfile.findOne({ userId });
     if(!buyerProfile) throw new ApiError(404, "User profile not found");
 
     // Find order
@@ -711,11 +711,20 @@ const cancelOrder = asyncHandler(async (request, response) => {
 
     // Authorize owner
     if(String(buyerProfile._id) !== String(order.buyerUserProfileId)) throw new ApiError(403, "You are not authorized to cancel this order");
-    
+
     // Validate current status
     const allowedCurrentStatuses = ["pending", "processing"];
     if(order.status === "cancelled") return response.status(200).json(new ApiResponse(200, null, "Order has already been cancelled"));
     if(!allowedCurrentStatuses.includes(order.status)) throw new ApiError(400, `Order cannot be cancelled in its current status: ${order.status}`);
+
+    // Check if account is frozen
+    if(buyerProfile.accountFrozenUntil && buyerProfile.accountFrozenUntil > new Date())
+    {
+        throw new ApiError(403, "Your account is temporarily frozen due to repeated cancellations. Please try again later.");
+    }    
+
+    // Get validated payload
+    const { cancellation } = validate(cancelOrderValidationSchema, request.body);
 
     // Start db transaction
     const dbSession = await mongoose.startSession();
@@ -726,7 +735,7 @@ const cancelOrder = asyncHandler(async (request, response) => {
         // Restore stock quantities
         for(const item of order.items)
         {
-            // Get each product ID and quantity
+            // Get each product ID & quantity
             const { productId, quantity } = item;
 
             // Update
@@ -737,54 +746,91 @@ const cancelOrder = asyncHandler(async (request, response) => {
             );
         }
 
-        // Get validated payload
-        const { cancellation } = validate(cancelOrderValidationSchema, request.body);
-
         // Set order status
-        order.cancellation = cancellation; // Reason
+        order.cancellation = cancellation;
         order.status = "cancelled";
         await order.save({ session:dbSession });
 
-        // Mark transaction as refund
-        const transaction = await Transaction.findOneAndUpdate(
-            { orderId },
-            { $set:{ type:"refund", status:"completed" } },
-            { new:true, session:dbSession }
-        );
-        if(!transaction) throw new ApiError(500, "Failed to update transaction");        
-
-        // Mark escrow transaction as refunded
+        // Update escrow status
         const escrow = await EscrowTransaction.findOneAndUpdate(
-            { orderId }, 
-            { $set:{ status:"refunded" } }, 
+            { orderId },
+            { $set:{ status:"refunded" } },
             { new:true, session:dbSession }
         );
-        if(!escrow) throw new ApiError(404, "Escrow record not found in escrow transaction");
 
-        // Deduct net amount from seller's wallet
+        if(!escrow) throw new ApiError(404, "Escrow record not found");
+
+        // Wallet adjustments
         await Wallet.findOneAndUpdate(
             { ownerId: order.sellerBusinessId, ownerModel:"BusinessProfile" },
-            { $inc: { pendingBalance: -escrow.netAmount } },
+            { $inc:{ pendingBalance: -escrow.netAmount } },
             { upsert:true, session:dbSession }
         );
 
-        // Refund amount to buyer's wallet
         await Wallet.findOneAndUpdate(
             { ownerId: order.buyerUserProfileId, ownerModel:"UserProfile" },
-            { $inc: { availableBalance: escrow.totalAmount } },
+            { $inc:{ availableBalance: escrow.totalAmount } },
             { upsert:true, session:dbSession }
         );
 
-        // Complete transaction
+        // Handle consecutive cancellations
+        const now = new Date();
+        let cancellationCount = buyerProfile.cancellationCount || 0;
+        let lastCancellationAt = buyerProfile.lastCancellationAt;
+
+        // If last cancellation was within 24 hours then count as consecutive
+        if(lastCancellationAt)
+        {
+            const diffInHours = (now - new Date(lastCancellationAt)) / (1000 * 60 * 60);
+
+            if(diffInHours <= 24)
+            {
+                cancellationCount += 1;
+            }
+            else
+            {
+                cancellationCount = 1; // Reset if gap is more than 24h
+            }
+        }
+        else
+        {
+            cancellationCount = 1;
+        }
+
+        let freezeUntil = null;
+        if(cancellationCount >= 3)
+        {
+            freezeUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+            cancellationCount = 0; // Reset counter after freeze
+        }
+
+        // Update user profile restriction data
+        await UserProfile.findByIdAndUpdate(
+            buyerProfile._id,
+            {
+                $set:{
+                    cancellationCount,
+                    lastCancellationAt: now,
+                    accountFrozenUntil: freezeUntil
+                }
+            },
+            { session:dbSession }
+        );
+
+        // Commit transaction
         await dbSession.commitTransaction();
-        dbSession.endSession();   
+        dbSession.endSession();
 
-        // Emit event real-time
+        // Emit real-time update
         const io = request.app.get("io");
-        io.to(String(order.sellerBusinessId)).emit("update-order-status", { orderId:order._id, status:order.status });         
+        io.to(String(order.sellerBusinessId)).emit("update-order-status", {
+            orderId: order._id,
+            status: order.status
+        });
 
-        // Response
-        return response.status(200).json(new ApiResponse(200, { orderId:order._id, status:order.status }, "Order has been cancelled"));
+        return response.status(200).json(
+            new ApiResponse(200, { orderId:order._id, status:order.status }, "Order cancelled successfully")
+        );
     }
     catch(error)
     {

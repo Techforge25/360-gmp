@@ -41,7 +41,10 @@ const orderSchema = new Schema({
     completedAt: { type:Date },
 
     // Order cancellation reasoning
-    cancellationReason: { type:String, trim:true }
+    cancellation: {
+        reason: { type:String, trim:true }, // Dropdown
+        other: { type:String, trim:true }
+    }
 }, { timestamps: true });
 
 // Inject plugin

@@ -33,4 +33,13 @@ const updateTrackingInfoValidationSchema = joi.object({
     trackingId: joi.string().trim().min(2).max(100).required().label("Tracking ID"),
 });
 
-module.exports = { createOrderValidationSchema, updateOrderStatusValidationSchema, updateTrackingInfoValidationSchema };
+// Cancel order validation schema
+const cancelOrderValidationSchema = joi.object({
+    cancellation: joi.object({
+        reason: joi.string().trim().required().label("Cancellation reason"),
+        other: joi.string().trim().optional().allow(null, "").label("Other details"),
+    }).label("Cancellation")
+});
+
+module.exports = { createOrderValidationSchema, updateOrderStatusValidationSchema, 
+updateTrackingInfoValidationSchema, cancelOrderValidationSchema };

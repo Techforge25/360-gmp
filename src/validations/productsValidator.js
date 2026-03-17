@@ -19,7 +19,6 @@ const createProductSchema = Joi.object({
     minOrderQty: Joi.number().integer().min(1).required().label("Minimum order quantity"),
     stockQty: Joi.number().integer().min(Joi.ref("minOrderQty")).required().label("Stock quantity"),
     lowStockThreshold: Joi.number().integer().min(1).allow(null).label("Lock threeshold"),    
-    shippingMethod: Joi.string().trim().max(200).required().label("Shipping Method"),
     shippingCost: Joi.number().min(0).required().label("Shipping Cost"),
     estimatedDeliveryDays: Joi.string().required().label("Estimated Delivery Days"),    
     isFeatured: Joi.boolean(),

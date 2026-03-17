@@ -18,7 +18,6 @@ const productSchema = new Schema({
     minOrderQty: { type:Number, required:true, default:1 },
     stockQty: { type:Number, required:true, default:0 },
     lowStockThreshold: { type:Number, default:5 }, // For critical stock alert
-    shippingMethod:{ type:String, required:true },
     shippingCost:{ type:Number, required:true, default:0 },
     estimatedDeliveryDays: { type:String, required:true },
     isFeatured: { type:Boolean, default:false },

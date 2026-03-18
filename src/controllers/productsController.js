@@ -156,7 +156,7 @@ const updateProduct = asyncHandler(async (request, response) => {
     if(!business) throw new ApiError(404, "Business not found");
 
     // Find product
-    const product = await Product.findById(productId);
+    const product = await Product.findById(productId).select("_id businessId").lean();
     if(!product) throw new ApiError(404, "Product not found");
 
     // Check authorization
@@ -211,7 +211,7 @@ const deleteProduct = asyncHandler(async (request, response) => {
     if(!business) throw new ApiError(404, "Business not found");
 
     // Find product
-    const product = await Product.findById(productId).select("_id").lean();
+    const product = await Product.findById(productId).select("_id businessId").lean();
     if(!product) throw new ApiError(404, "Product not found");
 
     // Check authorization

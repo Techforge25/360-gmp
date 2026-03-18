@@ -124,13 +124,13 @@ const viewProduct = asyncHandler(async (request, response) => {
 
     // Find product and business profile
     const [product, businessProfile] = await Promise.all([
-        Product.findById(productId).populate({ path:"businessId", select:"companyName foundedDate logo" }),
+        Product.findById(productId).populate({ path:"businessId", select:"_id companyName foundedDate logo" }),
         BusinessProfile.findOne({ ownerUserId:userId }).select("_id")
     ]);
     if(!product) throw new ApiError(404, "Product not found");
 
     // Owner flag
-    const isOwner = businessProfile && String(product.businessId) === String(businessProfile._id);
+    const isOwner = product.businessId._id.equals(businessProfile?._id);
 
     // Check if already viewed
     const alreadyViewed = product.viewedBy.some(id => String(id) === String(userId));
@@ -160,7 +160,7 @@ const updateProduct = asyncHandler(async (request, response) => {
     if(!product) throw new ApiError(404, "Product not found");
 
     // Check authorization
-    if(product.businessId !== business._id) throw new ApiError(403, "Unauthorized! You cannot update this product");
+    if(!product.businessId.equals(business._id)) throw new ApiError(403, "Unauthorized! You cannot update this product");
 
     // Get validated payload
     const payload = validate(createProductSchema, request.body);
@@ -215,7 +215,7 @@ const deleteProduct = asyncHandler(async (request, response) => {
     if(!product) throw new ApiError(404, "Product not found");
 
     // Check authorization
-    if(String(business._id) !== String(product.businessId))
+    if(!product.businessId.equals(business._id))
     {
         throw new ApiError(403, "Unauthorized! You cannot delete this product");
     }

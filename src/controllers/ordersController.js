@@ -15,7 +15,8 @@ const Transaction = require("../models/transactionModel");
 const TrialUsage = require("../models/trialUsageModel");
 const Notification = require("../models/notificationsModel");
 const validate = require("../utils/validate");
-const { createOrderValidationSchema, updateOrderStatusValidationSchema, updateTrackingInfoValidationSchema, cancelOrderValidationSchema } = require("../validations/orderValidator");
+const { createOrderValidationSchema, updateOrderStatusValidationSchema, 
+updateTrackingInfoValidationSchema, cancelOrderValidationSchema } = require("../validations/orderValidator");
 
 // Create order - Purchase product using stripe payment
 const createOrder = asyncHandler(async (request, response) => {
@@ -298,7 +299,7 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
         io.to(String(businessProfile._id)).emit("order-creation", order);
 
         // Response
-        return response.status(303).redirect(`${frontendUrl}/dashboard/user/orders/OrderTrackingPage/${order._id}`);
+        return response.status(303).redirect(`${frontendUrl}/dashboard/user/checkout/${order._id}`);
     } 
     catch(error) 
     {

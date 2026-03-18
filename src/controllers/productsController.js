@@ -220,6 +220,9 @@ const deleteProduct = asyncHandler(async (request, response) => {
         throw new ApiError(403, "Unauthorized! You cannot delete this product");
     }
 
+    const deleteProduct = await Product.findByIdAndDelete(productId);
+    if(!deleteProduct) throw new ApiError(500, "Failed to delete product");
+
     // Response
     return response.status(200).json(new ApiResponse(200, product, "Product has been deleted"));
 });

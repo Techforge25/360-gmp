@@ -299,7 +299,7 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
         io.to(String(businessProfile._id)).emit("order-creation", order);
 
         // Response
-        return response.status(303).redirect(`${frontendUrl}/dashboard/user/checkout/${order._id}`);
+        return response.status(303).redirect(`${frontendUrl}/dashboard/user/checkout/payment-confirmation/${order._id}`);
     } 
     catch(error) 
     {

@@ -71,7 +71,7 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
     if(!session_id) throw new ApiError(400, "Session ID is missing");
 
     // Redirect to frontend
-    const redirectUrl = `${frontendUrl}/subscription/success?session_id=${session_id}`;
+    const redirectUrl = `${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`;
     return response.status(303).redirect(redirectUrl);
 });
 
@@ -282,8 +282,10 @@ const getMySubscription = asyncHandler(async (request, response) => {
         { $project:{ _id:0, __v:0, "plan._id":0, "plan.__v":0, userId:0, planId:0 } }
     ]);
 
+    if(!subscription.length) throw new ApiError(404, "Subscription not found");
+
     // Response
-    return response.status(200).json(new ApiResponse(200, subscription, "Subscription details has been fetched"));
+    return response.status(200).json(new ApiResponse(200, subscription[0], "Subscription details has been fetched"));
 });
 
 // Total spent on subscriptions till now

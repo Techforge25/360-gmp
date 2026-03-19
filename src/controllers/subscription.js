@@ -83,6 +83,7 @@ const stripeWebhook = asyncHandler(async (request, response) => {
 
     // Get webhook signature
     const signature = request.headers["stripe-signature"];
+    console.log("Signature received", signature);
 
     let event;
 
@@ -102,6 +103,7 @@ const stripeWebhook = asyncHandler(async (request, response) => {
     // Checkout completed (New Subscription)
     if(eventType === "checkout.session.completed")
     {
+        console.log("checkout.session.completed");
         const session = event.data.object;
 
         // Only subscription checkout
@@ -126,6 +128,8 @@ const stripeWebhook = asyncHandler(async (request, response) => {
 
         if(subscription)
         {
+            console.log("Subscription plan upgraded");
+
             // Save to db
             subscription.stripeSubscriptionId = stripeSubscriptionId;
             subscription.planId = planId;
@@ -145,6 +149,8 @@ const stripeWebhook = asyncHandler(async (request, response) => {
         }
         else
         {
+            console.log("First time subscription creation");
+
             // Created 1st time
             await Subscription.create({
                 userId,
@@ -169,6 +175,8 @@ const stripeWebhook = asyncHandler(async (request, response) => {
     // Recurring Payment Success
     if(eventType === "invoice.payment_succeeded")
     {
+        console.log("invoice.payment_succeeded");
+
         // Get invoice event object
         const invoice = event.data.object;
         const stripeSubscriptionId = invoice.subscription;
@@ -203,6 +211,8 @@ const stripeWebhook = asyncHandler(async (request, response) => {
     // Payment Failed
     if(eventType === "invoice.payment_failed")
     {
+        console.log("invoice.payment_failed");
+
         // Get invoice event object
         const invoice = event.data.object;
         const stripeSubscriptionId = invoice.subscription;
@@ -230,6 +240,8 @@ const stripeWebhook = asyncHandler(async (request, response) => {
     // Subscription Cancelled
     if(eventType === "customer.subscription.deleted")
     {
+        console.log("customer.subscription.deleted");
+        
         // Get customer event object
         const stripeSubscription = event.data.object;
 

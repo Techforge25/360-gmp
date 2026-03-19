@@ -1,5 +1,4 @@
 const express = require("express");
-
 const { authentication } = require("../middlewares/auth");
 const { createSubscriptionStripe, verifyStripePayment, stripeWebhook, getMySubscription, 
 totalSpent, checkSubscriptionStatus } = require("../controllers/subscription");

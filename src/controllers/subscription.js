@@ -76,97 +76,9 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
     return response.status(303).redirect(redirectUrl);
 });
 
-// Verify stripe payment
-// const verifyStripePayment = asyncHandler(async (request, response) => {
-//     const { session_id } = request.query;
-//     if(!session_id) throw new ApiError(400, "Session ID is missing");
-
-//     // Initialize stripe SDK
-//     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-//     // Get checkout session details
-//     const session = await stripe.checkout.sessions.retrieve(session_id);
-
-//     // Validate session
-//     if(!session || !session.id) throw new ApiError(404, "Session not found");
-
-//     // Prevent dual payment for single session
-//     const existing = await Subscription.findOne({ stripeSubscriptionId:session.id });
-//     if(existing) return response.status(200).json(new ApiResponse(200, null, "Payment already processed"));
-
-//     // Check payment status
-//     if(session.payment_status === "paid") 
-//     {
-//         // Get subscription amount from stripe session
-//         // const subscriptionAmount = session.amount_total / 100;
-
-//         // Redirect url
-//         const redirectUrl = `${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`;
-
-//         // Get metadata
-//         const { userId, planId, planName } = session.metadata;
-        
-//         // If trial selected
-//         if(planName === "TRIAL")
-//         {
-//             // Calculate for trial period
-//             const startDate = new Date();
-//             const endDate = new Date();
-//             endDate.setDate(endDate.getDate() + 14);
-            
-//             // Create trial period
-//             const trialSubscription = await Subscription.create({ 
-//                 userId, 
-//                 planId, 
-//                 status:"active", 
-//                 startDate, 
-//                 endDate,
-//                 stripeSubscriptionId:session.id
-//             });
-//             if(!trialSubscription) throw new ApiError(500, "Failed to create trial period");            
-
-//             // Send notification for trial
-//             await sendNotification({ 
-//                 userOwnerId:userId,
-//                 title: "Subscription Activation",
-//                 content:"You have subscribed to our 14-days Trial period",
-//                 io: request.app.get("io")
-//             });
-
-//             // Response for trial
-//             return response.status(303).redirect(redirectUrl);
-//         }
-
-//         // Check existing subscription
-//         const existingSubscription = await Subscription.findOne({ userId, planId, status:"active", endDate:{ $gt:new Date() }});
-//         if(existingSubscription) return response.status(200).json(new ApiResponse(200, null, "Subscription has alraedy been purchased"));
-
-//         // Get subscription dates
-//         const { startDate, endDate } = getMonthlySubscriptionDates();
-
-//         // Upgrade subscription
-//         const subscription = await Subscription.create({ userId, planId, status:"active", startDate, endDate, stripeSubscriptionId:session.id });
-//         if(!subscription) throw new ApiError(400, "Failed to update subscription");       
-
-//         // Send notification
-//         await sendNotification({ 
-//             userOwnerId:userId,
-//             title: "Subscription activation",
-//             content: `You have successfully subscribed to ${planName}`,
-//             io: request.app.get("io")
-//         });
-
-//         // Response
-//         return response.status(303).redirect(redirectUrl);
-//     } 
-//     else 
-//     {
-//         throw new ApiError(400, "Payment not completed");
-//     }
-// });
-
 // Stripe webhook (Handle recurring subscription lifecycle)
 const stripeWebhook = asyncHandler(async (request, response) => {
+    console.log("Webhook fired");
 
     // Initialize stripe SDK
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);

@@ -13,7 +13,7 @@ subscriptionRouter.route("/stripe/cancel").get((request, response) => {
     return response.status(303).redirect(`${process.env.FRONTEND_URL}/onboarding/plans`);
 });
 // Stripe webhook for subscription
-subscriptionRouter.post("/webhook", express.raw({ type: "application/json" }), stripeWebhook);
+subscriptionRouter.post("/webhook", stripeWebhook);
 
 // Get my subscription
 subscriptionRouter.route("/").get(authentication, getMySubscription);

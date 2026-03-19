@@ -1,10 +1,10 @@
-const express = require("express");
+const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
 const { createSubscriptionStripe, verifyStripePayment, stripeWebhook, getMySubscription, 
 totalSpent, checkSubscriptionStatus } = require("../controllers/subscription");
 
 // Router instance
-const subscriptionRouter = express.Router();
+const subscriptionRouter = Router();
 
 // Stripe
 subscriptionRouter.route("/stripe/create").post(authentication, createSubscriptionStripe);
@@ -13,7 +13,7 @@ subscriptionRouter.route("/stripe/cancel").get((request, response) => {
     return response.status(303).redirect(`${process.env.FRONTEND_URL}/onboarding/plans`);
 });
 // Stripe webhook for subscription
-subscriptionRouter.post("/webhook", stripeWebhook);
+subscriptionRouter.route("/webhook").post(stripeWebhook);
 
 // Get my subscription
 subscriptionRouter.route("/").get(authentication, getMySubscription);

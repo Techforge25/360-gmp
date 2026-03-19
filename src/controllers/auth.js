@@ -14,13 +14,13 @@ const sendNotification = require("../utils/sendNotification");
 const validate = require("../utils/validate");
 const forgotPasswordSchema = require("../validations/forgotPasswordValidator");
 const resetPasswordSchema = require("../validations/resetPasswordValidator");
-const { userSignupSchema } = require("../validations/user");
+const { userSignupValidator, userLoginValidator } = require("../validations/user");
 const verifyPasswordResetTokenSchema = require("../validations/verifyPasswordResetTokenValidator");
 
 // User signup
 const userSignup = asyncHandler(async (request, response) => {
     // Validate
-    const { email, passwordHash } = validate(userSignupSchema, request.body) || {};
+    const { email, passwordHash } = validate(userSignupValidator, request.body) || {};
 
     // Check if email exist
     const user = await User.findOne({ email: email.toLowerCase() }).select("_id email status").lean();
@@ -131,12 +131,10 @@ const verifyOTP = asyncHandler(async (request, response) => {
 
 // User login
 const userLogin = asyncHandler(async (request, response) => {
-    const { email, passwordHash } = request.body;
-    if(!email) throw new ApiError(400, "Email is required");
-    if(!passwordHash) throw new ApiError(400, "Password is required");
+    const { email, passwordHash } = validate(userLoginValidator, request.body) || {};
 
     // Find user
-    const user = await User.findOne({ email: email.toLowerCase() })
+    const user = await User.findOne({ email })
     .select("_id status role passwordHash isNewToPlatform refreshToken");
     if(!user) throw new ApiError(400, "Username or password is incorrect");
 
@@ -153,9 +151,6 @@ const userLogin = asyncHandler(async (request, response) => {
         BusinessProfile.findOne({ ownerUserId:user._id }).lean(),
         UserProfile.findOne({ userId:user._id }).lean()
     ]);
-
-    // Payload based on role
-    const profilePayload = user.role === "user" ? userProfile : businessProfile;
 
     // Generate access token & refresh tokens
     const accessToken = generateAccessToken({ 
@@ -176,11 +171,14 @@ const userLogin = asyncHandler(async (request, response) => {
     user.refreshToken = refreshToken;
     await user.save();
 
+    // Is new user flag
+    const isNewUser = Boolean(!user.role);
+
     // Response
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .json(new ApiResponse(200, { profilePayload, role:user.role, isNewToPlatform:user.isNewToPlatform }, "Login successful"));
+    .json(new ApiResponse(200, { role:user.role, isNewToPlatform:isNewUser }, "Login successful"));
 });
 
 // Logout

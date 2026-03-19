@@ -43,7 +43,7 @@ const createUserProfile = asyncHandler(async (request, response) => {
     const [wallet, user] = await Promise.all([
         Wallet.create({ 
             ownerId:profile._id, ownerModel:"UserProfile",
-            pendingBalance: 0,availableBalance: 0, totalEarned:0, currency: 'USD'
+            pendingBalance:0, availableBalance:0, totalEarned:0, currency:'USD'
         }),
         User.findByIdAndUpdate(userId, { role:"user", isNewToPlatform:false }, { new:true, lean:true })
     ]);

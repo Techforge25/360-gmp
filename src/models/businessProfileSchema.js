@@ -15,7 +15,7 @@ const BusinessProfileSchema = new Schema({
     primaryIndustry: { type: String, trim: true },
     stripeConnectId: { type: String, trim: true, default:null },
     operationHour: { type: String, trim: true },
-    conutryOfRegistration: { type: String, trim: true },
+    countryOfRegistration: { type: String, trim: true },
 
     // Legal & Compliance
     businessRegistrationNumber: { type: String, trim: true }, // New

@@ -99,6 +99,23 @@ io.on("connection", (socket) => {
     });    
 });
 
+// // Debug
+// const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
+// async function testPrice() {
+//   try 
+//   {
+//     const price = await stripe.prices.retrieve("price_1T6yVzJTJ44mqAzLsZcSSN3u");
+//     console.log("Price exists:", price);
+//   } 
+//   catch (error) 
+//   {
+//     console.error("Error:", error);
+//   }
+// }
+
+// testPrice();
+
 // Connect db
 connectDB()
 .then(() => {

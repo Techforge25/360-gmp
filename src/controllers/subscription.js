@@ -6,8 +6,6 @@ const asyncHandler = require("../utils/asyncHandler");
 const Stripe = require("stripe");
 const convertToMongoId = require("../utils/convertToMongoId");
 const sendNotification = require("../utils/sendNotification");
-const { frontendUrl } = require("../constants");
-const getMonthlySubscriptionDates = require("../utils/getSubscriptionDates");
 
 // Helper function to get 
 const getSubscriptionDates = (startingDate) => {

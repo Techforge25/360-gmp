@@ -5,7 +5,7 @@ const asyncHandler = require("../utils/asyncHandler");
 
 // Create plan
 const createPlan = asyncHandler(async (request, response) => {
-    let { name, price, description, features, durationDays } = request.body;
+    let { name, price, description, features, durationDays, stripePriceId } = request.body;
     if(!name) throw new ApiError(400, "Please select plan");
 
     let allowsUserAccess = true;
@@ -25,6 +25,7 @@ const createPlan = asyncHandler(async (request, response) => {
         allowsUserAccess, 
         allowsBusinessAccess, 
         durationDays:Number(durationDays),
+        stripePriceId
     });
 
     if(!plan) throw new ApiError(500, "Failed to save a plan");

@@ -31,7 +31,10 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
 
     // Create wallet account, set role from null to business and mark "isNewToPlatform" as false
     const [wallet, user] = await Promise.all([
-        Wallet.create({ ownerId:profile._id, ownerModel:"BusinessProfile" }),
+        Wallet.create({ 
+            ownerId:profile._id, ownerModel:"BusinessProfile", 
+            pendingBalance: 0,availableBalance: 0, totalEarned:0, currency: 'USD' 
+        }),
         User.findByIdAndUpdate(userId, { role:"business", isNewToPlatform:false }, { new:true, lean:true })
     ]);
 

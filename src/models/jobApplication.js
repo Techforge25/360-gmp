@@ -9,7 +9,7 @@ const jobApplicationSchema = new Schema({
     portfolioLink: { type:String },
     yearsOfExperience: { type: Number },
     immediateJoiningStatus: { type:String },
-    expectedSalary: { type:String },
+    expectedSalary: { type:Number },
     status: { type:String, enum:["pending", "viewed", "interview", "hired", "rejected"], default:"pending" }
 }, { timestamps: true });
 

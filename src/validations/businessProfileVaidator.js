@@ -1,21 +1,26 @@
 const Joi = require("joi");
 
+// Patterns
+const alphaNumericPattern = /^[a-zA-Z0-9 -]*$/;
+const addressPattern = /^[a-zA-Z0-9 -,]*$/;
+const customPattern = /^[a-zA-Z0-9 \-.,\n\r]*$/;
+
 // Location schema
 const locationSchema = Joi.object({
-    country: Joi.string().max(100).trim().allow("", null).label("Country"),
-    city: Joi.string().max(100).trim().allow("", null).label("City"),
-    addressLine: Joi.string().max(1000).trim().allow("", null).label("Address line"),
-    warehouseAddress: Joi.string().max(1000).trim().allow("", null).label("Warehouse Address"),
-    additionalWarehouseAddress: Joi.string().max(1000).trim().allow("", null).label("Additional Warehouse Address"),
-    mandatoryPickupAddress: Joi.string().max(1000).trim().allow("", null).label("Mandatory Pickup Address"),
-    businessRegistrationAddress: Joi.string().max(1000).trim().allow("", null).label("Business Registration Address"),
-    internationalOffices: Joi.array().items(Joi.string()).label("International Offices")
+    country: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Country"),
+    city: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("City"),
+    addressLine: Joi.string().max(1000).trim().allow("", null).pattern(alphaNumericPattern).label("Address line"),
+    warehouseAddress: Joi.string().max(1000).trim().allow("", null).pattern(addressPattern).label("Warehouse Address"),
+    additionalWarehouseAddress: Joi.string().max(1000).trim().allow("", null).pattern(addressPattern).label("Additional Warehouse Address"),
+    mandatoryPickupAddress: Joi.string().max(1000).trim().allow("", null).pattern(addressPattern).label("Mandatory Pickup Address"),
+    businessRegistrationAddress: Joi.string().max(1000).trim().allow("", null).pattern(addressPattern).label("Business Registration Address"),
+    internationalOffices: Joi.array().items(Joi.string().pattern(addressPattern)).label("International Offices")
 });
 
 // B2B Contact schema
 const b2bContactSchema = Joi.object({
-    name: Joi.string().max(50).trim().allow("", null).label("B2B Name"),
-    title: Joi.string().max(50).trim().allow("", null).label("B2B Title"),
+    name: Joi.string().max(50).trim().allow("", null).pattern(alphaNumericPattern).label("B2B Name"),
+    title: Joi.string().max(50).trim().allow("", null).pattern(alphaNumericPattern).label("B2B Title"),
     phone: Joi.string().trim().max(15).pattern(/^\+?[1-9]\d{9,14}$/).required().messages({
         "string.pattern.base": "Phone number must be a valid international format (e.g., +923001234567)."
     }).label("Phone"),
@@ -24,54 +29,54 @@ const b2bContactSchema = Joi.object({
 
 // Create Business Profile schema
 const createBusinessProfileSchema = Joi.object({
-    ownerName: Joi.string().min(3).max(200).required().trim().label("Owner name"),
-    identificationOfBusinessOwner: Joi.string().min(3).max(200).required().trim().label("Identification of business owner"),
-    companyName: Joi.string().min(5).max(200).required().trim().label("Business name"),
-    tradeName: Joi.string().max(200).trim().optional().label("Trade name"),
-    businessType: Joi.string().max(50).trim().allow("", null).label("Business type"),
-    companySize: Joi.string().trim().allow("", null).label("Company size"),
+    ownerName: Joi.string().min(3).max(200).required().trim().pattern(alphaNumericPattern).label("Owner name"),
+    identificationOfBusinessOwner: Joi.string().min(3).max(200).required().trim().pattern(alphaNumericPattern).label("Identification of business owner"),
+    companyName: Joi.string().min(5).max(200).required().trim().pattern(alphaNumericPattern).label("Business name"),
+    tradeName: Joi.string().max(200).trim().optional().pattern(alphaNumericPattern).label("Trade name"),
+    businessType: Joi.string().max(50).trim().allow("", null).pattern(alphaNumericPattern).label("Business type"),
+    companySize: Joi.string().trim().allow("", null).pattern(alphaNumericPattern).label("Company size"),
     foundedDate: Joi.date().allow(null).label("Founded date"),
-    primaryIndustry: Joi.string().max(500).trim().allow("", null).label("Primary industry"),
+    primaryIndustry: Joi.string().max(500).trim().allow("", null).pattern(alphaNumericPattern).label("Primary industry"),
     operationHour: Joi.string().max(50).trim().allow("", null).label("Operation hours"),
-    countryOfRegistration: Joi.string().max(50).trim().allow("", null).label("Country of registration"),
+    countryOfRegistration: Joi.string().max(50).trim().allow("", null).pattern(alphaNumericPattern).label("Country of registration"),
 
     // Legal & Compliance
-    businessRegistrationNumber: Joi.string().max(100).trim().allow("", null).label("Business registration number"),
-    taxIdentificationNumber: Joi.string().max(100).trim().allow("", null).label("Tax identification number"),
-    dunsNumber: Joi.string().max(100).trim().allow("", null).label("Data Universal Numbering System"),
+    businessRegistrationNumber: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Business registration number"),
+    taxIdentificationNumber: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Tax identification number"),
+    dunsNumber: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Data Universal Numbering System"),
     complianceScreeningStatus: Joi.boolean().default(true).label("Compliance screening status"),
 
     // Location info
     location: locationSchema.allow(null).label("Location"),
 
     // International Commercial Terms
-    incoterms: Joi.string().max(500).trim().allow("", null).label("International Commercial Terms"),
+    incoterms: Joi.string().max(500).trim().allow("", null).pattern(alphaNumericPattern).label("International Commercial Terms"),
 
     // Shipping info
     shipping: {
-        capabilities:Joi.array().items(Joi.string()).max(10).label("Shipping Capabilities"),
+        capabilities:Joi.array().items(Joi.string().pattern(alphaNumericPattern)).max(10).label("Shipping Capabilities"),
         exportExperience: Joi.boolean().required().label("Export experience")
     },
 
     // Ownership & Leadership
-    executiveLeadership: Joi.array().items(Joi.string()).max(50).label("Executive Leadership"),
+    executiveLeadership: Joi.array().items(Joi.string().pattern(alphaNumericPattern)).max(50).label("Executive Leadership"),
     stakeholderDisclosure: Joi.array().items(Joi.object({
-        name: Joi.string().trim().min(3).required().label("Stake holder name"),
-        ownershipPercentage: Joi.number().min(0).max(100).positive().label("Ownership percentage")
+        name: Joi.string().trim().min(3).required().pattern(alphaNumericPattern).label("Stake holder name"),
+        ownershipPercentage: Joi.number().integer().min(0).max(100).positive().label("Ownership percentage")
     })),
 
     // Operational & Trade Profile   
-    regionOfOperations: Joi.array().items(Joi.string()).label("Region of operations"),  
-    productionCapacity: Joi.string().trim().max(1000).optional().label("Production capacity"),   
-    tradeAffiliations: Joi.array().items(Joi.string()).label("Trade Affiliations"),
+    regionOfOperations: Joi.array().items(Joi.string().pattern(alphaNumericPattern)).label("Region of operations"),  
+    productionCapacity: Joi.string().trim().max(1000).optional().pattern(customPattern).label("Production capacity"),   
+    tradeAffiliations: Joi.array().items(Joi.string().pattern(alphaNumericPattern)).label("Trade Affiliations"),
 
     // Financial & Regulatory Data
     annualRevenueRange: Joi.string().trim().optional().label("Annual revenue range"),
     auditingAgency: Joi.string().trim().optional().label("Auditing agency"),
 
     // Documentation & Verification Assets
-    certificateOfIncorporation: Joi.string().trim().optional().label("Certificate of incorporation"),
-    taxRegistrationCertificate: Joi.string().trim().optional().label("Certificate of tax registration"),
+    certificateOfIncorporation: Joi.string().trim().optional().uri().label("Certificate of incorporation"),
+    taxRegistrationCertificate: Joi.string().trim().optional().uri().label("Certificate of tax registration"),
 
     // Product Packaging Defaults (Logistics Prep)
     standardProductDimensions: Joi.object({
@@ -82,12 +87,12 @@ const createBusinessProfileSchema = Joi.object({
     }),
 
     // Other Certifications & B2B Contact
-    certifications: Joi.array().items(Joi.string().trim()).min(1).max(3).default([]).label("Certification"),
+    certifications: Joi.array().items(Joi.string().trim().pattern(alphaNumericPattern)).min(1).max(3).default([]).label("Certification"),
     b2bContact: b2bContactSchema.allow(null).label("B2B Contact"),
 
     // Website & description
     website: Joi.string().uri().max(100).trim().allow("", null).label("Website"),
-    description: Joi.string().trim().max(5000).allow("", null).label("Business description"),
+    description: Joi.string().trim().max(5000).allow("", null).pattern(customPattern).label("Business description"),
     
     // Media
     logo: Joi.string().trim().uri().allow("", null).label("Logo"),
@@ -96,54 +101,54 @@ const createBusinessProfileSchema = Joi.object({
 
 // Update Business Profile schema (all fields optional)
 const updateBusinessProfileSchema = Joi.object({
-    ownerName: Joi.string().min(3).max(200).trim().label("Owner name"),
-    identificationOfBusinessOwner: Joi.string().min(3).max(200).trim().label("Identification of business owner"),
-    companyName: Joi.string().min(5).max(200).trim().label("Company name"),
-    tradeName: Joi.string().max(200).trim().optional().label("Trade name"),
-    businessType: Joi.string().max(50).trim().allow("", null).label("Business type"),
-    companySize: Joi.string().trim().allow("", null).label("Company size"),
+    ownerName: Joi.string().min(3).max(200).trim().pattern(alphaNumericPattern).label("Owner name"),
+    identificationOfBusinessOwner: Joi.string().min(3).max(200).trim().pattern(alphaNumericPattern).label("Identification of business owner"),
+    companyName: Joi.string().min(5).max(200).trim().pattern(alphaNumericPattern).label("Company name"),
+    tradeName: Joi.string().max(200).trim().optional().pattern(alphaNumericPattern).label("Trade name"),
+    businessType: Joi.string().max(50).trim().allow("", null).pattern(alphaNumericPattern).label("Business type"),
+    companySize: Joi.string().trim().allow("", null).pattern(alphaNumericPattern).label("Company size"),
     foundedDate: Joi.date().allow(null),
-    primaryIndustry: Joi.string().trim().allow("", null),
-    operationHour: Joi.string().trim().allow("", null),
-    countryOfRegistration: Joi.string().max(50).trim().allow("", null).label("Country of registration"),
+    primaryIndustry: Joi.string().trim().allow("", null).pattern(alphaNumericPattern).label("Primary industry"),
+    operationHour: Joi.string().trim().allow("", null).label("Operation hours"),
+    countryOfRegistration: Joi.string().max(50).trim().allow("", null).pattern(alphaNumericPattern).label("Country of registration"),
 
     // Legal & Compliance
-    businessRegistrationNumber: Joi.string().max(100).trim().allow("", null).label("Business registration number"),
-    taxIdentificationNumber: Joi.string().max(100).trim().allow("", null).label("Tax identification number"),
-    dunsNumber: Joi.string().max(100).trim().allow("", null).label("Data Universal Numbering System"),
+    businessRegistrationNumber: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Business registration number"),
+    taxIdentificationNumber: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Tax identification number"),
+    dunsNumber: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Data Universal Numbering System"),
     complianceScreeningStatus: Joi.boolean().default(true).label("Compliance screening status"),
 
     // Location info
     location: locationSchema.allow(null).label("Location"),
 
     // International Commercial Terms
-    incoterms: Joi.string().max(500).trim().allow("", null).label("International Commercial Terms"),
+    incoterms: Joi.string().max(500).trim().allow("", null).pattern(alphaNumericPattern).label("International Commercial Terms"),
 
     // Shipping info
     shipping: {
-        capabilities:Joi.array().items(Joi.string()).max(10).label("Shipping Capabilities"),
+        capabilities:Joi.array().items(Joi.string().pattern(alphaNumericPattern)).max(10).label("Shipping Capabilities"),
         exportExperience: Joi.boolean().label("Export experience")
     },
 
     // Ownership & Leadership
-    executiveLeadership: Joi.array().items(Joi.string()).max(50).label("Executive Leadership"),
+    executiveLeadership: Joi.array().items(Joi.string().pattern(alphaNumericPattern)).max(50).label("Executive Leadership"),
     stakeholderDisclosure: Joi.array().items(Joi.object({
-        name: Joi.string().trim().min(3).label("Stake holder name"),
-        ownershipPercentage: Joi.number().min(0).max(100).positive().label("Ownership percentage")
+        name: Joi.string().trim().min(3).pattern(alphaNumericPattern).label("Stake holder name"),
+        ownershipPercentage: Joi.number().integer().min(0).max(100).positive().label("Ownership percentage")
     })),  
     
     // Operational & Trade Profile   
-    regionOfOperations: Joi.array().items(Joi.string()).label("Region of operations"),  
-    productionCapacity: Joi.string().trim().max(1000).optional().label("Production capacity"),  
-    tradeAffiliations: Joi.array().items(Joi.string()).label("Trade Affiliations"),
+    regionOfOperations: Joi.array().items(Joi.string().pattern(alphaNumericPattern)).label("Region of operations"),  
+    productionCapacity: Joi.string().trim().max(1000).optional().pattern(customPattern).label("Production capacity"),  
+    tradeAffiliations: Joi.array().items(Joi.string().pattern(alphaNumericPattern)).label("Trade Affiliations"),
 
     // Financial & Regulatory Data
     annualRevenueRange: Joi.string().trim().optional().label("Annual revenue range"),
-    auditingAgency: Joi.string().trim().optional().label("Auditing agency"),   
+    auditingAgency: Joi.string().trim().optional().pattern(alphaNumericPattern).label("Auditing agency"),   
     
     // Documentation & Verification Assets
-    certificateOfIncorporation: Joi.string().trim().optional().label("Certificate of incorporation"),
-    taxRegistrationCertificate: Joi.string().trim().optional().label("Certificate of tax registration"),    
+    certificateOfIncorporation: Joi.string().trim().optional().pattern(alphaNumericPattern).label("Certificate of incorporation"),
+    taxRegistrationCertificate: Joi.string().trim().optional().pattern(alphaNumericPattern).label("Certificate of tax registration"),    
 
     // Product Packaging Defaults (Logistics Prep)
     standardProductDimensions: Joi.object({
@@ -154,12 +159,12 @@ const updateBusinessProfileSchema = Joi.object({
     }),    
 
     // Other Certifications & B2B Contact
-    certifications: Joi.array().items(Joi.string().trim()),
+    certifications: Joi.array().items(Joi.string().trim().pattern(alphaNumericPattern)).label("Certifications"),
     b2bContact: b2bContactSchema.allow(null),
     
     // Website & description
     website: Joi.string().uri().trim().max(100).allow("", null).label("Website"),
-    description: Joi.string().trim().max(5000).allow("", null).label("Business description"),
+    description: Joi.string().trim().max(5000).allow("", null).pattern(customPattern).label("Business description"),
     
     // Media
     logo: Joi.string().trim().uri().allow("", null).label("Logo"),
@@ -168,8 +173,8 @@ const updateBusinessProfileSchema = Joi.object({
 
 // Gallery validation schema
 const galleryValidationSchema = Joi.object({
-    albumName: Joi.string().trim().min(3).max(50).required().label("Album Name"),
-    description: Joi.string().trim().max(1000).allow("", null).label("Album Description"),
+    albumName: Joi.string().trim().min(3).max(50).required().pattern(alphaNumericPattern).label("Album Name"),
+    description: Joi.string().trim().max(1000).allow("", null).pattern(alphaNumericPattern).label("Album Description"),
     images: Joi.array().items(Joi.string().uri().trim()).min(1).max(8).default([]).label("Album Images")
 });
 

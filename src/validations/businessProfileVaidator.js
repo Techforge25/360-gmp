@@ -4,6 +4,7 @@ const Joi = require("joi");
 const alphaNumericPattern = /^[a-zA-Z0-9 -]*$/;
 const addressPattern = /^[a-zA-Z0-9 -,]*$/;
 const customPattern = /^[a-zA-Z0-9 \-.,\n\r]*$/;
+const stackHoldersNamePattern = /^[a-zA-Z]*$/;
 
 // Location schema
 const locationSchema = Joi.object({
@@ -61,7 +62,7 @@ const createBusinessProfileSchema = Joi.object({
     // Ownership & Leadership
     executiveLeadership: Joi.array().items(Joi.string().pattern(alphaNumericPattern)).max(50).label("Executive Leadership"),
     stakeholderDisclosure: Joi.array().items(Joi.object({
-        name: Joi.string().trim().min(3).required().pattern(alphaNumericPattern).label("Stake holder name"),
+        name: Joi.string().trim().min(3).required().pattern(stackHoldersNamePattern).label("Stake holder name"),
         ownershipPercentage: Joi.number().integer().min(0).max(100).positive().label("Ownership percentage")
     })),
 
@@ -133,7 +134,7 @@ const updateBusinessProfileSchema = Joi.object({
     // Ownership & Leadership
     executiveLeadership: Joi.array().items(Joi.string().pattern(alphaNumericPattern)).max(50).label("Executive Leadership"),
     stakeholderDisclosure: Joi.array().items(Joi.object({
-        name: Joi.string().trim().min(3).pattern(alphaNumericPattern).label("Stake holder name"),
+        name: Joi.string().trim().min(3).pattern(stackHoldersNamePattern).label("Stake holder name"),
         ownershipPercentage: Joi.number().integer().min(0).max(100).positive().label("Ownership percentage")
     })),  
     

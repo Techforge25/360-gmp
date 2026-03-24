@@ -13,7 +13,7 @@ const createProductSchema = Joi.object({
     }),
     image: Joi.string().uri().required().label("Main image"),
     groupImages: Joi.array().items(Joi.string().uri()).max(3).label("Group images"),
-    detail: Joi.string().pattern(customPattern).trim().max(2000).allow("", null).optional().label("Product description"),
+    detail: Joi.string().trim().max(2000).allow("", null).optional().label("Product description"),
     category: Joi.string().pattern(alphaNumericPattern).required().label("Product category"),
     pricePerUnit: Joi.number().positive().required().label("Price per unit"),
 

@@ -17,7 +17,7 @@ const createCommunitySchema = Joi.object({
     type: Joi.string().valid("public", "private", "featured").default("public").messages({
         "any.only": "Community type must be one of: public, private, featured"
     }),
-    description: Joi.string().pattern(customPattern).max(1000).trim().allow("", null),
+    description: Joi.string().max(1000).trim().allow("", null),
     purpose: Joi.string().pattern(customPattern).max(500).trim().allow("", null),
     tags: Joi.array().items(Joi.string().pattern(alphaNumericPattern).trim()).default([]),
     rules: Joi.string().pattern(customPattern).max(2000).trim().allow("", null),

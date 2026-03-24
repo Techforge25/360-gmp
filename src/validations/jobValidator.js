@@ -24,7 +24,7 @@ const createJobSchema = Joi.object({
     jobCategory: Joi.string().pattern(alphaNumericPattern).trim().allow("", null),
     employmentType: Joi.string().pattern(alphaNumericPattern).trim().allow("", null),
     experienceLevel: Joi.string().pattern(alphaNumericPattern).trim().allow("", null),
-    description: Joi.string().pattern(customPattern).max(5000).allow("", null),
+    description: Joi.string().max(5000).allow("", null),
     salaryMin: Joi.number().min(0).allow(null),
     salaryMax: Joi.number().min(0).allow(null).greater(Joi.ref("salaryMin")).messages({
         "number.greater": "Maximum salary must be greater than minimum salary"
@@ -42,7 +42,7 @@ const updateJobSchema = Joi.object({
     jobCategory: Joi.string().pattern(alphaNumericPattern).trim().allow("", null),
     employmentType: Joi.string().pattern(alphaNumericPattern).trim().allow("", null),
     experienceLevel: Joi.string().pattern(alphaNumericPattern).trim().allow("", null),
-    description: Joi.string().pattern(customPattern).max(5000).allow("", null),
+    description: Joi.string().max(5000).allow("", null),
     salaryMin: Joi.number().min(0).allow(null),
     salaryMax: Joi.number().min(0).allow(null).greater(Joi.ref("salaryMin")).messages({
         "number.greater": "Maximum salary must be greater than minimum salary"

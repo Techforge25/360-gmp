@@ -100,6 +100,7 @@ const fetchFeaturedProducts = asyncHandler(async (request, response) => {
 
         return { ...product.toObject(), isOwner };
     });    
+    if(products.totalDocs === 0) return response.status(200).json(new ApiResponse(200, emptyList, "Featured Products not found"));
 
     // Response
     return response.status(200).json(new ApiResponse(200, updatedProducts, "All Featured products have been fetched"));

@@ -76,15 +76,33 @@ const fetchAllProducts = asyncHandler(async (request, response) => {
 
 // Fetch featured products (Shown on market place)
 const fetchFeaturedProducts = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
     // Pagination options
     const { page = 1, limit = 10 } = request.query;
+
+    const options = {
+        page: Number(page),
+        limit: Number(limit),
+        populate:{ path:"businessId", select:"ownerUserId" }
+    };
     
     // Find products
-    const products = await Product.paginate({ isFeatured:true, status:"approved" }, { page, limit });
-    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Featured Products not found"));
+    const products = await Product.paginate({ isFeatured:true, status:"approved" }, options);
+    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Featured Products not found")); 
+
+    // Get owner flag
+    const updatedProducts = products.map((product) => {
+        const { ownerUserId } = product.businessId;
+        
+        // Owner flag
+        const isOwner = ownerUserId.equals(userId);
+
+        return { ...product.toObject(), isOwner };
+    });    
 
     // Response
-    return response.status(200).json(new ApiResponse(200, products, "All Featured products have been fetched"));
+    return response.status(200).json(new ApiResponse(200, updatedProducts, "All Featured products have been fetched"));
 });
 
 // Fetch all business products (Shown on business profile)

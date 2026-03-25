@@ -1,7 +1,6 @@
 const Joi = require("joi");
 
 // Patterns
-const alphaNumericPattern = /^[a-zA-Z0-9 -]*$/;
 const customPattern = /^[a-zA-Z0-9 \-.,\n\r]*$/;
 const titlePattern = /^[a-zA-Z0-9 \-(),.&]*$/; // Allow common product title chars
 const qtyPattern = /^[a-zA-Z0-9 +\-]*$/; // For "10+", "5-10", "100 units"
@@ -32,6 +31,7 @@ const createProductSchema = Joi.object({
     shippingCost: Joi.number().min(0).required().label("Shipping Cost"),
     estimatedDeliveryDays: Joi.string().pattern(qtyPattern).required().label("Estimated Delivery Days"),    
     isFeatured: Joi.boolean(),
+    isSingleProductAvailable: Joi.boolean().default(false),
     status: Joi.string().valid("pending", "approved", "rejected", "draft"),
     shippingTerms: Joi.string().pattern(customPattern).allow("", null)
 });

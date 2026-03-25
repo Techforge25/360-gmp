@@ -301,11 +301,12 @@ const fetchTopRankingProducts = asyncHandler(async (request, response) => {
     if(!topProducts.length) return response.status(200).json(new ApiResponse(200, emptyList, "No top selling products found"));
     
     // Response
-    return response.status(200).json(new ApiResponse(200, topProducts, "Top selling products fetched successfully"));
+    return response.status(200).json(new ApiResponse(200, topProducts, "Top selling products fetched successfully")); 
 });
 
 // Fetch new products (Latest 30 products) (Shown on market place)
 const fetchNewProducts = asyncHandler(async (request, response) => {    
+
     // Find products
     const products = await Product.find({ status:"approved" })
     .select("title detail image minOrderQty pricePerUnit").sort("-createdAt").limit(30)
@@ -316,14 +317,28 @@ const fetchNewProducts = asyncHandler(async (request, response) => {
 });
 
 // Fetch flash deals (Top-deals products) (Shown on market place)
-const fetchFlashDeals = asyncHandler(async (request, response) => {    
-    // Find products
-    const products = await Product.find({ status:"approved", isFlashDeal:true })
-    .select("title detail image minOrderQty pricePerUnit extras").sort("-createdAt").limit(30)
-    if(!products.length) return response.status(200).json(new ApiResponse(200, emptyList, "Latest products not found"));
+const fetchFlashDeals = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
 
+    // Fetch
+    const products = await Product.find({ status:"approved", isFlashDeal:true })
+    .populate("businessId", "ownerUserId")
+    .select("title detail image minOrderQty pricePerUnit extras businessId")
+    .sort("-createdAt")
+    .limit(30);
+    if(!products.length) return response.status(200).json(new ApiResponse(200, [], "Latest products not found"));
+    
+    // Get owner flag
+    const updatedProducts = products.map((product) => {
+        const { ownerUserId } = product.businessId;
+        
+        // Owner flag
+        const isOwner = ownerUserId.equals(userId);
+
+        return { ...product.toObject(), isOwner };
+    });
     // Response
-    return response.status(200).json(new ApiResponse(200, products, "Latest products have been fetched"));
+    return response.status(200).json(new ApiResponse(200, updatedProducts, "Latest products fetched"));
 });
 
 module.exports = { createProduct, fetchAllProducts, fetchFeaturedProducts, fetchBusinessProducts,

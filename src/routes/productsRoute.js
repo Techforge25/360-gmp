@@ -3,7 +3,7 @@ const { authentication, authorization } = require("../middlewares/auth");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
 const { createProduct, fetchAllProducts, fetchBusinessProducts, viewProduct, updateProduct, 
 deleteProduct, fetchBusinessFeaturedProducts, setFeaturedProduct, fetchFeaturedProducts, 
-fetchTopRankingProducts, fetchNewProducts } = require("../controllers/productsController");
+fetchTopRankingProducts, fetchNewProducts, fetchFlashDeals } = require("../controllers/productsController");
 
 // Router instance
 const productsRouter = Router();
@@ -29,7 +29,7 @@ productsRouter.route("/top-ranking").get(authentication, fetchTopRankingProducts
 productsRouter.route("/new").get(authentication, fetchNewProducts);
 
 // Fetch flash deals (Top-deals products) (Market place)
-productsRouter.route("/top-deals").get(authentication, fetchNewProducts);
+productsRouter.route("/top-deals").get(authentication, fetchFlashDeals);
 
 // View product / Update product / Delete product
 productsRouter.route("/:productId")

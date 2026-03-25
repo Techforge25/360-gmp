@@ -5,6 +5,7 @@ const alphaNumericPattern = /^[a-zA-Z0-9 -]*$/;
 const namePattern = /^[a-zA-Z ]*$/;
 const customPattern = /^[a-zA-Z0-9 \-.,\n\r]*$/;
 const titlePattern = /^[a-zA-Z0-9 \-(),.&]*$/;
+const addressPattern = /^[a-zA-Z0-9 -,]*$/;
 
 const educationSchema = joi.object({
     institution: joi.string().pattern(titlePattern).trim().min(1).max(50).required().label("Institution"),
@@ -31,8 +32,8 @@ const createUserProfileSchema = joi.object({
         "string.pattern.base": "Phone number must be a valid international format (e.g., +923001234567)."
     }).label("Phone"),
     email: joi.string().trim().lowercase().email().max(40).required().label("Email"),
-    location: joi.string().pattern(customPattern).trim().max(100).allow("", null).label("Location"),
-    bio: joi.string().pattern(customPattern).trim().max(1000).allow("", null).label("Bio"),
+    location: joi.string().pattern(addressPattern).trim().max(100).allow("", null).label("Location"),
+    bio: joi.string().trim().max(1000).allow("", null).label("Bio"),
     resumeUrl: joi.string().uri().allow("", null).label("Resume"),
     logo: joi.string().uri().required().label("Profile image"),
     banner: joi.string().uri().optional().label("Banner"),
@@ -54,7 +55,7 @@ const updateUserContactInfoValidationSchema = joi.object({
     phone: joi.string().trim().max(15).pattern(/^\+?[1-9]\d{9,14}$/).required().messages({
         "string.pattern.base": "Phone number must be a valid international format (e.g., +923001234567)."
     }).label("Phone"),
-    location: joi.string().pattern(customPattern).trim().max(100).allow("", null).label("Location"),
+    location: joi.string().pattern(addressPattern).trim().max(100).allow("", null).label("Location"),
 });
 
 // Update education
@@ -88,7 +89,7 @@ const addWorkExperienceValidationSchema = joi.object({
         otherwise: joi.valid(null, "").optional()
     }).label("Ending date"),
 
-    location: joi.string().pattern(customPattern).trim().max(100).required().label("Location"),
+    location: joi.string().pattern(addressPattern).trim().max(100).required().label("Location"),
     description: joi.string().trim().max(1000).optional().label("Work Description"),
     isCurrentlyWorking: joi.boolean().default(false).label("Currently enrolled")
 });

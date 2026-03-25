@@ -93,7 +93,7 @@ const createBusinessProfileSchema = Joi.object({
 
     // Website & description
     website: Joi.string().uri().max(100).trim().allow("", null).label("Website"),
-    description: Joi.string().trim().max(5000).allow("", null).pattern(customPattern).label("Business description"),
+    description: Joi.string().trim().max(5000).allow("", null).label("Business description"),
     
     // Media
     logo: Joi.string().trim().uri().allow("", null).label("Logo"),
@@ -165,7 +165,7 @@ const updateBusinessProfileSchema = Joi.object({
     
     // Website & description
     website: Joi.string().uri().trim().max(100).allow("", null).label("Website"),
-    description: Joi.string().trim().max(5000).allow("", null).pattern(customPattern).label("Business description"),
+    description: Joi.string().trim().max(5000).allow("", null).label("Business description"),
     
     // Media
     logo: Joi.string().trim().uri().allow("", null).label("Logo"),
@@ -175,7 +175,7 @@ const updateBusinessProfileSchema = Joi.object({
 // Gallery validation schema
 const galleryValidationSchema = Joi.object({
     albumName: Joi.string().trim().min(3).max(50).required().pattern(alphaNumericPattern).label("Album Name"),
-    description: Joi.string().trim().max(1000).allow("", null).pattern(alphaNumericPattern).label("Album Description"),
+    description: Joi.string().trim().max(1000).allow("", null).label("Album Description"),
     images: Joi.array().items(Joi.string().uri().trim()).min(1).max(8).default([]).label("Album Images")
 });
 

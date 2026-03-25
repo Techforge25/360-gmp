@@ -2,7 +2,6 @@ const Joi = require("joi");
 
 // Patterns
 const alphaNumericPattern = /^[a-zA-Z0-9 -]*$/;
-const customPattern = /^[a-zA-Z0-9 \-.,\n\r]*$/;
 const jobTitlePattern = /^[a-zA-Z0-9 \-()]*$/; // allow parentheses for titles
 
 // Location schema for job

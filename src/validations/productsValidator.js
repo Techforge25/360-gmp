@@ -18,10 +18,10 @@ const createProductSchema = Joi.object({
 
     // Tiered pricing
     tieredPricing: Joi.array().items(Joi.object({
-        qty: Joi.string().pattern(qtyPattern).trim().max(100).required().label("Tiered pricing quantity").messages({
+        qty: Joi.string().pattern(qtyPattern).trim().max(100).optional().allow(null, "").label("Tiered pricing quantity").messages({
             "string.pattern.base": "Quantity format is invalid"
         }),
-        price: Joi.number().min(1).positive().required().label("Price")
+        price: Joi.number().min(0).required().label("Price")
     })).optional().label("Tiered pricing"),
 
     // Quantity and stocks

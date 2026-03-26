@@ -93,12 +93,14 @@ const fetchFeaturedProducts = asyncHandler(async (request, response) => {
 
     // Get owner flag
     const updatedProducts = products.map((product) => {
-        const { ownerUserId } = product.businessId;
+        let isOwner = false;
+        if(product.businessId)
+        {    
+            const { ownerUserId } = product.businessId;
+            isOwner = ownerUserId?.equals(userId);
+            return { ...product.toObject(), isOwner };
+        }
         
-        // Owner flag
-        const isOwner = ownerUserId.equals(userId);
-
-        return { ...product.toObject(), isOwner };
     });    
 
     // Response

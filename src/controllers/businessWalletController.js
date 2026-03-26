@@ -92,20 +92,40 @@ const fetchBusinessRecentTransactions = asyncHandler(async (request, response) =
     if(status && (!["pending", "failed", "completed"].includes(status))) throw new ApiError(400, "Invalid status type");
 
     // Base filter
-    const baseFilter = { ownerId:businessProfileId, ownerModel:"BusinessProfile", type:"sale" };
+    const baseFilter = { ownerId:convertToMongoId(businessProfileId), ownerModel:"BusinessProfile", type:"sale" };
     if(status) baseFilter.status = status;
 
     // Pagination options
     const options = {
         page: Number(page),
-        limit: Number(limit),
-        select:"orderId createdAt paymentMethod status amount -_id",
-        lean: true,
-        sort: { createdAt: -1 }
+        limit: Number(limit)
     };
 
     // Fetch
-    const transactions = await Transaction.paginate(baseFilter, options);
+    const aggregation = Transaction.aggregate([
+        // Match
+        { $match:baseFilter },
+
+        // Lookup inside order
+        {
+            $lookup:{
+                from:"orders",
+                localField:"orderId",
+                foreignField:"_id",
+                as:"order"
+            }
+        },
+
+        { $unwind:"$order" },
+
+        // Projection
+        { $project:{ orderId:1, createdAt:1, paymentMethod:1, status:"$order.status", _id:0 } },
+
+        // Sorting
+        { $sort:{ createdAt:-1 } }
+    ]);
+    // Execute query
+    const transactions = await Transaction.aggregatePaginate(aggregation, options);
     if(!transactions.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No transactions found for business profile"));
 
     // Response

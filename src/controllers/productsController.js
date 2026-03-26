@@ -189,7 +189,7 @@ const updateProduct = asyncHandler(async (request, response) => {
     if(!updateProduct) throw new ApiError(500, "Failed to update product");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, updateProduct, "Product created successfully"));
+    return response.status(200).json(new ApiResponse(200, updateProduct, "Product updated successfully"));
 });
 
 // Set to featured product

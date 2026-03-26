@@ -92,7 +92,7 @@ const fetchFeaturedProducts = asyncHandler(async (request, response) => {
     if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Featured Products not found")); 
 
     // Get owner flag
-    const updatedProducts = products.map((product) => {
+    const updatedProducts = products.docs.map((product) => {
         let isOwner = false;
         if(product.businessId)
         {    
@@ -100,7 +100,6 @@ const fetchFeaturedProducts = asyncHandler(async (request, response) => {
             isOwner = ownerUserId?.equals(userId);
             return { ...product.toObject(), isOwner };
         }
-        
     });    
 
     // Response

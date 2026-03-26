@@ -40,7 +40,7 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
     if(existingSubscription) return response.status(200).json(new ApiResponse(200, null, "You already have an active subscription for this plan"));
 
     // Stripe instance
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);
 
     // Common session config
     let sessionConfig = {
@@ -80,7 +80,7 @@ const stripeWebhook = asyncHandler(async (request, response) => {
     console.log("Webhook fired");
 
     // Initialize stripe SDK
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);
 
     // Get webhook signature
     const signature = request.headers["stripe-signature"];

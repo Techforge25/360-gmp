@@ -284,7 +284,7 @@ const getMySubscription = asyncHandler(async (request, response) => {
                 from: "plans",
                 localField: "planId",
                 foreignField: "_id",
-                as: "plan"
+                as: "plan" 
             }
         },
 
@@ -292,7 +292,7 @@ const getMySubscription = asyncHandler(async (request, response) => {
         { $unwind: "$plan" },
 
         // Exclude _id and other unnecessary fields
-        { $project:{ plan:"$plan.name", description:"$plan.description", status:1, startDate:1, endDate:1 } }
+        { $project:{ plan:"$plan.name", description:"$plan.description", status:1, price:"$plan.price", startDate:1, endDate:1 } }
     ]);
 
     if(!subscription.length) throw new ApiError(404, "Subscription not found");

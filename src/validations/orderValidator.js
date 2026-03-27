@@ -15,9 +15,7 @@ const createOrderValidationSchema = joi.object({
         phone: joi.string().trim().max(15).pattern(/^\+?[1-9]\d{9,14}$/).required().messages({
             "string.pattern.base": "Phone number must be a valid international format (e.g., +923001234567)."
         }).label("Phone"),
-        lineAddress: joi.array().items(
-            joi.string().pattern(addressPattern).min(10).max(500)
-        ).max(2).label("Line addresses"),
+        lineAddress: joi.array().items(joi.string().min(10).max(500)).max(2).label("Line addresses"),
         province: joi.string().pattern(alphaNumericPattern).trim().max(50).required().label("State/Province"),
         postalCode: joi.string().pattern(alphaNumericPattern).trim().max(30).required().label("Postal code"),
     },

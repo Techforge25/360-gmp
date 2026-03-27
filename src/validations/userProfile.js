@@ -19,7 +19,7 @@ const educationSchema = joi.object({
     
     isCurrent: joi.boolean().default(false),
     description: joi.string().trim().max(1000).optional().label("Educational description"),
-    grade: joi.string().pattern(alphaNumericPattern).max(20).allow("", null)
+    grade: joi.string().pattern(/^[a-zA-Z0-9 -.]*$/).max(20).allow("", null)
 });
 
 // Create user profile validation schema
@@ -71,7 +71,7 @@ const updateEducationValidationSchema = joi.object({
 
     isCurrent: joi.boolean().default(false).label("Currently enrolled"),
     description: joi.string().trim().max(1000).optional().label("Educational description"),
-    grade: joi.string().pattern(alphaNumericPattern).optional().label("Grade")
+    grade: joi.string().pattern(/^[a-zA-Z0-9 -.]*$/).optional().label("Grade")
 });
 
 // Allowed employment types

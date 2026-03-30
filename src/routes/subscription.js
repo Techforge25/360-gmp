@@ -1,7 +1,8 @@
 const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
 const { createSubscriptionStripe, verifyStripePayment, stripeWebhook, getMySubscription, 
-totalSpent, checkSubscriptionStatus } = require("../controllers/subscription");
+totalSpent, checkSubscriptionStatus, 
+getAllMySubscriptions} = require("../controllers/subscription");
 
 // Router instance
 const subscriptionRouter = Router();
@@ -16,8 +17,11 @@ subscriptionRouter.route("/stripe/cancel").get((request, response) => {
 // Stripe webhook for subscription
 subscriptionRouter.route("/webhook").post(stripeWebhook);
 
-// Get my subscription
+// Get my current subscription
 subscriptionRouter.route("/").get(authentication, getMySubscription);
+
+// Get my current subscription
+subscriptionRouter.route("/all").get(authentication, getAllMySubscriptions);
 
 // Total spent on subscriptions till now
 subscriptionRouter.route("/total-spent").get(authentication, totalSpent);

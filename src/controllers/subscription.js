@@ -7,6 +7,7 @@ const Stripe = require("stripe");
 const convertToMongoId = require("../utils/convertToMongoId");
 const sendNotification = require("../utils/sendNotification");
 const SubscriptionHistory = require("../models/subscriptionHistoryModel");
+const { emptyList } = require("../constants");
 
 // Helper function to get 
 const getSubscriptionDates = (startingDate) => {
@@ -460,5 +461,24 @@ const checkSubscriptionStatus = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, existingSubscription ? true : false, "Subscription status checked"));
 });
 
+// Get all my subscriptions
+const getAllMySubscriptions = asyncHandler(async (request, response) => {
+    const userId = convertToMongoId(request.user._id);
+
+    const { page = 1, limit = 10 } = request.query;
+
+    // Subscription details
+    const aggregation = await SubscriptionHistory.aggregate([
+        // Match
+        { $match: { userId } },
+    ]);
+
+    // Execute query
+    const subscriptions = await SubscriptionHistory.aggregatePaginate(aggregation, { page, limit });
+    if(!subscriptions.docs.length) return response.status(200).json(new ApiResponse(200, emptyList, "No subscription history found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, subscriptions, "All subscriptions fetched"));
+});
 module.exports = { createSubscriptionStripe, verifyStripePayment, stripeWebhook, 
-getMySubscription, totalSpent, checkSubscriptionStatus };
+getMySubscription, totalSpent, checkSubscriptionStatus, getAllMySubscriptions };

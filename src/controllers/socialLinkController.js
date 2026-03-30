@@ -3,7 +3,6 @@ const SocialLink = require("../models/socialLinkModel");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
-const { getBusinessProfile } = require("../utils/getProfiles");
 const validate = require("../utils/validate");
 const socialLinkValidationSchema = require("../validations/socialLinkValidator");
 
@@ -12,9 +11,15 @@ const createSocialLink = asyncHandler(async (request, response) => {
     const { platformName, url } = validate(socialLinkValidationSchema, request.body);
     const userId = request.user._id;
 
-    // Get business profile
-    const businessProfile = await getBusinessProfile(userId);
+    // Check if business profile exists and if social link with the same URL already exists
+    const [businessProfile, isExist] = await Promise.all([
+        BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean(),
+        SocialLink.findOne({ url }).lean()
+    ]);
+
+    // Validate
     if(!businessProfile) throw new ApiError(404, "Business profile not found");
+    if(isExist) throw new ApiError(400, "Social link with this URL already exists");
 
     // Save social link to db
     const socialLink = await SocialLink.create({ platformName, url, businessProfileId: businessProfile._id });

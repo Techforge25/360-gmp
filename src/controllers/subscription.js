@@ -8,6 +8,7 @@ const convertToMongoId = require("../utils/convertToMongoId");
 const sendNotification = require("../utils/sendNotification");
 const SubscriptionHistory = require("../models/subscriptionHistoryModel");
 const { emptyList } = require("../constants");
+const mongoose = require("mongoose");
 
 // Helper function to get 
 const getSubscriptionDates = (startingDate) => {

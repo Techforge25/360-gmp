@@ -490,12 +490,40 @@ const checkSubscriptionStatus = asyncHandler(async (request, response) => {
 const getAllMySubscriptions = asyncHandler(async (request, response) => {
     const userId = convertToMongoId(request.user._id);
 
-    const { page = 1, limit = 10 } = request.query;
+    // Pagination options
+    const { page = 1, limit = 10, status } = request.query;
+
+    // Base filter
+    const baseFilter = { userId };
+    if(status)
+    {
+        if(!["paid", "failed"].includes(status)) throw new ApiError(400, "Invalid status filter! Allowed values are paid, failed");
+        baseFilter.status = status;
+    }
 
     // Subscription details
-    const aggregation = await SubscriptionHistory.aggregate([
+    const aggregation = SubscriptionHistory.aggregate([
         // Match
-        { $match: { userId } },
+        { $match: baseFilter },
+
+        // Lookup
+        {
+            $lookup: {
+                from: "plans",
+                localField: "planId",
+                foreignField: "_id",
+                as: "plan" 
+            }
+        },
+
+        // Unwind
+        { $unwind: "$plan" },
+
+        // Projection
+        { $project: { createdAt:1, invoiceId:1, status:1, planName: "$plan.name", amount: "$plan.price" } },
+
+        // Sort by most recent
+        { $sort: { createdAt: -1 } }
     ]);
 
     // Execute query

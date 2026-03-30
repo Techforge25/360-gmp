@@ -6,6 +6,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const Stripe = require("stripe");
 const convertToMongoId = require("../utils/convertToMongoId");
 const sendNotification = require("../utils/sendNotification");
+const SubscriptionHistory = require("../models/subscriptionHistoryModel");
 
 // Helper function to get 
 const getSubscriptionDates = (startingDate) => {
@@ -121,8 +122,12 @@ const stripeWebhook = asyncHandler(async (request, response) => {
         const { userId, planId } = session.metadata;
         if(!userId) return response.status(200).json({ received:true });
 
+        // Start mongoose transaction
+        const dbSession = await mongoose.startSession();
+        dbSession.startTransaction();        
+
         // Check if already exists
-        let subscription = await Subscription.findOne({ userId });
+        let subscription = await Subscription.findOne({ userId }).session(dbSession);
 
         // Get dates for db
         const { startDate, endDate } = getSubscriptionDates(stripeSubscription.start_date);
@@ -131,45 +136,77 @@ const stripeWebhook = asyncHandler(async (request, response) => {
         {
             console.log("Subscription plan upgraded");
 
-            // Save to db
-            subscription.stripeSubscriptionId = stripeSubscriptionId;
-            subscription.planId = planId;
-            subscription.startDate = startDate;
-            subscription.endDate = endDate;
-            subscription.status = "active";
-            await subscription.save();
+            try 
+            {
+                // Save to db
+                subscription.stripeSubscriptionId = stripeSubscriptionId;
+                subscription.planId = planId;
+                subscription.startDate = startDate;
+                subscription.endDate = endDate;
+                subscription.status = "active";
+                await subscription.save({ session: dbSession });
 
-            // Notification
-            await sendNotification({
-                userOwnerId: userId,
-                title: "Subscription Updated",
-                content: "Your subscription has been updated successfully",
-                type:"payment",
-                io: request.app.get("io")
-            });
+                // Save to subscription history
+                await SubscriptionHistory.create([{ 
+                    userId, 
+                    planId, 
+                    invoiceId:subscription.stripeSubscriptionId, 
+                    status: "paid" 
+                }], { session: dbSession });
+
+                // Notification
+                await sendNotification({
+                    userOwnerId: userId,
+                    title: "Subscription Updated",
+                    content: "Your subscription has been updated successfully",
+                    type:"payment",
+                    io: request.app.get("io")
+                });                
+            } 
+            catch(error) 
+            {
+                await dbSession.abortTransaction();
+                throw error;
+            }
         }
         else
         {
             console.log("First time subscription creation");
 
-            // Created 1st time
-            await Subscription.create({
-                userId,
-                stripeSubscriptionId,
-                planId,
-                startDate: startDate,
-                endDate: endDate,
-                status: "active"
-            });
+            try 
+            {
+                // Created 1st time
+                await Subscription.create([{
+                    userId,
+                    stripeSubscriptionId,
+                    planId,
+                    startDate: startDate,
+                    endDate: endDate,
+                    status: "active"
+                }], { session: dbSession }); 
+                
+                // Save to subscription history
+                await SubscriptionHistory.create([{ 
+                    userId,
+                    planId,
+                    invoiceId:stripeSubscriptionId,
+                    status: "paid"
+                }], { session: dbSession });
 
-            // Notification
-            await sendNotification({
-                userOwnerId: userId,
-                title: "Subscription Activated",
-                content: "You have successfully subscribed to your plan",
-                type:"payment",
-                io: request.app.get("io")
-            });
+                // Notification
+                await sendNotification({
+                    userOwnerId: userId,
+                    title: "Subscription Activated",
+                    content: "You have successfully subscribed to your plan",
+                    type:"payment",
+                    io: request.app.get("io")
+                });                
+            }
+            catch(error) 
+            {
+                await dbSession.abortTransaction();
+                throw error;
+            }
         }
     }
 
@@ -183,8 +220,12 @@ const stripeWebhook = asyncHandler(async (request, response) => {
         const stripeSubscriptionId = invoice.subscription;
         if(!stripeSubscriptionId) return response.status(200).json({ received:true });
 
+        // Start mongoose transaction
+        const dbSession = await mongoose.startSession();
+        dbSession.startTransaction();
+
         // Find subscription
-        const subscription = await Subscription.findOne({ stripeSubscriptionId });
+        const subscription = await Subscription.findOne({ stripeSubscriptionId }).session(dbSession);
         if(subscription)
         {
             const stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
@@ -192,20 +233,36 @@ const stripeWebhook = asyncHandler(async (request, response) => {
             // Get date for db
             const { startDate, endDate } = getSubscriptionDates(stripeSubscription.start_date);
 
-            // Save to db
-            subscription.startDate = startDate;
-            subscription.endDate = endDate;
-            subscription.status = "active";
-            await subscription.save();
+            try 
+            {
+                // Save to db
+                subscription.startDate = startDate;
+                subscription.endDate = endDate;
+                subscription.status = "active";
+                await subscription.save({ session: dbSession });
 
-            // Notification
-            await sendNotification({
-                userOwnerId: subscription.userId,
-                title: "Subscription Renewed",
-                content: "Your subscription has been renewed successfully",
-                type:"payment",
-                io: request.app.get("io")
-            });
+                // Save to subscription history
+                await SubscriptionHistory.create([{ 
+                    userId: subscription.userId, 
+                    planId: subscription.planId, 
+                    invoiceId:subscription.stripeSubscriptionId, 
+                    status: "paid" 
+                }], { session: dbSession });
+
+                // Notification
+                await sendNotification({
+                    userOwnerId: subscription.userId,
+                    title: "Subscription Renewed",
+                    content: "Your subscription has been renewed successfully",
+                    type:"payment",
+                    io: request.app.get("io")
+                });                
+            }
+            catch(error)             
+            {
+                await dbSession.abortTransaction();
+                throw error;
+            }
         }
     }
 
@@ -219,13 +276,25 @@ const stripeWebhook = asyncHandler(async (request, response) => {
         const stripeSubscriptionId = invoice.subscription;
         if(!stripeSubscriptionId) return response.status(200).json({ received:true });
 
+        // Start mongoose transaction
+        const dbSession = await mongoose.startSession();
+        dbSession.startTransaction();
+
         // Find subscription
-        const subscription = await Subscription.findOne({ stripeSubscriptionId });
+        const subscription = await Subscription.findOne({ stripeSubscriptionId }).session(dbSession);
         if(subscription)
         {
             // Save to db
             subscription.status = "expired";
-            await subscription.save();
+            await subscription.save({ session: dbSession });
+            
+            // Save to subscription history
+            await SubscriptionHistory.create([{ 
+                userId: subscription.userId, 
+                planId: subscription.planId, 
+                invoiceId:subscription.stripeSubscriptionId, 
+                status: "failed" 
+            }], { session: dbSession });
 
             // Notification
             await sendNotification({
@@ -246,22 +315,41 @@ const stripeWebhook = asyncHandler(async (request, response) => {
         // Get customer event object
         const stripeSubscription = event.data.object;
 
+        // Start mongoose transaction
+        const dbSession = await mongoose.startSession();
+        dbSession.startTransaction();
+
         // Find subscription
-        const subscription = await Subscription.findOne({ stripeSubscriptionId: stripeSubscription.id });
+        const subscription = await Subscription.findOne({ stripeSubscriptionId: stripeSubscription.id }).session(dbSession);
         if(subscription)
         {
-            // Sve to db
-            subscription.status = "canceled";
-            await subscription.save();
+            try {
+                // Save to db
+                subscription.status = "canceled";
+                await subscription.save({ session: dbSession });
 
-            // Notification
-            await sendNotification({
-                userOwnerId: subscription.userId,
-                title: "Subscription Canceled",
-                content: "Your subscription has been canceled",
-                type:"payment",
-                io: request.app.get("io")
-            });
+                // Save to subscription history
+                await SubscriptionHistory.create([{ 
+                    userId: subscription.userId, 
+                    planId: subscription.planId, 
+                    invoiceId: subscription.stripeSubscriptionId, 
+                    status: "deleted" 
+                }], { session: dbSession });
+
+                // Notification
+                await sendNotification({
+                    userOwnerId: subscription.userId,
+                    title: "Subscription Canceled",
+                    content: "Your subscription has been canceled",
+                    type:"payment",
+                    io: request.app.get("io")
+                });                
+            } 
+            catch (error) 
+            {
+                await dbSession.abortTransaction();
+                throw error;
+            }
         }
     }
 

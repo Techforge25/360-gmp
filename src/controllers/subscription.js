@@ -73,8 +73,8 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
     if(!session_id) throw new ApiError(400, "Session ID is missing");
 
     // Redirect to frontend
-    const redirectUrl = `${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`;
-    // const redirectUrl = `http://localhost:3000/subscription/success?session_id=${session_id}`;
+    // const redirectUrl = `${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`;
+    const redirectUrl = `http://localhost:3000/subscription/success?session_id=${session_id}`;
     return response.status(303).redirect(redirectUrl);
 });
 
@@ -415,6 +415,18 @@ const getMySubscription = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, subscription[0], "Subscription details has been fetched"));
 });
 
+// Check subscription existense of user
+const checkSubscriptionExistense = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Check if user had ever purchased a subscription
+    const subscription = await Subscription.findOne({ userId }).select("_id endDate status");
+    if(!subscription) return response.status(101).json(new ApiResponse(101, { subscriptionStatus: false }, "No active subscription found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { subscriptionStatus: true }, "Active subscription found"));
+});
+
 // Total spent on subscriptions till now
 const totalSpent = asyncHandler(async (request, response) => {
     const userId = convertToMongoId(request.user._id);
@@ -533,5 +545,5 @@ const getAllMySubscriptions = asyncHandler(async (request, response) => {
     // Response
     return response.status(200).json(new ApiResponse(200, subscriptions, "All subscriptions fetched"));
 });
-module.exports = { createSubscriptionStripe, verifyStripePayment, stripeWebhook, 
-getMySubscription, totalSpent, checkSubscriptionStatus, getAllMySubscriptions };
+module.exports = { createSubscriptionStripe, verifyStripePayment, stripeWebhook, checkSubscriptionExistense,
+getMySubscription, totalSpent, checkSubscriptionStatus, getAllMySubscriptions  };

@@ -1,8 +1,7 @@
 const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
 const { createSubscriptionStripe, verifyStripePayment, stripeWebhook, getMySubscription, 
-totalSpent, checkSubscriptionStatus, 
-getAllMySubscriptions} = require("../controllers/subscription");
+totalSpent, checkSubscriptionStatus, getAllMySubscriptions, checkSubscriptionExistense } = require("../controllers/subscription");
 
 // Router instance
 const subscriptionRouter = Router();
@@ -19,6 +18,9 @@ subscriptionRouter.route("/webhook").post(stripeWebhook);
 
 // Get my current subscription
 subscriptionRouter.route("/").get(authentication, getMySubscription);
+
+// Check subscription existense of user
+subscriptionRouter.route("/exists").get(authentication, checkSubscriptionExistense);
 
 // Get my current subscription
 subscriptionRouter.route("/all").get(authentication, getAllMySubscriptions);

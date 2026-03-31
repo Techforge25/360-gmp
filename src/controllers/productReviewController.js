@@ -6,18 +6,12 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
+const { productReviewValidator } = require("../validations/productReviewValidator");
 
 // Product review access (Check if user purchased this product)
 const productReviewAccess = asyncHandler(async (request, response) => {
-    const { userProfileId } = request.user.profiles || {};
-    const { productId } = request.params;
-
-    // Validate ID
-    if(!isValidObjectId(productId)) throw new ApiError(400, "Invalid MongoDB ID! Please provide a valid product ID");
-
-    // Check
-    const hasPurchased = await Order.exists({ buyerUserProfileId:userProfileId, status:"completed", "items.productId":productId });
-
+    const hasPurchased = request.hasPurchased;
+    
     // Response message
     const message = hasPurchased ? "You are allowed to give a review for this product." : "You are not allowed to give a review for this product.";
 
@@ -25,4 +19,17 @@ const productReviewAccess = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, { hasPurchased: Boolean(hasPurchased) }, message));
 });
 
-module.exports = { productReviewAccess };
+// Create product review
+const createProductReview = asyncHandler(async (request, response) => {
+    const hasPurchased = request.hasPurchased;
+    if(!hasPurchased) throw new ApiError(400, "You are not allowed to give a review for this product.");
+
+    // Get validated payload
+    const { rating, comment, images } = validate(productReviewValidator, request.body) || {};
+    
+
+    // Response
+    return response.status(201).json(new ApiResponse(201, hasPurchased, "Product review has been created"));
+});
+
+module.exports = { productReviewAccess, createProductReview };

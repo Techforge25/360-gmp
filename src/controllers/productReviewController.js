@@ -31,12 +31,16 @@ const createProductReview = asyncHandler(async (request, response) => {
     // Get validated payload
     const { rating, comment, images } = validate(productReviewValidator, request.body) || {};
 
+    // Prevent multiple reviews
+    const isExist = await ProductReview.findOne({ userProfileId, productId }).select("_id").lean();
+    if(isExist) throw new ApiError(400, "You have already submitted a review for this product.");
+
     // Save to db
     const productReview = await ProductReview.create({ userProfileId, productId, rating, comment, images });
     if(!productReview) throw new ApiError(500, "Failed to create product review");
 
     // Response
-    return response.status(201).json(new ApiResponse(201, { rating, comment, images }, "Product review has been created"));
+    return response.status(201).json(new ApiResponse(201, { rating, comment, images }, "Product review has been submitted"));
 });
 
 module.exports = { productReviewAccess, createProductReview };

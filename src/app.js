@@ -50,6 +50,7 @@ const testimonialRouter = require("./routes/testimonialRoute");
 const galleryRouter = require("./routes/galleryRoute");
 const communityMembershipRouter = require("./routes/communityMembershipRoute");
 const disputeRouter = require("./routes/disputeRoute");
+const productReviewRouter = require("./routes/productReviewRoute");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);
@@ -79,6 +80,7 @@ app.use("/api/v1/testimonials", testimonialRouter);
 app.use("/api/v1/gallery", galleryRouter);
 app.use("/api/v1/community-membership", communityMembershipRouter);
 app.use("/api/v1/dispute", disputeRouter);
+app.use("/api/v1/productReview", productReviewRouter);
 
 // Import Admin Routes
 const adminAuthRouter = require("./routes/admin/adminAuthRoute");

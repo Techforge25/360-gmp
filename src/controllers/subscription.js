@@ -421,7 +421,7 @@ const checkSubscriptionExistense = asyncHandler(async (request, response) => {
 
     // Check if user had ever purchased a subscription
     const subscription = await Subscription.findOne({ userId }).select("_id endDate status");
-    if(!subscription) return response.status(101).json(new ApiResponse(101, { subscriptionStatus: false }, "No active subscription found"));
+    if(!subscription) return response.status(200).json(new ApiResponse(200, { subscriptionStatus: false }, "No active subscription found"));
 
     // Response
     return response.status(200).json(new ApiResponse(200, { subscriptionStatus: true }, "Active subscription found"));

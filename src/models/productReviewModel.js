@@ -10,7 +10,7 @@ const productReviewSchema = new Schema({
     rating: { type:Number, min:1, max:5, required:true },
     comment:{ type:String, trim:true, required:true },
     images:[{ type:String, trim:true }]
-});
+}, { timestamps:true });
 
 // Model
 const ProductReview = model("ProductReview", productReviewSchema);

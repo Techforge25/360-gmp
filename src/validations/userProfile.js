@@ -4,7 +4,7 @@ const joi = require("joi");
 const alphaNumericPattern = /^[a-zA-Z0-9 -]*$/;
 const namePattern = /^[a-zA-Z ]*$/;
 const customPattern = /^[a-zA-Z0-9 \-.,\n\r]*$/;
-const titlePattern = /^[a-zA-Z0-9 \-(),.&]*$/;
+const titlePattern = /^[a-zA-Z0-9 \-(),.'&]*$/;
 const addressPattern = /^[a-zA-Z0-9 -,]*$/;
 
 const educationSchema = joi.object({
@@ -42,7 +42,7 @@ const createUserProfileSchema = joi.object({
     employmentType:joi.array().items(joi.string().pattern(alphaNumericPattern)).allow("", null).label("Employment type"),
 
     // Job preferences
-    targetJob: joi.string().pattern(titlePattern).max(50).allow("", null).label("Target job"),
+    targetJob: joi.string().pattern(titlePattern).max(200).allow("", null).label("Target job"),
     minSalary: joi.number().min(0).label("Minimum salary"),
     maxSalary: joi.number().greater(joi.ref("minSalary")).label("Maximum salary"),
     education: educationSchema.default({}).label("Education")

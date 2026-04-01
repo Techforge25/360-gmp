@@ -1,6 +1,3 @@
-const { isValidObjectId } = require("mongoose");
-const Order = require("../models/orders");
-const Product = require("../models/products");
 const ProductReview = require("../models/productReviewModel");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
@@ -37,7 +34,7 @@ const createProductReview = asyncHandler(async (request, response) => {
 
     // Save to db
     const productReview = await ProductReview.create({ userProfileId, productId, rating, comment, images });
-    if(!productReview) throw new ApiError(500, "Failed to create product review");
+    if(!productReview) throw new ApiError(500, "Failed to submit product review");
 
     // Response
     return response.status(201).json(new ApiResponse(201, { rating, comment, images }, "Product review has been submitted"));

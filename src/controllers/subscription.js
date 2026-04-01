@@ -420,11 +420,20 @@ const checkSubscriptionExistense = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Check if user had ever purchased a subscription
-    const subscription = await Subscription.findOne({ userId }).select("_id endDate status");
+    const subscription = await Subscription.findOne({ userId })
+    .populate({ path:"planId", select:"name" })
+    .select("_id endDate status");
     if(!subscription) return response.status(200).json(new ApiResponse(200, { subscriptionStatus: false }, "No active subscription found"));
 
+    // Prepare payload
+    const payload = {
+        subscriptionStatus: true,
+        planName: subscription.planId?.name || "Plan name not specified"
+    };
+
     // Response
-    return response.status(200).json(new ApiResponse(200, { subscriptionStatus: true }, "Active subscription found"));
+    return response.status(200)
+    .json(new ApiResponse(200, payload, "Active subscription found"));
 });
 
 // Total spent on subscriptions till now

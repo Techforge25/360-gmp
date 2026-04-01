@@ -79,8 +79,6 @@ const resendOTPToken = asyncHandler(async (request, response) => {
 
     // Update user with new OTP token
     user.accountVerificationToken = accountVerificationToken;
-    user.accountVerificationTokenExpires = Date.now() + 1 * 60 * 1000;
-    await user.save();
 
     // Send email
     const result = await sendEmail(validEmail, "Account Activation Token", 
@@ -88,6 +86,10 @@ const resendOTPToken = asyncHandler(async (request, response) => {
         <p>Please use this token to activate your account.</p>`
         );
     if(!result) throw new ApiError(500, "Failed to send OTP");
+
+    // Set timer
+    user.accountVerificationTokenExpires = Date.now() + 1 * 60 * 1000;
+    await user.save();    
 
     // Response
     return response.status(200).json(new ApiResponse(200, user._id, "We have re-sent you an OTP to your email"));         

@@ -8,6 +8,7 @@ const validate = require("../utils/validate");
 const { createProductSchema } = require("../validations/productsValidator");
 const Order = require("../models/orders");
 const convertToMongoId = require("../utils/convertToMongoId");
+const ProductReview = require("../models/productReviewModel");
 
 // Create product
 const createProduct = asyncHandler(async (request, response) => {
@@ -137,14 +138,54 @@ const fetchBusinessFeaturedProducts = asyncHandler(async (request, response) => 
 });
 
 // View product
+// const viewProduct = asyncHandler(async (request, response) => {
+//     const userId = convertToMongoId(request.user._id);
+//     const { productId } = request.params;
+
+//     // Find product and business profile
+//     const [product, businessProfile] = await Promise.all([
+//         Product.findById(productId).populate({ path:"businessId", select:"_id companyName foundedDate logo" }),
+//         BusinessProfile.findOne({ ownerUserId:userId }).select("_id")
+//     ]);
+//     if(!product) throw new ApiError(404, "Product not found");
+
+//     // Owner flag
+//     const isOwner = product.businessId._id.equals(businessProfile?._id);
+
+//     // Check if already viewed
+//     const alreadyViewed = product.viewedBy.some(id => String(id) === String(userId));
+
+//     // Add unique view
+//     if (!alreadyViewed && !isOwner) 
+//     {
+//         await Product.findByIdAndUpdate(productId, { 
+//             $addToSet:{ viewedBy:userId }, 
+//             $inc:{ viewsCount:1 } 
+//         });
+//     }
+
+//     // Response
+//     return response.status(200).json(new ApiResponse(200, { ...product.toObject(), isOwner }, "Product has been fetched"));
+// });
+
 const viewProduct = asyncHandler(async (request, response) => {
     const userId = convertToMongoId(request.user._id);
     const { productId } = request.params;
 
-    // Find product and business profile
-    const [product, businessProfile] = await Promise.all([
+    // Fetch product + business profile + rating stats
+    const [product, businessProfile, ratingStats] = await Promise.all([
         Product.findById(productId).populate({ path:"businessId", select:"_id companyName foundedDate logo" }),
-        BusinessProfile.findOne({ ownerUserId:userId }).select("_id")
+        BusinessProfile.findOne({ ownerUserId:userId }).select("_id"),
+        ProductReview.aggregate([
+            { $match: { productId: convertToMongoId(productId) } },
+            {
+                $group: {
+                    _id: "$productId",
+                    avgRating: { $avg: "$rating" },
+                    totalReviews: { $sum: 1 }
+                }
+            }
+        ])
     ]);
     if(!product) throw new ApiError(404, "Product not found");
 
@@ -163,8 +204,20 @@ const viewProduct = asyncHandler(async (request, response) => {
         });
     }
 
+    // Extract rating data
+    const avgRating = ratingStats[0]?.avgRating || 0;
+    const totalReviews = ratingStats[0]?.totalReviews || 0;
+
+    // Prepare payload
+    const payload = {
+        ...product.toObject(),
+        isOwner, 
+        avgRating: Number(avgRating.toFixed(1)), 
+        totalReviews
+    };
+
     // Response
-    return response.status(200).json(new ApiResponse(200, { ...product.toObject(), isOwner }, "Product has been fetched"));
+    return response.status(200).json(new ApiResponse(200, payload, "Product has been fetched"));
 });
 
 // Update product

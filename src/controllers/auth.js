@@ -350,6 +350,10 @@ const resetPassword = asyncHandler(async (request, response) => {
     if(!user) throw new ApiError(400, "Invalid reset token");
     if(user.passwordResetTokenExpires < Date.now()) throw new ApiError(400, "Reset token has expired");
 
+    // Prevent restting password as old password
+    const matchPassword = await user.matchPassword(newPassword);
+    if(matchPassword) throw new ApiError(400, "Your new password cannot be the same as your previous password");
+
     // Update password
     user.passwordHash = newPassword;
     user.passwordResetToken = null;

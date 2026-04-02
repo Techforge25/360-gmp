@@ -32,7 +32,7 @@ const createUserProfileSchema = joi.object({
         "string.pattern.base": "Phone number must be a valid international format (e.g., +923001234567)."
     }).label("Phone"),
     email: joi.string().trim().lowercase().email().max(40).required().label("Email"),
-    location: joi.string().pattern(addressPattern).trim().max(100).allow("", null).label("Location"),
+    location: joi.string().trim().max(100).allow("", null).label("Location"),
     bio: joi.string().trim().max(1000).allow("", null).label("Bio"),
     resumeUrl: joi.string().uri().allow("", null).label("Resume"),
     logo: joi.string().uri().required().label("Profile image"),

@@ -303,3 +303,85 @@ const stripeWebhook = asyncHandler(async (request, response) => {
     return response.status(200).json({ received: true });
 });
 ```
+
+## CANCEL SUBSCRIPTION
+
+- You can choose to cancel a subscription immediately or schedule it for the end of the billing period. 
+
+#### Option A: Cancel Immediately 
+
+- This method stops the subscription and billing right away.
+```javascript
+const stripe = require("stripe");
+
+// Delete subscription (Cancel via app)
+const cancelStripeSubscription = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Find subscription
+    const subscription = await Subscription.findOne({ userId })
+    .select("status endDate stripeSubscriptionId");
+    if(!subscription) throw new ApiError(400, "No subscription found");
+
+    // Only active subscription can be cancelled
+    if(subscription.status !== "active" || new Date(subscription.endDate) < new Date())
+    {
+        throw new ApiError(400, "Your subscription has already been expired");
+    }
+
+    // Initialized stripe
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);
+
+    // Cancel subscription
+    const deleteSubscription = await stripe.subscriptions.cancel(subscription.stripeSubscriptionId); 
+    if(!deleteSubscription) throw new ApiError(500, "Failed to cancel subscription");
+
+    // Save to db
+    subscription.status = "canceled";
+    await subscription.save();
+
+    // Prepare payload
+    const payload = { 
+        subscriptionId: subscription.stripeSubscriptionId, 
+        subscriptionStatus: subscription.status 
+    };
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, payload, "Subscription has been deleted"));
+});
+```
+
+#### Option B: Cancel at Period End
+
+- This allows the customer to maintain access until the end of the current billing cycle.
+```javascript
+const stripe = require("stripe");
+
+// Cancel stripe subscription at period
+const cancelStripeSubscriptionAtPeriod = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Find subscription
+    const subscription = await Subscription.findOne({ userId })
+    .select("status endDate stripeSubscriptionId");
+    if(!subscription) throw new ApiError(400, "No subscription found");
+
+    // Only active subscription can be cancelled
+    if(subscription.status !== "active" || new Date(subscription.endDate) < new Date())
+    {
+        throw new ApiError(400, "Your subscription has already been expired");
+    }
+
+    // Initialized stripe
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);
+
+    //  Cancel at period
+    const cancelSubscription = await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+        cancel_at_period_end: true,
+    });
+    if(!cancelSubscription) throw new ApiError(500, "Failed to cancel subscription");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Subscription will be cancelled at period"));    
+});
+```

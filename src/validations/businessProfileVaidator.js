@@ -10,11 +10,11 @@ const stackHoldersNamePattern = /^[a-zA-Z]*$/;
 const locationSchema = Joi.object({
     country: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Country"),
     city: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("City"),
-    addressLine: Joi.string().max(1000).trim().allow("", null).pattern(alphaNumericPattern).label("Address line"),
-    warehouseAddress: Joi.string().max(1000).trim().allow("", null).pattern(addressPattern).label("Warehouse Address"),
-    additionalWarehouseAddress: Joi.string().max(1000).trim().allow("", null).pattern(addressPattern).label("Additional Warehouse Address"),
-    mandatoryPickupAddress: Joi.string().max(1000).trim().allow("", null).pattern(addressPattern).label("Mandatory Pickup Address"),
-    businessRegistrationAddress: Joi.string().max(1000).trim().allow("", null).pattern(addressPattern).label("Business Registration Address"),
+    addressLine: Joi.string().max(1000).trim().allow("", null).label("Address line"),
+    warehouseAddress: Joi.string().max(1000).trim().allow("", null).label("Warehouse Address"),
+    additionalWarehouseAddress: Joi.string().max(1000).trim().allow("", null).label("Additional Warehouse Address"),
+    mandatoryPickupAddress: Joi.string().max(1000).trim().allow("", null).label("Mandatory Pickup Address"),
+    businessRegistrationAddress: Joi.string().max(1000).trim().allow("", null).label("Business Registration Address"),
     internationalOffices: Joi.array().items(Joi.string().pattern(addressPattern)).label("International Offices")
 });
 

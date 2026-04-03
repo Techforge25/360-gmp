@@ -8,7 +8,7 @@ const checkSubscription = asyncHandler(async (request, response, next) => {
     
     // Find subscription with populated plan details
     const subscription = await Subscription.findOne({ userId, status:"active" }).populate("planId");
-    if(!subscription) throw new ApiError(400, "No subscriptions found");
+    if(!subscription) throw new ApiError(400, "No active subscription found");
 
     // Check expiry
     const currentDate = new Date();

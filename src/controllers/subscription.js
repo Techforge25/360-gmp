@@ -38,9 +38,18 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
     if(!stripePriceId) throw new ApiError(400, "Stripe price ID not configured for this plan");
     if(name === "TRIAL" && profile === "business") throw new ApiError(400, "Business cannot select Trial plan");
 
-    // Prevent duplicate active subscription
-    const existingSubscription = await Subscription.findOne({ userId, planId, status:"active", endDate:{ $gt:new Date() } });
-    if(existingSubscription) return response.status(200).json(new ApiResponse(200, null, "You already have an active subscription for this plan"));
+    // Prevent duplicate active subscription and downgrade subscription
+    // const existingSubscription = await Subscription.findOne({ userId, planId, status:"active", endDate:{ $gt:new Date() } });
+    const existingSubscription = await Subscription.findOne({ userId });
+    if(existingSubscription && name === "TRIAL")
+    {
+        throw new ApiError(400, "You cannot downgrade your subscription plan");
+    }
+    if(String(existingSubscription?.planId) === String(planId) 
+    && existingSubscription?.status === "active" && new Date(existingSubscription?.endDate) > new Date())
+    {
+        return response.status(200).json(new ApiResponse(200, null, "You already have an active subscription for this plan"));
+    }
 
     // Stripe instance
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);

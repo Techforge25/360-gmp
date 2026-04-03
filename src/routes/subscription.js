@@ -3,6 +3,7 @@ const { authentication } = require("../middlewares/auth");
 const { createSubscriptionStripe, verifyStripePayment, stripeWebhook, getMySubscription, 
 totalSpent, checkSubscriptionStatus, getAllMySubscriptions, checkSubscriptionExistense, 
 cancelStripeSubscription } = require("../controllers/subscription");
+const { checkSubscription } = require("../middlewares/checkSubscription");
 
 // Router instance
 const subscriptionRouter = Router();
@@ -16,7 +17,7 @@ subscriptionRouter.route("/stripe/cancel").get((request, response) => {
 
 // Delete subscription (Cancel via app)
 subscriptionRouter.route("/stripe/cancel-subscription")
-.delete(authentication, cancelStripeSubscription);
+.delete(authentication, checkSubscription, cancelStripeSubscription);
 
 // Stripe webhook for subscription
 subscriptionRouter.route("/webhook").post(stripeWebhook);

@@ -89,18 +89,7 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
 
 // Delete subscription (Cancel via app)
 const cancelStripeSubscription = asyncHandler(async (request, response) => {
-    const userId = request.user._id;
-
-    // Find subscription
-    const subscription = await Subscription.findOne({ userId })
-    .select("status endDate stripeSubscriptionId");
-    if(!subscription) throw new ApiError(400, "No subscription found");
-
-    // Only active subscription can be cancelled
-    if(subscription.status !== "active" || new Date(subscription.endDate) < new Date())
-    {
-        throw new ApiError(400, "Your subscription has already been expired");
-    }
+    const { subscription } = request.user;
 
     // Initialized stripe
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);
@@ -109,14 +98,12 @@ const cancelStripeSubscription = asyncHandler(async (request, response) => {
     const deleteSubscription = await stripe.subscriptions.cancel(subscription.stripeSubscriptionId); 
     if(!deleteSubscription) throw new ApiError(500, "Failed to cancel subscription");
 
-    // Save to db
-    subscription.status = "canceled";
-    await subscription.save();
+    /* Subscription status will be marked as canceled in db (via webhook) */
 
     // Prepare payload
     const payload = { 
         subscriptionId: subscription.stripeSubscriptionId, 
-        subscriptionStatus: subscription.status 
+        subscriptionStatus: "canceled"
     };
 
     // Response

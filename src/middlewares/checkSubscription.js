@@ -4,10 +4,10 @@ const asyncHandler = require("../utils/asyncHandler");
 
 // Main middleware to check subscription and attach plan info
 const checkSubscription = asyncHandler(async (request, response, next) => {
-    const _id = request.user?._id;
+    const userId = request.user?._id;
     
     // Find subscription with populated plan details
-    const subscription = await Subscription.findOne({ userId:_id, status:"active" }).populate("planId");
+    const subscription = await Subscription.findOne({ userId, status:"active" }).populate("planId");
     if(!subscription) throw new ApiError(400, "No subscriptions found");
 
     // Check expiry

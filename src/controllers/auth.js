@@ -249,7 +249,7 @@ const refreshAccessToken = asyncHandler(async (request, response) => {
 
 // Switch role
 const switchRole = asyncHandler(async (request, response) => {
-    const { _id } = request.user;
+    const userId = request.user._id;
     const role = request.query?.role || null;
     if(!role) throw new ApiError(400, "Role is required for switching a profile");
     if(role.toLowerCase() !== "user" && role.toLowerCase() !== "business") throw new ApiError(400, "Invalid role");
@@ -257,25 +257,26 @@ const switchRole = asyncHandler(async (request, response) => {
     // Check if user profile actually exist before switching
     if(role.toLowerCase() === "user")
     {
-        const userProfile = await getUserProfile(_id);
+        const userProfile = await getUserProfile(userId);
         if(!userProfile) throw new ApiError(404, "User profile not found! Please create user profile first");
     }
 
     // Check if business profile actually exist before switching
     if(role.toLowerCase() === "business")
     {
-        const businessProfile = await getBusinessProfile(_id);
+        const businessProfile = await getBusinessProfile(userId);
         if(!businessProfile) throw new ApiError(404, "Business profile not found! Please create business profile first");
+        if(request.user.planName === "TRIAL") throw new ApiError(403, "Switching to a business profile is not allowed while you are on a trial plan");
     }    
 
     // Save to db
-    const user = await User.findByIdAndUpdate(_id, { role }, { new:true, lean:true }).select("_id role");
+    const user = await User.findByIdAndUpdate(userId, { role }, { new:true, lean:true }).select("_id role");
     if(!user) throw new ApiError(400, "Failed to update role in db.");
 
     // Find profiles
     const [businessProfile, userProfile] = await Promise.all([
-        BusinessProfile.findOne({ ownerUserId:user._id }).lean(),
-        UserProfile.findOne({ userId:user._id }).lean()
+        BusinessProfile.findOne({ ownerUserId:userId }).lean(),
+        UserProfile.findOne({ userId }).lean()
     ]);
 
     // Payload based on role
@@ -283,7 +284,7 @@ const switchRole = asyncHandler(async (request, response) => {
 
     // Generate new token with updated role
     const accessToken = generateAccessToken({ 
-        _id: user._id, 
+        _id: userId, 
         role: role, 
         profiles: {
             businessProfileId: businessProfile?._id || null,

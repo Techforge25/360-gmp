@@ -4,6 +4,7 @@ verifypasswordResetToken, resetPassword, googleLogin, verifyOTP,
 resendOTPToken, userExistence, refreshAccessToken, userAuthCheck } = require("../controllers/auth");
 const { authentication } = require("../middlewares/auth");
 const passport = require("passport");
+const { checkSubscription } = require("../middlewares/checkSubscription");
 
 // Router instance
 const authRouter = Router();
@@ -33,7 +34,7 @@ authRouter.route("/logout").get(authentication, logout);
 authRouter.route("/refreshToken").get(refreshAccessToken);
 
 // Refresh token - (Switch user role)
-authRouter.route("/refreshToken/updateRole").get(authentication, switchRole);
+authRouter.route("/refreshToken/updateRole").get(authentication, checkSubscription, switchRole);
 
 // Forgot password
 authRouter.route("/forgotPassword").post(forgotPassword);

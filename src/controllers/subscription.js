@@ -87,6 +87,42 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
     return response.status(303).redirect(redirectUrl);
 });
 
+// Delete subscription (Cancel via app)
+const cancelStripeSubscription = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Find subscription
+    const subscription = await Subscription.findOne({ userId })
+    .select("status endDate stripeSubscriptionId");
+    if(!subscription) throw new ApiError(400, "No subscription found");
+
+    // Only active subscription can be cancelled
+    if(subscription.status !== "active" || new Date(subscription.endDate) < new Date())
+    {
+        throw new ApiError(400, "Your subscription has already been expired");
+    }
+
+    // Initialized stripe
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);
+
+    // Cancel subscription
+    const deleteSubscription = await stripe.subscriptions.cancel(subscription.stripeSubscriptionId); 
+    if(!deleteSubscription) throw new ApiError(500, "Failed to cancel subscription");
+
+    // Save to db
+    subscription.status = "canceled";
+    await subscription.save();
+
+    // Prepare payload
+    const payload = { 
+        subscriptionId: subscription.stripeSubscriptionId, 
+        subscriptionStatus: subscription.status 
+    };
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, payload, "Subscription has been deleted"));
+});
+
 // Stripe webhook (Handle recurring subscription lifecycle)
 const stripeWebhook = asyncHandler(async (request, response) => {
     console.log("Webhook fired");
@@ -564,4 +600,4 @@ const getAllMySubscriptions = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, subscriptions, "All subscriptions fetched"));
 });
 module.exports = { createSubscriptionStripe, verifyStripePayment, stripeWebhook, checkSubscriptionExistense,
-getMySubscription, totalSpent, checkSubscriptionStatus, getAllMySubscriptions  };
+getMySubscription, totalSpent, checkSubscriptionStatus, getAllMySubscriptions, cancelStripeSubscription };

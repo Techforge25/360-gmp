@@ -1,7 +1,8 @@
 const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
 const { createSubscriptionStripe, verifyStripePayment, stripeWebhook, getMySubscription, 
-totalSpent, checkSubscriptionStatus, getAllMySubscriptions, checkSubscriptionExistense } = require("../controllers/subscription");
+totalSpent, checkSubscriptionStatus, getAllMySubscriptions, checkSubscriptionExistense, 
+cancelStripeSubscription } = require("../controllers/subscription");
 
 // Router instance
 const subscriptionRouter = Router();
@@ -12,6 +13,10 @@ subscriptionRouter.route("/stripe/success").get(verifyStripePayment);
 subscriptionRouter.route("/stripe/cancel").get((request, response) => {
     return response.status(303).redirect(`${process.env.FRONTEND_URL}/onboarding/plans`);
 });
+
+// Delete subscription (Cancel via app)
+subscriptionRouter.route("/stripe/cancel-subscription")
+.delete(authentication, cancelStripeSubscription);
 
 // Stripe webhook for subscription
 subscriptionRouter.route("/webhook").post(stripeWebhook);

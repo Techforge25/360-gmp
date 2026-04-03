@@ -120,7 +120,7 @@ const cancelStripeSubscription = asyncHandler(async (request, response) => {
     };
 
     // Response
-    return response.status(200).json(new ApiResponse(200, payload, "Subscription has been deleted"));
+    return response.status(200).json(new ApiResponse(200, payload, "Subscription has been cancelled"));
 });
 
 // Stripe webhook (Handle recurring subscription lifecycle)
@@ -472,7 +472,7 @@ const checkSubscriptionExistense = asyncHandler(async (request, response) => {
 
     // Prepare payload
     const payload = {
-        subscriptionStatus: true,
+        subscriptionStatus: subscription.status,
         planName: subscription.planId?.name || "Plan name not specified"
     };
 

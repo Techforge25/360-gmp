@@ -16,6 +16,7 @@ const forgotPasswordSchema = require("../validations/forgotPasswordValidator");
 const resetPasswordSchema = require("../validations/resetPasswordValidator");
 const { userSignupValidator, userLoginValidator } = require("../validations/user");
 const verifyPasswordResetTokenSchema = require("../validations/verifyPasswordResetTokenValidator");
+const bcrypt = require("bcrypt");
 
 // User signup
 const userSignup = asyncHandler(async (request, response) => {
@@ -135,32 +136,64 @@ const verifyOTP = asyncHandler(async (request, response) => {
 const userLogin = asyncHandler(async (request, response) => {
     const { email, passwordHash } = validate(userLoginValidator, request.body) || {};
 
-    // Find user
-    const user = await User.findOne({ email })
-    .select("_id status role passwordHash isNewToPlatform refreshToken");
-    if(!user) throw new ApiError(400, "Username or password is incorrect");
+    const [user] = await User.aggregate([
+        // Match
+        { $match:{ email } },
+
+        // Lookup inside user profile
+        {
+            $lookup:{
+                from:"userprofiles",
+                localField:"_id",
+                foreignField:"userId",
+                as:"userProfile"
+            }
+        },
+
+        // Lookup inside business profile
+        {
+            $lookup:{
+                from:"businessprofiles",
+                localField:"_id",
+                foreignField:"ownerUserId",
+                as:"businessProfile"
+            }
+        },
+
+        // $unwind
+        { $unwind:"$userProfile" },
+        { $unwind:"$businessProfile" },
+        
+        // Projection
+        {
+            $project:{
+                email:1, 
+                passwordHash:1,
+                status:1,
+                role:1,
+                refreshToken:1,
+                userProfileId: { $ifNull:["$userProfile._id", null] },
+                businessProfileId: { $ifNull:["$businessProfile._id", null] }
+            }
+        }
+    ]);
+    if(!user) throw new ApiError(400, "Invalid email or password");
 
     // Match password
-    const isMatched = await user.matchPassword(passwordHash);
-    if(!isMatched) throw new ApiError(400, "Username or password is incorrect");
+    const isMatched = await bcrypt.compare(passwordHash, user.passwordHash);
+    if(!isMatched) throw new ApiError(400, "Invalid email or password");
 
     // Only approved account can log in
     if(user.status === "pending") throw new ApiError(400, "Your account is not activated yet. Please verify your identity via OTP.");
-    if(user.status === "flagged") throw new ApiError(400, "Your account is flagged. You cannot log-in to your account");
-
-    // Find profiles
-    const [businessProfile, userProfile] = await Promise.all([
-        BusinessProfile.findOne({ ownerUserId:user._id }).lean(),
-        UserProfile.findOne({ userId:user._id }).lean()
-    ]);
+    if(user.status === "flagged") throw new ApiError(400, "Your account is flagged. You cannot log-in to your account");    
 
     // Generate access token & refresh tokens
     const accessToken = generateAccessToken({ 
         _id:user._id, 
         role:user.role, 
         profiles: {
-            businessProfileId: businessProfile?._id || null,
-            userProfileId: userProfile?._id || null
+            businessProfileId: user.businessProfileId,
+            userProfileId: user.userProfileId
         }
     });
     const refreshToken = generateRefreshToken({ _id:user._id });
@@ -169,12 +202,11 @@ const userLogin = asyncHandler(async (request, response) => {
     if(!accessToken) throw new ApiError(500, "Failed to generate access token");
     if(!refreshToken) throw new ApiError(500, "Failed to generate refresh token");
 
-    // Save refresh token to db
-    user.refreshToken = refreshToken;
-    await user.save();
+    // Save to db
+    await User.updateOne({ _id: user._id }, { $set: { refreshToken } });
 
     // Is new user flag
-    const isNewUser = Boolean(!user.role);
+    const isNewUser = Boolean(!user.role);    
 
     // Response
     return response.status(200)

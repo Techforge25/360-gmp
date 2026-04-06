@@ -5,6 +5,7 @@ resendOTPToken, userExistence, refreshAccessToken, userAuthCheck } = require("..
 const { authentication } = require("../middlewares/auth");
 const passport = require("passport");
 const { checkSubscription } = require("../middlewares/checkSubscription");
+const limitRequest = require("../middlewares/rateLimit");
 
 // Router instance
 const authRouter = Router();
@@ -13,7 +14,8 @@ const authRouter = Router();
 authRouter.route("/user/signup").post(userSignup);
 
 // Resend OTP token
-authRouter.route("/user/resend-otp").post(resendOTPToken);
+authRouter.route("/user/resend-otp")
+.post(limitRequest({ minutes:1, maxRequests:1, message:"Please wait 1 minute for next otp request" }), resendOTPToken);
 
 // Account activation
 authRouter.route("/user/verify-otp").post(verifyOTP);
@@ -37,7 +39,8 @@ authRouter.route("/refreshToken").get(refreshAccessToken);
 authRouter.route("/refreshToken/updateRole").get(authentication, checkSubscription, switchRole);
 
 // Forgot password
-authRouter.route("/forgotPassword").post(forgotPassword);
+authRouter.route("/forgotPassword")
+.post(limitRequest({ minutes:5, maxRequests:1, message:"Please wait 5 minutes for next password reset request" }), forgotPassword);
 
 // Password reset token verification
 authRouter.route("/verifyPasswordResetToken").post(verifypasswordResetToken);

@@ -9,10 +9,14 @@ const passport = require("passport");
 require("./service/social-auth");
 const morgan = require("morgan");
 const app = express();
+const helmet = require("helmet");
+const limitRequest = require("./middlewares/rateLimit");
 
 // Middlewares
 app.use(cors(corsOptions));
 app.use(cookieParser(process.env.COOKIE_PARSER_SECRET));
+app.use(helmet());
+app.use(limitRequest({ maxRequests:100 }));
 app.set("trust proxy", 1);
 app.use("/api/v1/subscription/webhook", express.raw({ type: "application/json" })); // Webhook
 app.use(express.urlencoded({ extended: true, limit: "50kb" }));

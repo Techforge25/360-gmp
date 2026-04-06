@@ -49,8 +49,8 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
     if(messageType === "customOffer")
     {
         // Only business profile can create custom offer to user profile
-        if(senderModel !== "BusinessProfile") throw new ApiError(400, "You are not allowed to create a custom offer");
-        if(receiverModel !== "UserProfile") throw new ApiError(400, "You are not allowed to request a custom offer to a business profile");
+        if(senderModel !== "BusinessProfile") throw new ApiError(403, "You are not allowed to create a custom offer");
+        if(receiverModel !== "UserProfile") throw new ApiError(403, "You are not allowed to request a custom offer to a business profile");
 
         // Extract custom offer details
         const { productId, quantity, pricePerUnit, subTotal } = customOfferDetails || {};

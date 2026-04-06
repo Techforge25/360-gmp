@@ -17,7 +17,7 @@ subscriptionRouter.route("/stripe/cancel").get((request, response) => {
 
 // Delete subscription (Cancel via app)
 subscriptionRouter.route("/stripe/cancel-subscription")
-.delete(authentication, checkSubscription, cancelStripeSubscription);
+.post(authentication, checkSubscription, cancelStripeSubscription);
 
 // Stripe webhook for subscription
 subscriptionRouter.route("/webhook").post(stripeWebhook);

@@ -92,6 +92,7 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
 const cancelStripeSubscription = asyncHandler(async (request, response) => {
     const { _id:userId, subscription } = request.user;
     const { password } = request.body || {};
+    console.log("Password: ", password);
     if(!password) throw new ApiError(400, "Password is required to cancel subscription");
 
     // Find user

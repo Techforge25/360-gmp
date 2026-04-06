@@ -24,6 +24,8 @@
     "mongoose": "^9.1.2",
     "mongoose-aggregate-paginate-v2": "^1.1.4",
     "mongoose-paginate-v2": "^1.9.1",
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.1.0",
     "morgan": "^1.10.1",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.12",

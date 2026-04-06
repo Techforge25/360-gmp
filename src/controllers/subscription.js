@@ -9,6 +9,7 @@ const sendNotification = require("../utils/sendNotification");
 const SubscriptionHistory = require("../models/subscriptionHistoryModel");
 const { emptyList } = require("../constants");
 const mongoose = require("mongoose");
+const User = require("../models/users");
 
 // Helper function to get 
 const getSubscriptionDates = (startingDate) => {
@@ -89,7 +90,17 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
 
 // Delete subscription (Cancel via app)
 const cancelStripeSubscription = asyncHandler(async (request, response) => {
-    const { subscription } = request.user;
+    const { _id:userId, subscription } = request.user;
+    const { password } = request.body;
+    if(!password) throw new ApiError(400, "Password is required to cancel subscription");
+
+    // Find user
+    const user = await User.findById(userId).select("passwordHash");
+    if(!user) throw new ApiError(404, "User not found");
+
+    // Match password
+    const isMatched = await user.matchPassword(password);
+    if(!isMatched) throw new ApiError(400, "Incorrect password!");
 
     // Initialized stripe
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);

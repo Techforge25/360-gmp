@@ -34,4 +34,35 @@ const updateCompanyIdentityValidator = joi.object({
     banner: joi.string().trim().uri().allow("", null).label("Banner")    
 });
 
-module.exports = { updateCompanyIdentityValidator };
+// Operations and logistics validator
+const operationsAndLogisticsValidator = joi.object({
+    location: joi.object({
+        country: joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Country"),
+        city: joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("City"),
+        addressLine: joi.string().max(1000).trim().allow("", null).label("Address line"),
+        warehouseAddress: joi.string().max(1000).trim().allow("", null).label("Warehouse Address"),
+        additionalWarehouseAddress: joi.string().max(1000).trim().allow("", null).label("Additional Warehouse Address"),
+        mandatoryPickupAddress: joi.string().max(1000).trim().allow("", null).label("Mandatory Pickup Address"),
+        businessRegistrationAddress: joi.string().max(1000).trim().allow("", null).label("Business Registration Address"),
+        internationalOffices: joi.array().items(joi.string().pattern(addressPattern)).label("International Offices")      
+    }),
+
+    // International Commercial Terms
+    incoterms: joi.string().max(500).trim().allow("", null).pattern(alphaNumericPattern).label("International Commercial Terms"),
+
+    // Shipping info
+    shipping: {
+        capabilities:joi.array().items(joi.string().pattern(alphaNumericPattern)).max(10).label("Shipping Capabilities"),
+        exportExperience: joi.boolean().required().label("Export experience")
+    },
+    
+    // Product Packaging Defaults (Logistics Prep)
+    standardProductDimensions: joi.object({
+        length: joi.number().min(0).default(0).label("Product dimension length"),
+        width: joi.number().min(0).default(0).label("Product dimension width"),
+        height: joi.number().min(0).default(0).label("Product dimension height"),
+        weight: joi.number().min(0).default(0).label("Product dimension weight"),
+    })
+});
+
+module.exports = { updateCompanyIdentityValidator, operationsAndLogisticsValidator };

@@ -177,8 +177,7 @@ const userLogin = asyncHandler(async (request, response) => {
             }
         }
     ]);
-    console.log(user);
-    if(!user) throw new ApiError(400, "Email not found");
+    if(!user) throw new ApiError(400, "Invalid email or password");
 
     // Match password
     const isMatched = await bcrypt.compare(passwordHash, user.passwordHash);

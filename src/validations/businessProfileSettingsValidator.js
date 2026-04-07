@@ -65,4 +65,32 @@ const operationsAndLogisticsValidator = joi.object({
     })
 });
 
-module.exports = { updateCompanyIdentityValidator, operationsAndLogisticsValidator };
+// Update business intelligence validator
+const updateBusinessIntelligenceValidator = joi.object({
+    // B2B
+    b2bContact: joi.object({
+        name: joi.string().max(50).trim().allow("", null).pattern(alphaNumericPattern).label("B2B Name"),
+        title: joi.string().max(50).trim().allow("", null).pattern(alphaNumericPattern).label("B2B Title"),
+        phone: joi.string().trim().max(15).pattern(/^\+?[1-9]\d{9,14}$/).required().messages({
+            "string.pattern.base": "Phone number must be a valid international format (e.g., +923001234567)."
+        }).label("Phone"),
+        supportEmail: joi.string().trim().email().lowercase().allow("", null).label("Support email")        
+    }),
+
+    // Ownership & Leadership
+    executiveLeadership: joi.array().items(joi.string().pattern(alphaNumericPattern)).max(50).label("Executive Leadership"),
+    stakeholderDisclosure: joi.array().items(joi.object({
+        name: joi.string().trim().min(3).pattern(stackHoldersNamePattern).label("Stake holder name"),
+        ownershipPercentage: joi.number().integer().min(0).max(100).positive().label("Ownership percentage")
+    })),  
+        
+    // Operational & Trade Profile   
+    regionOfOperations: joi.array().items(joi.string().pattern(alphaNumericPattern)).label("Region of operations"),  
+    productionCapacity: joi.string().trim().max(1000).optional().pattern(customPattern).label("Production capacity"),  
+    tradeAffiliations: joi.array().items(joi.string().pattern(alphaNumericPattern)).label("Trade Affiliations"),  
+    
+    // Financial & Regulatory Data
+    auditingAgency: joi.string().trim().optional().pattern(alphaNumericPattern).label("Auditing agency")     
+});
+
+module.exports = { updateCompanyIdentityValidator, operationsAndLogisticsValidator, updateBusinessIntelligenceValidator };

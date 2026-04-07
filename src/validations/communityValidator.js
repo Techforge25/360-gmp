@@ -12,17 +12,17 @@ const createCommunitySchema = Joi.object({
         "string.min": "Community name must be at least 3 characters long",
         "string.max": "Community name must not exceed 100 characters",
         "string.pattern.base": "Community name can only contain letters, numbers, spaces, and hyphens"
-    }),
-    category: Joi.string().pattern(alphaNumericPattern).trim().allow("", null),
+    }).label("Community name"),
+    category: Joi.string().pattern(alphaNumericPattern).trim().allow("", null).label("Category"),
     type: Joi.string().valid("public", "private", "featured").default("public").messages({
         "any.only": "Community type must be one of: public, private, featured"
-    }),
-    description: Joi.string().max(1000).trim().allow("", null),
-    purpose: Joi.string().max(500).trim().allow("", null),
-    tags: Joi.array().items(Joi.string().pattern(alphaNumericPattern).trim()).default([]),
-    rules: Joi.string().max(2000).trim().allow("", null),
-    coverImage: Joi.string().trim().allow("", null),
-    profileImage: Joi.string().trim().allow("", null),
+    }).label("Type"),
+    description: Joi.string().max(1000).trim().allow("", null).label("Description"),
+    purpose: Joi.string().max(2000).trim().allow("", null).label("Purpose"),
+    tags: Joi.array().items(Joi.string().pattern(alphaNumericPattern).trim()).default([]).label("Tags"),
+    rules: Joi.string().max(2000).trim().allow("", null).label("Rules"),
+    coverImage: Joi.string().trim().allow("", null).label("Cover image"),
+    profileImage: Joi.string().trim().allow("", null).label("Community image"),
     industry: Joi.string().pattern(alphaNumericPattern).allow("", null).label("Industry"),
     region: Joi.string().pattern(addressPattern).allow("", null).label("Region"),
 });
@@ -33,20 +33,20 @@ const updateCommunitySchema = Joi.object({
         "string.min": "Community name must be at least 3 characters long",
         "string.max": "Community name must not exceed 100 characters",
         "string.pattern.base": "Community name can only contain letters, numbers, spaces, and hyphens"
-    }),
-    category: Joi.string().pattern(alphaNumericPattern).trim().allow("", null),
+    }).label("Community name"),
+    category: Joi.string().pattern(alphaNumericPattern).trim().allow("", null).label("Category"),
     type: Joi.string().valid("public", "private", "featured").messages({
         "any.only": "Community type must be one of: public, private, featured"
-    }),
-    description: Joi.string().max(1000).trim().allow("", null),
-    purpose: Joi.string().max(500).trim().allow("", null),
-    tags: Joi.array().items(Joi.string().pattern(alphaNumericPattern).trim()),
-    rules: Joi.string().max(2000).trim().allow("", null),
-    coverImage: Joi.string().trim().uri().allow("", null),
-    profileImage: Joi.string().trim().uri().allow("", null),
+    }).label("Type"),
+    description: Joi.string().max(1000).trim().allow("", null).label("Description"),
+    purpose: Joi.string().max(2000).trim().allow("", null).label("Purpose"),
+    tags: Joi.array().items(Joi.string().pattern(alphaNumericPattern).trim()).label("Tags"),
+    rules: Joi.string().max(2000).trim().allow("", null).label("Rules"),
+    coverImage: Joi.string().trim().uri().allow("", null).label("Cover image"),
+    profileImage: Joi.string().trim().uri().allow("", null).label("Community image"),
     status: Joi.string().valid("active", "inactive", "suspended").messages({
         "any.only": "Status must be one of: active, inactive, suspended"
-    })
+    }).label("Status")
 });
 
 // Join Community schema

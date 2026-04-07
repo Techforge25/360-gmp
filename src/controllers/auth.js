@@ -161,8 +161,8 @@ const userLogin = asyncHandler(async (request, response) => {
         },
 
         // $unwind
-        { $unwind:"$userProfile" },
-        { $unwind:"$businessProfile" },
+        { $unwind:{ path:"$userProfile", preserveNullAndEmptyArrays:true } },
+        { $unwind:{ path:"$businessProfile", preserveNullAndEmptyArrays:true } },
         
         // Projection
         {
@@ -177,7 +177,8 @@ const userLogin = asyncHandler(async (request, response) => {
             }
         }
     ]);
-    if(!user) throw new ApiError(400, "Invalid email or password");
+    console.log(user);
+    if(!user) throw new ApiError(400, "Email not found");
 
     // Match password
     const isMatched = await bcrypt.compare(passwordHash, user.passwordHash);

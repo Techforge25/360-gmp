@@ -80,7 +80,7 @@ const updateBusinessIntelligenceValidator = joi.object({
     // Ownership & Leadership
     executiveLeadership: joi.array().items(joi.string().pattern(alphaNumericPattern)).max(50).label("Executive Leadership"),
     stakeholderDisclosure: joi.array().items(joi.object({
-        name: joi.string().trim().min(3).pattern(stackHoldersNamePattern).label("Stake holder name"),
+        name: joi.string().trim().min(3).pattern(alphaNumericPattern).label("Stake holder name"),
         ownershipPercentage: joi.number().integer().min(0).max(100).positive().label("Ownership percentage")
     })),  
         

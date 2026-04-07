@@ -61,10 +61,10 @@ const getAllCommunities = asyncHandler(async (request, response) => {
     const { businessId, type, status, category, page = 1, limit = 20, search = "", industry, region } = request.query;
 
     // Base filter
-    const filter = {
-        name: { $regex: search, $options: "i" },
-    };
+    const filter = {};
 
+    // Searches
+    if(search) filter.name = { $regex: search, $options: "i" };
     if(industry) filter.industry = { $regex:industry, $options:"i" };
     if(region) filter.region = { $regex:region, $options:"i" };
     if(businessId) filter.businessId = businessId;

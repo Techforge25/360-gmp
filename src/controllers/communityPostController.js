@@ -415,7 +415,8 @@ const getPostComments = asyncHandler(async (request, response) => {
     const skip = (pageNumber - 1) * limitNumber;
 
     // Fetch post with populated comments.userId
-    const post = await CommunityPost.findById(postId).populate({ path: "comments.userId", select: "fullName title logo"}).select("comments");
+    const post = await CommunityPost.findById(postId)
+    .populate({ path: "comments.userId", select: "fullName ownerName title logo"}).select("comments");
     if(!post) throw new ApiError(404, "Post not found");
 
     // Reverse to get newest comments first without mutating DB

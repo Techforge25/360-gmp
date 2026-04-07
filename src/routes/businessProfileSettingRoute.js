@@ -1,7 +1,8 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { checkSubscription } = require("../middlewares/checkSubscription");
-const { updateCompanyIdentity, updateOperationsAndLogistics } = require("../controllers/businessProfileSettingController");
+const { updateCompanyIdentity, updateOperationsAndLogistics, 
+updateBusinessIntelligence } = require("../controllers/businessProfileSettingController");
 
 // Route instance
 const businessProfileSettingRouter = Router();
@@ -13,5 +14,9 @@ businessProfileSettingRouter.route("/companyIdentity")
 // Update operations & logistics
 businessProfileSettingRouter.route("/operationsAndLogistics")
 .patch(authentication, authorization(["business"]), checkSubscription, updateOperationsAndLogistics);
+
+// Update business intelligence
+businessProfileSettingRouter.route("/businessIntelligence")
+.patch(authentication, authorization(["business"]), checkSubscription, updateBusinessIntelligence);
 
 module.exports = businessProfileSettingRouter;

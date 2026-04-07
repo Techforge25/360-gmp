@@ -9,6 +9,7 @@ const { createProductSchema } = require("../validations/productsValidator");
 const Order = require("../models/orders");
 const convertToMongoId = require("../utils/convertToMongoId");
 const ProductReview = require("../models/productReviewModel");
+const { isValidObjectId } = require("mongoose");
 
 // Create product
 const createProduct = asyncHandler(async (request, response) => {
@@ -277,6 +278,7 @@ const setFeaturedProduct = asyncHandler(async (request, response) => {
 const deleteProduct = asyncHandler(async (request, response) => {
     const userId = request.user._id
     const { productId } = request.params;
+    if(!isValidObjectId(productId)) throw new ApiError(400, "Invalid MongoDB ID! Please provide a valid product ID");
 
     // Find business
     const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();

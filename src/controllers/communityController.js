@@ -445,19 +445,38 @@ const fetchSuggestedCommunities = asyncHandler(async (request, response) => {
 
 // Fetch my communities
 const fetchMyCommunities = asyncHandler(async (request, response) => {
-    const { userProfileId, businessProfileId } = request.user.profiles || {};
-    if(!userProfileId && !businessProfileId) throw new ApiError(401, "User profile not found. Please create a profile to view your communities.");
+    const { userProfileId, businessProfileId } = request.user.profiles || {}; 
+
+    // Validate role
+    const { role } = request.user;
+    if(!["user", "business"].includes(role)) throw new ApiError(400, "Invalid role");
+
+    // Intialize member ID
+    let memberId = null;
+    if(role === "user")
+    {
+        if(!userProfileId) throw new ApiError(400, "User profile ID is mising");
+        memberId = userProfileId;
+    }
+
+    if(role === "business") 
+    {
+        if(!businessProfileId) throw new ApiError(400, "Business profile ID is mising");
+        memberId = businessProfileId;
+    }
 
     // Get memberships for both user and business profiles
     const memberships = await CommunityMembership.find({ 
-        memberId: { $in: [userProfileId, businessProfileId] },
+        memberId,
         status: "approved"
     }).populate("communityId", "name profileImage memberCount type status").lean();
 
+    // Extract communities
     const communities = memberships.map(m => m.communityId);
+    if(!communities.length) return response.status(200).json(new ApiResponse(200, [], `No communities found for ${role} profile`));
 
     // Response
-    return response.status(200).json(new ApiResponse(200, communities, "My communities fetched successfully"));
+    return response.status(200).json(new ApiResponse(200, communities, "Communities fetched successfully"));
 });
 
 module.exports = { createCommunity, getAllCommunities, getCommunityById, 

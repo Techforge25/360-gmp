@@ -21,8 +21,8 @@ const createCommunitySchema = Joi.object({
     purpose: Joi.string().max(2000).trim().allow("", null).label("Purpose"),
     tags: Joi.array().items(Joi.string().pattern(alphaNumericPattern).trim()).default([]).label("Tags"),
     rules: Joi.string().max(2000).trim().allow("", null).label("Rules"),
-    coverImage: Joi.string().trim().allow("", null).label("Cover image"),
-    profileImage: Joi.string().trim().allow("", null).label("Community image"),
+    coverImage: Joi.string().trim().optional().uri().label("Cover image"),
+    profileImage: Joi.string().trim().optional().uri().label("Community image"),
     industry: Joi.string().pattern(alphaNumericPattern).allow("", null).label("Industry"),
     region: Joi.string().pattern(addressPattern).allow("", null).label("Region"),
 });
@@ -42,8 +42,8 @@ const updateCommunitySchema = Joi.object({
     purpose: Joi.string().max(2000).trim().allow("", null).label("Purpose"),
     tags: Joi.array().items(Joi.string().pattern(alphaNumericPattern).trim()).label("Tags"),
     rules: Joi.string().max(2000).trim().allow("", null).label("Rules"),
-    coverImage: Joi.string().trim().uri().allow("", null).label("Cover image"),
-    profileImage: Joi.string().trim().uri().allow("", null).label("Community image"),
+    coverImage: Joi.string().trim().optional().uri().label("Cover image"),
+    profileImage: Joi.string().trim().optional().uri().label("Community image"),
     status: Joi.string().valid("active", "inactive", "suspended").messages({
         "any.only": "Status must be one of: active, inactive, suspended"
     }).label("Status")

@@ -464,10 +464,11 @@ const userExistence = asyncHandler(async (request, response) => {
 
 // User auth check
 const userAuthCheck = asyncHandler(async (request, response) => {
-    const { _id:userId, role } = request.user;
+    const { _id:userId, role, profiles } = request.user;
+    const { userProfileId = null, businessProfileId = null } = profiles || {};
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { userId, role }, "Authenticated!"));
+    return response.status(200).json(new ApiResponse(200, { userId, userProfileId, businessProfileId, role }, "Authenticated!"));
 });
 
 module.exports = { userSignup, userLogin, logout, refreshAccessToken, switchRole, forgotPassword, 

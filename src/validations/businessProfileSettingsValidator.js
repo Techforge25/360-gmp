@@ -97,7 +97,7 @@ const updateBusinessIntelligenceValidator = joi.object({
 const updateBusinessCertifactesValidator = joi.object({
     certificateOfIncorporation: joi.string().trim().optional().uri().label("Certificate of incorporation"),
     taxRegistrationCertificate: joi.string().trim().optional().uri().label("Certificate of tax registration"),
-    certifications: joi.array().items(joi.string().trim().pattern(alphaNumericPattern)).label("Certifications")
+    certifications: joi.array().items(joi.string().trim().uri()).label("Certifications")
 });
 
 module.exports = { updateCompanyIdentityValidator, operationsAndLogisticsValidator, 

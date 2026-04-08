@@ -119,7 +119,7 @@ const fetchBusinessRecentTransactions = asyncHandler(async (request, response) =
         { $unwind:"$order" },
 
         // Projection
-        { $project:{ orderId:1, createdAt:1, paymentMethod:1, status:"$order.status", amount:1, _id:0 } },
+        { $project:{ orderId:1, stripeSessionId:1, createdAt:1, paymentMethod:1, status:"$order.status", amount:1, _id:0 } },
 
         // Sorting
         { $sort:{ createdAt:-1 } }

@@ -93,4 +93,12 @@ const updateBusinessIntelligenceValidator = joi.object({
     auditingAgency: joi.string().trim().optional().pattern(alphaNumericPattern).label("Auditing agency")     
 });
 
-module.exports = { updateCompanyIdentityValidator, operationsAndLogisticsValidator, updateBusinessIntelligenceValidator };
+// Update certificates
+const updateBusinessCertifactesValidator = joi.object({
+    certificateOfIncorporation: joi.string().trim().optional().pattern(alphaNumericPattern).label("Certificate of incorporation"),
+    taxRegistrationCertificate: joi.string().trim().optional().pattern(alphaNumericPattern).label("Certificate of tax registration"),
+    certifications: joi.array().items(joi.string().trim().uri()).label("Certifications")
+});
+
+module.exports = { updateCompanyIdentityValidator, operationsAndLogisticsValidator, 
+updateBusinessIntelligenceValidator, updateBusinessCertifactesValidator };

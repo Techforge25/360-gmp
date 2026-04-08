@@ -70,18 +70,17 @@ const deleteAlbum = asyncHandler(async (request, response) => {
     if(!isValidObjectId(businessProfileId)) throw new ApiError(400, "Invalid Business profile ID!");
 
     // Fetch album
-    const album = await Gallery.findById(albumId).select("businessProfileId albumName description images createdAt");
+    const album = await Gallery.findById(albumId).select("businessProfileId");
     if(!album) throw new ApiError(404, "Album not found");
 
     // Check authorization
-    const isOwner = String(businessProfileId)?.equals(String(album.businessProfileId));
-    if(!isOwner) throw new ApiError(403, "You are not allowed to delete album that does not belong to you");
+    if(businessProfileId !== album.businessProfileId) throw new ApiError(403, "You are not allowed to delete album that does not belong to you");
 
     // Delete
     await album.deleteOne();
 
     // Response
-    return response.status(200).json(new ApiResponse(200, album, "Album has been deleted"));    
+    return response.status(200).json(new ApiResponse(200, null, "Album has been deleted"));    
 });
 
 module.exports = { uploadAlbum, fetchAlbums, viewAlbum, deleteAlbum };

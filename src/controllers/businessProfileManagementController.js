@@ -270,10 +270,22 @@ const updateContactInfo = asyncHandler(async (request, response) => {
     // Validate input
     const { b2bContact, website, location } = validate(updateBusinessContactValidator, request.body) || {};
 
+    // Destructure
+    const { phone, supportEmail } = b2bContact;
+    const { country, city, addressLine } = location;
+
     // Update
     const businessProfile = await BusinessProfile.findByIdAndUpdate(
         businessProfileId,
-        { $set:{ b2bContact, website, location } },
+        { 
+            $set:{ "b2bContact.phone": phone, 
+                "b2bContact.supportEmail": supportEmail, 
+                website, 
+                "location.country": country,
+                "location.city": city,
+                "location.addressLine": addressLine,
+            } 
+        },
         { new:true, runValidators:true }
     );
     if(!businessProfile) throw new ApiError(404, "Business profile not found");

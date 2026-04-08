@@ -264,24 +264,22 @@ const fetchViewCounts = asyncHandler(async (request, response) => {
 
 // Update business contact information
 const updateContactInfo = asyncHandler(async (request, response) => {
-    // Get business profile
-    const businessProfile = await BusinessProfile.findOne({ ownerUserId: request.user._id });
-    if (!businessProfile) throw new ApiError(404, "Business profile not found");
+    const { businessProfileId } = request.user.profiles || {};
+    if(!businessProfileId) throw new ApiError(400, "Business profile ID is missing");
 
     // Validate input
-    const { description, certifications, phone, supportEmail, website, location } = validate(updateBusinessContactValidator, request.body);
-    
-    // Update and save
-    businessProfile.description = description || businessProfile.description;
-    businessProfile.certifications = certifications || businessProfile.certifications;
-    businessProfile.b2bContact.phone = phone || businessProfile.b2bContact.phone;
-    businessProfile.b2bContact.supportEmail = supportEmail || businessProfile.b2bContact.supportEmail;
-    businessProfile.website = website || businessProfile.website;
-    businessProfile.location = location || businessProfile.location;
-    await businessProfile.save();
+    const { b2bContact, website, location } = validate(updateBusinessContactValidator, request.body) || {};
+
+    // Update
+    const businessProfile = await BusinessProfile.findByIdAndUpdate(
+        businessProfileId,
+        { $set:{ b2bContact, website, location } },
+        { new:true, runValidators:true }
+    );
+    if(!businessProfile) throw new ApiError(404, "Business profile not found");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, businessProfile, "Contact information updated successfully"));
+    return response.status(200).json(new ApiResponse(200, { b2bContact, website, location }, "Contact information updated successfully"));
 });
 
 // Fetch recent job applicants

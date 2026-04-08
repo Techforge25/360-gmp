@@ -87,7 +87,7 @@ const createBusinessProfileSchema = Joi.object({
     }),
 
     // Other Certifications & B2B Contact
-    certifications: Joi.array().items(Joi.string().trim().uri()).min(1).max(3).default([]).label("Certification"),
+    certifications: Joi.array().items(Joi.string().trim().pattern(alphaNumericPattern)).min(1).max(3).default([]).label("Certification"),
     b2bContact: b2bContactSchema.allow(null).label("B2B Contact"),
 
     // Website & description
@@ -147,8 +147,8 @@ const updateBusinessProfileSchema = Joi.object({
     auditingAgency: Joi.string().trim().optional().pattern(alphaNumericPattern).label("Auditing agency"),   
     
     // Documentation & Verification Assets
-    certificateOfIncorporation: Joi.string().trim().optional().pattern(alphaNumericPattern).label("Certificate of incorporation"),
-    taxRegistrationCertificate: Joi.string().trim().optional().pattern(alphaNumericPattern).label("Certificate of tax registration"),    
+    certificateOfIncorporation: Joi.string().trim().optional().uri().label("Certificate of incorporation"),
+    taxRegistrationCertificate: Joi.string().trim().optional().uri().label("Certificate of tax registration"),    
 
     // Product Packaging Defaults (Logistics Prep)
     standardProductDimensions: Joi.object({
@@ -159,7 +159,7 @@ const updateBusinessProfileSchema = Joi.object({
     }),    
 
     // Other Certifications & B2B Contact
-    certifications: Joi.array().items(Joi.string().trim().uri()).label("Certifications"),
+    certifications: Joi.array().items(Joi.string().trim().pattern(alphaNumericPattern)).min(1).max(3).label("Certifications"),
     b2bContact: b2bContactSchema.allow(null),
     
     // Website & description

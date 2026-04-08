@@ -52,7 +52,10 @@ const fetchMyProducts = asyncHandler(async (request, response) => {
                     ]
                 }
             }
-        }
+        },
+
+        // Sort
+        { $sort:{ createdAt:-1 } }
     ]);
 
     // Execute query

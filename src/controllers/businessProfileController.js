@@ -94,17 +94,18 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
             }
         },
 
-        { $unwind:{ path:"$products", preserveNullAndEmptyArrays:true } },
-
+        // Count total products count
         {
             $addFields:{
                 totalProducts: { $cond:{ if:{ $isArray:"$products" }, then:{ $size:"$products" }, else:0 } }
             }
         },
 
+        // Projection
+        { $project:{ products:0 } },
+
         // Sort
         { $sort:{ createdAt:-1 } },
-
     ]);
 
     // Execute query

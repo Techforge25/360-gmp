@@ -101,9 +101,9 @@ const createBusinessProfileSchema = Joi.object({
 
 // Update Business Profile schema (all fields optional)
 const updateBusinessProfileSchema = Joi.object({
-    ownerName: Joi.string().min(3).max(200).trim().pattern(alphaNumericPattern).label("Owner name"),
-    identificationOfBusinessOwner: Joi.string().min(3).max(200).trim().pattern(alphaNumericPattern).label("Identification of business owner"),
-    companyName: Joi.string().min(5).max(200).trim().pattern(alphaNumericPattern).label("Company name"),
+    ownerName: Joi.string().min(3).max(200).trim().required().pattern(alphaNumericPattern).label("Owner name"),
+    identificationOfBusinessOwner: Joi.string().min(3).max(200).trim().required().pattern(alphaNumericPattern).label("Identification of business owner"),
+    companyName: Joi.string().min(5).max(200).trim().required().pattern(alphaNumericPattern).label("Company name"),
     tradeName: Joi.string().max(200).trim().optional().pattern(alphaNumericPattern).label("Trade name"),
     businessType: Joi.string().max(50).trim().allow("", null).pattern(alphaNumericPattern).label("Business type"),
     companySize: Joi.string().trim().allow("", null).pattern(alphaNumericPattern).label("Company size"),
@@ -178,4 +178,11 @@ const galleryValidationSchema = Joi.object({
     images: Joi.array().items(Joi.string().uri().trim()).min(1).max(8).default([]).label("Album Images")
 });
 
-module.exports = { createBusinessProfileSchema, updateBusinessProfileSchema, galleryValidationSchema };
+// Update gallery validation schema
+const updateGalleryValidationSchema = Joi.object({
+    albumName: Joi.string().trim().min(3).max(50).required().pattern(alphaNumericPattern).label("Album Name"),
+    description: Joi.string().trim().max(1000).allow("", null).label("Album Description")
+});
+
+module.exports = { createBusinessProfileSchema, updateBusinessProfileSchema, 
+galleryValidationSchema, updateGalleryValidationSchema };

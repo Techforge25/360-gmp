@@ -259,7 +259,7 @@ const fetchBusinessWithdrawal = asyncHandler(async (request, response) => {
     const options = {
         page: Number(page),
         limit: Number(limit),
-        select:"amount currency status",
+        select:"amount currency status stripeTransferId",
         lean: true,
         sort: { createdAt: -1 }
     };    

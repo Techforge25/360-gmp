@@ -1,5 +1,6 @@
 const { Router } = require("express");
-const { uploadAlbum, fetchAlbums, viewAlbum, deleteAlbum } = require("../controllers/galleryController");
+const { uploadAlbum, fetchAlbums, viewAlbum, 
+deleteAlbum, updateAlbum } = require("../controllers/galleryController");
 const { authentication, authorization } = require("../middlewares/auth");
 
 // Router instance
@@ -12,13 +13,14 @@ galleryRouter.use(authentication);
 galleryRouter.route("/album")
 .post(authorization(["business"]), uploadAlbum);
 
-// View album / Delete album
-galleryRouter.route("/album/:albumId")
-.get(authorization(["business", "user"]), viewAlbum)
-.delete(authorization(["business"]), deleteAlbum)
-
-// Fetch albums
+// Fetch all albums of a business profile
 galleryRouter.route("/albums/:businessProfileId")
 .get(authorization(["business", "user"]), fetchAlbums);
+
+// View album / Update album / Delete album
+galleryRouter.route("/album/:albumId")
+.get(authorization(["business", "user"]), viewAlbum)
+.patch(authorization(["business", "user"]), updateAlbum)
+.delete(authorization(["business"]), deleteAlbum);
 
 module.exports = galleryRouter;

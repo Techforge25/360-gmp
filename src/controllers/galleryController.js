@@ -6,7 +6,7 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
-const { galleryValidationSchema } = require("../validations/businessProfileVaidator");
+const { galleryValidationSchema, updateGalleryValidationSchema } = require("../validations/businessProfileVaidator");
 
 // Upload album to gallery
 const uploadAlbum = asyncHandler(async (request, response) => {
@@ -59,6 +59,32 @@ const viewAlbum = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, album, "Album fetched successfully"));
 });
 
+// Update album
+const updateAlbum = asyncHandler(async (request, response) => {
+    const { albumId } = request.params;
+    const { businessProfileId } = request.user.profiles || {};
+
+    // Validate
+    if(!businessProfileId) throw new ApiError(400, "Business profile ID is missing");
+    if(!isValidObjectId(albumId)) throw new ApiError(400, "Invalid Mongodb ID! Please provide valid album ID");
+    if(!isValidObjectId(businessProfileId)) throw new ApiError(400, "Invalid Business profile ID!");
+
+    // Fetch album
+    const album = await Gallery.findById(albumId);
+    if(!album) throw new ApiError(404, "Album not found");
+
+    // Check authorization
+    if(businessProfileId !== album.businessProfileId) throw new ApiError(403, "You are not allowed to update album that does not belong to you");
+
+    // Update
+    const { albumName, description } = validate(updateGalleryValidationSchema, request.body);
+    Object.assign(album, { albumName, description });
+    await album.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { albumName, description }, "Album updated successfully"));
+});
+
 // Delete album
 const deleteAlbum = asyncHandler(async (request, response) => {
     const { albumId } = request.params;
@@ -83,4 +109,4 @@ const deleteAlbum = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Album has been deleted"));    
 });
 
-module.exports = { uploadAlbum, fetchAlbums, viewAlbum, deleteAlbum };
+module.exports = { uploadAlbum, fetchAlbums, viewAlbum, updateAlbum, deleteAlbum };

@@ -4,7 +4,8 @@ const { createBusinessProfile, updateBusinessProfile,
 fetchBusinessProfiles, getDirection, 
 fetchMyBusinessProfile,
 deleteMyBusinessProfile,
-fetchLatestBusiness} = require("../controllers/businessProfileController");
+fetchLatestBusiness,
+fetchBusinessCountries} = require("../controllers/businessProfileController");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -21,6 +22,10 @@ businessProfileRouter.route("/")
 // Fetch my business
 businessProfileRouter.route("/me")
 .get(authentication, fetchMyBusinessProfile);
+
+// Fetch business countries
+businessProfileRouter.route("/countries")
+.get(authentication, fetchBusinessCountries);
 
 // Update business profile
 businessProfileRouter.route("/")

@@ -128,5 +128,15 @@ const fetchLatestBusiness = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, business, "Latest Business has been fetched successfully"));
 });
 
+// Fetch country of registered business
+const fetchBusinessCountries = asyncHandler(async (request, response) => {
+    // Get unique countries
+    const countries = await BusinessProfile.distinct("location.country", {});
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, countries, "Business countries have been fetched successfully"));
+});
+
+
 module.exports = { createBusinessProfile, fetchBusinessProfiles, fetchMyBusinessProfile, 
-updateBusinessProfile, deleteMyBusinessProfile, getDirection, fetchLatestBusiness };
+updateBusinessProfile, deleteMyBusinessProfile, getDirection, fetchLatestBusiness, fetchBusinessCountries };

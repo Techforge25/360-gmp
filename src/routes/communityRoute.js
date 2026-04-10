@@ -13,7 +13,6 @@ communityRouter.route("/").post(authentication, createCommunity);
 // Get all communities (with filters and pagination)
 communityRouter.route("/").get(authentication, getAllCommunities);
 
-
 // Fetch business communities
 communityRouter.route("/business/:businessId").get(authentication, fetchBusinessCommunities);
 

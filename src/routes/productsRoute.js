@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
-const { createProduct, fetchAllProducts, fetchBusinessProducts, viewProduct, updateProduct, 
+const { createProduct, fetchAllProducts, viewProduct, updateProduct, 
 deleteProduct, fetchBusinessFeaturedProducts, setFeaturedProduct, fetchFeaturedProducts, 
 fetchTopRankingProducts, fetchNewProducts, fetchFlashDeals } = require("../controllers/productsController");
 
@@ -15,9 +15,6 @@ productsRouter.route("/")
 
 // Fetch featured products
 productsRouter.route("/featured").get(authentication, fetchFeaturedProducts);
-
-// Fetch business products
-productsRouter.route("/business/:businessId").get(authentication, fetchBusinessProducts);
 
 // Fetch business featured products
 productsRouter.route("/business/:businessId/featured").get(authentication, fetchBusinessFeaturedProducts);

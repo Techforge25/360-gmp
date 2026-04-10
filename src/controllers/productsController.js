@@ -106,19 +106,6 @@ const fetchFeaturedProducts = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, updatedProducts, "All Featured products have been fetched"));
 });
 
-// Fetch all business products (Shown on business profile)
-const fetchBusinessProducts = asyncHandler(async (request, response) => {
-    const { businessId } = request.params; 
-
-    // Pagination options
-    const { page = 1, limit = 10 } = request.query;
-    const products = await Product.paginate({ businessId }, { page, limit });
-    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Business products not found"));
-
-    // Response
-    return response.status(200).json(new ApiResponse(200, products, "Business products have been fetched"));
-});
-
 // Fetch business featured products (Shown on business profile)
 const fetchBusinessFeaturedProducts = asyncHandler(async (request, response) => {
     const { businessId } = request.params;
@@ -380,6 +367,6 @@ const fetchFlashDeals = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, updatedProducts, "Latest products fetched"));
 });
 
-module.exports = { createProduct, fetchAllProducts, fetchFeaturedProducts, fetchBusinessProducts,
+module.exports = { createProduct, fetchAllProducts, fetchFeaturedProducts,
 fetchBusinessFeaturedProducts, viewProduct, updateProduct, setFeaturedProduct, 
 deleteProduct, fetchTopRankingProducts, fetchNewProducts, fetchFlashDeals };

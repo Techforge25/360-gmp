@@ -1,11 +1,8 @@
-const {Router} = require("express");
+const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
-const { createBusinessProfile, updateBusinessProfile, 
-fetchBusinessProfiles, getDirection, 
-fetchMyBusinessProfile,
-deleteMyBusinessProfile,
-fetchLatestBusiness,
-fetchBusinessCountries} = require("../controllers/businessProfileController");
+const { createBusinessProfile, updateBusinessProfile, fetchBusinessProfiles, getDirection, 
+fetchMyBusinessProfile, deleteMyBusinessProfile, fetchLatestBusiness, fetchBusinessCountries,
+fetchBusinessJobs, fetchBusinessProducts, fetchBusinessCommunities } = require("../controllers/businessProfileController");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -42,5 +39,18 @@ businessProfileRouter.route("/:businessId/getDirection")
 // Fetch latest business for market place
 businessProfileRouter.route("/latest/marketplace")
 .get(authentication, fetchLatestBusiness);
+
+/******************** BUSINESS RESOURCES ********************/
+// Products of a business
+businessProfileRouter.route("/:businessId/products")
+.get(authentication, fetchBusinessProducts);
+
+// Jobs of a business
+businessProfileRouter.route("/:businessId/jobs")
+.get(authentication, fetchBusinessJobs);
+
+// Communities of a business
+businessProfileRouter.route("/:businessId/communities")
+.get(authentication, fetchBusinessCommunities);
 
 module.exports = businessProfileRouter;

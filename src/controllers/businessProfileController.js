@@ -6,6 +6,10 @@ const { createBusinessProfileSchema, updateBusinessProfileSchema } = require("..
 const User = require("../models/users");
 const Wallet = require("../models/walletModel");
 const { emptyList } = require("../constants");
+const { isValidObjectId } = require("mongoose");
+const Job = require("../models/jobsSchema");
+const Product = require("../models/products");
+const Community = require("../models/communityModel");
 
 // Create business
 const createBusinessProfile = asyncHandler(async (request, response) => {
@@ -193,6 +197,50 @@ const fetchBusinessCountries = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, countries, "Business countries have been fetched successfully"));
 });
 
+/******************** BUSINESS RESOURCES ********************/
+// Fetch all business products (Shown on business profile)
+const fetchBusinessProducts = asyncHandler(async (request, response) => {
+    const { businessId } = request.params;
+    if(!isValidObjectId(businessId)) throw new ApiError(400, "Invalid business ID");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+    const products = await Product.paginate({ businessId }, { page, limit });
+    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Business products not found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, products, "Business products have been fetched"));
+});
+
+// Fetch all business jobs
+const fetchBusinessJobs = asyncHandler(async (request, response) => {
+    const { businessId } = request.params;
+    if(!isValidObjectId(businessId)) throw new ApiError(400, "Invalid business ID");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+    const jobs = await Job.paginate({ businessId }, { page, limit });
+    if(!jobs.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No business jobs found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, jobs, "Business jobs have been fetched"));
+});
+
+// Fetch all business communities
+const fetchBusinessCommunities = asyncHandler(async (request, response) => {
+    const { businessId } = request.params;
+    if(!isValidObjectId(businessId)) throw new ApiError(400, "Invalid business ID");
+
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+    const communities = await Community.paginate({ businessId }, { page, limit });
+    if(!communities.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No business communities found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, communities, "Business communities have been fetched"));
+});
+
 
 module.exports = { createBusinessProfile, fetchBusinessProfiles, fetchMyBusinessProfile, 
-updateBusinessProfile, deleteMyBusinessProfile, getDirection, fetchLatestBusiness, fetchBusinessCountries };
+updateBusinessProfile, deleteMyBusinessProfile, getDirection, fetchLatestBusiness, 
+fetchBusinessCountries, fetchBusinessJobs, fetchBusinessProducts, fetchBusinessCommunities };

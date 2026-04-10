@@ -22,7 +22,18 @@ const cookieOptions = {
 };
 
 // Empty list
-const emptyList = { docs:[], totalPages:0, totalDocs:0 };
+const emptyList = { 
+    docs:[], 
+    totalPages:0, 
+    totalDocs:0, 
+    limit:0, 
+    page:0, 
+    pagingCounter:0, 
+    hasPrevPage:false, 
+    hasNextPage:false, 
+    prevPage:null, 
+    nextPage:null 
+};
 
 module.exports = {
     port,

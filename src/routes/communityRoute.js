@@ -2,7 +2,7 @@ const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
 const { createCommunity, getAllCommunities, getCommunityById, joinCommunity, approveMembership,
 getPendingRequests, getCommunityMembers, updateCommunity, deleteCommunity, leaveCommunity, 
-fetchSuggestedCommunities,  fetchMyCommunities, fetchBusinessCommunities } = require("../controllers/communityController");
+fetchSuggestedCommunities,  fetchMyCommunities } = require("../controllers/communityController");
 
 // Router instance
 const communityRouter = Router();
@@ -12,9 +12,6 @@ communityRouter.route("/").post(authentication, createCommunity);
 
 // Get all communities (with filters and pagination)
 communityRouter.route("/").get(authentication, getAllCommunities);
-
-// Fetch business communities
-communityRouter.route("/business/:businessId").get(authentication, fetchBusinessCommunities);
 
 // Get community by ID
 communityRouter.route("/:id").get(authentication, getCommunityById);

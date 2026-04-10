@@ -1,6 +1,5 @@
 const { isValidObjectId } = require("mongoose");
 const { emptyList } = require("../constants");
-const BusinessProfile = require("../models/businessProfileSchema");
 const Gallery = require("../models/galleryModel");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
@@ -74,7 +73,10 @@ const updateAlbum = asyncHandler(async (request, response) => {
     if(!album) throw new ApiError(404, "Album not found");
 
     // Check authorization
-    if(businessProfileId !== album.businessProfileId) throw new ApiError(403, "You are not allowed to update album that does not belong to you");
+    if(String(businessProfileId) !== String(album.businessProfileId))
+    {
+        throw new ApiError(403, "You are not allowed to update album that does not belong to you");
+    }
 
     // Update
     const { albumName, description } = validate(updateGalleryValidationSchema, request.body);
@@ -100,13 +102,16 @@ const deleteAlbum = asyncHandler(async (request, response) => {
     if(!album) throw new ApiError(404, "Album not found");
 
     // Check authorization
-    if(businessProfileId !== album.businessProfileId) throw new ApiError(403, "You are not allowed to delete album that does not belong to you");
+    if(String(businessProfileId) !== String(album.businessProfileId))
+    {
+        throw new ApiError(403, "You are not allowed to delete album that does not belong to you");
+    }
 
-    // Delete
+    // // Delete
     await album.deleteOne();
 
     // Response
-    return response.status(200).json(new ApiResponse(200, null, "Album has been deleted"));    
+    return response.status(200).json(new ApiResponse(200, { businessProfileId, albumBusinessId: album.businessProfileId }, "Album has been deleted"));    
 });
 
 module.exports = { uploadAlbum, fetchAlbums, viewAlbum, updateAlbum, deleteAlbum };

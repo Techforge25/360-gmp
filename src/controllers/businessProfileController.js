@@ -97,7 +97,13 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
         // Count total products count
         {
             $addFields:{
-                totalProducts: { $cond:{ if:{ $isArray:"$products" }, then:{ $size:"$products" }, else:0 } }
+                totalProducts: { 
+                    $cond:{ 
+                        if:{ $isArray:"$products" }, 
+                        then:{ $size:"$products" }, 
+                        else:0 
+                    } 
+                }
             }
         },
 

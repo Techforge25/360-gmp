@@ -480,21 +480,7 @@ const fetchMyCommunities = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, communities, "Communities fetched successfully"));
 });
 
-// Fetch all business communities
-const fetchBusinessCommunities = asyncHandler(async (request, response) => {
-    const { businessId } = request.params;
-    if(!isValidObjectId(businessId)) throw new ApiError(400, "Invalid business ID");
-
-    // Pagination options
-    const { page = 1, limit = 10 } = request.query;
-    const communities = await Community.paginate({ businessId }, { page, limit });
-    if(!communities.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No business communities found"));
-
-    // Response
-    return response.status(200).json(new ApiResponse(200, communities, "Business communities have been fetched"));
-});
-
 module.exports = { createCommunity, getAllCommunities, getCommunityById, 
 joinCommunity, approveMembership, getPendingRequests, getCommunityMembers, 
 updateCommunity, deleteCommunity, leaveCommunity, fetchSuggestedCommunities, 
-fetchMyCommunities, fetchBusinessCommunities };
+fetchMyCommunities };

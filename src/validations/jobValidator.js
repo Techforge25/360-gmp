@@ -2,12 +2,13 @@ const Joi = require("joi");
 
 // Patterns
 const alphaNumericPattern = /^[a-zA-Z0-9 -]*$/;
+const locationPattern = /^[a-zA-Z0-9 -,]*$/;
 const jobTitlePattern = /^[a-zA-Z0-9 \-()]*$/; // allow parentheses for titles
 
 // Location schema for job
 const jobLocationSchema = Joi.object({
-    country: Joi.string().pattern(alphaNumericPattern).trim().allow("", null),
-    city: Joi.string().pattern(alphaNumericPattern).trim().allow("", null)
+    country: Joi.string().pattern(locationPattern).trim().allow("", null),
+    city: Joi.string().pattern(locationPattern).trim().allow("", null)
 });
 
 // Create Job schema

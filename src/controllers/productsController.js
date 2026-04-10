@@ -32,16 +32,14 @@ const createProduct = asyncHandler(async (request, response) => {
 // Fetch all products with filters (Shown on market place)
 const fetchAllProducts = asyncHandler(async (request, response) => {
     // Pagination options
-    const { page = 1, limit = 10, search = "" } = request.query;
+    const { page = 1, limit = 10, search } = request.query;
 
     // Filter options
     const { category, moq, certification, country } = request.query;
 
     // Base product filter
-    const filter = {
-        title: { $regex: search, $options: "i" },
-        // status: "approved"
-    };
+    const filter = {};
+    if(search) filter.title = { $regex:search, $options:"i" };
 
     // Category filter
     if(category) filter.category = { $regex:category, $options: "i" };
@@ -110,9 +108,7 @@ const fetchFeaturedProducts = asyncHandler(async (request, response) => {
 
 // Fetch all business products (Shown on business profile)
 const fetchBusinessProducts = asyncHandler(async (request, response) => {
-    const { businessId } = request.params;
-    const business = await BusinessProfile.findById(businessId).lean();
-    if(!business) throw new ApiError(404, "Business not found");    
+    const { businessId } = request.params; 
 
     // Pagination options
     const { page = 1, limit = 10 } = request.query;

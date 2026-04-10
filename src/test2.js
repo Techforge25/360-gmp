@@ -1,3 +1,4 @@
+require('dotenv').config();
 const axios = require('axios');
 
 // Example usage
@@ -8,40 +9,51 @@ const shipmentData = {
     weightKg: 5
 };
 
-// Replace with actual Maersk API environment URL
-const MAERSK_API_URL = 'https://api.maersk.com/shipments'; 
+// Production URLs
+// const MAERSK_API_URL = 'https://api.maersk.com/shipments'; 
+// const TOKEN_ENDPOINT = 'https://api-maersk.com/customer-identity/oauth/v2/access_token';
+
+// Staging URLs
+const MAERSK_API_URL = 'https://api-stage.maersk.com/shipments';
+const TOKEN_ENDPOINT = 'https://api-stage.maersk.com/customer-identity/oauth/v2/access_token';
 
 const test = async () => {
     try 
     {
-        // 1. Get Authentication Token (OAuth 2.0)
-        // In production, cache this token until expiration
-        const tokenResponse = await axios.post('https://api-stage.maersk.com/oauth2/access_token', {
+        // Get Authentication Token (OAuth 2.0)
+        const tokenResponse = await axios.post(TOKEN_ENDPOINT, {
             grant_type: 'client_credentials' 
         }, 
         {
             headers: {
-                'Authorization': 'Basic ' + Buffer.from('YOUR_CLIENT_ID:YOUR_CLIENT_SECRET').toString('base64'),
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Consumer-Key': process.env.MAERSK_CLIENT_ID,
+                'Consumer-Secret': process.env.MAERSK_CLIENT_SECRET
             }
         });
         const token = tokenResponse.data.access_token;
 
-        // 2. Call Maersk API
+        // Call Maersk API
         const response = await axios.post(MAERSK_API_URL, shipmentData, {
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
-                'ApiKey': 'YOUR_API_KEY' // Usually required for Visibility/Shipment APIs
+                'Consumer-Key': process.env.MAERSK_CLIENT_ID,
+                'Consumer-Secret': process.env.MAERSK_CLIENT_SECRET,
+                'ApiKey': process.env.MAERSK_INTEGRATION_ID
             }
         });
 
-        // 3. Return Response
+        // Return Response
         return response.data;
     } 
     catch(error) 
     {
         console.error('Error creating shipment:', error.response ? error.response.data : error.message);
-        throw error; // Re-throw to handle in calling function
+        throw error;
     }
 };
+
+test()
+.then(response => console.log(response))
+.catch(error => console.error('Test failed:', error.message));

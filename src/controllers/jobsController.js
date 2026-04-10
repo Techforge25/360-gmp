@@ -243,4 +243,5 @@ const fetchHiredJobs = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, hiredJobs, "Hired jobs fetched successfully"));
 });
 
-module.exports = { createJob, getAllJobs, getJobById, updateJob, deleteJob, fetchLatestJobs, fetchMyAppliedJobs, fetchHiredJobs };
+module.exports = { createJob, getAllJobs, getJobById, updateJob, deleteJob, 
+fetchLatestJobs, fetchMyAppliedJobs, fetchHiredJobs };

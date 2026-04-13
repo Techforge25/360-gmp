@@ -15,15 +15,13 @@ const shipmentData = {
 
 // Staging URLs
 const MAERSK_API_URL = 'https://api-stage.maersk.com/shipments';
-const TOKEN_ENDPOINT = 'https://api-stage.maersk.com/customer-identity/oauth/v2/access_token';
+const TOKEN_ENDPOINT = `https://api-stage.maersk.com/customer-identity/oauth/v2/access_token`;
 
 const test = async () => {
     try 
     {
         // Get Authentication Token (OAuth 2.0)
-        const tokenResponse = await axios.post(TOKEN_ENDPOINT, {
-            grant_type: 'client_credentials' 
-        }, 
+        const tokenResponse = await axios.post(TOKEN_ENDPOINT, { grant_type: 'client_credentials' }, 
         {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',

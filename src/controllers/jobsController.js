@@ -96,13 +96,16 @@ const fetchLatestJobs = asyncHandler(async (request, response) => {
 
 // Get Job By ID
 const getJobById = asyncHandler(async (request, response) => { 
+    const { userProfileId } = request.user.profiles || {};
+
     const { id } = request.params;
     if(!id) throw new ApiError(400, "Job ID is missing");
     if(!isValidObjectId(id)) throw new ApiError(400, "Invalid MongoDB ID");
 
     // Find job
     const job = await Job.findById(id)
-    .populate("businessId", "companyName businessType primaryIndustry location website logo");
+    .populate({ path:"businessId", select:"companyName businessType primaryIndustry location website logo" })
+    .select("-__v -updatedAt").lean();
     if(!job) throw new ApiError(404, "Job not found");
 
     // Find user profile
@@ -113,6 +116,13 @@ const getJobById = asyncHandler(async (request, response) => {
         UserProfile.findOne({ userId }).select("_id").lean(),
         BusinessProfile.findOne({ ownerUserId: userId })
     ]);
+
+    let isApplied = false;
+    if(userProfile)
+    {
+        const application = await JobApplication.findOne({ jobId:id, userProfileId:userProfile._id }).select("_id").lean();
+        isApplied = Boolean(application);
+    }
 
     // Only user's views can be counted
     if(userProfile)
@@ -130,7 +140,7 @@ const getJobById = asyncHandler(async (request, response) => {
     }
 
     // Response
-    return response.status(200).json(new ApiResponse(200, job, "Job fetched successfully"));
+    return response.status(200).json(new ApiResponse(200, { ...job, isApplied }, "Job fetched successfully"));
 });
 
 // Update Job

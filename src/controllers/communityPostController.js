@@ -90,6 +90,7 @@ const createPost = asyncHandler(async (request, response) => {
 
 // Get All Posts in Community (with pagination)
 const getCommunityPosts = asyncHandler(async (request, response) => {
+    const { userProfileId } = request.user.profiles || {};
     const { id } = request.params; // communityId
     const { page = 1, limit = 20 } = request.query;
 
@@ -98,35 +99,42 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
     if(!community) throw new ApiError(404, "Community not found");
 
     // Check if user is member (for private communities)
+    let isMember = false;
     let hasAccess = community.type === "public";
     let currentUserProfileId = null;
-    let isMember = false;
-    if(request.user?._id) {
-        const isBusinessOwner = community.businessId.ownerUserId === request.user._id;
-        if (isBusinessOwner) 
+    if(request.user?._id) 
+    {
+        const isBusinessOwner = String(community.businessId.ownerUserId) === String(request.user._id);
+        if(isBusinessOwner) 
         {
             hasAccess = true;
         } 
         else 
         {
             try {
-                const userProfileId = await getUserProfileId(request.user._id);
+                if(!userProfileId) throw new ApiError(404, "User profile ID is missing.");
                 const membership = await CommunityMembership.findOne({
                     communityId: id,
-                    userProfileId: userProfileId,
+                    memberId: userProfileId,
+                    memberModel: "UserProfile",
                     status: "approved"
                 });
-                if(membership) isMember =  hasAccess = true;
-            } catch(err) {
+                if(membership)
+                {
+                    isMember = true;
+                    hasAccess = true;
+                    currentUserProfileId = userProfileId;
+                }
+            } 
+            catch(err) 
+            {
                 // User not logged in or no profile
             }
         }
     }
 
     // For private communities, only members can see posts
-    if(community.type === "private" && !hasAccess && community.type !== "public") {
-        throw new ApiError(403, "You must be a member to view posts in this community");
-    }
+    if(community.type === "private" && !hasAccess) throw new ApiError(403, "You must be a member to view posts in this community");
 
     // Pagination
     const pageNumber = Number.parseInt(page, 10);
@@ -168,7 +176,7 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
     };
 
     return response.status(200).json(
-        new ApiResponse(200, { posts, pagination: paginationInfo }, "Posts fetched successfully")
+        new ApiResponse(200, { community, posts, pagination: paginationInfo }, "Posts fetched successfully")
     );
 });
 

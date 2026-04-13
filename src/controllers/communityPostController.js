@@ -453,6 +453,29 @@ const getPostComments = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, { comments, pagination: paginationInfo }, "Comments fetched successfully"));
 });
 
+// Add vote to poll option
+const addVote = asyncHandler(async (request, response) => {
+    const { postId } = request.params;
+    const { option } = request.body;
+    if(!option) throw new ApiError(400, "Option is required to vote");
+
+    // Fetch post 
+    const post = await CommunityPost.findById(postId);
+    if(!post) throw new ApiError(404, "Post not found");
+    if(post.type !== "poll") throw new ApiError(400, "This post is not a poll");
+
+    // Find the selected option
+    const selectedOption = post.poll.options.find(opt => opt.option === option);
+    if(!selectedOption) throw new ApiError(400, "Invalid poll option");
+
+    await post.updateOne(
+        { _id: postId, "poll.options.option": option },
+        { $inc: { "poll.options.$.votes": 1 } }
+    );
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { pollOptions: post.poll.options }, "Vote added successfully"));
+});
 
 module.exports = {
     createPost,
@@ -462,5 +485,6 @@ module.exports = {
     deletePost,
     likePost,
     addComment,
-    getPostComments
+    getPostComments,
+    addVote
 };

@@ -28,24 +28,25 @@ const test = async () => {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Consumer-Key': process.env.MAERSK_CLIENT_ID,
-                'Consumer-Secret': process.env.MAERSK_CLIENT_SECRET
+                // 'Consumer-Secret': process.env.MAERSK_CLIENT_SECRET
             }
         });
         const token = tokenResponse.data.access_token;
+        return token;
 
-        // Call Maersk API
-        const response = await axios.post(MAERSK_API_URL, shipmentData, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'Consumer-Key': process.env.MAERSK_CLIENT_ID,
-                'Consumer-Secret': process.env.MAERSK_CLIENT_SECRET,
-                'ApiKey': process.env.MAERSK_INTEGRATION_ID
-            }
-        });
+        // // Call Maersk API
+        // const response = await axios.post(MAERSK_API_URL, shipmentData, {
+        //     headers: {
+        //         'Authorization': `Bearer ${token}`,
+        //         'Content-Type': 'application/json',
+        //         'Consumer-Key': process.env.MAERSK_CLIENT_ID,
+        //         'Consumer-Secret': process.env.MAERSK_CLIENT_SECRET,
+        //         'ApiKey': process.env.MAERSK_INTEGRATION_ID
+        //     }
+        // });
 
-        // Return Response
-        return response.data;
+        // // Return Response
+        // return response.data;
     } 
     catch(error) 
     {

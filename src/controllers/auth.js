@@ -443,8 +443,7 @@ const googleLogin = async (request, response) => {
     return response.status(303)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    //.redirect(`${process.env.FRONTEND_URL}/authSuccess`);
-    .redirect(`http://localhost:3000/authSuccess`);
+    .redirect(`${process.env.FRONTEND_URL}/authSuccess`);
 }
 
 // User existence

@@ -1113,13 +1113,13 @@ const viewOrder = asyncHandler(async (request, response) => {
 
         // Lookup for business profile
         {
-            $lookup:{
+            $lookup:{ 
                 from:"businessprofiles",
                 localField:"sellerBusinessId",
                 foreignField:"_id",
                 as:"businessProfile",
                 pipeline:[
-                    { $project:{ companyName:1 } }
+                    { $project:{ companyName:1, sellerEmail:"$b2bContact.supportEmail" } }
                 ]
             }
         },   

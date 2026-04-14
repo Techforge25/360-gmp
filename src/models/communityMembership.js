@@ -7,7 +7,6 @@ const communityMembershipSchema = new Schema({
         ref: "Community",
         required: true 
     },
-    userProfileId: { type: Schema.Types.ObjectId, ref: "UserProfile" },
     memberId: { 
         type: Schema.Types.ObjectId, 
         required: true, 
@@ -40,8 +39,7 @@ const communityMembershipSchema = new Schema({
 }, { timestamps: true });
 
 // Indexes - Prevent duplicate memberships
-communityMembershipSchema.index({ communityId: 1, userProfileId: 1 }, { unique: true });
-communityMembershipSchema.index({ userProfileId: 1 });
+communityMembershipSchema.index({ communityId: 1, memberId: 1 }, { unique: true });
 communityMembershipSchema.index({ status: 1 });
 
 // Model

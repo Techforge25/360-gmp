@@ -39,7 +39,6 @@ const createCommunity = asyncHandler(async (request, response) => {
     // Create membership for owner
     const membership = await CommunityMembership.create({
         communityId: community._id,
-        userProfileId: null,
         memberId: businessProfile._id,
         memberModel: "BusinessProfile",
         role: "owner",

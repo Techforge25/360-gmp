@@ -125,6 +125,10 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
                     hasAccess = true;
                     currentUserProfileId = userProfileId;
                 }
+                else
+                {
+                    throw new ApiError(400, "Failed to fetch community post. Only approve members can view posts");
+                }
             } 
             catch(err) 
             {

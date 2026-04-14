@@ -4,7 +4,7 @@ const { connectStripeAccount, WithdrawFunds, viewTransactionTimeline } = require
 const { addFundsUser, verifyAddFundsUser, fetchUserWalletAnalytics, 
 fetchUserPurchases, fetchUserSpendingActivity } = require("../controllers/userWalletController");
 const { fetchBusinessWalletAnalytics, fetchBusinessRecentTransactions, fetchBusinessEarnings, 
-fetchBusinessFinancialPerformance, fetchBusinessWithdrawal } = require("../controllers/businessWalletController");
+fetchBusinessFinancialPerformance, fetchBusinessWithdrawal, transferFunds } = require("../controllers/businessWalletController");
 
 // Router instance
 const walletRouter = Router();
@@ -75,5 +75,10 @@ walletRouter.route("/business/earnings")
 // Fetch business withdrawals
 walletRouter.route("/business/withdrawals")
 .get(authentication, authorization(["business"]), fetchBusinessWithdrawal);
+
+
+// ********************* TRANSFER FUNDS BETWEEN BUSINESS AND USER *********************
+walletRouter.route("/transferFunds")
+.post(authentication, authorization(["user", "business"]), transferFunds);
 
 module.exports = walletRouter;

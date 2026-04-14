@@ -277,18 +277,17 @@ const fetchBusinessWithdrawal = asyncHandler(async (request, response) => {
 
 // Transfer funds between business and user
 const transferFunds = asyncHandler(async (request, response) => {
-    // Get user ID and sub profile IDs
-    const userId = request.user._id;
+    // Get sub profile IDs
     const { userProfileId, businessProfileId } = request.user.profiles || {};
 
     // Validate IDs
-    if(!businessProfileId) throw new ApiError(400, "Business profile ID is missing. You need to create a business profile before transferring funds");
-    if(!userProfileId) throw new ApiError(400, "User profile ID is missing. You need to create a user profile before transferring funds");    
+    if(!businessProfileId) throw new ApiError(400, "Business profile is missing. You need to create a business profile before transferring funds");
+    if(!userProfileId) throw new ApiError(400, "User profile is missing. You need to create a user profile before transferring funds");    
 
     // Get validated payload
     const { amount, recipientType } = validate(transferFundsValidator, request.body);
 
-    // If user
+    // If transferring to user
     if(recipientType === "user") 
     {
         // Check if business wallet exist and has sufficient balance
@@ -306,16 +305,113 @@ const transferFunds = asyncHandler(async (request, response) => {
 
         try
         {
-            await Wallet.findOneAndUpdate(
-                {  }
-            )
+            // Transfer to user
+            const userWallet = await Wallet.findOneAndUpdate(
+                { ownerId: userProfileId, ownerModel: "UserProfile" },
+                { $inc: { availableBalance: Number(amount) } },
+                { new:true, session:dbSession }
+            );
+
+            // Deduct from business
+            const businessWallet = await Wallet.findOneAndUpdate(
+                { ownerId: businessProfileId, ownerModel: "BusinessProfile" },
+                { $inc: { availableBalance: -Number(amount) } },
+                { new:true, session:dbSession }
+            );
+            
+            // Add to transaction history
+            await Transaction.create([{ 
+                ownerId: businessProfileId, 
+                ownerModel: "BusinessProfile",
+                amount,
+                type: "transfer",
+                paymentMethod: "wallet",
+                status: "completed"
+            }], { session:dbSession });
+
+            // Commit transaction
+            await dbSession.commitTransaction();
+            dbSession.endSession();
+
+            // Payload
+            const payload = { 
+                userBalance: userWallet.availableBalance,
+                businessBalance: businessWallet.availableBalance
+            };
+
+            // Response
+            return response.status(200)
+            .json(new ApiResponse(200, payload, `Funds has been transfered to ${recipientType} profile's wallet`));
         }
         catch(error)
         {
             await dbSession.abortTransaction();
-            dbSession.endSession()
+            dbSession.endSession();
         }
     }
+
+    // If transferring to business
+    if(recipientType === "business") 
+    {
+        // Check if user wallet exist and has sufficient balance
+        const userWallet = await Wallet.findOne({ ownerId:userProfileId, ownerModel:"UserProfile" });
+        if(!userWallet) throw new ApiError(404, "User wallet not found");
+        if(Number(userWallet.availableBalance) < amount) throw new ApiError(400, "Insufficient balance in user wallet");
+
+        // Check if business wallet exist        
+        const businessWallet = await Wallet.findOne({ ownerId:businessProfileId, ownerModel:"BusinessProfile" });
+        if(!businessWallet) throw new ApiError(404, "Business wallet not found");
+
+        // Create db session
+        const dbSession = await startSession();
+        dbSession.startTransaction();
+
+        try
+        {
+            // Transfer to business
+            const businessWallet = await Wallet.findOneAndUpdate(
+                { ownerId: businessProfileId, ownerModel: "BusinessProfile" },
+                { $inc: { availableBalance: Number(amount) } },
+                { new:true, session:dbSession }
+            );
+
+            // Deduct from user
+            const userWallet = await Wallet.findOneAndUpdate(
+                { ownerId: userProfileId, ownerModel: "UserProfile" },
+                { $inc: { availableBalance: -Number(amount) } },
+                { new:true, session:dbSession }
+            );
+            
+            // Add to transaction history
+            await Transaction.create([{ 
+                ownerId: userProfileId, 
+                ownerModel: "UserProfile",
+                amount,
+                type: "transfer",
+                paymentMethod: "wallet",
+                status: "completed"
+            }], { session:dbSession });
+
+            // Commit transaction
+            await dbSession.commitTransaction();
+            dbSession.endSession();
+
+            // Payload
+            const payload = { 
+                userBalance: userWallet.availableBalance,
+                businessBalance: businessWallet.availableBalance
+            };
+
+            // Response
+            return response.status(200)
+            .json(new ApiResponse(200, payload, `Funds has been transfered to ${recipientType} profile's wallet`));
+        }
+        catch(error)
+        {
+            await dbSession.abortTransaction();
+            dbSession.endSession();
+        }
+    }    
 });
 
 module.exports = { fetchBusinessWalletAnalytics, fetchBusinessRecentTransactions, 

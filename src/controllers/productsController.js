@@ -84,7 +84,8 @@ const fetchFeaturedProducts = asyncHandler(async (request, response) => {
     const options = {
         page: Number(page),
         limit: Number(limit),
-        populate:{ path:"businessId", select:"ownerUserId" }
+        populate:{ path:"businessId", select:"ownerUserId" },
+        sort:{ createdAt:-1 }
     };
     
     // Find products
@@ -114,7 +115,7 @@ const fetchBusinessFeaturedProducts = asyncHandler(async (request, response) => 
 
     // Pagination options
     const { page = 1, limit = 10 } = request.query;
-    const products = await Product.paginate({ businessId, isFeatured:true }, { page, limit });
+    const products = await Product.paginate({ businessId, isFeatured:true }, { page, limit, sort:{ createdAt:-1 } });
     if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Business featured products not found"));
 
     // Response

@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { authentication } = require("../middlewares/auth");
+const { authentication, authorization } = require("../middlewares/auth");
 const { createCommunity, getAllCommunities, getCommunityById, joinCommunity, approveMembership,
 getPendingRequests, getCommunityMembers, updateCommunity, deleteCommunity, leaveCommunity, 
 fetchSuggestedCommunities,  fetchMyCommunities } = require("../controllers/communityController");
@@ -23,7 +23,7 @@ communityRouter.route("/:id").put(authentication, updateCommunity);
 communityRouter.route("/:id").delete(authentication, deleteCommunity);
 
 // Join community
-communityRouter.route("/:id/join").post(authentication, joinCommunity);
+communityRouter.route("/:id/join").post(authentication, authorization(["user"]), joinCommunity);
 
 // Leave community
 communityRouter.route("/:id/leave").post(authentication, leaveCommunity);

@@ -26,7 +26,7 @@ communityRouter.route("/:id").delete(authentication, deleteCommunity);
 communityRouter.route("/:id/join").post(authentication, authorization(["user"]), joinCommunity);
 
 // Leave community
-communityRouter.route("/:id/leave").post(authentication, leaveCommunity);
+communityRouter.route("/:id/leave").post(authentication, authorization(["user", "business"]), leaveCommunity);
 
 // Get pending join requests (owner/admin only)
 communityRouter.route("/:id/pending-requests").get(authentication, getPendingRequests);

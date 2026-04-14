@@ -375,20 +375,20 @@ const deleteCommunity = asyncHandler(async (request, response) => {
 // Leave Community
 const leaveCommunity = asyncHandler(async (request, response) => {
     const { id } = request.params; // communityId
+    const { role } = request.user;
+    const { userProfileId, businessProfileId } = request.user.profiles || {};
 
     // Get community
     const community = await Community.findById(id);
     if(!community) throw new ApiError(404, "Community not found");
 
-    // Get user profile
-    const userProfileId = await getUserProfileId(request.user._id);
+    let memberId = null;
+    if(role === "user") memberId = userProfileId;
+    if(role === "business") memberId = businessProfileId;
+    if(!memberId) throw new ApiError(400, "Member ID is missing");
 
     // Find and remove membership
-    const membership = await CommunityMembership.findOneAndDelete({
-        communityId: id,
-        userProfileId: userProfileId
-    });
-
+    const membership = await CommunityMembership.findOneAndDelete({ communityId:id, memberId });
     if(!membership) throw new ApiError(404, "You are not a member of this community");
 
     // Update member count

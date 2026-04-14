@@ -158,7 +158,7 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
             // const userProfileId = await getUserProfileId(request.user._id);
             for(let post of posts) {
                 post.likedByUser = post.likes.some(
-                    like =>  like.userProfileId && like.userProfileId === currentUserProfileId
+                    like =>  like.userId && like.userId === currentUserProfileId
                 );
             }
         } catch(err) {
@@ -468,10 +468,13 @@ const addVote = asyncHandler(async (request, response) => {
     const selectedOption = post.poll.options.find(opt => opt.option === option);
     if(!selectedOption) throw new ApiError(400, "Invalid poll option");
 
-    await post.updateOne(
+    // Update vote
+    const updatedPost = await CommunityPost.findOneAndUpdate(
         { _id: postId, "poll.options.option": option },
-        { $inc: { "poll.options.$.votes": 1 } }
-    );
+        { $inc: { "poll.options.$.votes": 1 } },
+        { new: true }
+    );  
+    if(!updatedPost) throw new ApiError(400, "Failed to update vote");
 
     // Response
     return response.status(200).json(new ApiResponse(200, { pollOptions: post.poll.options }, "Vote added successfully"));

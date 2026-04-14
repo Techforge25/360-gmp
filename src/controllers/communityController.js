@@ -291,16 +291,16 @@ const getCommunityMembers = asyncHandler(async (request, response) => {
     const limitNumber = Number.parseInt(limit, 10);
     const skip = (pageNumber - 1) * limitNumber;
 
-    const filter = { communityId: id, status: "approved" };
+    const filter = { communityId: id, status: "approved", role:{ $in:["member", "admin"] } };
     if(role) filter.role = role;
     if(status) filter.status = status;
 
     // Get members
     const members = await CommunityMembership.find(filter)
-        .populate("userProfileId", "fullName title logo bio")
-        .sort({ joinedAt: -1 })
-        .skip(skip)
-        .limit(limitNumber);
+    .populate("memberId", "fullName title logo bio")
+    .sort({ joinedAt: -1 })
+    .skip(skip)
+    .limit(limitNumber);
 
     const total = await CommunityMembership.countDocuments(filter);
 

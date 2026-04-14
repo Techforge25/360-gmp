@@ -118,19 +118,18 @@ const getCommunityById = asyncHandler(async (request, response) => {
 
 // Join Community
 const joinCommunity = asyncHandler(async (request, response) => {
-    const role = request.user.role;
-    const { id } = request.params; // Get communityId from URL params
+    const { userProfileId } = request.user.profiles || {};
+    const { id } = request.params; // Community ID
+
+    // Validate
+    if(!userProfileId) throw new ApiError(404, "User profile not found! Please create your profile first.");
 
     // Get community
     const community = await Community.findById(id);
     if(!community) throw new ApiError(404, "Community not found");
 
-    // Get user profile
-    const userProfile = await UserProfile.findOne({ userId:request.user._id }).lean();
-    if(!userProfile) throw new ApiError(404, "User profile not found! Please create your profile first.");
-
     // Check if already a member
-    const existingMembership = await CommunityMembership.findOne({ communityId:id, userProfileId:userProfile._id });
+    const existingMembership = await CommunityMembership.findOne({ communityId:id, memberId: userProfileId });
     if(existingMembership) 
     {
         if(existingMembership.status === "approved") throw new ApiError(400, "You are already a member of this community");
@@ -155,12 +154,11 @@ const joinCommunity = asyncHandler(async (request, response) => {
     // Create membership
     const membership = await CommunityMembership.create({
         communityId: id,
-        userProfileId: userProfile._id,
-        memberId:userProfile._id,
+        memberId: userProfileId,
+        memberModel: "UserProfile",
         role: "member",
         status: membershipStatus,
-        isPaid: isPaid,
-        memberModel: role === "user" ? "UserProfile" : "BusinessProfile"
+        isPaid: isPaid
     });
 
     // Update member count only if approved
@@ -171,7 +169,9 @@ const joinCommunity = asyncHandler(async (request, response) => {
     }
 
     // Response message based on community joining behaviour
-    const responseMessage = membershipStatus === "approved" ? "Successfully joined community" : "Join request sent. Waiting for approval";
+    const responseMessage = membershipStatus === "approved" 
+    ? `Successfully joined ${community.name}` 
+    : `Join request sent to ${community.name}. Waiting for approval`;
 
     // Response
     return response.status(201).json(new ApiResponse(201, membership, responseMessage));

@@ -90,7 +90,7 @@ const createPost = asyncHandler(async (request, response) => {
 
 // Get All Posts in Community (with pagination)
 const getCommunityPosts = asyncHandler(async (request, response) => {
-    const { userProfileId } = request.user.profiles || {};
+    const { userProfileId, businessProfileId } = request.user.profiles || {};
     const { id } = request.params; // communityId
     const { page = 1, limit = 20 } = request.query;
 
@@ -104,7 +104,7 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
     let currentUserProfileId = null;
     if(request.user?._id) 
     {
-        const isBusinessOwner = String(community.businessId.ownerUserId) === String(request.user._id);
+        const isBusinessOwner = String(community.businessId) === String(businessProfileId);
         if(isBusinessOwner) 
         {
             hasAccess = true;

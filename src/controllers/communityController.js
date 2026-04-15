@@ -10,6 +10,7 @@ const { emptyList } = require("../constants");
 const UserSearch = require("../models/userSearchesModel");
 const sendNotification = require("../utils/sendNotification");
 const { isValidObjectId } = require("mongoose");
+const CommunityPost = require("../models/communityPostModel");
 
 // Helper function to get userProfileId from userId
 const getUserProfileId = async (userId) => {
@@ -109,10 +110,17 @@ const getCommunityById = asyncHandler(async (request, response) => {
             isMember = true;
             membershipStatus = membership.status;
         }
-    }
+    } 
+
+    // const now = new Date();
+    // const currentMonth = new Date(now);
+    // currentMonth.setMonth(currentMonth.getMonth());
+
+    // Post count
+    const postCount = await CommunityPost.countDocuments({ communityId: id });
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { community, isMember, membershipStatus }, "Community fetched successfully"));
+    return response.status(200).json(new ApiResponse(200, { community, postCount, isMember, membershipStatus }, "Community fetched successfully"));
 });
 
 // Join Community

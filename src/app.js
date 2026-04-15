@@ -56,6 +56,7 @@ const galleryRouter = require("./routes/galleryRoute");
 const communityMembershipRouter = require("./routes/communityMembershipRoute");
 const disputeRouter = require("./routes/disputeRoute");
 const productReviewRouter = require("./routes/productReviewRoute");
+const exploreRouter = require("./routes/exploreRoute");
 
 // Registered Routes
 app.use("/api/v1/auth", authRouter);
@@ -87,6 +88,7 @@ app.use("/api/v1/gallery", galleryRouter);
 app.use("/api/v1/community-membership", communityMembershipRouter);
 app.use("/api/v1/dispute", disputeRouter);
 app.use("/api/v1/productReview", productReviewRouter);
+app.use("/api/v1/explore", exploreRouter);
 
 // Import Admin Routes
 const adminAuthRouter = require("./routes/admin/adminAuthRoute");

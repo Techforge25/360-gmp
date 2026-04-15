@@ -5,7 +5,8 @@ fetchViewCounts, updateContactInfo, fetchLowStockProducts,fetchRecentJobApplicat
 fetchNewLeads, countTotalJobApplications, countTotalHiredApplicants, countTotalInterviewApplicants,
 countConversionRate, fetchInStockProducts, fetchOutOfStockProducts,
 countTotalJobViews,
-fetchMyJobs} = require("../controllers/businessProfileManagementController");
+fetchMyJobs,
+updateBusinessBanner} = require("../controllers/businessProfileManagementController");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -78,5 +79,10 @@ businessProfileManagementRouter.route("/count-interview-applicants")
 // Count conversion rate
 businessProfileManagementRouter.route("/count-conversion-rate")
 .get(authentication, authorization(["business"]), countConversionRate);
+
+/***********************  UPDATES  ***********************/
+// Update banner
+businessProfileManagementRouter.route("/banner")
+.patch(authentication, authorization(["business"]), updateBusinessBanner);
 
 module.exports = businessProfileManagementRouter;

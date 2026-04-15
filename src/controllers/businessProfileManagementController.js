@@ -9,6 +9,7 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const { getBusinessProfile } = require("../utils/getProfiles");
 const validate = require("../utils/validate");
+const { updateBannerValidator } = require("../validations/businessProfileManagementValidator");
 const { updateBusinessContactValidator } = require("../validations/updateBusinessContactValidator");
 
 // Fetch my products
@@ -512,8 +513,23 @@ const countConversionRate = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, conversionRate, "Conversion rate fetched successfully"));
 });
 
+// Update banner
+const updateBusinessBanner = asyncHandler(async (request, response) => {
+    const { businessProfileId } = request.user.profiles || {};
+
+    // Get validated payload
+    const { banner } = validate(updateBannerValidator, request.body);
+    
+    // Save
+    const business = await BusinessProfile.findByIdAndUpdate(businessProfileId, { $set:{ banner } }, { new:true, lean:true })
+    .select("-_id banner");
+    if(!business) throw new ApiError(400, "Failed to update banner");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, business, "Banner has been updated"));
+});
 
 module.exports = { fetchMyProducts, topPerformingProducts, updateMapURL, viewBusinessProfile,
 fetchViewCounts, updateContactInfo, fetchLowStockProducts, fetchRecentJobApplications, fetchNewLeads,
 countTotalJobApplications, countTotalHiredApplicants, countTotalInterviewApplicants, countConversionRate,
-fetchInStockProducts, fetchOutOfStockProducts, countTotalJobViews, fetchMyJobs };
+fetchInStockProducts, fetchOutOfStockProducts, countTotalJobViews, fetchMyJobs, updateBusinessBanner };

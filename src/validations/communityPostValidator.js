@@ -4,7 +4,7 @@ const joi = require("joi");
 const createPostSchema = joi.object({
     // References
     communityId: joi.string().required().label("Community ID"),
-    type: joi.string().valid("post", "event", "poll").default("post").label("Post Type"),
+    type: joi.string().valid("post", "event", "poll", "file", "document").default("post").label("Post Type"),
 
     // Simple content for post
     content: joi.string().min(1).max(5000).trim()

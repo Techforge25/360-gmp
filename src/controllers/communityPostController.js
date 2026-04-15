@@ -104,7 +104,7 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
     let currentUserProfileId = null;
     if(request.user?._id) 
     {
-        const isBusinessOwner = String(community.businessId) === String(businessProfileId);
+        const isBusinessOwner = String(community.businessId.id) === String(businessProfileId);
         if(isBusinessOwner) 
         {
             hasAccess = true;

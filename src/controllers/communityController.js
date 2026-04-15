@@ -271,16 +271,17 @@ const getPendingRequests = asyncHandler(async (request, response) => {
     // Get pending memberships
     const pendingMemberships = await CommunityMembership.find({
         communityId: id,
-        status: "pending"
-    })
-        .populate("userProfileId", "fullName title logo")
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limitNumber);
+        status: "pending",
+        role: { $in:["member"] }
+    }).populate("memberId", "fullName title logo")
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limitNumber);
 
     const total = await CommunityMembership.countDocuments({
         communityId: id,
-        status: "pending"
+        status: "pending",
+        role: { $in:["member"] }
     });
 
     return response.status(200).json(

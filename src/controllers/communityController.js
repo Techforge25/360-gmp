@@ -112,12 +112,15 @@ const getCommunityById = asyncHandler(async (request, response) => {
         }
     } 
 
-    // const now = new Date();
-    // const currentMonth = new Date(now);
-    // currentMonth.setMonth(currentMonth.getMonth());
-
-    // Post count
-    const postCount = await CommunityPost.countDocuments({ communityId: id });
+    // Post count of current month
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    
+    const postCount = await CommunityPost.countDocuments({ 
+        communityId: id, 
+        createdAt:{ $gte:startOfMonth, $lte:endOfMonth } 
+    });
 
     // Response
     return response.status(200).json(new ApiResponse(200, { community, postCount, isMember, membershipStatus }, "Community fetched successfully"));

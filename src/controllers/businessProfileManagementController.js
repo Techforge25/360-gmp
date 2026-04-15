@@ -313,7 +313,8 @@ const fetchRecentJobApplications = asyncHandler(async (request, response) => {
 
     // Find job applicants (Who applied for this job)
     const jobApplications = await JobApplication.find({ jobId:job._id, status:"pending" })
-    .sort("-createdAt").limit(5).lean();
+    .populate({ path:"userProfileId", select:"fullName" })
+    .sort("-createdAt").limit(5).select("-__v -updatedAt").lean();
 
     // Validate job applications
     if(!jobApplications.length) return response.status(200).json(new ApiResponse(200, [], "No recent job applicants found"));

@@ -213,7 +213,7 @@ const approveMembership = asyncHandler(async (request, response) => {
 
     // Find and update membership
     const membership = await CommunityMembership.findOneAndUpdate(
-        { communityId:id, userProfileId:value.userProfileId },
+        { communityId:id, memberId:value.userProfileId },
         { status:value.status, joinedAt:value.status === "approved" ? new Date() : undefined },
         { new:true }
     );

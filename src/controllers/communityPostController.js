@@ -265,30 +265,38 @@ const updatePost = asyncHandler(async (request, response) => {
 
 // Delete Post
 const deletePost = asyncHandler(async (request, response) => {
+    const { userProfileId, businessProfileId } = request.user.profiles || {};
     const { postId } = request.params;
 
     // Get post
     const post = await CommunityPost.findById(postId);
     if(!post) throw new ApiError(404, "Post not found");
 
-    // Get user profile
-    const identity = await getIdentity(request.user._id, post.communityId);
+    let isAllowed = false;
+    if(String(userProfileId) === String(post.authorId) || String(businessProfileId) === String(post.authorId))
+    {
+        isAllowed = true;
+    }  
 
-    // Check if author OR Community Admin
-    const isAuthor = post.authorId === identity.id;
+    // // Get user profile
+    // const identity = await getIdentity(request.user._id, post.communityId);
+
+    // // Check if author OR Community Admin
+    // const isAuthor = post.authorId === identity.id;
     
-    // Find membership
-    const membership = await CommunityMembership.findOne({
-        communityId: post.communityId,
-        memberId: identity.id,
-        role: { $in: ["owner", "admin"] }
-    });
+    // // Find membership
+    // const membership = await CommunityMembership.findOne({
+    //     communityId: post.communityId,
+    //     memberId: memberId,
+    //     role: { $in: ["owner", "admin"] }
+    // });
 
     // Check authorization
-    if(!isAuthor && !membership) throw new ApiError(403, "Only post author or community admins can delete the post");
+    if(!isAllowed) throw new ApiError(403, "Only post author or community admins can delete the post");
 
     // Delete post
-    await CommunityPost.findByIdAndDelete(postId);
+    // await CommunityPost.findByIdAndDelete(postId);
+    await post.deleteOne();
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Post deleted successfully"));

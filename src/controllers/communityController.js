@@ -205,7 +205,7 @@ const approveMembership = asyncHandler(async (request, response) => {
         const userProfileId = await getUserProfileId(request.user._id);
         const userMembership = await CommunityMembership.findOne({
             communityId:id,
-            userProfileId:userProfileId,
+            memberId:userProfileId,
             role:{ $in: ["owner", "admin", "moderator"] }
         });
         if(!userMembership) throw new ApiError(403, "Only community owner, admins and moderators can approve memberships");

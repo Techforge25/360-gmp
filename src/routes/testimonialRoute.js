@@ -3,6 +3,7 @@ const { createReviewInvite, createTestimonial, fetchTestimonials,
 viewTestimonial, flagTestimonial, deleteTestimonial, 
 checkInviteToken} = require("../controllers/testimonialController");
 const { authentication, authorization } = require("../middlewares/auth");
+const { adminAuthentication, adminAuthorization } = require("../middlewares/adminAuth");
 
 // Router insatnce
 const testimonialRouter = Router();
@@ -36,6 +37,6 @@ testimonialRouter.route("/:testimonialId/flag")
 
 // Delete testimonial
 testimonialRouter.route("/:testimonialId")
-.delete(authorization(["admin"]), deleteTestimonial);
+.delete(adminAuthentication, adminAuthorization(["admin"]), deleteTestimonial);
 
 module.exports = testimonialRouter;

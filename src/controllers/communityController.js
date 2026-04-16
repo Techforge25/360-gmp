@@ -128,7 +128,7 @@ const getCommunityById = asyncHandler(async (request, response) => {
 
 // Join Community
 const joinCommunity = asyncHandler(async (request, response) => {
-    const { userProfileId } = request.user.profiles || {};
+    const { userProfileId, businessProfileId } = request.user.profiles || {};
     const { id } = request.params; // Community ID
 
     // Validate
@@ -137,6 +137,12 @@ const joinCommunity = asyncHandler(async (request, response) => {
     // Get community
     const community = await Community.findById(id);
     if(!community) throw new ApiError(404, "Community not found");
+
+    // Same parent restriction
+    if(businessProfileId && String(businessProfileId) === String(community.businessId))
+    {
+        throw new ApiError(403, "You cannot join your own community");
+    }
 
     // Check if already a member
     const existingMembership = await CommunityMembership.findOne({ communityId:id, memberId: userProfileId });

@@ -18,8 +18,8 @@ const updateCompanyIdentity = asyncHandler(async (request, response) => {
     // Get validated payload
     const { ownerName, identificationOfBusinessOwner, companyName, tradeName, businessType, 
     companySize, foundedDate, primaryIndustry, operationHour, countryOfRegistration, website,
-    description, businessRegistrationNumber, taxIdentificationNumber, dunsNumber, complianceScreeningStatus,
-    logo, banner } = validate(updateCompanyIdentityValidator, request.body) || {};
+    description, businessRegistrationNumber, taxIdentificationNumber, dunsNumber, 
+    complianceScreeningStatus } = validate(updateCompanyIdentityValidator, request.body) || {};
 
     // Update
     const business = await BusinessProfile.findByIdAndUpdate(
@@ -29,7 +29,7 @@ const updateCompanyIdentity = asyncHandler(async (request, response) => {
                 ownerName, identificationOfBusinessOwner, companyName, tradeName, businessType, 
                 companySize, foundedDate, primaryIndustry, operationHour, countryOfRegistration, website,
                 description, businessRegistrationNumber, taxIdentificationNumber, dunsNumber, 
-                complianceScreeningStatus, logo, banner
+                complianceScreeningStatus
             } 
         }, 
         { new:true, runValidators:true }

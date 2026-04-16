@@ -27,11 +27,7 @@ const updateCompanyIdentityValidator = joi.object({
     businessRegistrationNumber: joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Business registration number"),
     taxIdentificationNumber: joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Tax identification number"),
     dunsNumber: joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Data Universal Numbering System"),
-    complianceScreeningStatus: joi.boolean().default(true).label("Compliance screening status"),
-
-    // Media
-    logo: joi.string().trim().uri().allow("", null).label("Logo"),
-    banner: joi.string().trim().uri().allow("", null).label("Banner")    
+    complianceScreeningStatus: joi.boolean().default(true).label("Compliance screening status"), 
 });
 
 // Operations and logistics validator

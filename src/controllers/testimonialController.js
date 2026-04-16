@@ -1,7 +1,5 @@
-const BusinessProfile = require("../models/businessProfileSchema");
 const ReviewInvite = require("../models/reviewInviteModel");
 const Testimonial = require("../models/testimonialModel");
-const UserProfile = require("../models/userProfile");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
@@ -39,20 +37,20 @@ const checkInviteToken = asyncHandler(async (request, response) => {
     if(reviewInvite.isUsed) throw new ApiError(400, "This review invite token has already been used");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, reviewInvite, "Review invite token is valid"));
+    return response.status(200).json(new ApiResponse(200, { inviteToken }, "Review invite token is valid"));
 });
 
 // Crate testimonial
 const createTestimonial = asyncHandler(async (request, response) => {
     const userId = request.user._id;
+    const { userProfileId } = request.user.profiles || {};
     const { inviteToken } = request.params;
+
+    // Validate
+    if(!userProfileId) throw new ApiError(404, "User profile ID is missing");
 
     // Get validated payload
     const { rating, title, description } = validate(createTestimonialValidationSchema, request.body) || {};
-
-    // Find user profile
-    const userProfile = await UserProfile.findOne({ userId }).select("fullName email").lean();
-    if(!userProfile) throw new ApiError(404, "User profile not found");
 
     // Find review invite    
     const reviewInvite = await ReviewInvite.findOne({ inviteToken })
@@ -68,12 +66,15 @@ const createTestimonial = asyncHandler(async (request, response) => {
         throw new ApiError(400, "You cannot submit a review to your own business profile");
     }
 
+    // Prevent per user duplication
+    const isExist = await Testimonial.exists({ userProfileId });
+    if(isExist) throw new ApiError(403, "You have already submitted a testimonial review for this business");
+
     // Save to db
     const testimonial = await Testimonial.create({
-        businessId: reviewInvite.businessId._id,
+        userProfileId,
+        businessProfileId: reviewInvite.businessId._id,
         reviewInviteId: reviewInvite._id,
-        reviewerName: userProfile.fullName,
-        reviewerEmail: userProfile.email,
         rating, 
         title, 
         description
@@ -88,26 +89,27 @@ const createTestimonial = asyncHandler(async (request, response) => {
     await sendNotification({ 
         userOwnerId: reviewInvite.businessId.ownerUserId,
         title:"New Testimonial Received", 
-        content:`You have received a new testimonial from ${userProfile.fullName} with a rating of ${rating} stars.`, 
+        content:`You have received a new testimonial with a rating of ${rating} stars.`, 
         type:"account", 
         io: request.app.get("io") 
     });
 
     // Response
-    return response.status(201).json(new ApiResponse(201, testimonial, "Testimonial created successfully"));
+    return response.status(201).json(new ApiResponse(201, { rating, title, description }, "Testimonial created successfully"));
 }); 
 
 // Fetch testimonials for a business
 const fetchTestimonials = asyncHandler(async (request, response) => {
     const { businessId } = request.params;
+    if(!isValidObjectId(businessId)) throw new ApiError(400, "Invalid MongoDB ID! Please provide a valid Business ID");
 
     // Pagination options
     const { page = 1, limit = 10 } = request.query;
 
     // Fetch testimonials
     const testimonials = await Testimonial.paginate(
-        { businessId }, 
-        { page, limit, select:"reviewerName reviewerEmail rating title description createdAt", sort:{ createdAt:-1 } 
+        { businessProfileId: businessId }, 
+        { page, limit, select:"rating title description createdAt", sort:{ createdAt:-1 } 
     });
     if(!testimonials.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No testimonials found for this business"));
 
@@ -118,10 +120,12 @@ const fetchTestimonials = asyncHandler(async (request, response) => {
 // View single testimonial
 const viewTestimonial = asyncHandler(async (request, response) => {
     const { testimonialId } = request.params;
+    if(!isValidObjectId(testimonialId)) throw new ApiError(400, "Invalid MongoDB ID! Please provide a valid testimonial ID");
 
     // Fetch testimonial
     const testimonial = await Testimonial.findById(testimonialId)
-    .select("reviewerName reviewerEmail rating title description createdAt").lean();
+    .populate({ path:"userProfileId", select:"email fullName" })
+    .select("userProfileId rating title description createdAt").lean();
     if(!testimonial) throw new ApiError(404, "Testimonial not found");
 
     // Response
@@ -160,6 +164,7 @@ const flagTestimonial = asyncHandler(async (request, response) => {
 // Delete testimonial
 const deleteTestimonial = asyncHandler(async (request, response) => {
     const { testimonialId } = request.params;
+    if(!isValidObjectId(testimonialId)) throw new ApiError(400, "Invalid MongoDB ID! Please provide a valid testimonial ID");
 
     // Find testimonial
     const testimonial = await Testimonial.findByIdAndDelete(testimonialId).select("description").lean();

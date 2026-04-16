@@ -2,12 +2,10 @@ const { Schema, model } = require("mongoose");
 const paginate = require("mongoose-paginate-v2");
 
 const testimonialSchema = new Schema({
-    businessId: { type:Schema.Types.ObjectId, ref:"BusinessProfile", required:true, index:true },
+    // References
+    userProfileId: { type:Schema.Types.ObjectId, ref:"UserProfile", required:true },
+    businessProfileId: { type:Schema.Types.ObjectId, ref:"BusinessProfile", required:true, index:true },
     reviewInviteId: { type:Schema.Types.ObjectId, ref:"ReviewInvite", required:true, unique:true }, // One review per invite
-
-    // Reviewer info
-    reviewerName: { type:String, trim:true, required:true },
-    reviewerEmail: { type:String, trim:true, required:true },
 
     // Review info
     rating: { type:Number, min:1, max:5, required:true },

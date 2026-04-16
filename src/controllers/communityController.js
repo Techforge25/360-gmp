@@ -91,7 +91,8 @@ const getCommunityById = asyncHandler(async (request, response) => {
 
     // Find community
     const community = await Community.findById(id)
-    .populate("businessId", "_id ownerUserId companyName businessType primaryIndustry location logo banner website");
+    .populate("businessId", "_id ownerUserId companyName businessType primaryIndustry location logo banner website")
+    .lean();
     if(!community) throw new ApiError(404, "Community not found");
 
     // Check if user is member (for private communities)
@@ -128,8 +129,18 @@ const getCommunityById = asyncHandler(async (request, response) => {
         createdAt:{ $gte:startOfMonth, $lte:endOfMonth } 
     });
 
+    // Replace actual member count to exclude owner
+    const memberCount = Number(community.memberCount) - 1;
+    delete community.memberCount;
+
     // Prepare payload
-    const payload = { community, postCount, isMember, membershipStatus, isOwnCommunity };
+    const payload = { 
+        community: { ...community, memberCount } , 
+        postCount, 
+        isMember, 
+        membershipStatus, 
+        isOwnCommunity 
+    };
 
     // Response
     return response.status(200).json(new ApiResponse(200, payload, "Community fetched successfully"));

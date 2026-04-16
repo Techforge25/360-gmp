@@ -13,18 +13,15 @@ const sendNotification = require("../utils/sendNotification");
 
 // Create review invite
 const createReviewInvite = asyncHandler(async (request, response) => {
-    const userId = request.user._id;
-
-    // Find business profile
-    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId });
-    if(!businessProfile) throw new ApiError(404, "Business profile not found");
+    const { businessProfileId } = request.user.profiles || {};
+    if(!businessProfileId) throw new ApiError(400, "Business profile ID is missing");
     
     // Generate random invite token
     const inviteToken = crypto.randomBytes(20).toString("hex");
     if(!inviteToken) throw new ApiError(500, "Could not generate review invite token");
 
     // Save to db
-    const reviewInvite = await ReviewInvite.create({ businessId:businessProfile._id, inviteToken });
+    const reviewInvite = await ReviewInvite.create({ businessId:businessProfileId, inviteToken });
     if(!reviewInvite) throw new ApiError(500, "Could not create review invite");
     
     // Response
@@ -37,11 +34,11 @@ const checkInviteToken = asyncHandler(async (request, response) => {
 
     // Find review invite
     const reviewInvite = await ReviewInvite.findOne({ inviteToken }).select("isUsed").lean();
-    if(!reviewInvite) throw new ApiError(404, "Review invite not found");
-    if(reviewInvite.isUsed) throw new ApiError(400, "Review invite has already been used");
+    if(!reviewInvite) throw new ApiError(404, "Review invite not found! Invalid invite token.");
+    if(reviewInvite.isUsed) throw new ApiError(400, "This review invite token has already been used");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, reviewInvite, "Review invite is valid"));
+    return response.status(200).json(new ApiResponse(200, reviewInvite, "Review invite token is valid"));
 });
 
 // Crate testimonial
@@ -57,13 +54,22 @@ const createTestimonial = asyncHandler(async (request, response) => {
     if(!userProfile) throw new ApiError(404, "User profile not found");
 
     // Find review invite    
-    const reviewInvite = await ReviewInvite.findOne({ inviteToken });
-    if(!reviewInvite) throw new ApiError(404, "Review invite not found");
-    if(reviewInvite.isUsed) throw new ApiError(400, "Review invite has already been used");
+    const reviewInvite = await ReviewInvite.findOne({ inviteToken })
+    .populate({ path:"businessId", select:"_id ownerUserId" });
 
-    // Create testimonial
+    // Validate
+    if(!reviewInvite) throw new ApiError(404, "Review invite not found! Invalid invite token.");
+    if(reviewInvite.isUsed) throw new ApiError(400, "This review invite token has already been used");
+
+    // Same parent profiles restriction
+    if(String(reviewInvite.businessId.ownerUserId) === String(userId))
+    {
+        throw new ApiError(400, "You cannot submit a review to your own business profile");
+    }
+
+    // Save to db
     const testimonial = await Testimonial.create({
-        businessId: reviewInvite.businessId,
+        businessId: reviewInvite.businessId._id,
         reviewInviteId: reviewInvite._id,
         reviewerName: userProfile.fullName,
         reviewerEmail: userProfile.email,
@@ -75,15 +81,11 @@ const createTestimonial = asyncHandler(async (request, response) => {
 
     // Mark invite as used
     reviewInvite.isUsed = true;
-    reviewInvite.usedAt = new Date();
     await reviewInvite.save();
-
-    // Notify parent user about new testimonial
-    const businessProfile = await BusinessProfile.findById(reviewInvite.businessId).select("ownerUserId").lean();
 
     // Send notification to business owner
     await sendNotification({ 
-        userOwnerId:businessProfile.ownerUserId, 
+        userOwnerId: reviewInvite.businessId.ownerUserId,
         title:"New Testimonial Received", 
         content:`You have received a new testimonial from ${userProfile.fullName} with a rating of ${rating} stars.`, 
         type:"account", 

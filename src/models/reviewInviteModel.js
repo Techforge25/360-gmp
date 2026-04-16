@@ -7,7 +7,6 @@ const reviewInviteSchema = new Schema({
 
     // Invite status
     isUsed: { type:Boolean, default:false },
-    usedAt: { type:Date }
 }, { timestamps:true });
 
 // Model

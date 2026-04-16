@@ -86,31 +86,37 @@ const getAllCommunities = asyncHandler(async (request, response) => {
 
 // Get Community By ID
 const getCommunityById = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
     const { id } = request.params;
 
     // Find community
     const community = await Community.findById(id)
-    .populate("businessId", "companyName businessType primaryIndustry location logo banner website");
+    .populate("businessId", "_id ownerUserId companyName businessType primaryIndustry location logo banner website");
     if(!community) throw new ApiError(404, "Community not found");
 
     // Check if user is member (for private communities)
+    let isOwnCommunity = false;
     let isMember = false;
     let membershipStatus = null;
-    if(request.user?._id) 
-    {
-        const { businessProfileId, userProfileId } = request.user.profiles || {};
-        const membership = await CommunityMembership.findOne({
-            communityId: id,
-            memberId: { $in:[userProfileId, businessProfileId] },
-            status:"approved"
-        });
 
-        if(membership) 
-        {
-            isMember = true;
-            membershipStatus = membership.status;
-        }
-    } 
+    // Get profile IDs
+    const { businessProfileId, userProfileId } = request.user.profiles || {};  
+    
+    // Same parent profiles restriction
+    if(String(userId) === String(community.businessId.ownerUserId)) isOwnCommunity = true;
+
+    // Find membership
+    const membership = await CommunityMembership.findOne({
+        communityId: id,
+        memberId: { $in:[userProfileId, businessProfileId] },
+        status: "approved"
+    });
+
+    if(membership) 
+    {
+        isMember = true;
+        membershipStatus = membership.status;
+    }
 
     // Post count of current month
     const now = new Date();
@@ -122,8 +128,11 @@ const getCommunityById = asyncHandler(async (request, response) => {
         createdAt:{ $gte:startOfMonth, $lte:endOfMonth } 
     });
 
+    // Prepare payload
+    const payload = { community, postCount, isMember, membershipStatus, isOwnCommunity };
+
     // Response
-    return response.status(200).json(new ApiResponse(200, { community, postCount, isMember, membershipStatus }, "Community fetched successfully"));
+    return response.status(200).json(new ApiResponse(200, payload, "Community fetched successfully"));
 });
 
 // Join Community

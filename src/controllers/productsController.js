@@ -127,7 +127,7 @@ const viewProduct = asyncHandler(async (request, response) => {
     const { productId } = request.params;
 
     // Fetch product + business profile + rating stats
-    const [product, businessProfile, ratingStats] = await Promise.all([
+    const [product, businessProfile, ratingStats, sold] = await Promise.all([
         Product.findById(productId).populate({ path:"businessId", select:"_id companyName foundedDate logo" }),
         BusinessProfile.findOne({ ownerUserId:userId }).select("_id"),
         ProductReview.aggregate([
@@ -139,7 +139,10 @@ const viewProduct = asyncHandler(async (request, response) => {
                     totalReviews: { $sum: 1 }
                 }
             }
-        ])
+        ]),
+        
+        // Total sold
+        Order.countDocuments({ "items.productId": productId, status: "completed" })
     ]);
     if(!product) throw new ApiError(404, "Product not found");
 
@@ -167,7 +170,8 @@ const viewProduct = asyncHandler(async (request, response) => {
         ...product.toObject(),
         isOwner, 
         avgRating: Number(avgRating.toFixed(1)), 
-        totalReviews
+        totalReviews,
+        sold
     };
 
     // Response

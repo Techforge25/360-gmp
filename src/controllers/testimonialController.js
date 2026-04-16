@@ -10,6 +10,7 @@ const validate = require("../utils/validate");
 const { createTestimonialValidationSchema } = require("../validations/testimonialsValidator");
 const { emptyList } = require("../constants");
 const sendNotification = require("../utils/sendNotification");
+const { isValidObjectId } = require("mongoose");
 
 // Create review invite
 const createReviewInvite = asyncHandler(async (request, response) => {
@@ -129,23 +130,23 @@ const viewTestimonial = asyncHandler(async (request, response) => {
 
 // Flag testimonial
 const flagTestimonial = asyncHandler(async (request, response) => {
-    const userId = request.user._id;
+    const { businessProfileId } = request.user.profiles || {};
     const { testimonialId } = request.params;
+
+    // Sanitize IDs
+    if(!businessProfileId) throw new ApiError(400, "Business profile ID is missing");
+    if(!isValidObjectId(testimonialId)) throw new ApiError(400, "Invalid MongoDB ID! Please provide a valid testimonial ID");
 
     // Get flag reason
     const { flagReason = null } = request.body || {};
     if(!flagReason) throw new ApiError(400, "Flag reason is required to flag a testimonial");
-
-    // Find business profile
-    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId });
-    if(!businessProfile) throw new ApiError(404, "Business profile not found");
 
     // Find testimonial
     const testimonial = await Testimonial.findById(testimonialId);
     if(!testimonial) throw new ApiError(404, "Testimonial not found");
 
     // Check if testimonial belongs to the business
-    if(String(testimonial.businessId) !== String(businessProfile._id)) throw new ApiError(403, "You are not authorized to flag this testimonial");
+    if(String(testimonial.businessId) !== String(businessProfileId)) throw new ApiError(403, "You are not authorized to flag this testimonial");
     
     // Update testimonial status to flagged
     testimonial.status = "flagged";

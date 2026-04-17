@@ -10,6 +10,8 @@ adminDecisionValidationSchema } = require("../validations/disputeValidator");
 const EscrowTransaction = require("../models/escrowTrasanction");
 const Wallet = require("../models/walletModel");
 const mongoose = require("mongoose");
+const Stripe = require("stripe");
+const Transaction = require("../models/transactionModel");
 
 // Create dispute
 const createDispute = asyncHandler(async (request, response) => {
@@ -37,19 +39,115 @@ const createDispute = asyncHandler(async (request, response) => {
     const isExist = await Dispute.exists({ orderId });
     if(isExist) throw new ApiError(400, "You can create a dispute only once for each order");
 
-    // Create dispute    
-    const dispute = await Dispute.create({ 
-        orderId, 
-        buyerId: escrow.buyerId, 
-        sellerId: escrow.sellerId, 
-        reason, 
-        description, 
-        evidences 
+    // Dispute creation charges
+    const disputeAmount = 20;
+
+    // Stripe instance
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+    // Create Stripe checkout session
+    const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        mode: "payment",
+        line_items: [
+            {
+                price_data: {
+                    currency: "usd",
+                    unit_amount: Number(disputeAmount) * 100,
+                    product_data: {
+                        name: "Dispute creation",
+                        metadata: {
+                            brand: "360-GMP",
+                            category: "Dispute"
+                        }
+                    }
+                },
+                quantity: 1
+            }
+        ],
+        metadata: {
+            orderId: String(orderId),
+            buyerId: String(escrow.buyerId),
+            sellerId: String(escrow.sellerId),
+            disputeAmount,
+            reason,
+            description,
+            evidences: JSON.stringify(evidences)
+        },
+        success_url: `${process.env.BACKEND_URL}/api/v1/dispute/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.BACKEND_URL}/api/v1/dispute/cancel`
     });
-    if(!dispute) throw new ApiError(500, "Failed to create dispute");
+
+    if(!session) throw new ApiError(400, "Stripe session creation failed");
 
     // Response
-    return response.status(201).json(new ApiResponse(201, dispute, "Dispute created successfully"));
+    return response.status(200).json(new ApiResponse(200, session.url, "Checkout url generated"));
+});
+
+// Dispute payment success
+const disputePaymentSuccess = asyncHandler(async (request, response) => {
+    const { session_id } = request.query;
+    if (!session_id) throw new ApiError(400, "Session ID is missing");
+
+    // Fetch session
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripeSession = await stripe.checkout.sessions.retrieve(session_id);
+
+    // Validate
+    if(!stripeSession) throw new ApiError(404, "Session not found");
+    if(stripeSession.payment_status !== "paid") throw new ApiError(400, "Payment not completed");
+
+    // Start MongoDB transaction
+    const dbSession = await mongoose.startSession();
+    dbSession.startTransaction();
+    try 
+    {
+        // Get payload from metadata
+        const { orderId, buyerId, sellerId, disputeAmount, reason, description, evidences } = stripeSession.metadata;
+
+        // Type safety
+        const amount = Number(disputeAmount);
+
+        // Create dispute    
+        const dispute = await Dispute.create([{ 
+            orderId, 
+            buyerId, 
+            sellerId, 
+            reason, 
+            description, 
+            evidences: JSON.parse(evidences) 
+        }], { session:dbSession });
+        if(!dispute) throw new ApiError(500, "Failed to create dispute");
+
+        // Update order status
+        const order = await Order.findByIdAndUpdate(orderId, { $set:{ status:"dispute" } }, { session:dbSession });
+        if(!order) throw new ApiError(500, "Failed to update order status");
+
+        // Transaction record
+        await Transaction.create([{
+            ownerId: buyerId, 
+            ownerModel: "UserProfile",
+            orderId,
+            amount,
+            type: "dispute",
+            stripeSessionId: stripeSession.id,
+            status: "completed",
+            paymentMethod:"stripe"
+        }], { session:dbSession });       
+
+        // Complete transaction
+        await dbSession.commitTransaction();
+        dbSession.endSession();
+
+        // Response
+        return response.status(303).redirect(`${process.env.FRONTEND_URL}`);
+    } 
+    catch(error) 
+    {
+        await dbSession.abortTransaction();
+        dbSession.endSession();
+        throw error;
+    }
 });
 
 // View dispute details (admin only)
@@ -161,4 +259,5 @@ const adminDecision = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Admin decision recorded successfully"));
 });
 
-module.exports = { createDispute, viewDisputeDetails, changeDisputeStatus, adminDecision };
+module.exports = { createDispute, disputePaymentSuccess, viewDisputeDetails, 
+changeDisputeStatus, adminDecision };

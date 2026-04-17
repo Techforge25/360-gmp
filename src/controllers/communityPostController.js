@@ -91,6 +91,7 @@ const createPost = asyncHandler(async (request, response) => {
 // Get All Posts in Community (with pagination)
 const getCommunityPosts = asyncHandler(async (request, response) => {
     const { userProfileId, businessProfileId } = request.user.profiles || {};
+    const { _id:userId, role } = request.user;
     const { id } = request.params; // communityId
     const { page = 1, limit = 20 } = request.query;
 
@@ -100,45 +101,38 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
 
     // Check if user is member (for private communities)
     let isMember = false;
-    let hasAccess = community.type === "public";
+    let hasAccess = false;
     let currentUserProfileId = null;
-    if(request.user?._id) 
+
+    if(role === "business")
     {
-        const isBusinessOwner = String(community.businessId.id) === String(businessProfileId);
-        if(isBusinessOwner) 
+        // Always accessible to business community owner
+        const isBusinessOwner = String(community.businessId._id) === String(businessProfileId);        
+        if(isBusinessOwner)
         {
+            isMember = true;
             hasAccess = true;
-        } 
-        else 
-        {
-            try {
-                if(!userProfileId) throw new ApiError(404, "User profile ID is missing.");
-                const membership = await CommunityMembership.findOne({
-                    communityId: id,
-                    memberId: userProfileId,
-                    memberModel: "UserProfile",
-                    status: "approved"
-                });
-                if(membership)
-                {
-                    isMember = true;
-                    hasAccess = true;
-                    currentUserProfileId = userProfileId;
-                }
-                else
-                {
-                    throw new ApiError(400, "Failed to fetch community post. Only approve members can view posts");
-                }
-            } 
-            catch(err) 
-            {
-                // User not logged in or no profile
-            }
         }
     }
 
-    // For private communities, only members can see posts
-    if(community.type === "private" && !hasAccess) throw new ApiError(403, "You must be a member to view posts in this community");
+    if(role === "user")
+    {
+       if(!userProfileId) throw new ApiError(404, "User profile ID is missing while watching a post as a user");
+       const membership = await CommunityMembership.findOne({
+            communityId: id,
+            memberId: userProfileId,
+            memberModel: "UserProfile",
+            status: "approved"
+        });
+        if(membership)
+        {
+            isMember = true;
+            hasAccess = true;
+            currentUserProfileId = userProfileId;
+        }        
+    }    
+
+    if(!hasAccess) throw new ApiError(403, "You must be a member to view posts in this community");
 
     // Pagination
     const pageNumber = Number.parseInt(page, 10);

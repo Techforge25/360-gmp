@@ -10,7 +10,7 @@ const communityPostRouter = Router();
 communityPostRouter.route("/").post(authentication, createPost);
 
 // Get all posts in a community (with pagination)
-communityPostRouter.route("/community/:id").get(authentication, getCommunityPosts);
+communityPostRouter.route("/community/:id").get(authentication, authorization(["user", "business"]), getCommunityPosts);
 
 // Get post by ID
 communityPostRouter.route("/:postId").get(authentication, getPostById);

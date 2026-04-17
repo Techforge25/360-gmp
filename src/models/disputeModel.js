@@ -3,12 +3,8 @@ const paginate = require("mongoose-paginate-v2");
 
 // Schema
 const disputeSchema = new Schema({
-    // References to related entities
+    // References
     orderId: { type: Schema.Types.ObjectId, ref: "Order", required: true },
-    productId: { type: Schema.Types.ObjectId, ref: "Product", required: true },
-    escrowId: { type: Schema.Types.ObjectId, ref: "EscrowTransaction", required: true },
-
-    // Parties involved
     buyerId: { type: Schema.Types.ObjectId, ref: "UserProfile", required: true },
     sellerId: { type: Schema.Types.ObjectId, ref: "BusinessProfile", required: true },
 

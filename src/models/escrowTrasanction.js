@@ -4,7 +4,7 @@ const paginate = require("mongoose-paginate-v2");
 // Schema
 const escrowTransactionSchema = new Schema({
     // Direct references
-    orderId: { type:Schema.Types.ObjectId, ref:"Order", required:true },
+    orderId: { type:Schema.Types.ObjectId, ref:"Order", required:true, unique:true },
     sellerId: { type:Schema.Types.ObjectId, ref:"BusinessProfile", required:true },
     buyerId: { type:Schema.Types.ObjectId, ref:"UserProfile", required:true },
 

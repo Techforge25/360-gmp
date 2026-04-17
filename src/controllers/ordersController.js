@@ -1153,7 +1153,76 @@ const viewOrder = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, orderDetails[0], "Order details have been fetched"));
 });
 
+// Fetch unreviewed products
+const fetchUnreviewedProducts = asyncHandler(async (request, response) => {
+    const { userProfileId } = request.user.profiles || {};
+    const { page = 1, limit = 10 } = request.query;
+
+    // Aggregation
+    const aggregation = Product.aggregate([
+
+        // Find orders of this user with completed status
+        {
+            $lookup: {
+                from: "orders",
+                let: { productId: "$_id" },
+                pipeline: [
+                    { 
+                        $match: { 
+                            buyerUserProfileId: convertToMongoId(userProfileId),
+                            status: "completed"
+                        } 
+                    },
+                    { $unwind: "$items" },
+                    {
+                        $match: { $expr: { $eq: ["$items.productId", "$$productId"] } }
+                    }
+                ],
+                as: "orders"
+            }
+        },
+
+        // Only keep products that exist in completed orders
+        { $match: { "orders.0": { $exists: true } } },
+
+        // Lookup reviews by this user
+        {
+            $lookup: {
+                from: "productreviews",
+                let: { productId: "$_id" },
+                pipeline: [
+                    {
+                        $match: {
+                            userProfileId: convertToMongoId(userProfileId)
+                        }
+                    },
+                    {
+                        $match: {
+                            $expr: { $eq: ["$productId", "$$productId"] }
+                        }
+                    }
+                ],
+                as: "reviews"
+            }
+        },
+
+        // Keep only products with NO reviews
+        { $match: { "reviews.0": { $exists: false } } },
+
+        // Projection
+        { $project:{ title:1, image:1, category:1, pricePerUnit:1, createdAt:1, } }
+    ]);
+
+    // Execute query
+    const unreviewedProducts = await Product.aggregatePaginate(aggregation, { page, limit });
+    if(!unreviewedProducts.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No unreviewed products found"));
+    
+    // Response
+    return response.status(200).json(new ApiResponse(200, unreviewedProducts, "Unreviewed products fetched"));
+});
+
 module.exports = { createOrder, verifyStripePaymentForOrders, createOrderWithWallet, completeOrder, updateOrderStatusBySeller, 
 fetchAllUserOrders, fetchAllBusinessOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, fetchCancelledOrders,
 fetchBusinessProcessingOrders, fetchBsuinessInTransitOrders, fetchBusinessCompletedOrders, fetchBusinessCancelledOrders,
-viewOrder, cancelOrder, updateOrderTrackingInfo, fetchNewOrders, fetchBusinessNewOrders, fetchDeliveredOrders, fetchBusinessDeliveredOrders };
+viewOrder, cancelOrder, updateOrderTrackingInfo, fetchNewOrders, fetchBusinessNewOrders, fetchDeliveredOrders, 
+fetchBusinessDeliveredOrders, fetchUnreviewedProducts };

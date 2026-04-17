@@ -17,7 +17,7 @@ disputeRouter.route("/success")
 
 // View dispute details (admin)
 disputeRouter.route("/:orderId")
-.get(adminAuthentication, adminAuthorization(["admin"]), viewDisputeDetails);
+.get(authentication, authorization(["user", "business"]), viewDisputeDetails);
 
 // Change dispute status (admin)
 disputeRouter.route("/:orderId/status")

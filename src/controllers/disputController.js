@@ -161,7 +161,7 @@ const viewDisputeDetails = asyncHandler(async (request, response) => {
         { path: "orderId", select: "totalAmount status shippingAddress" },
         { path: "buyerId", select: "fullName email phone" },
         { path: "sellerId", select: "companyName businessType location b2bContact" }
-    ]);
+    ]).select("-__v -updatedAt");
     if(!dispute) throw new ApiError(404, "Dispute not found");
 
     // Response

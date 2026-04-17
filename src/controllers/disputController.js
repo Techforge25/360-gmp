@@ -54,17 +54,15 @@ const createDispute = asyncHandler(async (request, response) => {
 
 // View dispute details (admin only)
 const viewDisputeDetails = asyncHandler(async (request, response) => {
-    const { disputeId } = request.params;
-    if(!isValidObjectId(disputeId)) throw new ApiError(400, "Invalid disputeId");
+    const { orderId } = request.params;
+    if(!isValidObjectId(orderId)) throw new ApiError(400, "Invalid order ID");
 
     // Fetch dispute with related details
-    const dispute = await Dispute.findById(disputeId)
+    const dispute = await Dispute.findOne({ orderId })
     .populate([
         { path: "orderId", select: "totalAmount status shippingAddress" },
-        { path: "productId", select: "title image detail category pricePerUnit tieredPricing minOrderQty stockQty status" },
-        { path: "escrowId", select: "totalAmount platformFee netAmount status paymentMethod" },
-        { path: "buyerId", select: "userId fullName email phone" },
-        { path: "sellerId", select: "ownerUserId companyName businessType location b2bContact" }
+        { path: "buyerId", select: "fullName email phone" },
+        { path: "sellerId", select: "companyName businessType location b2bContact" }
     ]);
     if(!dispute) throw new ApiError(404, "Dispute not found");
 
@@ -74,14 +72,14 @@ const viewDisputeDetails = asyncHandler(async (request, response) => {
 
 // Change dispute status (admin only) - can be used to implement resolution actions later
 const changeDisputeStatus = asyncHandler(async (request, response) => {
-    const { disputeId } = request.params;
-    if(!isValidObjectId(disputeId)) throw new ApiError(400, "Invalid disputeId");
+    const { orderId } = request.params;
+    if(!isValidObjectId(orderId)) throw new ApiError(400, "Invalid Order ID");
 
     // Validate new status
     const { status } = validate(changeDisputeStatusValidationSchema, request.body);
 
     // Update dispute status
-    const updatedDispute = await Dispute.findByIdAndUpdate(disputeId, { status }, { new: true });
+    const updatedDispute = await Dispute.findOneAndUpdate({ orderId }, { status }, { new: true });
     if(!updatedDispute) throw new ApiError(404, "Dispute not found");
 
     // Response

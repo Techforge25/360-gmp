@@ -4,7 +4,7 @@ const paginate = require("mongoose-paginate-v2");
 // Schema
 const disputeSchema = new Schema({
     // References
-    orderId: { type: Schema.Types.ObjectId, ref: "Order", required: true },
+    orderId: { type: Schema.Types.ObjectId, ref: "Order", required: true, unique:[true, "Only one dispute per order is allowed"] },
     buyerId: { type: Schema.Types.ObjectId, ref: "UserProfile", required: true },
     sellerId: { type: Schema.Types.ObjectId, ref: "BusinessProfile", required: true },
 

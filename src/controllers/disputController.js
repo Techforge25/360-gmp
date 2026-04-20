@@ -186,77 +186,115 @@ const changeDisputeStatus = asyncHandler(async (request, response) => {
 
 // Admin decision
 const adminDecision = asyncHandler(async (request, response) => {
-    const { disputeId } = request.params;
-    if(!isValidObjectId(disputeId)) throw new ApiError(400, "Invalid disputeId");
-
-    // Validate admin decision details
+    const { orderId } = request.params;
+    if(!isValidObjectId(orderId)) throw new ApiError(400, "Invalid order ID");
+    
+    // Get validated payload
     const { adminDecision, refundAmount = 0, adminNotes } = validate(adminDecisionValidationSchema, request.body);
 
-    // Cases for refund decisions
+    // Reject case
     if(adminDecision === "reject") 
     {
-        // Just update the dispute with admin decision and notes
-        const updatedDispute = await Dispute.findByIdAndUpdate(disputeId, { adminDecision, adminNotes, status:"closed" }, { new: true });
+        // Mark dispute as closed
+        const updatedDispute = await Dispute.findOneAndUpdate({ orderId }, { adminDecision, adminNotes, status: "closed" }, { new: true })
+        .select("adminDecision status");
         if(!updatedDispute) throw new ApiError(404, "Dispute not found");
-        return response.status(200).json(new ApiResponse(200, updatedDispute, "Admin decision recorded successfully"));
+
+        // Mark order as completed
+        const updatedOrder = await Order.findByIdAndUpdate(orderId, { $set:{ status: "completed" } });
+        if(!updatedOrder) throw new ApiError(500, "Failed to update order status");
+
+        return response.status(200).json(new ApiResponse(200, updatedDispute, "Dispute rejected successfully"));
     }
 
-    // Get order ID
-    const dispute = await Dispute.findById(disputeId).select("orderId").lean();
-    if(!dispute) throw new ApiError(404, "Dispute not found");
-
-    // Get total amount
-    const escrow = await EscrowTransaction.findOne({ orderId:dispute.orderId })
-    .select("totalAmount platformFee netAmount status paymentMethod");
+    // Get escrow details
+    const escrow = await EscrowTransaction.findOne({ orderId });
     if(!escrow) throw new ApiError(404, "Escrow transaction not found");
 
-    if(adminDecision === "full_refund" || (adminDecision === "partial_refund" && refundAmount > 0))
+    // Validate amounts
+    if(adminDecision === "full_refund" && refundAmount !== Number(escrow.totalAmount)) 
     {
-        // Refund full amount to buyer's wallet
-        const buyerWallet = await Wallet.findOne({ ownerId: dispute.buyerId, ownerModel: "UserProfile" });
-        if(!buyerWallet) throw new ApiError(404, "Buyer wallet not found");
-
-        // Start db transaction session
-        const dbSession = await mongoose.startSession();
-        dbSession.startTransaction();
-
-        try
-        {
-            // Update wallet balances
-            buyerWallet.availableBalance += Number(refundAmount);
-            await buyerWallet.save({ session: dbSession });
-
-            // Update escrow status to refunded
-            escrow.totalAmount = adminDecision === "full_refund" ? 0 : (Number(escrow.totalAmount) - Number(refundAmount));
-            escrow.platformFee = adminDecision === "full_refund" ? 0 : (Number(escrow.platformFee) - (Number(refundAmount) * 0.1)); // Assuming platform fee is 10%
-            escrow.netAmount = adminDecision === "full_refund" ? 0 : (Number(escrow.netAmount) - (Number(refundAmount) * 0.9)); // Rest goes to seller
-            escrow.status = "refunded";
-            await escrow.save({ session: dbSession });
-
-            // Update dispute with refund details
-            const updatedDispute = await Dispute.findByIdAndUpdate(disputeId, 
-                { adminDecision, refundAmount, adminNotes, status:"closed" }, 
-                { new: true, session: dbSession }
-            );
-            if(!updatedDispute) throw new ApiError(404, "Dispute not found");
-
-            // Commit transaction
-            await dbSession.commitTransaction();
-            dbSession.endSession();
-
-            // Response
-            return response.status(200).json(new ApiResponse(200, updatedDispute, "Admin decision recorded successfully"));
-        }
-        catch(error)
-        {
-            await dbSession.abortTransaction();
-            dbSession.endSession();
-            throw error;
-        }
+        throw new ApiError(400, "Refund amount mismatch. A full refund must equal the total escrow amount.");
     }
 
-    // Fallback response
-    return response.status(200).json(new ApiResponse(200, null, "Admin decision recorded successfully"));
+    if(adminDecision === "partial_refund" && (refundAmount <= 0 || refundAmount > escrow.totalAmount)) 
+    {
+        throw new ApiError(400, "Invalid refund amount. It must be greater than 0 and less than or equal to the escrow total.");
+    }
+
+    // Start transaction
+    const dbSession = await mongoose.startSession();
+    dbSession.startTransaction();
+
+    try 
+    {
+        // Get wallets
+        const buyerWallet = await Wallet.findOne({ ownerId: escrow.buyerId, ownerModel: "UserProfile"}).session(dbSession);
+        const sellerWallet = await Wallet.findOne({ ownerId: escrow.sellerId, ownerModel: "BusinessProfile"}).session(dbSession);
+
+        // Validate
+        if(!buyerWallet) throw new ApiError(404, "Buyer wallet not found");
+        if(!sellerWallet) throw new ApiError(404, "Seller wallet not found");
+        if(sellerWallet.pendingBalance < refundAmount) throw new ApiError(400, "Seller does not have sufficient balance");
+
+        // Escrow calculation
+        const totalAmount = adminDecision === "full_refund" ? 0 : Number(escrow.totalAmount) - refundAmount;
+        const platformFee = adminDecision === "full_refund" ? 0 : Number(escrow.platformFee) - (refundAmount * 0.1);
+        const netAmount = adminDecision === "full_refund" ? 0 : Number(escrow.netAmount) - (refundAmount * 0.9);
+        const status = "refunded";      
+
+        // Update buyer wallet
+        await Wallet.updateOne(
+            { _id: buyerWallet._id },
+            { $inc: { availableBalance: Number(refundAmount) + 20 } }, // Extra 20 fee for initiating dispute
+            { session:dbSession }
+        );
+
+        // Update seller wallet
+        await Wallet.updateOne(
+            { _id: sellerWallet._id },
+            { $inc: { pendingBalance: -refundAmount } },
+            { session:dbSession }
+        );
+
+        // Set values
+        escrow.totalAmount = totalAmount;
+        escrow.platformFee = platformFee;
+        escrow.netAmount = netAmount;
+        escrow.status = status;
+
+        // Save
+        await escrow.save({ session:dbSession });
+
+        // Mark dispute as resolved
+        const updatedDispute = await Dispute.findOneAndUpdate(
+            { orderId },
+            { adminDecision, refundAmount, adminNotes, status: "resolved" },
+            { new: true, session:dbSession }
+        );
+        if(!updatedDispute) throw new ApiError(404, "Dispute not found");
+
+        // Mark order as completed
+        const updatedOrder = await Order.findByIdAndUpdate(
+            orderId, 
+            { $set:{ status: "completed" } },
+            { new: true, session:dbSession }
+        );
+        if(!updatedOrder) throw new ApiError(500, "Failed to update order status");      
+
+        // Commit transaction
+        await dbSession.commitTransaction();
+        dbSession.endSession();
+
+        // Response
+        return response.status(200).json(new ApiResponse(200, updatedDispute, "Refund processed successfully"));
+    } 
+    catch(error) 
+    {
+        await dbSession.abortTransaction();
+        dbSession.endSession();
+        throw error;
+    }
 });
 
 module.exports = { createDispute, disputePaymentSuccess, viewDisputeDetails, 

@@ -205,6 +205,11 @@ const adminDecision = asyncHandler(async (request, response) => {
     // Get validated payload
     const { adminDecision, refundAmount = 0, adminNotes } = validate(adminDecisionValidationSchema, request.body);
 
+    // Validate order
+    const order = await Order.findById(orderId).select("_id").lean();
+    if(!order) throw new ApiError(404, "Order not found");
+    if(order.status !== "disputed") throw new ApiError(403, "You can only make a decision on orders that are currently in a disputed state");
+
     // Reject case
     if(adminDecision === "reject") 
     {

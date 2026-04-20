@@ -208,8 +208,11 @@ const sellerResponse = asyncHandler(async (request, response) => {
     const disputedOrder = await Dispute.findOne({ orderId, sellerId: businessProfileId });
     if(!disputedOrder) throw new ApiError(404, "Disputed order not found");
 
-    // Validate status
-    if(disputedOrder.sellerResponseStatus) throw new ApiError(400, "You can respond on disputed order only for once");
+    // Only 1 response allowed per dispute
+    if(disputedOrder.sellerResponseStatus)
+    {
+        throw new ApiError(403, "A response has already been recorded for this dispute. Further responses are not permitted.");
+    }
 
     // Save to db
     disputedOrder.sellerResponse.description = description;

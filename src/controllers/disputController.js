@@ -6,7 +6,8 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
 const { createDisputeValidationSchema, changeDisputeStatusValidationSchema, 
-adminDecisionValidationSchema } = require("../validations/disputeValidator");
+adminDecisionValidationSchema, 
+sellerResponseValidationSchema} = require("../validations/disputeValidator");
 const EscrowTransaction = require("../models/escrowTrasanction");
 const Wallet = require("../models/walletModel");
 const mongoose = require("mongoose");
@@ -194,6 +195,32 @@ const changeDisputeStatus = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, updatedDispute, "Dispute status updated successfully"));
 }); 
 
+// Seller response
+const sellerResponse = asyncHandler(async (request, response) => {
+    const { businessProfileId } = request.user.profiles || {};
+    const { orderId } = request.params;
+    if(!isValidObjectId(orderId)) throw new ApiError(400, "Invalid Order ID");
+
+    // Get validated payload
+    const { description, evidences } = validate(sellerResponseValidationSchema, request.body);
+
+    // Find disputed order
+    const disputedOrder = await Dispute.findOne({ orderId, sellerId: businessProfileId });
+    if(!disputedOrder) throw new ApiError(404, "Disputed order not found");
+
+    // Validate status
+    if(disputedOrder.sellerResponseStatus) throw new ApiError(400, "You can respond on disputed order only for once");
+
+    // Save to db
+    disputedOrder.sellerResponse.description = description;
+    disputedOrder.sellerResponse.evidences = evidences;
+    disputedOrder.sellerResponseStatus = true;
+    await disputedOrder.save();
+
+    // Response
+    return response.status(201).json(new ApiResponse(201, disputedOrder.sellerResponse, "Response has been submitted"));
+});
+
 // Admin decision
 const adminDecision = asyncHandler(async (request, response) => {
     const { orderId } = request.params;
@@ -351,5 +378,5 @@ const adminDecision = asyncHandler(async (request, response) => {
     }
 });
 
-module.exports = { createDispute, disputePaymentSuccess, viewDisputeDetails, 
-changeDisputeStatus, adminDecision };
+module.exports = { createDispute, disputePaymentSuccess, viewDisputeDetails, changeDisputeStatus,
+sellerResponse, adminDecision };

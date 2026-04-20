@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { createDispute, viewDisputeDetails, changeDisputeStatus, 
-adminDecision, disputePaymentSuccess } = require("../controllers/disputController");
+adminDecision, disputePaymentSuccess, sellerResponse } = require("../controllers/disputController");
 const { adminAuthentication, adminAuthorization } = require("../middlewares/adminAuth");
 
 // Router instance
@@ -22,6 +22,10 @@ disputeRouter.route("/:orderId")
 // Change dispute status (admin)
 disputeRouter.route("/:orderId/status")
 .patch(adminAuthentication, adminAuthorization(["admin"]), changeDisputeStatus);
+
+// Seller response
+disputeRouter.route("/:orderId/sellerResponse")
+.patch(authentication, authorization(["business"]), sellerResponse);
 
 // Admin decision (admin)
 disputeRouter.route("/:orderId/decision")

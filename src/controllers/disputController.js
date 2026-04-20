@@ -139,6 +139,11 @@ const disputePaymentSuccess = asyncHandler(async (request, response) => {
         await dbSession.commitTransaction();
         dbSession.endSession();
 
+        // Get socket instance
+        const io = request.app.get("io");
+        io.to(String(buyerId)).emit("dispute-creation", { orderId });
+        io.to(String(sellerId)).emit("dispute-creation", { orderId });
+
         // Response
         return response.status(303).redirect(`${process.env.FRONTEND_URL}`);
     } 
@@ -180,6 +185,11 @@ const changeDisputeStatus = asyncHandler(async (request, response) => {
     const updatedDispute = await Dispute.findOneAndUpdate({ orderId }, { $set:{ status } }, { new: true });
     if(!updatedDispute) throw new ApiError(404, "Dispute not found");
 
+    // Get socket instance
+    const io = request.app.get("io");
+    io.to(String(updatedDispute.buyerId)).emit("update-dispute", { orderId });
+    io.to(String(updatedDispute.sellerId)).emit("update-dispute", { orderId });    
+
     // Response
     return response.status(200).json(new ApiResponse(200, updatedDispute, "Dispute status updated successfully"));
 }); 
@@ -188,6 +198,9 @@ const changeDisputeStatus = asyncHandler(async (request, response) => {
 const adminDecision = asyncHandler(async (request, response) => {
     const { orderId } = request.params;
     if(!isValidObjectId(orderId)) throw new ApiError(400, "Invalid order ID");
+
+    // Get socket instance
+    const io = request.app.get("io");  
     
     // Get validated payload
     const { adminDecision, refundAmount = 0, adminNotes } = validate(adminDecisionValidationSchema, request.body);
@@ -203,6 +216,10 @@ const adminDecision = asyncHandler(async (request, response) => {
         // Mark order as completed
         const updatedOrder = await Order.findByIdAndUpdate(orderId, { $set:{ status: "completed" } });
         if(!updatedOrder) throw new ApiError(500, "Failed to update order status");
+
+        // Emit socket
+        io.to(String(updatedDispute.buyerId)).emit("update-dispute", { orderId });
+        io.to(String(updatedDispute.sellerId)).emit("update-dispute", { orderId });            
 
         return response.status(200).json(new ApiResponse(200, updatedDispute, "Dispute rejected successfully"));
     }
@@ -285,6 +302,10 @@ const adminDecision = asyncHandler(async (request, response) => {
         // Commit transaction
         await dbSession.commitTransaction();
         dbSession.endSession();
+
+        // Emit socket
+        io.to(String(escrow.buyerId)).emit("update-dispute", { orderId });
+        io.to(String(escrow.sellerId)).emit("update-dispute", { orderId });          
 
         // Response
         return response.status(200).json(new ApiResponse(200, updatedDispute, "Refund processed successfully"));

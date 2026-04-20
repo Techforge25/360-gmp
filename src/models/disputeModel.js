@@ -21,6 +21,22 @@ const disputeSchema = new Schema({
         }
     },
 
+    // Seller response
+    sellerResponse: {
+        description: { type: String, trim: true },
+
+        // Evidence - array of image URLs (max 5)
+        evidences: { 
+            type: [String],
+            validate: {
+                validator: v => v.length <= 5,
+                message: "Maximum 5 evidence images allowed"
+            }
+        }, 
+    },
+    // Flag
+    sellerResponseStatus: { type:Boolean, default:false },
+
     // Dispute resolution
     status: { type: String, enum: ["open", "under_review", "waiting_buyer", "waiting_seller", "resolved", "closed"], default: "open" },
 

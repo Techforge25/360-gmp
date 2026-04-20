@@ -204,6 +204,19 @@ const sellerResponse = asyncHandler(async (request, response) => {
     // Get validated payload
     const { description, evidences } = validate(sellerResponseValidationSchema, request.body);
 
+    // Find order
+    const order = await Order.findById(orderId).select("sellerBusinessId status").lean();
+    if(!order) throw new ApiError(404, "Order not found");
+
+    // Authorization check
+    if(String(order.sellerBusinessId) !== String(businessProfileId))
+    {
+        throw new ApiError(403, "You can only respond to disputes for orders that belong to your business");
+    }
+
+    // Validate current status
+    if(order.status !== "disputed") throw new ApiError(403, "You can only respond on orders that are currently in a disputed state");
+
     // Find disputed order
     const disputedOrder = await Dispute.findOne({ orderId, sellerId: businessProfileId });
     if(!disputedOrder) throw new ApiError(404, "Disputed order not found");

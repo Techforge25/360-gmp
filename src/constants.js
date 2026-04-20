@@ -5,7 +5,7 @@ const frontendUrl = isProduction ? process.env.FRONTEND_URL : "http://localhost:
 
 // Cors options
 const corsOptions = {
-    origin:[process.env.ORIGIN, "http://localhost:3000", "http://192.168.1.11:3000"],
+    origin:[process.env.ORIGIN, "http://localhost:3000", "http://192.168.1.11:3000", "https://stride-snowdrop-gigahertz.ngrok-free.dev"],
     credentials:true,
     methods:["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders:["Content-Type", "Authorization"]

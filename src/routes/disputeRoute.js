@@ -24,7 +24,7 @@ disputeRouter.route("/:orderId/status")
 .patch(adminAuthentication, adminAuthorization(["admin"]), changeDisputeStatus);
 
 // Admin decision (admin)
-disputeRouter.route("/:disputeId/decision")
+disputeRouter.route("/:orderId/decision")
 .patch(adminAuthentication, adminAuthorization(["admin"]), adminDecision);
 
 module.exports = disputeRouter;

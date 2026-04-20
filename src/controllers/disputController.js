@@ -177,7 +177,7 @@ const changeDisputeStatus = asyncHandler(async (request, response) => {
     const { status } = validate(changeDisputeStatusValidationSchema, request.body);
 
     // Update dispute status
-    const updatedDispute = await Dispute.findOneAndUpdate({ orderId }, { status }, { new: true });
+    const updatedDispute = await Dispute.findOneAndUpdate({ orderId }, { $set:{ status } }, { new: true });
     if(!updatedDispute) throw new ApiError(404, "Dispute not found");
 
     // Response

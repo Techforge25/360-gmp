@@ -120,7 +120,7 @@ const disputePaymentSuccess = asyncHandler(async (request, response) => {
         if(!dispute) throw new ApiError(500, "Failed to create dispute");
 
         // Update order status
-        const order = await Order.findByIdAndUpdate(orderId, { $set:{ status:"dispute" } }, { session:dbSession });
+        const order = await Order.findByIdAndUpdate(orderId, { $set:{ status:"disputed" } }, { session:dbSession });
         if(!order) throw new ApiError(500, "Failed to update order status");
 
         // Transaction record

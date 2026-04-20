@@ -8,6 +8,12 @@ const createDisputeValidationSchema = joi.object({
     evidences: joi.array().items(joi.string().trim().uri()).max(5).optional().default([]).label("Evidences")
 });
 
+// Seller response validator
+const sellerResponseValidationSchema = joi.object({
+    description: joi.string().trim().max(2000).label("Description"),
+    evidences: joi.array().items(joi.string().trim().uri()).max(5).optional().default([]).label("Evidences")
+});
+
 // Dispute status validation schema (for admin)
 const changeDisputeStatusValidationSchema = joi.object({
     status: joi.string().required().valid("under_review", "waiting_buyer", "waiting_seller", "resolved", "closed").label("Status")
@@ -26,4 +32,5 @@ const adminDecisionValidationSchema = joi.object({
     adminNotes: joi.string().trim().max(2000).label("Admin Notes")
 });
 
-module.exports = { createDisputeValidationSchema, changeDisputeStatusValidationSchema, adminDecisionValidationSchema };
+module.exports = { createDisputeValidationSchema, sellerResponseValidationSchema,
+changeDisputeStatusValidationSchema, adminDecisionValidationSchema };

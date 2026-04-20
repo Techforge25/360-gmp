@@ -208,6 +208,9 @@ const sellerResponse = asyncHandler(async (request, response) => {
     const disputedOrder = await Dispute.findOne({ orderId, sellerId: businessProfileId });
     if(!disputedOrder) throw new ApiError(404, "Disputed order not found");
 
+    // Cannot respond if the status is closed or resolved
+    if(["resolved", "closed"].includes(disputedOrder.status)) throw new ApiError(403, "Dispute has already been resolved or closed by the admin.");
+
     // Only 1 response allowed per dispute
     if(disputedOrder.sellerResponseStatus)
     {

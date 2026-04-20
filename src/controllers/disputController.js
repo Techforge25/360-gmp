@@ -208,20 +208,59 @@ const adminDecision = asyncHandler(async (request, response) => {
     // Reject case
     if(adminDecision === "reject") 
     {
-        // Mark dispute as closed
-        const updatedDispute = await Dispute.findOneAndUpdate({ orderId }, { adminDecision, adminNotes, status: "closed" }, { new: true })
-        .select("adminDecision status");
-        if(!updatedDispute) throw new ApiError(404, "Dispute not found");
+        // Start transaction
+        const dbSession = await mongoose.startSession();
+        dbSession.startTransaction();
 
-        // Mark order as completed
-        const updatedOrder = await Order.findByIdAndUpdate(orderId, { $set:{ status: "completed" } });
-        if(!updatedOrder) throw new ApiError(500, "Failed to update order status");
+        try
+        {
+            // Mark dispute as closed
+            const updatedDispute = await Dispute.findOneAndUpdate(
+                { orderId }, 
+                { adminDecision, adminNotes, status: "closed" }, 
+                { new: true, session: dbSession }
+            ).select("adminDecision status");
+            if(!updatedDispute) throw new ApiError(404, "Dispute not found");
 
-        // Emit socket
-        io.to(String(updatedDispute.buyerId)).emit("update-dispute", { orderId });
-        io.to(String(updatedDispute.sellerId)).emit("update-dispute", { orderId });            
+            // Mark order as completed
+            const updatedOrder = await Order.findByIdAndUpdate(
+                orderId, 
+                { $set:{ status: "completed" } },
+                { new: true, session: dbSession }
+            );
+            if(!updatedOrder) throw new ApiError(500, "Failed to update order status");
 
-        return response.status(200).json(new ApiResponse(200, updatedDispute, "Dispute rejected successfully"));
+            // Mark escrow status as released
+            const escrow = await EscrowTransaction.findOneAndUpdate(
+                { orderId },
+                { $set:{ status:"released" } },
+                { new: true, session: dbSession }
+            );
+            if(!escrow) throw new ApiError(404, "Escrow transaction not found");
+
+            // Send net amount to seller's wallet
+            await Wallet.findOneAndUpdate(
+                { ownerId: escrow.sellerId, ownerModel:"BusinessProfile" },
+                { 
+                    $inc:{ 
+                        pendingBalance: -Number(escrow.netAmount),
+                        availableBalance: Number(escrow.netAmount)
+                    } 
+                },
+            );
+
+            // Emit socket
+            io.to(String(updatedDispute.buyerId)).emit("update-dispute", { orderId });
+            io.to(String(updatedDispute.sellerId)).emit("update-dispute", { orderId });          
+
+            return response.status(200).json(new ApiResponse(200, updatedDispute, "Dispute rejected successfully"));
+        }
+        catch(error)
+        {
+            await dbSession.abortTransaction();
+            dbSession.endSession();
+            throw error;            
+        }
     }
 
     // Get escrow details
@@ -254,12 +293,6 @@ const adminDecision = asyncHandler(async (request, response) => {
         if(!sellerWallet) throw new ApiError(404, "Seller wallet not found");
         if(sellerWallet.pendingBalance < refundAmount) throw new ApiError(400, "Seller does not have sufficient balance");
 
-        // Escrow calculation
-        const totalAmount = adminDecision === "full_refund" ? 0 : Number(escrow.totalAmount) - refundAmount;
-        const platformFee = adminDecision === "full_refund" ? 0 : Number(escrow.platformFee) - (refundAmount * 0.1);
-        const netAmount = adminDecision === "full_refund" ? 0 : Number(escrow.netAmount) - (refundAmount * 0.9);
-        const status = "refunded";      
-
         // Update buyer wallet
         await Wallet.updateOne(
             { _id: buyerWallet._id },
@@ -270,17 +303,12 @@ const adminDecision = asyncHandler(async (request, response) => {
         // Update seller wallet
         await Wallet.updateOne(
             { _id: sellerWallet._id },
-            { $inc: { pendingBalance: -refundAmount } },
+            { $inc: { pendingBalance: -Number(escrow.netAmount) } },
             { session:dbSession }
         );
 
-        // Set values
-        escrow.totalAmount = totalAmount;
-        escrow.platformFee = platformFee;
-        escrow.netAmount = netAmount;
-        escrow.status = status;
-
-        // Save
+        // Mark escrow status as refunded
+        escrow.status = "refunded";
         await escrow.save({ session:dbSession });
 
         // Mark dispute as resolved

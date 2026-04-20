@@ -220,6 +220,11 @@ const sellerResponse = asyncHandler(async (request, response) => {
     disputedOrder.sellerResponseStatus = true;
     await disputedOrder.save();
 
+    // Emit real time
+    const io = request.app.get("io");
+    io.to(String(disputedOrder.buyerId)).emit("update-dispute", { orderId });
+    io.to(String(disputedOrder.sellerId)).emit("update-dispute", { orderId });      
+
     // Response
     return response.status(201).json(new ApiResponse(201, disputedOrder.sellerResponse, "Response has been submitted"));
 });

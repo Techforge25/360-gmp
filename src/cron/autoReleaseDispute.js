@@ -72,14 +72,14 @@ cron.schedule("0 */12 * * *", async () => {
             await escrow.save({ session:dbSession });            
 
             // Deduct from seller's wallet
-            await Wallet.findOne(
+            await Wallet.findOneAndUpdate(
                 { ownerId: escrow.sellerId, ownerModel: "BusinessProfile" },
                 { $inc:{ pendingBalance: -Number(escrow.netAmount) } },
             );
 
             // Full refund to buyer
             await Wallet.findOneAndUpdate(
-                { ownerId: escrow.buyerId, ownerModel: "UserProfile"},
+                { ownerId: escrow.buyerId, ownerModel: "UserProfile" },
                 { $inc:{ availableBalance: Number(escrow.totalAmount) } },
                 { new:true, session:dbSession }
             );
@@ -92,7 +92,6 @@ cron.schedule("0 */12 * * *", async () => {
             const io = request.app.get("io");  
             io.to(String(escrow.buyerId)).emit("update-dispute", { orderId: escrow.orderId });
             io.to(String(escrow.sellerId)).emit("update-dispute", { orderId: escrow.orderId });                         
-
             console.log(`Auto release completed for order ${orderData._id}`);
         }
         catch(error)

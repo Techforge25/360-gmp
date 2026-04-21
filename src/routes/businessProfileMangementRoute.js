@@ -2,11 +2,9 @@ const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { fetchMyProducts, topPerformingProducts, updateMapURL, viewBusinessProfile, 
 fetchViewCounts, updateContactInfo, fetchLowStockProducts,fetchRecentJobApplications,
-fetchNewLeads, countTotalJobApplications, countTotalHiredApplicants, countTotalInterviewApplicants,
-countConversionRate, fetchInStockProducts, fetchOutOfStockProducts,
-countTotalJobViews,
-fetchMyJobs,
-updateBusinessBanner} = require("../controllers/businessProfileManagementController");
+fetchNewLeads, countTotalJobApplications, countTotalHiredApplicants, countTotalInterviewApplicants, 
+countConversionRate, fetchInStockProducts, fetchOutOfStockProducts, countTotalJobViews,
+fetchMyJobs, updateBusinessBanner,updateBusinessLogo } = require("../controllers/businessProfileManagementController");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -81,6 +79,10 @@ businessProfileManagementRouter.route("/count-conversion-rate")
 .get(authentication, authorization(["business"]), countConversionRate);
 
 /***********************  UPDATES  ***********************/
+// Update profile logo
+businessProfileManagementRouter.route("/logo")
+.patch(authentication, authorization(["business"]), updateBusinessLogo);
+
 // Update banner
 businessProfileManagementRouter.route("/banner")
 .patch(authentication, authorization(["business"]), updateBusinessBanner);

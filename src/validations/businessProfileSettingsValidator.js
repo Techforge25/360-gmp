@@ -49,8 +49,7 @@ const operationsAndLogisticsValidator = joi.object({
 
     // Shipping info
     shipping: {
-        capabilities:joi.array().items(joi.string().pattern(alphaNumericPattern)).max(10).label("Shipping Capabilities"),
-        exportExperience: joi.boolean().required().label("Export experience")
+        capabilities:joi.array().items(joi.string().pattern(alphaNumericPattern)).max(10).label("Shipping Capabilities")
     },
     
     // Product Packaging Defaults (Logistics Prep)

@@ -461,29 +461,96 @@ const getPostComments = asyncHandler(async (request, response) => {
 
 // Add vote to poll option
 const addVote = asyncHandler(async (request, response) => {
-    const { postId } = request.params;
-    const { option } = request.body;
-    if(!option) throw new ApiError(400, "Option is required to vote");
+    const { role } = request.user;
+    const { userProfileId, businessProfileId } = request.user.profiles || {};
+    const voterId = role === "user" ? userProfileId : businessProfileId;
 
-    // Fetch post 
-    const post = await CommunityPost.findById(postId);
+    // Get IDs
+    const { postId } = request.params;
+    const { optionId } = request.body;
+
+    // Validate
+    if(!optionId) throw new ApiError(400, "Option ID is required to vote");
+    if(!isValidObjectId(postId)) throw new ApiError(400, "Invalid post ID");
+    if(!isValidObjectId(optionId)) throw new ApiError(400, "Invalid option ID");
+
+    // Fetch post
+    const post = await CommunityPost.findById(postId)
+    .populate({ path:"communityId", select:"businessId" });
+
     if(!post) throw new ApiError(404, "Post not found");
     if(post.type !== "poll") throw new ApiError(400, "This post is not a poll");
 
-    // Find the selected option
-    const selectedOption = post.poll.options.find(opt => opt.option === option);
+    // Authorization check
+    if(role === "business" && String(post.communityId.businessId) !== String(businessProfileId))
+    {
+        throw new ApiError(403, "You cannot vote on a poll that does not belong to your community");
+    }
+
+    // Check membership
+    const membership = await CommunityMembership.findOne({ 
+        communityId:post.communityId._id,
+        memberId: voterId
+    }).select("_id").lean();
+    if(!membership) throw new ApiError(403, "You cannot vote on a poll that does not belong to your community");
+
+    // Find selected option
+    const selectedOption = post.poll.options.find(opt => String(opt._id) === String(optionId));
     if(!selectedOption) throw new ApiError(400, "Invalid poll option");
 
-    // Update vote
+    // Find if current profile already voted
+    const previousOption = post.poll.options.find(opt => 
+        opt.votedBy.some(id => String(id) === String(voterId))
+    );
+
+    let updateQuery = {};
+
+    // Toggle case
+    if(previousOption && String(previousOption._id) === String(optionId))
+    {
+        updateQuery = {
+            $pull: { "poll.options.$.votedBy": voterId },
+            $inc: { "poll.options.$.votes": -1 }
+        };
+
+        const updatedPost = await CommunityPost.findOneAndUpdate(
+            { _id: postId, "poll.options._id": optionId },
+            updateQuery,
+            { new: true }
+        );
+
+        return response.status(200).json(new ApiResponse(200, updatedPost, "Vote removed successfully"));
+    }
+
+    // Switch vote case
+    if(previousOption)
+    {
+        await CommunityPost.updateOne(
+            { _id: postId, "poll.options._id": previousOption._id },
+            {
+                $pull: { "poll.options.$.votedBy": voterId },
+                $inc: { "poll.options.$.votes": -1 }
+            }
+        );
+    }
+
+    // Add vote case
     const updatedPost = await CommunityPost.findOneAndUpdate(
-        { _id: postId, "poll.options.option": option },
-        { $inc: { "poll.options.$.votes": 1 } },
+        {
+            _id: postId,
+            "poll.options._id": optionId,
+            "poll.options.votedBy": { $ne: voterId }
+        },
+        {
+            $addToSet: { "poll.options.$.votedBy": voterId },
+            $inc: { "poll.options.$.votes": 1 }
+        },
         { new: true }
-    );  
+    );
     if(!updatedPost) throw new ApiError(400, "Failed to update vote");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { pollOptions: post.poll.options }, "Vote added successfully"));
+    return response.status(200).json(new ApiResponse(200, updatedPost, "Vote added successfully"));
 });
 
 module.exports = {

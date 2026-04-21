@@ -34,6 +34,7 @@ const communityPostSchema = new Schema({
         question: { type: String, trim: true },
         options: [{
             option: { type: String, trim: true },
+            votedBy:[{ type:Schema.Types.ObjectId }],
             votes: { type: Number, default: 0 }
         }],
         duration: { type:Date }, // Duration in (1 day, 2 days, 3 days, 1 week, 2 weeks)

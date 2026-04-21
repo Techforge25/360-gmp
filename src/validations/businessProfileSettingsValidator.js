@@ -48,9 +48,9 @@ const operationsAndLogisticsValidator = joi.object({
     incoterms: joi.string().max(500).trim().allow("", null).pattern(alphaNumericPattern).label("International Commercial Terms"),
 
     // Shipping info
-    shipping: {
+    shipping: joi.object({
         capabilities:joi.array().items(joi.string().pattern(alphaNumericPattern)).max(10).label("Shipping Capabilities")
-    },
+    }).required().label("Shipping"),
     
     // Product Packaging Defaults (Logistics Prep)
     standardProductDimensions: joi.object({

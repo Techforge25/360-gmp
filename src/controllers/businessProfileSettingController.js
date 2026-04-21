@@ -54,7 +54,7 @@ const updateOperationsAndLogistics = asyncHandler(async (request, response) => {
     // Update
     const business = await BusinessProfile.findByIdAndUpdate(
         businessProfileId, 
-        { $set: { location, incoterms, shipping, standardProductDimensions } }, 
+        { $set: { location, incoterms, "shipping.capabilities": shipping.capabilities, standardProductDimensions } }, 
         { new:true, runValidators:true }
     );
     if(!business) throw new ApiError(404, "Failed to update operations and logistics");

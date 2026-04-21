@@ -45,7 +45,7 @@ const operationsAndLogisticsValidator = joi.object({
     }),
 
     // International Commercial Terms
-    incoterms: joi.string().max(500).trim().allow("", null).pattern(alphaNumericPattern).label("International Commercial Terms"),
+    incoterms: joi.string().max(500).trim().allow("", null).label("International Commercial Terms"),
 
     // Shipping info
     shipping: joi.object({

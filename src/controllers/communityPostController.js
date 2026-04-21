@@ -478,8 +478,13 @@ const addVote = asyncHandler(async (request, response) => {
     const post = await CommunityPost.findById(postId)
     .populate({ path:"communityId", select:"businessId" });
 
+    // Validate post
     if(!post) throw new ApiError(404, "Post not found");
     if(post.type !== "poll") throw new ApiError(400, "This post is not a poll");
+
+    // Poll expiration check
+    const now = new Date();
+    if(now > new Date(post.poll.duration)) throw new ApiError(403, "This poll has ended");
 
     // Authorization check
     if(role === "business" && String(post.communityId.businessId) !== String(businessProfileId))

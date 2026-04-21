@@ -29,12 +29,28 @@ const createReviewInvite = asyncHandler(async (request, response) => {
 
 // Check invite token validity
 const checkInviteToken = asyncHandler(async (request, response) => {
+    const { _id:userId } = request.user;
+    const { userProfileId } = request.user.profiles || {};
     const { inviteToken } = request.params;
 
     // Find review invite
-    const reviewInvite = await ReviewInvite.findOne({ inviteToken }).select("isUsed").lean();
+    const reviewInvite = await ReviewInvite.findOne({ inviteToken })
+    .populate({ path:"businessId", select:"_id ownerUserId" })
+    .select("isUsed").lean();
+
+    // Validate
     if(!reviewInvite) throw new ApiError(404, "Review invite not found! Invalid invite token.");
-    if(reviewInvite.isUsed) throw new ApiError(400, "This review invite token has already been used");
+    if(reviewInvite.isUsed) throw new ApiError(400, "This review invite token has already been used");  
+
+    // Same parent profiles restriction
+    if(String(reviewInvite.businessId.ownerUserId) === String(userId))
+    {
+        throw new ApiError(403, "You cannot submit a review to your own business profile");
+    }   
+    
+    // Prevent per user duplication
+    const isExist = await Testimonial.exists({ userProfileId, businessProfileId: reviewInvite.businessId._id });
+    if(isExist) throw new ApiError(403, "You have already submitted a testimonial review for this business");    
 
     // Response
     return response.status(200).json(new ApiResponse(200, { inviteToken }, "Review invite token is valid"));
@@ -63,11 +79,11 @@ const createTestimonial = asyncHandler(async (request, response) => {
     // Same parent profiles restriction
     if(String(reviewInvite.businessId.ownerUserId) === String(userId))
     {
-        throw new ApiError(400, "You cannot submit a review to your own business profile");
+        throw new ApiError(403, "You cannot submit a review to your own business profile");
     }
 
     // Prevent per user duplication
-    const isExist = await Testimonial.exists({ userProfileId });
+    const isExist = await Testimonial.exists({ userProfileId, businessProfileId: reviewInvite.businessId._id });
     if(isExist) throw new ApiError(403, "You have already submitted a testimonial review for this business");
 
     // Save to db

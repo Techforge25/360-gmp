@@ -6,15 +6,14 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
 const { createDisputeValidationSchema, changeDisputeStatusValidationSchema, 
-adminDecisionValidationSchema, 
-sellerResponseValidationSchema} = require("../validations/disputeValidator");
+adminDecisionValidationSchema, sellerResponseValidationSchema } = require("../validations/disputeValidator");
 const EscrowTransaction = require("../models/escrowTrasanction");
 const Wallet = require("../models/walletModel");
 const mongoose = require("mongoose");
 const Stripe = require("stripe");
 const Transaction = require("../models/transactionModel");
 
-// Create dispute
+// Create dispute with stripe
 const createDispute = asyncHandler(async (request, response) => {
     const { userProfileId } = request.user.profiles || {};
     const { orderId } = request.params;
@@ -34,6 +33,7 @@ const createDispute = asyncHandler(async (request, response) => {
     // Checks
     if(!escrow) throw new ApiError(404, "Order not found in escrow history");
     if(String(userProfileId) !== String(escrow.buyerId)) throw new ApiError(403, "You can only dispute those orders that you have purchased");
+    if(escrow.status !== "held") throw new ApiError(403, `The amount for this order has already been ${escrow.status}`);
     if(escrow.orderId?.status !== "delivered") throw new ApiError(403, "You can only submit a dispute when the order is in delivered state");
 
     // Prevent duplication
@@ -149,6 +149,117 @@ const disputePaymentSuccess = asyncHandler(async (request, response) => {
         return response.status(303).redirect(`${process.env.FRONTEND_URL}`);
     } 
     catch(error) 
+    {
+        await dbSession.abortTransaction();
+        dbSession.endSession();
+        throw error;
+    }
+});
+
+// Create with wallet
+const createDisputeWithWallet = asyncHandler(async (request, response) => {
+    const { userProfileId } = request.user.profiles || {};
+    const { orderId } = request.params;
+
+    // Validate
+    if(!userProfileId) throw new ApiError(400, "User profile ID is missing");
+    if(!isValidObjectId(orderId)) throw new ApiError(400, "Invalid MongoDB ID! Please provide a valid Order ID");
+
+    // Find order in escrow
+    const escrow = await EscrowTransaction.findOne({ orderId })
+    .populate({ path:"orderId", select:"status" })
+    .lean();
+
+    // Checks
+    if(!escrow) throw new ApiError(404, "Order not found in escrow history");
+    if(String(userProfileId) !== String(escrow.buyerId)) throw new ApiError(403, "You can only dispute those orders that you have purchased");
+    if(escrow.status !== "held") throw new ApiError(403, `The amount for this order has already been ${escrow.status}`);
+    if(escrow.orderId?.status !== "delivered") throw new ApiError(403, "You can only submit a dispute when the order is in delivered state");
+
+    // Prevent duplication
+    const isExist = await Dispute.exists({ orderId });
+    if(isExist) throw new ApiError(400, "You can create a dispute only once for each order");
+
+    // Start MongoDB transaction
+    const dbSession = await mongoose.startSession();
+    dbSession.startTransaction();
+
+    try
+    { 
+        // Get validated payload
+        const { reason, description, evidences } = validate(createDisputeValidationSchema, request.body) || {};
+
+        // Dispute creation charges
+        const disputeAmount = 20;
+
+        // Type safety
+        const amount = Number(disputeAmount);        
+        
+        // Check wallet
+        const buyerWallet = await Wallet.findOne({ ownerId: userProfileId, ownerModel: "UserProfile" })
+        .select("availableBalance").session(dbSession);
+
+        if(!buyerWallet)
+        {
+            await dbSession.abortTransaction();
+            dbSession.endSession();
+            throw new ApiError(404, "Wallet account not found! To initiate dispute with wallet, you need to create wallet account first");
+        }
+
+        // Check amount
+        if(buyerWallet.availableBalance < amount)
+        {
+            await dbSession.abortTransaction();
+            dbSession.endSession();            
+            throw new ApiError(403, "You don't have sufficient balance to initate a dispute");     
+        }   
+
+        // Deduct dispute fee from buyer's wallet
+        await Wallet.findOneAndUpdate(
+            { ownerId: userProfileId, ownerModel: "UserProfile", availableBalance: { $gte:amount } },
+            { $inc:{ availableBalance: -amount } },
+            { new:true, session: dbSession }
+        );
+
+        // Create dispute    
+        const dispute = await Dispute.create([{ 
+            orderId, 
+            buyerId: userProfileId, 
+            sellerId: escrow.sellerId, 
+            reason, 
+            description, 
+            evidences
+        }], { session:dbSession });
+        if(!dispute) throw new ApiError(500, "Failed to create dispute");
+
+        // Update order status
+        const order = await Order.findByIdAndUpdate(orderId, { $set:{ status:"disputed" } }, { session:dbSession });
+        if(!order) throw new ApiError(500, "Failed to update order status");
+
+        // Transaction record
+        await Transaction.create([{
+            ownerId: userProfileId, 
+            ownerModel: "UserProfile",
+            orderId,
+            amount,
+            type: "dispute",
+            status: "completed",
+            paymentMethod:"wallet"
+        }], { session:dbSession });    
+
+        // Complete transaction
+        await dbSession.commitTransaction();
+        dbSession.endSession();
+
+        // Get socket instance
+        const io = request.app.get("io");
+        io.to(String(userProfileId)).emit("dispute-creation", { orderId });
+        io.to(String(escrow.sellerId)).emit("dispute-creation", { orderId });
+
+        // Response
+        return response.status(303).redirect(`${process.env.FRONTEND_URL}`);        
+    }
+    catch(error)
     {
         await dbSession.abortTransaction();
         dbSession.endSession();
@@ -402,5 +513,5 @@ const adminDecision = asyncHandler(async (request, response) => {
     }
 });
 
-module.exports = { createDispute, disputePaymentSuccess, viewDisputeDetails, changeDisputeStatus,
-sellerResponse, adminDecision };
+module.exports = { createDispute, disputePaymentSuccess, createDisputeWithWallet, 
+viewDisputeDetails, changeDisputeStatus, sellerResponse, adminDecision };

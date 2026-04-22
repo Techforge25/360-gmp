@@ -1168,70 +1168,108 @@ const fetchBusinessCancelledOrders = asyncHandler(async (request, response) => {
 // View order
 const viewOrder = asyncHandler(async (request, response) => {
     const orderId = convertToMongoId(request.params.orderId);
+    const { userProfileId } = request.user.profiles || {};
 
     // Fetch order details
     const orderDetails = await Order.aggregate([
+
         // Match order ID
-        {
-            $match:{ _id:orderId }
-        },
+        { $match: { _id: orderId } },
 
-        // Lookup for user profile
+        // Lookup user profile
         {
-            $lookup:{
-                from:"userprofiles",
-                localField:"buyerUserProfileId",
-                foreignField:"_id",
-                as:"userProfile",
-                pipeline:[
-                    { $project:{ fullName:1 } }
+            $lookup: {
+                from: "userprofiles",
+                localField: "buyerUserProfileId",
+                foreignField: "_id",
+                as: "userProfile",
+                pipeline: [
+                    { $project: { fullName: 1 } }
                 ]
             }
         },
 
-        // Lookup for business profile
+        // Lookup business profile
         {
-            $lookup:{ 
-                from:"businessprofiles",
-                localField:"sellerBusinessId",
-                foreignField:"_id",
-                as:"businessProfile",
-                pipeline:[
-                    { $project:{ companyName:1, sellerEmail:"$b2bContact.supportEmail" } }
+            $lookup: {
+                from: "businessprofiles",
+                localField: "sellerBusinessId",
+                foreignField: "_id",
+                as: "businessProfile",
+                pipeline: [
+                    { $project: { companyName: 1, sellerEmail: "$b2bContact.supportEmail" } }
                 ]
             }
-        },   
-        
-        // Lookup for products
+        },
+
+        // Unwind items
+        { $unwind: "$items" },
+
+        // Review lookup
         {
-            $lookup:{
-                from:"products",
-                localField:"items.productId",
-                foreignField:"_id",
-                as:"products",
-                pipeline:[
-                    { $project:{ title:1, image:1, detail:1, category:1, pricePerUnit:1 } }
-                ]
+            $lookup: {
+                from: "productreviews",
+                let: { productId: "$items.productId" },
+                pipeline: [
+                    { $match: { userProfileId: convertToMongoId(userProfileId) } },
+                    { $match: { $expr: { $eq: ["$productId", "$$productId"] } } }
+                ],
+                as: "itemReview"
             }
-        },         
+        },
 
-        // Unwind
-        { $unwind:"$userProfile" },
-        { $unwind:"$businessProfile" },
+        // Add review flag
+        {
+            $addFields: {
+                "items.reviewGiven": {
+                    $gt: [{ $size: "$itemReview" }, 0]
+                }
+            }
+        },
 
-        // Final projection
-        { 
-            $project:{ totalAmount:1, status:1, shippingAddress:1, items:1, tracking:1, completedAt:1,
-            createdAt:1, userProfile:1, businessProfile:1, products:1, cancellation:1 } 
-        }
+        // Group back
+        {
+            $group: {
+                _id: "$_id",
+                totalAmount: { $first: "$totalAmount" },
+                status: { $first: "$status" },
+                shippingAddress: { $first: "$shippingAddress" },
+                tracking: { $first: "$tracking" },
+                completedAt: { $first: "$completedAt" },
+                createdAt: { $first: "$createdAt" },
+                cancellation: { $first: "$cancellation" },
+                userProfile: { $first: "$userProfile" },
+                businessProfile: { $first: "$businessProfile" },
+
+                items: { $push: "$items" },
+
+                // collect review flags
+                reviewFlags: { $push: "$items.reviewGiven" }
+            }
+        },
+
+        // compute allReviewed
+        {
+            $addFields: {
+                allReviewed: {
+                    $allElementsTrue: "$reviewFlags"
+                }
+            }
+        },
+
+        // remove helper array
+        { $project: { reviewFlags: 0 } },
+
+        // Unwind profiles
+        { $unwind: "$userProfile" },
+        { $unwind: "$businessProfile" }
     ]);
     if(!orderDetails.length) throw new ApiError(404, "No order found");
-
+    
     // Response
     return response.status(200).json(new ApiResponse(200, orderDetails[0], "Order details have been fetched"));
 });
 
-// Fetch unreviewed products
 // Fetch unreviewed orders
 const fetchUnreviewedOrders = asyncHandler(async (request, response) => {
     const { userProfileId } = request.user.profiles || {};

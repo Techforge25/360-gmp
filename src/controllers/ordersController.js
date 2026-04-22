@@ -1172,102 +1172,123 @@ const viewOrder = asyncHandler(async (request, response) => {
 
     // Fetch order details
     const orderDetails = await Order.aggregate([
+            // Match order ID
+            { $match: { _id: orderId } },
 
-        // Match order ID
-        { $match: { _id: orderId } },
-
-        // Lookup user profile
-        {
-            $lookup: {
-                from: "userprofiles",
-                localField: "buyerUserProfileId",
-                foreignField: "_id",
-                as: "userProfile",
-                pipeline: [
-                    { $project: { fullName: 1 } }
-                ]
-            }
-        },
-
-        // Lookup business profile
-        {
-            $lookup: {
-                from: "businessprofiles",
-                localField: "sellerBusinessId",
-                foreignField: "_id",
-                as: "businessProfile",
-                pipeline: [
-                    { $project: { companyName: 1, sellerEmail: "$b2bContact.supportEmail" } }
-                ]
-            }
-        },
-
-        // Unwind items
-        { $unwind: "$items" },
-
-        // Review lookup
-        {
-            $lookup: {
-                from: "productreviews",
-                let: { productId: "$items.productId" },
-                pipeline: [
-                    { $match: { userProfileId: convertToMongoId(userProfileId) } },
-                    { $match: { $expr: { $eq: ["$productId", "$$productId"] } } }
-                ],
-                as: "itemReview"
-            }
-        },
-
-        // Add review flag
-        {
-            $addFields: {
-                "items.reviewGiven": {
-                    $gt: [{ $size: "$itemReview" }, 0]
+            // Lookup user profile
+            {
+                $lookup: {
+                    from: "userprofiles",
+                    localField: "buyerUserProfileId",
+                    foreignField: "_id",
+                    as: "userProfile",
+                    pipeline: [
+                        { $project: { fullName: 1 } }
+                    ]
                 }
-            }
-        },
+            },
 
-        // Group back
-        {
-            $group: {
-                _id: "$_id",
-                totalAmount: { $first: "$totalAmount" },
-                status: { $first: "$status" },
-                shippingAddress: { $first: "$shippingAddress" },
-                tracking: { $first: "$tracking" },
-                completedAt: { $first: "$completedAt" },
-                createdAt: { $first: "$createdAt" },
-                cancellation: { $first: "$cancellation" },
-                userProfile: { $first: "$userProfile" },
-                businessProfile: { $first: "$businessProfile" },
-
-                items: { $push: "$items" },
-
-                // collect review flags
-                reviewFlags: { $push: "$items.reviewGiven" }
-            }
-        },
-
-        // compute allReviewed
-        {
-            $addFields: {
-                allReviewed: {
-                    $allElementsTrue: "$reviewFlags"
+            // Lookup business profile
+            {
+                $lookup: {
+                    from: "businessprofiles",
+                    localField: "sellerBusinessId",
+                    foreignField: "_id",
+                    as: "businessProfile",
+                    pipeline: [
+                        { $project: { companyName: 1, sellerEmail: "$b2bContact.supportEmail" } }
+                    ]
                 }
-            }
-        },
+            },
 
-        // remove helper array
-        { $project: { reviewFlags: 0 } },
+            // Unwind items
+            { $unwind: "$items" },
 
-        // Unwind profiles
-        { $unwind: "$userProfile" },
-        { $unwind: "$businessProfile" }
+            // Review lookup
+            {
+                $lookup: {
+                    from: "productreviews",
+                    let: { productId: "$items.productId" },
+                    pipeline: [
+                        { $match: { userProfileId: convertToMongoId(userProfileId) } },
+                        { $match: { $expr: { $eq: ["$productId", "$$productId"] } } }
+                    ],
+                    as: "itemReview"
+                }
+            },
+
+            // Add review flag
+            {
+                $addFields: {
+                    "items.reviewGiven": {
+                        $gt: [{ $size: "$itemReview" }, 0]
+                    }
+                }
+            },
+
+            // Group back
+            {
+                $group: {
+                    _id: "$_id",
+                    totalAmount: { $first: "$totalAmount" },
+                    status: { $first: "$status" },
+                    shippingAddress: { $first: "$shippingAddress" },
+                    tracking: { $first: "$tracking" },
+                    completedAt: { $first: "$completedAt" },
+                    createdAt: { $first: "$createdAt" },
+                    cancellation: { $first: "$cancellation" },
+                    userProfile: { $first: "$userProfile" },
+                    businessProfile: { $first: "$businessProfile" },
+
+                    items: { $push: "$items" },
+
+                    // collect review flags
+                    reviewFlags: { $push: "$items.reviewGiven" }
+                }
+            },
+
+            // compute allReviewed
+            {
+                $addFields: {
+                    allReviewed: {
+                        $allElementsTrue: "$reviewFlags"
+                    }
+                }
+            },
+
+            // remove helper array
+            { $project: { reviewFlags: 0 } },
+
+            // Unwind profiles
+            { $unwind: "$userProfile" },
+            { $unwind: "$businessProfile" }
     ]);
     if(!orderDetails.length) throw new ApiError(404, "No order found");
+
+    // Get related products separately
+    const order = await Order.findById(orderId)
+    .populate({ path: "items.productId", select: "title image" })
+    .lean();
+
+    if(!order) throw new ApiError(404, "No order found");
+
+    // Fetch products
+    const products = order.items.map(item => ({
+        _id: item.productId?._id,
+        title: item.productId?.title,
+        image: item.productId?.image,
+        quantity: item.quantity,
+        priceAtPurchase: item.priceAtPurchase
+    }));
+
+    // Prepare payload
+    const payload = {
+        orderDetails: orderDetails[0],
+        products
+    };
     
     // Response
-    return response.status(200).json(new ApiResponse(200, orderDetails[0], "Order details have been fetched"));
+    return response.status(200).json(new ApiResponse(200, payload, "Order details have been fetched"));
 });
 
 // Fetch unreviewed orders

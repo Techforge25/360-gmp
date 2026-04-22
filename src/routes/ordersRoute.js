@@ -5,7 +5,7 @@ fetchAllUserOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedO
 fetchCancelledOrders, viewOrder, createOrderWithWallet, cancelOrder, fetchAllBusinessOrders, 
 fetchBusinessProcessingOrders, fetchBsuinessInTransitOrders, fetchBusinessCompletedOrders,
 fetchBusinessCancelledOrders, updateOrderTrackingInfo, fetchNewOrders, fetchBusinessNewOrders, 
-fetchDeliveredOrders, fetchBusinessDeliveredOrders, fetchUnreviewedProducts } = require("../controllers/ordersController");
+fetchDeliveredOrders, fetchBusinessDeliveredOrders, fetchUnreviewedOrders } = require("../controllers/ordersController");
 const { checkSubscription, checkUserAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -69,8 +69,8 @@ orderRouter.route("/user/cancelled-orders")
 .get(authentication, authorization(["user"]), fetchCancelledOrders);
 
 // Fetch unreviewed products
-orderRouter.route("/user/unreviewedProducts")
-.get(authentication, authorization(['user']), fetchUnreviewedProducts);
+orderRouter.route("/user/unreviewedOrders")
+.get(authentication, authorization(['user']), fetchUnreviewedOrders);
 // ===================== USER SIDE ENDED ===================== //
 
 

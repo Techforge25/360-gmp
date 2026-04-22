@@ -1,9 +1,11 @@
+const { isValidObjectId } = require("mongoose");
 const ProductReview = require("../models/productReviewModel");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
 const { productReviewValidator } = require("../validations/productReviewValidator");
+const convertToMongoId = require("../utils/convertToMongoId");
 
 // Product review access (Check if user purchased this product)
 const productReviewAccess = asyncHandler(async (request, response) => {
@@ -40,4 +42,36 @@ const createProductReview = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, { rating, comment, images }, "Product review has been submitted"));
 });
 
-module.exports = { productReviewAccess, createProductReview };
+// Fetch product reviews
+const fetchProductReviews = asyncHandler(async (request, response) => {
+    const { productId } = request.params;
+    const { page = 1, limit = 10 } = request.query;
+    if(!isValidObjectId(productId)) throw new ApiError(400, "Invalid product ID");
+
+    // Fetch
+    const productReviews = await ProductReview.aggregatePaginate([
+        { $match:{ productId: convertToMongoId(productId) } },
+
+        // lookup
+        {
+            $lookup:{
+                from: "userprofiles",
+                localField: "userProfileId",
+                foreignField: "_id",
+                as: "userProfile"
+            }
+        },
+
+        // Unwind
+        { $unwind: "$userProfile" },
+
+        // Projection
+        { $project:{ rating:1, comment:1, images:1, username: "$userProfile.fullName" } }
+    ], { page, limit });
+    if(!productReviews) throw new ApiError(404, "Product review not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, productReviews, "Product reviews have been fetched"));
+});
+
+module.exports = { productReviewAccess, createProductReview, fetchProductReviews };

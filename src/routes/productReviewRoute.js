@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const { productReviewAccess, createProductReview } = require("../controllers/productReviewController");
+const { productReviewAccess, createProductReview, fetchProductReviews } = require("../controllers/productReviewController");
 const { authentication, authorization } = require("../middlewares/auth");
 const { hasProductPurchased } = require("../middlewares/productReview");
 
@@ -13,5 +13,9 @@ productReviewRouter.route("/access/:productId")
 // Create product review
 productReviewRouter.route("/:productId")
 .post(authentication, authorization(["user"]), hasProductPurchased, createProductReview);
+
+// Fetch product reviews
+productReviewRouter.route("/:productId")
+.get(authentication, authorization(["user"]), fetchProductReviews);
 
 module.exports = productReviewRouter;

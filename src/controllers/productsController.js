@@ -128,8 +128,12 @@ const viewProduct = asyncHandler(async (request, response) => {
 
     // Fetch product + business profile + rating stats
     const [product, businessProfile, ratingStats, sold] = await Promise.all([
-        Product.findById(productId).populate({ path:"businessId", select:"_id companyName foundedDate logo" }),
+        Product.findById(productId)
+        .populate({ path:"businessId", select:"_id companyName foundedDate logo" })
+        .select("-__v -updatedAt"),
+
         BusinessProfile.findOne({ ownerUserId:userId }).select("_id"),
+
         ProductReview.aggregate([
             { $match: { productId: convertToMongoId(productId) } },
             {

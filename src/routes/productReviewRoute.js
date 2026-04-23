@@ -16,6 +16,6 @@ productReviewRouter.route("/:productId")
 
 // Fetch product reviews
 productReviewRouter.route("/:productId")
-.get(authentication, authorization(["user"]), fetchProductReviews);
+.get(authentication, authorization(["user", "business"]), fetchProductReviews);
 
 module.exports = productReviewRouter;

@@ -7,6 +7,7 @@ const Product = require("../models/products");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
+const convertToMongoId = require("../utils/convertToMongoId");
 const { getBusinessProfile } = require("../utils/getProfiles");
 const validate = require("../utils/validate");
 const { updateBannerValidator, updateLogoValidator } = require("../validations/businessProfileManagementValidator");
@@ -227,25 +228,59 @@ const updateMapURL = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, mapURL, "Map URL updated successfully"));
 });
 
-// Viewed by users
+const mongoose = require("mongoose");
+
 const viewBusinessProfile = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const { businessProfileId } = request.params;
 
-    // Find business profile to send this complete payload as a response
-    const business = await BusinessProfile.findById(businessProfileId).lean();
+    const [business] = await BusinessProfile.aggregate([
+        { $match: { _id: convertToMongoId(businessProfileId) } },
+
+        // Lookup testimonial
+        {
+            $lookup: {
+                from: "testimonials",
+                let: { businessId: "$_id" },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ["$businessProfileId", "$$businessId"] },
+                                    { $eq: ["$status", "approved"] }
+                                ]
+                            }
+                        }
+                    }
+                ],
+                as: "reviews"
+            }
+        },
+
+        // Add fields
+        {
+            $addFields: {
+                averageRating: { $ifNull: [{ $avg: "$reviews.rating" }, 0] },
+                totalReviews: { $size: "$reviews" }
+            }
+        },
+
+        // Projection
+        { $project: { reviews: 0, __v:0, updatedAt:0 } }
+    ]);
     if(!business) throw new ApiError(404, "Business profile not found");
 
-    // Update
+    // Update views (exclude owner + duplicate views)
     await BusinessProfile.findOneAndUpdate(
         {
-            _id:businessProfileId,
-            ownerUserId: { $ne:userId }, // Ignore owner's view
-            "viewedBy.userId": { $ne:userId } // check unique viewer
+            _id: businessProfileId,
+            ownerUserId: { $ne: userId },
+            "viewedBy.userId": { $ne: userId }
         },
         {
-            $push:{ viewedBy:{ userId, viewedAt:new Date() } },
-            $inc:{ viewsCount:1 }
+            $push: { viewedBy: { userId, viewedAt: new Date() } },
+            $inc: { viewsCount: 1 }
         }
     );
 

@@ -10,7 +10,7 @@ const stackHoldersNamePattern = /^[a-zA-Z]*$/;
 // Update company identity validator
 const updateCompanyIdentityValidator = joi.object({
     ownerName: joi.string().min(3).max(200).trim().required().pattern(alphaNumericPattern).label("Owner name"),
-    identificationOfBusinessOwner: joi.string().min(3).max(200).trim().required().pattern(alphaNumericPattern).label("Identification of business owner"),
+    identificationOfBusinessOwner: joi.string().min(3).max(200).trim().required().label("Identification of business owner"),
     companyName: joi.string().min(5).max(200).trim().required().pattern(alphaNumericPattern).label("Company name"),
     tradeName: joi.string().max(200).trim().required().pattern(alphaNumericPattern).label("Trade name"),
     businessType: joi.string().max(50).trim().required().pattern(alphaNumericPattern).label("Business type"),

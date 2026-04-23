@@ -30,7 +30,7 @@ const b2bContactSchema = Joi.object({
 // Create Business Profile schema
 const createBusinessProfileSchema = Joi.object({
     ownerName: Joi.string().min(3).max(200).required().trim().pattern(alphaNumericPattern).label("Owner name"),
-    identificationOfBusinessOwner: Joi.string().min(3).max(200).required().trim().pattern(alphaNumericPattern).label("Identification of business owner"),
+    identificationOfBusinessOwner: Joi.string().min(3).max(200).required().trim().label("Identification of business owner"),
     companyName: Joi.string().min(5).max(200).required().trim().pattern(alphaNumericPattern).label("Business name"),
     tradeName: Joi.string().max(200).trim().optional().pattern(alphaNumericPattern).label("Trade name"),
     businessType: Joi.string().max(50).trim().allow("", null).pattern(alphaNumericPattern).label("Business type"),
@@ -102,7 +102,7 @@ const createBusinessProfileSchema = Joi.object({
 // Update Business Profile schema (all fields optional)
 const updateBusinessProfileSchema = Joi.object({
     ownerName: Joi.string().min(3).max(200).trim().required().pattern(alphaNumericPattern).label("Owner name"),
-    identificationOfBusinessOwner: Joi.string().min(3).max(200).trim().required().pattern(alphaNumericPattern).label("Identification of business owner"),
+    identificationOfBusinessOwner: Joi.string().min(3).max(200).trim().required().label("Identification of business owner"),
     companyName: Joi.string().min(5).max(200).trim().required().pattern(alphaNumericPattern).label("Company name"),
     tradeName: Joi.string().max(200).trim().optional().pattern(alphaNumericPattern).label("Trade name"),
     businessType: Joi.string().max(50).trim().allow("", null).pattern(alphaNumericPattern).label("Business type"),

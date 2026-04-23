@@ -66,7 +66,18 @@ const fetchProductReviews = asyncHandler(async (request, response) => {
         { $unwind: "$userProfile" },
 
         // Projection
-        { $project:{ rating:1, comment:1, images:1, username: "$userProfile.fullName" } }
+        { 
+            $project: { 
+                rating: 1, 
+                comment: 1, 
+                images: 1, 
+                createdAt: 1, 
+                user:{
+                    name: "$userProfile.fullName",
+                    image: "$userProfile.logo"
+                }  
+            } 
+    }
     ], { page, limit });
     if(!productReviews) throw new ApiError(404, "Product review not found");
 

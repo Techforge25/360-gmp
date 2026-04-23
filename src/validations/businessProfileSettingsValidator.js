@@ -18,7 +18,7 @@ const updateCompanyIdentityValidator = joi.object({
     foundedDate: joi.date().max('now').allow(null),
     primaryIndustry: joi.string().trim().allow("", null).pattern(alphaNumericPattern).label("Primary industry"),
     operationHour: joi.string().trim().allow("", null).label("Operation hours"),
-    countryOfRegistration: joi.string().max(50).trim().required().pattern(countryPattern).label("Country of registration"),
+    countryOfRegistration: joi.string().max(50).trim().required().label("Country of registration"),
 
     // Web and description
     website: joi.string().uri().max(100).trim().allow("", null).label("Website"),

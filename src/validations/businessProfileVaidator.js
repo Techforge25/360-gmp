@@ -38,7 +38,7 @@ const createBusinessProfileSchema = Joi.object({
     foundedDate: Joi.date().max("now").allow(null).label("Founded date"),
     primaryIndustry: Joi.string().max(500).trim().allow("", null).pattern(alphaNumericPattern).label("Primary industry"),
     operationHour: Joi.string().max(50).trim().allow("", null).label("Operation hours"),
-    countryOfRegistration: Joi.string().max(50).trim().allow("", null).pattern(alphaNumericPattern).label("Country of registration"),
+    countryOfRegistration: Joi.string().max(50).trim().allow("", null).label("Country of registration"),
 
     // Legal & Compliance
     businessRegistrationNumber: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Business registration number"),
@@ -110,7 +110,7 @@ const updateBusinessProfileSchema = Joi.object({
     foundedDate: Joi.date().max("now").allow(null),
     primaryIndustry: Joi.string().trim().allow("", null).pattern(alphaNumericPattern).label("Primary industry"),
     operationHour: Joi.string().trim().allow("", null).label("Operation hours"),
-    countryOfRegistration: Joi.string().max(50).trim().allow("", null).pattern(alphaNumericPattern).label("Country of registration"),
+    countryOfRegistration: Joi.string().max(50).trim().allow("", null).label("Country of registration"),
 
     // Legal & Compliance
     businessRegistrationNumber: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Business registration number"),

@@ -128,7 +128,7 @@ const fetchTestimonials = asyncHandler(async (request, response) => {
         { 
             page, limit, select:"rating title description createdAt", 
             sort:{ createdAt:-1 },
-            populate:{ path:"userProfileId", select:"email fullName" }
+            populate:{ path:"userProfileId", select:"email fullName logo" }
         }
     );
     if(!testimonials.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No testimonials found for this business"));

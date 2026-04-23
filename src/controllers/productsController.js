@@ -125,6 +125,7 @@ const fetchBusinessFeaturedProducts = asyncHandler(async (request, response) => 
 const viewProduct = asyncHandler(async (request, response) => {
     const userId = convertToMongoId(request.user._id);
     const { productId } = request.params;
+    if(!isValidObjectId(productId)) throw new ApiError(400, "Invalid product ID");
 
     // Fetch product + business profile + rating stats
     const [product, businessProfile, ratingStats, sold] = await Promise.all([

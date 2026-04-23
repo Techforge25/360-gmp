@@ -30,6 +30,51 @@ const createProduct = asyncHandler(async (request, response) => {
 });
 
 // Fetch all products with filters (Shown on market place)
+// const fetchAllProducts = asyncHandler(async (request, response) => {
+//     // Pagination options
+//     const { page = 1, limit = 10, search } = request.query;
+
+//     // Filter options
+//     const { category, moq, certification, country } = request.query;
+
+//     // Base product filter
+//     const filter = {};
+//     if(search) filter.title = { $regex:search, $options:"i" };
+
+//     // Category filter
+//     if(category) filter.category = { $regex:category, $options: "i" };
+    
+//     // MOQ filter
+//     if(moq) filter.minOrderQty = { $lte: Number(moq) };
+
+//     // Certification / Country filter (via BusinessProfile)
+//     if(certification || country)
+//     {
+//         const businessFilter = {};
+
+//         if(certification) businessFilter.certifications = { $regex:certification, $options:"i" };
+//         if(country) businessFilter["location.country"] = { $regex:country, $options:"i" };
+
+//         // Fetch business
+//         const businesses = await BusinessProfile.find(businessFilter).select("_id");
+
+//         // Get businesses ids
+//         const businessIds = businesses.map(b => b._id);
+
+//         // No matching businesses = empty result
+//         if(!businessIds.length) return response.status(200).json(new ApiResponse(200, emptyList, "Products not found"));
+//         filter.businessId = { $in:businessIds };
+//     }
+
+//     // Fetch products
+//     const products = await Product.paginate(filter, { page, limit, sort:{ createdAt:-1 }});
+//     if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Products not found"));
+
+//     // Response
+//     return response.status(200).json(new ApiResponse(200, products, "All products have been fetched"));
+// });
+
+// Fetch all products with filters (Shown on market place)
 const fetchAllProducts = asyncHandler(async (request, response) => {
     // Pagination options
     const { page = 1, limit = 10, search } = request.query;
@@ -66,8 +111,47 @@ const fetchAllProducts = asyncHandler(async (request, response) => {
         filter.businessId = { $in:businessIds };
     }
 
-    // Fetch products
-    const products = await Product.paginate(filter, { page, limit, sort:{ createdAt:-1 }});
+    // Aggregate pipeline
+    const products = await Product.aggregatePaginate([
+        { $match: filter },
+
+        // Join reviews
+        {
+            $lookup: {
+                from: "productreviews",
+                localField: "_id",
+                foreignField: "productId",
+                as: "reviews"
+            }
+        },
+
+        // Add totalReviews and avgRating
+        {
+            $addFields: {
+                totalReviews: { $size: "$reviews" },
+                avgRating: { $avg: "$reviews.rating" }
+            }
+        },
+
+        // Default 0 if no reviews
+        {
+            $addFields: {
+                avgRating: { $ifNull: ["$avgRating", 0] }
+            }
+        },
+
+        // Sort by avgRating then totalReviews
+        {
+            $sort: {
+                totalReviews: -1,
+                avgRating: -1,
+                createdAt: -1
+            }
+        },
+
+        // Projection
+        { $project:{ __v:0, updatedAt:0, reviews:0 } }
+    ], { page, limit });
     if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Products not found"));
 
     // Response

@@ -228,8 +228,6 @@ const updateMapURL = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, mapURL, "Map URL updated successfully"));
 });
 
-const mongoose = require("mongoose");
-
 const viewBusinessProfile = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const { businessProfileId } = request.params;

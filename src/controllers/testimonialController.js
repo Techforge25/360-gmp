@@ -126,7 +126,7 @@ const fetchTestimonials = asyncHandler(async (request, response) => {
     const testimonials = await Testimonial.paginate(
         { businessProfileId: businessId }, 
         { 
-            page, limit, select:"rating title description createdAt", 
+            page, limit, select:"rating title description status createdAt", 
             sort:{ createdAt:-1 },
             populate:{ path:"userProfileId", select:"email fullName logo" }
         }

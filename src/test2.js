@@ -11,7 +11,7 @@ const shipmentData = {
 
 // Production URLs
 // const MAERSK_API_URL = 'https://api.maersk.com/shipments'; 
-// const TOKEN_ENDPOINT = 'https://api-maersk.com/customer-identity/oauth/v2/access_token';
+// const TOKEN_ENDPOINT = 'https://api.maersk.com/customer-identity/oauth/v2/access_token';
 
 // Staging URLs
 const MAERSK_API_URL = 'https://api-stage.maersk.com/shipments';
@@ -26,7 +26,7 @@ const test = async () => {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Consumer-Key': process.env.MAERSK_CLIENT_ID,
-                // 'Consumer-Secret': process.env.MAERSK_CLIENT_SECRET
+                'Consumer-Secret': process.env.MAERSK_CLIENT_SECRET
             }
         });
         const token = tokenResponse.data.access_token;

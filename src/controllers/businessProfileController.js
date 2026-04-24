@@ -53,7 +53,10 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
 
 // Fetch business profiles
 const fetchBusinessProfiles = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search, industry, country, city, businessType } = request.query;
+    const { page = 1, limit = 10, search, industry, country, city, businessType, rating } = request.query;
+
+    // Validate rating filter
+    if(rating && (rating > 5 || rating < 1)) throw new ApiError(400, "Invalid rating value");
 
     // Filters
     const filter = {};
@@ -61,44 +64,10 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
     if(industry) filter.primaryIndustry = { $regex:industry, $options:"i" };
     if(country) filter["location.country"] = { $regex: country, $options: "i" };
     if(city) filter["location.city"] = { $regex: city, $options: "i" };
-    if(businessType) filter.businessType = { $regex: businessType, $options: "i" };
+    if(businessType) filter.businessType = { $regex: businessType, $options: "i" };    
 
-    // Aggregation pipeline
-    // const aggregation = BusinessProfile.aggregate([
-    //     // Match
-    //     { $match:filter },
-
-    //     // Lookup inside products
-    //     {
-    //         $lookup:{
-    //             from:"products",
-    //             localField: "_id",
-    //             foreignField: "businessId",
-    //             as:"products"
-    //         }
-    //     },
-
-    //     // Count total products count
-    //     {
-    //         $addFields:{
-    //             totalProducts: { 
-    //                 $cond:{ 
-    //                     if:{ $isArray:"$products" }, 
-    //                     then:{ $size:"$products" }, 
-    //                     else:0 
-    //                 } 
-    //             }
-    //         }
-    //     },
-
-    //     // Projection
-    //     { $project:{ products:0 } },
-
-    //     // Sort
-    //     { $sort:{ createdAt:-1 } },
-    // ]);
-
-    const aggregation = BusinessProfile.aggregate([
+    // Fetch business profiles
+    const businessProfiles = await BusinessProfile.aggregatePaginate([
         // Match
         { $match: filter },
 
@@ -112,7 +81,7 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
             }
         },
 
-        // Add avgRating + totalReviews
+        // Add average rating and total reviews fields
         {
             $addFields: {
                 totalReviews: {
@@ -136,6 +105,9 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
                 averageRating: { $round: ["$averageRating", 1] }
             }
         },
+
+        // Filter by rating
+        ...(rating ? [{ $match: { averageRating: { $eq: Number(rating) } } }] : []),     
 
         // Existing product lookup
         {
@@ -183,11 +155,8 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
                 description: 1
             } 
         },
-    ]);    
-
-    // Execute query
-    const businessProfiles = await BusinessProfile.aggregatePaginate(aggregation, { page, limit });
-    if(!businessProfiles.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No business profiles found"));
+    ], { page, limit });
+    if(!businessProfiles.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No business profiles found"));
 
     // Response
     return response.status(200).json(new ApiResponse(200, businessProfiles, "Business profiles fetched successfully"));

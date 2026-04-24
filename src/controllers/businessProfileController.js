@@ -179,7 +179,8 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
                 mapURL: 1, 
                 latitude:1, 
                 longitude: 1, 
-                phone: "$b2bContact.phone"
+                phone: "$b2bContact.phone",
+                description: 1
             } 
         },
     ]);    

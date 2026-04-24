@@ -51,26 +51,6 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, { profile, isNewToPlatform:user.isNewToPlatform }, "Business profile has been created"));
 });
 
-// // Fetch business profiles
-// const fetchBusinessProfiles = asyncHandler(async (request, response) => {
-//     const { page = 1, limit = 10, search, industry, country, city, businessType } = request.query;
-
-//     // Filters
-//     const filter = {};
-//     if(search) filter.companyName = { $regex:search, $options:"i" };
-//     if(industry) filter.primaryIndustry = { $regex:industry, $options:"i" };
-//     if(country) filter["location.country"] = { $regex: country, $options: "i" };
-//     if(city) filter["location.city"] = { $regex: city, $options: "i" };
-//     if(businessType) filter.businessType = { $regex: businessType, $options: "i" };
-
-//     // Fetch
-//     const profiles = await BusinessProfile.paginate(filter, { page, limit, sort:{ createdAt:-1 } });
-//     if(!profiles.docs?.length) return response.status(200).json(new ApiResponse(200, profiles, "No business profiles found"));
-
-//     // Response
-//     return response.status(200).json(new ApiResponse(200, profiles, "Business profiles fetched successfully"));
-// });
-
 // Fetch business profiles
 const fetchBusinessProfiles = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10, search, industry, country, city, businessType } = request.query;
@@ -84,39 +64,125 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
     if(businessType) filter.businessType = { $regex: businessType, $options: "i" };
 
     // Aggregation pipeline
+    // const aggregation = BusinessProfile.aggregate([
+    //     // Match
+    //     { $match:filter },
+
+    //     // Lookup inside products
+    //     {
+    //         $lookup:{
+    //             from:"products",
+    //             localField: "_id",
+    //             foreignField: "businessId",
+    //             as:"products"
+    //         }
+    //     },
+
+    //     // Count total products count
+    //     {
+    //         $addFields:{
+    //             totalProducts: { 
+    //                 $cond:{ 
+    //                     if:{ $isArray:"$products" }, 
+    //                     then:{ $size:"$products" }, 
+    //                     else:0 
+    //                 } 
+    //             }
+    //         }
+    //     },
+
+    //     // Projection
+    //     { $project:{ products:0 } },
+
+    //     // Sort
+    //     { $sort:{ createdAt:-1 } },
+    // ]);
+
     const aggregation = BusinessProfile.aggregate([
         // Match
-        { $match:filter },
+        { $match: filter },
 
-        // Lookup inside products
+        // Lookup testimonials
         {
-            $lookup:{
-                from:"products",
+            $lookup: {
+                from: "testimonials",
                 localField: "_id",
-                foreignField: "businessId",
-                as:"products"
+                foreignField: "businessProfileId",
+                as: "testimonials"
             }
         },
 
-        // Count total products count
+        // Add avgRating + totalReviews
         {
-            $addFields:{
-                totalProducts: { 
-                    $cond:{ 
-                        if:{ $isArray:"$products" }, 
-                        then:{ $size:"$products" }, 
-                        else:0 
-                    } 
+            $addFields: {
+                totalReviews: {
+                    $size: {
+                        $ifNull: ["$testimonials", []]
+                    }
+                },
+                averageRating: {
+                    $cond: {
+                        if: { $gt: [{ $size: "$testimonials" }, 0] },
+                        then: { $avg: "$testimonials.rating" },
+                        else: 0
+                    }
                 }
             }
         },
 
-        // Projection
-        { $project:{ products:0 } },
+        // Round rating
+        {
+            $addFields: {
+                averageRating: { $round: ["$averageRating", 1] }
+            }
+        },
+
+        // Existing product lookup
+        {
+            $lookup: {
+                from: "products",
+                localField: "_id",
+                foreignField: "businessId",
+                as: "products"
+            }
+        },
+
+        {
+            $addFields: {
+                totalProducts: {
+                    $cond: {
+                        if: { $isArray: "$products" },
+                        then: { $size: "$products" },
+                        else: 0
+                    }
+                }
+            }
+        },
 
         // Sort
-        { $sort:{ createdAt:-1 } },
-    ]);
+        { $sort: { createdAt: -1 } },
+
+        // Projection
+        { 
+            $project: { 
+                logo: 1,
+                companyName: 1, 
+                totalReviews: 1, 
+                averageRating: 1, 
+                businessType: 1, 
+                foundedDate: 1,
+                location: { country:"$location.country", city:"$location.city" }, 
+                operationHour: 1, 
+                companySize: 1, 
+                totalProducts: 1, 
+                website:1, 
+                mapURL: 1, 
+                latitude:1, 
+                longitude: 1, 
+                phone: "$b2bContact.phone"
+            } 
+        },
+    ]);    
 
     // Execute query
     const businessProfiles = await BusinessProfile.aggregatePaginate(aggregation, { page, limit });

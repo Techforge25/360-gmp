@@ -246,7 +246,7 @@ const viewBusinessProfile = asyncHandler(async (request, response) => {
                             $expr: {
                                 $and: [
                                     { $eq: ["$businessProfileId", "$$businessId"] },
-                                    { $eq: ["$status", "approved"] }
+                                    // { $eq: ["$status", "approved"] }
                                 ]
                             }
                         }

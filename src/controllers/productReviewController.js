@@ -24,14 +24,14 @@ const createProductReview = asyncHandler(async (request, response) => {
     if(!hasPurchased) throw new ApiError(400, "You are not allowed to give a review for this product.");
 
     // Get IDs
-    const { userProfileId } = request.user.profiles;
+    const { userProfileId } = request.user.profiles || {};
     const { productId } = request.params;
 
     // Get validated payload
     const { rating, comment, images } = validate(productReviewValidator, request.body) || {};
 
     // Prevent multiple reviews
-    const isExist = await ProductReview.findOne({ userProfileId, productId }).select("_id").lean();
+    const isExist = await ProductReview.exists({ userProfileId, productId });
     if(isExist) throw new ApiError(400, "You have already submitted a review for this product.");
 
     // Save to db

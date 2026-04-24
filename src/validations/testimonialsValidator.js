@@ -7,4 +7,9 @@ const createTestimonialValidationSchema = joi.object({
     description: joi.string().trim().max(1000).required().label("Testimonial Description")
 });
 
-module.exports = { createTestimonialValidationSchema };
+// Flag testimonial validator
+const flagTestimonialValidationSchema = joi.object({
+    flagReason: joi.string().trim().min(5).max(1000).required().label("Flag reason"),
+});
+
+module.exports = { createTestimonialValidationSchema, flagTestimonialValidationSchema };

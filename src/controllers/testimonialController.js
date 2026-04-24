@@ -162,7 +162,7 @@ const flagTestimonial = asyncHandler(async (request, response) => {
     if(!isValidObjectId(testimonialId)) throw new ApiError(400, "Invalid MongoDB ID! Please provide a valid testimonial ID");
 
     // Get flag reason
-    const { flagReason = null } = validate(flagTestimonialValidationSchema, request.body) || {};
+    const { flagReason } = validate(flagTestimonialValidationSchema, request.body) || {};
 
     // Find testimonial
     const testimonial = await Testimonial.findById(testimonialId);

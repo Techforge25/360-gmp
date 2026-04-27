@@ -1,4 +1,4 @@
-const { emptyList } = require("../constants");
+const { emptyList, allowedNotificationTypes } = require("../constants");
 const Notification = require("../models/notificationsModel");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
@@ -10,8 +10,7 @@ const fetchMyNotifications = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
 
     // Allowed types
-    const allowedTypes = ["System", "UserProfile", "BusinessProfile", "Public"];
-    if(!allowedTypes.includes(type)) throw new ApiError(400, "Invalid notification type");
+    if(!allowedNotificationTypes.includes(type)) throw new ApiError(400, "Invalid notification type");
 
     // Options
     const options = {
@@ -36,19 +35,24 @@ const fetchMyNotifications = asyncHandler(async (request, response) => {
 // Mark all as read
 const markAllAsRead = asyncHandler(async (request, response) => {
     const userId = request.user._id;
+    const { type } = request.params;
+
+    // Allowed types
+    if(!allowedNotificationTypes.includes(type)) throw new ApiError(400, "Invalid notification type");    
 
     // Find notifications and check if they are already read
-    const notifications = await Notification.find({ userId, haveSeen:false }).lean();
+    const notifications = await Notification.find({ userId, type, haveSeen:false }).lean();
     if(!notifications.length) return response.status(200).json(new ApiResponse(200, notifications, "All notifications have already been read"));
 
     // Mark all as read
     const markNotifications = await Notification.updateMany(
-        { userId, haveSeen:false }, 
+        { userId, type, haveSeen:false }, 
         { $set:{ haveSeen:true } }
     );
+    if(!markNotifications) throw new ApiError(500, "Failed to mark all notifications as read");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, markNotifications, "All notifications have been marked as read"));
+    return response.status(200).json(new ApiResponse(200, { allRead:true }, "All notifications have been marked as read"));
 });
 
 module.exports = { fetchMyNotifications, markAllAsRead };

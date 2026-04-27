@@ -9,6 +9,6 @@ const notificationsRouter = Router();
 notificationsRouter.route("/:type").get(authentication, fetchMyNotifications);
 
 // Mark all as read
-notificationsRouter.route("/mark-all-as-read").patch(authentication, markAllAsRead);
+notificationsRouter.route("/:type/mark-all-as-read").patch(authentication, markAllAsRead);
 
 module.exports = notificationsRouter;

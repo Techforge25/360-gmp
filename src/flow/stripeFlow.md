@@ -124,11 +124,12 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
 
     // Send notification
     await sendNotification({
-        userOwnerId:userId,
+        userId,
         title: "Subscription Activation",
         content: stripeSubscription.status === "trialing"
             ? `Your trial has started. You will be charged after 14 days`
             : `You have successfully subscribed to ${planName}`,
+        type: "System"
         io: request.app.get("io")
     });
 

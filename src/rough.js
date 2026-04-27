@@ -114,9 +114,10 @@
 
 //             // Send notification for trial
 //             await sendNotification({ 
-//                 userOwnerId:userId,
+//                 userId,
 //                 title: "Subscription Activation",
 //                 content:"You have subscribed to our 14-days Trial period",
+//                 type: "System"
 //                 io: request.app.get("io")
 //             });
 

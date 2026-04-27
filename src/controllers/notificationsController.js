@@ -17,6 +17,7 @@ const fetchMyNotifications = asyncHandler(async (request, response) => {
     const options = {
         page: Number(page),
         limit: Number(limit),
+        select: "-userId -updatedAt -__v",
         sort: { createdAt: -1 }
     };
 

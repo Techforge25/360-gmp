@@ -16,7 +16,7 @@ const sellerResponseValidationSchema = joi.object({
 
 // Dispute status validation schema (for admin)
 const changeDisputeStatusValidationSchema = joi.object({
-    status: joi.string().required().valid("under_review", "waiting_buyer", "waiting_seller").label("Status")
+    status: joi.string().required().valid("under_review", "waiting_seller").label("Status")
 });
 
 // Admin decision validation schema

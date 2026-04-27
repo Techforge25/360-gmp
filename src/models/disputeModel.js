@@ -38,7 +38,7 @@ const disputeSchema = new Schema({
     sellerResponseStatus: { type:Boolean, default:false },
 
     // Dispute resolution
-    status: { type: String, enum: ["open", "under_review", "waiting_buyer", "waiting_seller", "resolved", "closed"], default: "open" },
+    status: { type: String, enum: ["open", "under_review", "waiting_seller", "resolved", "closed"], default: "open" },
 
     // Admin resolution details
     adminDecision: { type: String, enum: ["full_refund", "partial_refund", "reject"], default: null },

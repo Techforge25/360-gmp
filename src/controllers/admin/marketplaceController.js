@@ -50,7 +50,7 @@ const sumPendingProducts = asyncHandler(async (request, response) => {
 const sumDisputedOrders = asyncHandler(async (request, response) => {
     // Fetch
     const disputedOrdersCount = await Dispute.countDocuments({ 
-        status: { $in:["open", "under_review", "waiting_buyer", "waiting_seller"] } 
+        status: { $in:["open", "under_review", "waiting_seller"] } 
     });
 
     // Prepare payload

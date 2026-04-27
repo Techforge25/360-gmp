@@ -35,11 +35,15 @@ const emptyList = {
     nextPage:null 
 };
 
+// Notification types
+const allowedNotificationTypes = ["System", "UserProfile", "BusinessProfile", "Public"];
+
 module.exports = {
     port,
     isProduction,
     frontendUrl,
     corsOptions,
     cookieOptions,
-    emptyList
+    emptyList,
+    allowedNotificationTypes
 };

@@ -202,10 +202,10 @@ const stripeWebhook = asyncHandler(async (request, response) => {
 
                 // Notification
                 await sendNotification({
-                    userOwnerId: userId,
+                    userId,
                     title: "Subscription Updated",
                     content: "Your subscription has been updated successfully",
-                    type:"payment",
+                    type:"System",
                     io: request.app.get("io")
                 });    
                 
@@ -237,10 +237,10 @@ const stripeWebhook = asyncHandler(async (request, response) => {
 
                 // Notification
                 await sendNotification({
-                    userOwnerId: userId,
+                    userId,
                     title: "Subscription Activated",
                     content: "You have successfully subscribed to your plan",
-                    type:"payment",
+                    type:"System",
                     io: request.app.get("io")
                 });  
 
@@ -298,10 +298,10 @@ const stripeWebhook = asyncHandler(async (request, response) => {
 
                 // Notification
                 await sendNotification({
-                    userOwnerId: subscription.userId,
+                    userId: subscription.userId,
                     title: "Subscription Renewed",
                     content: "Your subscription has been renewed successfully",
-                    type:"payment",
+                    type:"System",
                     io: request.app.get("io")
                 });  
                 
@@ -351,10 +351,10 @@ const stripeWebhook = asyncHandler(async (request, response) => {
 
                 // Notification
                 await sendNotification({
-                    userOwnerId: subscription.userId,
+                    userId: subscription.userId,
                     title: "Subscription Payment Failed",
                     content: "Your subscription payment has failed. Please update your payment method.",
-                    type:"payment",
+                    type:"System",
                     io: request.app.get("io")
                 });            
             }
@@ -403,10 +403,10 @@ const stripeWebhook = asyncHandler(async (request, response) => {
 
                 // Notification
                 await sendNotification({
-                    userOwnerId: subscription.userId,
+                    userId: subscription.userId,
                     title: "Subscription Canceled",
                     content: "Your subscription has been canceled",
-                    type:"payment",
+                    type:"System",
                     io: request.app.get("io")
                 });              
             }

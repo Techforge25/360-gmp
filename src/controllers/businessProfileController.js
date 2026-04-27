@@ -240,8 +240,15 @@ const fetchBusinessProducts = asyncHandler(async (request, response) => {
     if(!isValidObjectId(businessId)) throw new ApiError(400, "Invalid business ID");
 
     // Pagination options
-    const { page = 1, limit = 10 } = request.query;
-    const products = await Product.paginate({ businessId }, { page, limit });
+    const { page = 1, limit = 10 } = request.query;    
+
+    // Options
+    const options = {
+        page: Number(page),
+        limit: Number(limit),
+        populate:{ path:"businessId", select:"companyName" }
+    };
+    const products = await Product.paginate({ businessId }, options);
     if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Business products not found"));
 
     // Response

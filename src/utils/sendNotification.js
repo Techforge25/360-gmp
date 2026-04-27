@@ -13,16 +13,20 @@ const sendNotification = async ({ userId = null, title, content, type, io }) => 
 
       // Save to db
       const notification = await Notification.create({ userId, title, content, type });
+      if(!notification) throw new ApiError(400, "Failed to create notification! Invalid payload");
+
+      // Notification payload for socket
+      const notificationPayload = { userId, title, content, type, createdAt: notification.createdAt };
 
       if(type === "Public")
       {
          // Public notification
-         io.emit("notification", { userId, title, content, type });
+         io.emit("notification", notificationPayload);
       }
       else
       {
          // Private notification
-         io.to(`${String(userId)}`).emit("notification", { userId, title, content, type });
+         io.to(`${String(userId)}`).emit("notification", notificationPayload);
       }      
    } 
    catch(error) 

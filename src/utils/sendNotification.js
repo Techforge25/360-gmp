@@ -2,24 +2,24 @@ const Notification = require("../models/notificationsModel");
 const ApiError = require("./ApiError");
 
 // Send notification helper
-const sendNotification = async ({ userOwnerId = null, title, content, type = "account", io }) => {
+const sendNotification = async ({ userId = null, title, content, type, io }) => {
    try 
    {
-      // Save to db
-      const notification = await Notification.create({ userId: userOwnerId, title, content, type });
-
       // Enforce user owner id for non-public notification
-      if(type !== "public" && !userOwnerId) throw new ApiError(400, "User owner ID is required for non-public notifications");
+      if(type !== "Public" && !userId) throw new ApiError(400, "User ID is required for non-public notifications");  
 
-      if(type.toLowerCase() === "public")
+      // Save to db
+      const notification = await Notification.create({ userId, title, content, type });
+
+      if(type === "Public")
       {
          // Public notification
-         io.emit("notification", notification);
+         io.emit("notification", { userId, title, content, type });
       }
       else
       {
          // Private notification
-         io.to(`user:${userOwnerId}`).emit("notification", notification);
+         io.to(`${String(userId)}`).emit("notification", { userId, title, content, type });
       }      
    } 
    catch(error) 

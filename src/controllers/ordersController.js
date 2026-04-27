@@ -13,7 +13,6 @@ const { emptyList, frontendUrl } = require("../constants");
 const convertToMongoId = require("../utils/convertToMongoId");
 const Transaction = require("../models/transactionModel");
 const TrialUsage = require("../models/trialUsageModel");
-const Notification = require("../models/notificationsModel");
 const validate = require("../utils/validate");
 const { createOrderValidationSchema, updateOrderStatusValidationSchema, 
 updateTrackingInfoValidationSchema, cancelOrderValidationSchema } = require("../validations/orderValidator");
@@ -260,43 +259,15 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
             ); 
         }
 
-        // Get parent user ids for socket event
-        const [userProfile, businessProfile] = await Promise.all([
-            UserProfile.findById(buyerUserProfileId).select("userId").lean(),
-            BusinessProfile.findById(sellerBusinessId).select("ownerUserId").lean()
-        ]);
-
-        // Create buyer notification
-        const [buyerNotification] = await Notification.create([{
-            userId: userProfile.userId, // Parent user's id
-            title: "Order Confirmed!",
-            content: "Your payment was successful and your order has been placed. The seller will process it soon.",
-            type: "payment"
-        }], { session:dbSession });
-
-        // Create seller notification
-        const [sellerNotification] = await Notification.create([{
-            userId: businessProfile.ownerUserId, // Parent user's id
-            title: "New Order Received!",
-            content: "You have received a new paid order. Please prepare the items for shipment.",
-            type: "order"
-        }], { session:dbSession });
-
         // Complete transaction
         await dbSession.commitTransaction();
         dbSession.endSession();
 
         // Get socket instance
         const io = request.app.get("io");
-
-        // Emit real-time notification to buyer
-        io.to(`user:${String(userProfile.userId)}`).emit("notification", buyerNotification);
-
-        // Emit real-time notification to seller
-        io.to(`user:${String(businessProfile.ownerUserId)}`).emit("notification", sellerNotification);
         
         // Emit real-time event to business profile for order creation
-        io.to(String(businessProfile._id)).emit("order-creation", order);
+        io.to(String(sellerBusinessId)).emit("order-creation", order);
 
         // Response
         return response.status(303).redirect(`${frontendUrl}/dashboard/user/checkout/payment-confirmation/${order._id}`);
@@ -495,28 +466,6 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
             ); 
         }        
 
-        // Get parent user ids for notifications
-        const [buyerUser, sellerBusiness] = await Promise.all([
-            UserProfile.findById(userProfile._id).select("userId").lean(),
-            BusinessProfile.findById(sellerBusinessId).select("ownerUserId").lean()
-        ]);
-
-        // Create buyer notification
-        const [buyerNotification] = await Notification.create([{
-            userId: buyerUser.userId,
-            title: "Order Confirmed!",
-            content: "Your wallet payment was successful and your order has been placed.",
-            type: "payment"
-        }], { session: dbSession });
-
-        // Create seller notification
-        const [sellerNotification] = await Notification.create([{
-            userId: sellerBusiness.ownerUserId,
-            title: "New Order Received!",
-            content: "You have received a new paid order via wallet. Please prepare it for shipment.",
-            type: "account"
-        }], { session: dbSession });
-
         // Commit db changes
         await dbSession.commitTransaction();
         dbSession.endSession();
@@ -524,12 +473,8 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
         // Get socket instance
         const io = request.app.get("io");
 
-        // Emit real-time notifications to buyer and seller
-        io.to(`user:${String(buyerUser.userId)}`).emit("notification", buyerNotification);
-        io.to(`user:${String(sellerBusiness.ownerUserId)}`).emit("notification", sellerNotification);
-
         // Emit real-time event to business profile for order creation
-        io.to(String(sellerBusiness._id)).emit("order-creation", order);        
+        io.to(String(sellerBusinessId)).emit("order-creation", order);        
 
         // Response
         return response.status(201).json(new ApiResponse(201, order, "Order placed successfully using wallet"));

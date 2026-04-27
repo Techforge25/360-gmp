@@ -10,7 +10,6 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const generateCode = require("../utils/generateCode");
 const { getUserProfile, getBusinessProfile } = require("../utils/getProfiles");
-const sendNotification = require("../utils/sendNotification");
 const validate = require("../utils/validate");
 const forgotPasswordSchema = require("../validations/forgotPasswordValidator");
 const resetPasswordSchema = require("../validations/resetPasswordValidator");
@@ -118,15 +117,6 @@ const verifyOTP = asyncHandler(async (request, response) => {
     user.accountVerificationTokenExpires = null;
     user.status = "active";
     await user.save();
-
-    // Send notification to user upon account creation
-    await sendNotification({
-        userOwnerId:userId,
-        title: "Welcome to 360-GMP 🎉",  
-        content: `Your account has been successfully verified. Welcome to 360-GMP! You can now explore features, connect with others, and start using the platform.`,
-        type: "system",
-        io: request.app.get("io")
-    });
 
     // Response
     return response.status(200).json(new ApiResponse(200, user.email, "Your account has been activated"));
@@ -392,15 +382,6 @@ const resetPassword = asyncHandler(async (request, response) => {
     user.passwordResetToken = null;
     user.passwordResetTokenExpires = null;
     await user.save();
-
-    // Send notification
-    await sendNotification({
-        userOwnerId: user._id,
-        title: "Password Changed Successfully",
-        content: "Your account password was just updated. If this wasn't you, please contact support immediately.",
-        type: "security",
-        io: request.app.get("io")
-    });
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Password has been reset successfully"));

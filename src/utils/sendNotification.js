@@ -5,6 +5,9 @@ const ApiError = require("./ApiError");
 const sendNotification = async ({ userId = null, title, content, type, io }) => {
    try 
    {
+      // Validate type
+      if(!["System", "UserProfile", "BusinessProfile", "Public"].includes(type)) throw new ApiError(400, "Invalid notification type");
+   
       // Enforce user owner id for non-public notification
       if(type !== "Public" && !userId) throw new ApiError(400, "User ID is required for non-public notifications");  
 

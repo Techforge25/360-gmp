@@ -137,9 +137,10 @@
 
 //         //     // Send notification for subscription extension 
 //         //     await sendNotification({ 
-//         //         userOwnerId:userId,
+//         //         userId,
 //         //         title: "Subscription Extended",
 //         //         content:"Your subscription has been extended by 1 month",
+//         //         type: "System"
 //         //         io: request.app.get("io")
 //         //     });
 
@@ -155,9 +156,10 @@
 
 //         // Send notification
 //         await sendNotification({ 
-//             userOwnerId:userId,
+//             userId,
 //             title: "Subscription activation",
 //             content: `You have successfully subscribed to ${planName}`,
+//             type: "System"
 //             io: request.app.get("io")
 //         });
 

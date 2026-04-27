@@ -103,10 +103,10 @@ const createTestimonial = asyncHandler(async (request, response) => {
 
     // Send notification to business owner
     await sendNotification({ 
-        userOwnerId: reviewInvite.businessId.ownerUserId,
+        userId: reviewInvite.businessId.ownerUserId,
         title:"New Testimonial Received", 
         content:`You have received a new testimonial with a rating of ${rating} stars.`, 
-        type:"account", 
+        type:"BusinessProfile",
         io: request.app.get("io") 
     });
 

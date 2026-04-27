@@ -246,7 +246,7 @@ const fetchBusinessProducts = asyncHandler(async (request, response) => {
     const options = {
         page: Number(page),
         limit: Number(limit),
-        populate:{ path:"businessId", select:"companyName" }
+        populate:{ path:"businessId", select:"companyName logo isVerified" }
     };
     const products = await Product.paginate({ businessId }, options);
     if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Business products not found"));

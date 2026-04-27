@@ -8,7 +8,6 @@ const asyncHandler = require("../utils/asyncHandler");
 const { createCommunitySchema, updateCommunitySchema, approveMembershipSchema } = require("../validations/communityValidator");
 const { emptyList } = require("../constants");
 const UserSearch = require("../models/userSearchesModel");
-const sendNotification = require("../utils/sendNotification");
 const { isValidObjectId } = require("mongoose");
 const CommunityPost = require("../models/communityPostModel");
 const convertToMongoId = require("../utils/convertToMongoId");
@@ -295,12 +294,6 @@ const approveMembership = asyncHandler(async (request, response) => {
     if(userProfile) 
     {
         const notificationTitle = value.status === "approved" ? "Community Join Request Approved" : "Community Join Request Rejected";
-        await sendNotification({ 
-            userOwnerId: userProfile.userId, 
-            title: notificationTitle, 
-            content:`Your request to join the community "${community.name}" has been ${value.status}.`, 
-            io: request.app.get("io") 
-        });
     }
 
     // Response

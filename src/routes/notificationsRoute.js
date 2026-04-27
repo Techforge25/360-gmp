@@ -6,7 +6,7 @@ const { authentication } = require("../middlewares/auth");
 const notificationsRouter = Router();
 
 // Fetch my notifications
-notificationsRouter.route("/").get(authentication, fetchMyNotifications);
+notificationsRouter.route("/:type").get(authentication, fetchMyNotifications);
 
 // Mark all as read
 notificationsRouter.route("/mark-all-as-read").patch(authentication, markAllAsRead);

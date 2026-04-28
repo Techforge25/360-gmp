@@ -146,7 +146,8 @@ const disputePaymentSuccess = asyncHandler(async (request, response) => {
         io.to(String(sellerId)).emit("dispute-creation", { orderId });
 
         // Response
-        return response.status(303).redirect(`${process.env.FRONTEND_URL}`);
+        return response.status(303).redirect(`${process.env.FRONTEND_URL}/dashboard/user/orders/OrderTrackingPage/${orderId}`);
+        // /dashboard/user/orders/OrderTrackingPage/69f09d71b6e4b66c096c7320
     } 
     catch(error) 
     {

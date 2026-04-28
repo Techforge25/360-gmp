@@ -16,7 +16,7 @@ const sendNotification = async ({ userId = null, title, content, type, io }) => 
       if(!notification) throw new ApiError(400, "Failed to create notification! Invalid payload");
 
       // Notification payload for socket
-      const notificationPayload = { userId, title, content, type, createdAt: notification.createdAt };
+      const notificationPayload = { title, content, type, createdAt: notification.createdAt };
 
       if(type === "Public")
       {

@@ -25,6 +25,15 @@ const createProduct = asyncHandler(async (request, response) => {
     // Savve to db
     const product = await Product.create({ ...payload, businessId:business._id });
 
+    // Send notification to business
+    await sendNotification({ 
+        userId,
+        title: "New Product Created", 
+        content: `You have successfully listed ${payload.title} as your product`, 
+        type: "BusinessProfile",
+        io: request.app.get("io") 
+    });    
+
     // Response
     return response.status(201).json(new ApiResponse(201, product, "Product created successfully"));
 });
@@ -256,6 +265,15 @@ const updateProduct = asyncHandler(async (request, response) => {
     const updateProduct = await Product.findByIdAndUpdate(productId, payload, { new:true, lean:true });
     if(!updateProduct) throw new ApiError(500, "Failed to update product");
 
+    // Send notification to business
+    await sendNotification({ 
+        userId,
+        title: "Product Modification", 
+        content: `You have successfully updated your product info: ${updateProduct.title}`,
+        type: "BusinessProfile",
+        io: request.app.get("io") 
+    });      
+
     // Response
     return response.status(200).json(new ApiResponse(200, updateProduct, "Product updated successfully"));
 });
@@ -282,7 +300,7 @@ const setFeaturedProduct = asyncHandler(async (request, response) => {
     if(!product) throw new ApiError(404, "Product not found or unauthorized");
 
     // Response message
-    const responseMessage = isFeatured ? "Product has been marked as featured" : "Product has been unmarked as featured";
+    const responseMessage = isFeatured ? "Product has been marked as featured" : "Product has been unmarked as featured";  
 
     // Response
     return response.status(200).json(new ApiResponse(200, updateProduct, responseMessage));
@@ -299,7 +317,7 @@ const deleteProduct = asyncHandler(async (request, response) => {
     if(!business) throw new ApiError(404, "Business not found");
 
     // Find product
-    const product = await Product.findById(productId).select("_id businessId").lean();
+    const product = await Product.findById(productId).select("_id businessId title").lean();
     if(!product) throw new ApiError(404, "Product not found");
 
     // Check authorization
@@ -310,6 +328,15 @@ const deleteProduct = asyncHandler(async (request, response) => {
 
     const deleteProduct = await Product.findByIdAndDelete(productId);
     if(!deleteProduct) throw new ApiError(500, "Failed to delete product");
+
+    // Send notification to business
+    await sendNotification({ 
+        userId,
+        title: "Product Removed", 
+        content: `You have successfully deleted your product: ${product.title}`, 
+        type: "BusinessProfile",
+        io: request.app.get("io") 
+    });         
 
     // Response
     return response.status(200).json(new ApiResponse(200, product, "Product has been deleted"));

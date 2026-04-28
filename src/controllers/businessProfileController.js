@@ -10,6 +10,7 @@ const { isValidObjectId } = require("mongoose");
 const Job = require("../models/jobsSchema");
 const Product = require("../models/products");
 const Community = require("../models/communityModel");
+const sendNotification = require("../utils/sendNotification");
 
 // Create business
 const createBusinessProfile = asyncHandler(async (request, response) => {
@@ -46,6 +47,15 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
     // Validate
     if(!wallet) throw new ApiError(500, "Failed to setup wallet account business");
     if(!user) throw new ApiError(500, "Failed to update user status upon business profile creation");
+
+    // Send notification to business
+    await sendNotification({ 
+        userId,
+        type: "BusinessProfile",
+        title: "Business profile created",
+        content: "Your business profile has been successfully set up.",
+        io: request.app.get("io")
+    });
 
     // Response
     return response.status(201).json(new ApiResponse(201, { profile, isNewToPlatform:user.isNewToPlatform }, "Business profile has been created"));

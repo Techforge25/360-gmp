@@ -16,6 +16,7 @@ const resetPasswordSchema = require("../validations/resetPasswordValidator");
 const { userSignupValidator, userLoginValidator } = require("../validations/user");
 const verifyPasswordResetTokenSchema = require("../validations/verifyPasswordResetTokenValidator");
 const bcrypt = require("bcrypt");
+const sendNotification = require("../utils/sendNotification");
 
 // User signup
 const userSignup = asyncHandler(async (request, response) => {
@@ -117,6 +118,15 @@ const verifyOTP = asyncHandler(async (request, response) => {
     user.accountVerificationTokenExpires = null;
     user.status = "active";
     await user.save();
+
+    // Send notification to parent user upon account creation
+    await sendNotification({ 
+        userId,
+        type: "System",
+        title: "Welcome aboard!",
+        content: "Your account is now verified and ready to use.",
+        io: request.app.get("io")
+    });   
 
     // Response
     return response.status(200).json(new ApiResponse(200, user.email, "Your account has been activated"));

@@ -6,6 +6,8 @@ const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
 const { productReviewValidator } = require("../validations/productReviewValidator");
 const convertToMongoId = require("../utils/convertToMongoId");
+const sendNotification = require("../utils/sendNotification");
+const Product = require("../models/products");
 
 // Product review access (Check if user purchased this product)
 const productReviewAccess = asyncHandler(async (request, response) => {
@@ -27,6 +29,12 @@ const createProductReview = asyncHandler(async (request, response) => {
     const { userProfileId } = request.user.profiles || {};
     const { productId } = request.params;
 
+    // Find product
+    const product = await Product.findById(productId)
+    .populate({ path:"businessId", select:"ownerUserId" })
+    .select("businessId title");
+    if(!product) throw new ApiError(404, "Product not found!");
+
     // Get validated payload
     const { rating, comment, images } = validate(productReviewValidator, request.body) || {};
 
@@ -37,6 +45,16 @@ const createProductReview = asyncHandler(async (request, response) => {
     // Save to db
     const productReview = await ProductReview.create({ userProfileId, productId, rating, comment, images });
     if(!productReview) throw new ApiError(500, "Failed to submit product review");
+
+    // Send notification to Business on product review
+    await sendNotification({ 
+        userId: product.businessId.ownerUserId,
+        type: "BusinessProfile",
+        title: "Product Review!",
+        content: `Your product ${product.title} recieved a new review`,
+        io: request.app.get("io")
+    });   
+    
 
     // Response
     return response.status(201).json(new ApiResponse(201, { rating, comment, images }, "Product review has been submitted"));

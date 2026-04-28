@@ -31,7 +31,7 @@ const createReviewInvite = asyncHandler(async (request, response) => {
 const checkInviteToken = asyncHandler(async (request, response) => {
     const { _id:userId } = request.user;
     const { userProfileId } = request.user.profiles || {};
-    const { inviteToken } = request.params;
+    const { inviteToken, businessId } = request.params;
 
     // Find review invite
     const reviewInvite = await ReviewInvite.findOne({ inviteToken })
@@ -41,6 +41,9 @@ const checkInviteToken = asyncHandler(async (request, response) => {
     // Validate
     if(!reviewInvite) throw new ApiError(404, "Review invite not found! Invalid invite token.");
     if(reviewInvite.isUsed) throw new ApiError(400, "This review invite token has already been used");  
+
+    // Authorize
+    if(String(businessId) !== String(reviewInvite.businessId._id)) throw new ApiError(403, "Invalid invite token");    
 
     // Same parent profiles restriction
     if(String(reviewInvite.businessId.ownerUserId) === String(userId))
@@ -60,10 +63,11 @@ const checkInviteToken = asyncHandler(async (request, response) => {
 const createTestimonial = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const { userProfileId } = request.user.profiles || {};
-    const { inviteToken } = request.params;
+    const { inviteToken, businessId } = request.params;
 
     // Validate
     if(!userProfileId) throw new ApiError(404, "User profile ID is missing");
+    if(!isValidObjectId(businessId)) throw new ApiError(400, "Invalid business ID");
 
     // Get validated payload
     const { rating, title, description } = validate(createTestimonialValidationSchema, request.body) || {};
@@ -76,6 +80,9 @@ const createTestimonial = asyncHandler(async (request, response) => {
     if(!reviewInvite) throw new ApiError(404, "Review invite not found! Invalid invite token.");
     if(reviewInvite.isUsed) throw new ApiError(400, "This review invite token has already been used");
 
+    // Authorize
+    if(String(businessId) !== String(reviewInvite.businessId._id)) throw new ApiError(403, "Invalid invite token");
+    
     // Same parent profiles restriction
     if(String(reviewInvite.businessId.ownerUserId) === String(userId))
     {

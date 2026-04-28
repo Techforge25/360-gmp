@@ -16,11 +16,11 @@ testimonialRouter.route("/invite")
 .get(authorization(["business"]), createReviewInvite);
 
 // Check invite token validity
-testimonialRouter.route("/invite/:inviteToken")
+testimonialRouter.route("/invite/:inviteToken/:businessId")
 .get(authorization(["business", "user"]), checkInviteToken);
 
 // Create testimonials
-testimonialRouter.route("/:inviteToken")
+testimonialRouter.route("/:inviteToken/:businessId")
 .post(authorization(["user"]), createTestimonial);
 
 // Fetch testimonials for a business

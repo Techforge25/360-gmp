@@ -33,6 +33,9 @@ const checkInviteToken = asyncHandler(async (request, response) => {
     const { userProfileId } = request.user.profiles || {};
     const { inviteToken, businessId } = request.params;
 
+    // Validate business ID
+    if(!isValidObjectId(businessId)) throw new ApiError(400, "Invalid business ID");
+
     // Find review invite
     const reviewInvite = await ReviewInvite.findOne({ inviteToken })
     .populate({ path:"businessId", select:"_id ownerUserId" })

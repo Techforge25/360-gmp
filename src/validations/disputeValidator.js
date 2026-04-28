@@ -10,7 +10,7 @@ const createDisputeValidationSchema = joi.object({
 
 // Seller response validator
 const sellerResponseValidationSchema = joi.object({
-    description: joi.string().trim().max(5000).label("Description"),
+    description: joi.string().trim().required().max(5000).label("Description"),
     evidences: joi.array().items(joi.string().trim().uri()).max(5).optional().default([]).label("Evidences")
 });
 

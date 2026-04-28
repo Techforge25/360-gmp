@@ -4,6 +4,7 @@ const Joi = require("joi");
 const alphaNumericPattern = /^[a-zA-Z0-9 -]*$/;
 const addressPattern = /^[a-zA-Z0-9 -,]*$/;
 const customPattern = /^[a-zA-Z0-9 \-.,\n\r]*$/;
+const operatingHourPattern = /^\d{1,2}(:\d{2})?\s?(am|pm)\s?-\s?\d{1,2}(:\d{2})?\s?(am|pm)$/i;
 
 // Location schema
 const locationSchema = Joi.object({
@@ -37,7 +38,7 @@ const createBusinessProfileSchema = Joi.object({
     companySize: Joi.string().trim().allow("", null).pattern(alphaNumericPattern).label("Company size"),
     foundedDate: Joi.date().max("now").allow(null).label("Founded date"),
     primaryIndustry: Joi.string().max(500).trim().allow("", null).pattern(alphaNumericPattern).label("Primary industry"),
-    operationHour: Joi.string().max(50).trim().allow("", null).label("Operation hours"),
+    operationHour: Joi.string().max(50).trim().pattern(operatingHourPattern).allow("", null).label("Operation hours"),
     countryOfRegistration: Joi.string().max(50).trim().allow("", null).label("Country of registration"),
 
     // Legal & Compliance
@@ -109,7 +110,7 @@ const updateBusinessProfileSchema = Joi.object({
     companySize: Joi.string().trim().allow("", null).pattern(alphaNumericPattern).label("Company size"),
     foundedDate: Joi.date().max("now").allow(null),
     primaryIndustry: Joi.string().trim().allow("", null).pattern(alphaNumericPattern).label("Primary industry"),
-    operationHour: Joi.string().trim().allow("", null).label("Operation hours"),
+    operationHour: Joi.string().trim().pattern(operatingHourPattern).allow("", null).label("Operation hours"),
     countryOfRegistration: Joi.string().max(50).trim().allow("", null).label("Country of registration"),
 
     // Legal & Compliance

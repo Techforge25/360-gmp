@@ -6,6 +6,7 @@ const countryPattern = /^[a-zA-Z]*$/;
 const addressPattern = /^[a-zA-Z0-9 -,]*$/;
 const customPattern = /^[a-zA-Z0-9 \-.,\n\r]*$/;
 const stackHoldersNamePattern = /^[a-zA-Z]*$/;
+const operatingHourPattern = /^\d{1,2}(:\d{2})?\s?(am|pm)\s?-\s?\d{1,2}(:\d{2})?\s?(am|pm)$/i;
 
 // Update company identity validator
 const updateCompanyIdentityValidator = joi.object({
@@ -17,7 +18,7 @@ const updateCompanyIdentityValidator = joi.object({
     companySize: joi.string().trim().required().pattern(alphaNumericPattern).label("Company size"),
     foundedDate: joi.date().max('now').allow(null),
     primaryIndustry: joi.string().trim().allow("", null).pattern(alphaNumericPattern).label("Primary industry"),
-    operationHour: joi.string().trim().allow("", null).label("Operation hours"),
+    operationHour: joi.string().trim().pattern(operatingHourPattern).allow("", null).label("Operation hours"),
     countryOfRegistration: joi.string().max(50).trim().required().label("Country of registration"),
 
     // Web and description

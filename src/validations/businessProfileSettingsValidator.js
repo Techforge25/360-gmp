@@ -5,7 +5,7 @@ const alphaNumericPattern = /^[a-zA-Z0-9\s\-.'&]*$/;
 const ownerNamePattern = /^[a-zA-Z\s\-.]*$/;
 const countryPattern = /^[a-zA-Z\s-]*$/;
 const cityPattern = /^[a-zA-Z\s-]*$/;
-const addressPattern = /^[a-zA-Z0-9\s,.\-/#]*$/;
+const addressPattern = /^(?![0-9\s,.\-/#]+$)[a-zA-Z0-9\s,.\-/#]+$/;
 const customPattern = /^[a-zA-Z0-9 \-.,\n\r]*$/;
 const operatingHourPattern = /^[0-9A-Za-z:\-\s,]+$/;
 const alphaNumericWithHyphen = /^[A-Za-z0-9-]+$/;
@@ -45,10 +45,14 @@ const operationsAndLogisticsValidator = joi.object({
     location: joi.object({
         country: joi.string().pattern(countryPattern).min(2).max(100).trim().required().label("Country"),
         city: joi.string().pattern(cityPattern).min(2).max(100).trim().required().label("City"),
+
         addressLine: joi.string().pattern(addressPattern).max(200).trim().required().label("Address line"),
         warehouseAddress: joi.string().pattern(addressPattern).max(200).trim().required().label("Warehouse Address"),
-        additionalWarehouseAddress: joi.string().pattern(addressPattern).max(200).trim().allow("", null).label("Additional Warehouse Address"),
+
+        additionalWarehouseAddress: joi.string().pattern(addressPattern).max(200).trim().allow("", null).invalid(joi.ref('warehouseAddress'))
+        .label("Additional Warehouse Address"),
         additionalPickupAddress: joi.string().pattern(addressPattern).max(200).trim().allow("", null).label("Additional Pickup Address"),
+
         businessRegistrationAddress: joi.string().pattern(addressPattern).max(200).trim().required().label("Business Registration Address"),
         internationalOffices: joi.array().items(joi.string().pattern(addressPattern).max(200)).max(11).label("International Offices")
     }),

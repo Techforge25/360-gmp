@@ -54,7 +54,6 @@ const createProductReview = asyncHandler(async (request, response) => {
         content: `Your product ${product.title} recieved a new review`,
         io: request.app.get("io")
     });   
-    
 
     // Response
     return response.status(201).json(new ApiResponse(201, { rating, comment, images }, "Product review has been submitted"));

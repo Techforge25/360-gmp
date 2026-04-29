@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { createDispute, createDisputeWithWallet, viewDisputeDetails, changeDisputeStatus, 
-adminDecision, disputePaymentSuccess, sellerResponse } = require("../controllers/disputController");
+adminDecision, disputePaymentSuccess, sellerResponse, fetchProductsOfDisputedOrder } = require("../controllers/disputController");
 const { adminAuthentication, adminAuthorization } = require("../middlewares/adminAuth");
 
 // Router instance
@@ -19,9 +19,13 @@ disputeRouter.route("/:orderId/wallet")
 disputeRouter.route("/success")
 .get(disputePaymentSuccess);
 
-// View dispute details (admin)
+// View dispute details
 disputeRouter.route("/:orderId")
 .get(authentication, authorization(["user", "business"]), viewDisputeDetails);
+
+// Fetch products of disputed order
+disputeRouter.route("/:orderId/products")
+.get(authentication, authorization(["user"]), fetchProductsOfDisputedOrder);
 
 // Change dispute status (admin)
 disputeRouter.route("/:orderId/status")

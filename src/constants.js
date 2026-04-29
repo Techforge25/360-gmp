@@ -36,7 +36,7 @@ const emptyList = {
 };
 
 // Notification types
-const allowedNotificationTypes = ["System", "UserProfile", "BusinessProfile", "Public"];
+const allowedNotificationTypes = ["System", "UserProfile", "BusinessProfile"];
 
 module.exports = {
     port,

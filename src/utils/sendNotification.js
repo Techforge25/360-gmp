@@ -1,3 +1,4 @@
+const { allowedNotificationTypes } = require("../constants");
 const Notification = require("../models/notificationsModel");
 const ApiError = require("./ApiError");
 
@@ -6,7 +7,7 @@ const sendNotification = async ({ userId, title, content, type, io }) => {
    try 
    {
       // Validate type
-      if(!["System", "UserProfile", "BusinessProfile"].includes(type)) throw new ApiError(400, "Invalid notification type");
+      if(!allowedNotificationTypes.includes(type)) throw new ApiError(400, "Invalid notification type");
 
       // Save to db
       const notification = await Notification.create({ userId, title, content, type });

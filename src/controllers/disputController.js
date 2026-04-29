@@ -205,7 +205,7 @@ const createDisputeWithWallet = asyncHandler(async (request, response) => {
         }
 
         // Check amount
-        if(buyerWallet.availableBalance < amount) throw new ApiError(403, "You don't have sufficient balance to initate a dispute");     
+        if(buyerWallet.availableBalance < amount) throw new ApiError(403, "You don't have sufficient balance to initiate a dispute");     
           
 
         // Deduct dispute fee from buyer's wallet

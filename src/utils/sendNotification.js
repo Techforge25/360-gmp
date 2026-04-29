@@ -3,7 +3,7 @@ const Notification = require("../models/notificationsModel");
 const ApiError = require("./ApiError");
 
 // Send notification helper
-const sendNotification = async ({ userId, title, content, type, io }) => {
+const sendNotification = async ({ userId, title, content, type, io = null }) => {
    try 
    {
       // Validate type
@@ -14,7 +14,7 @@ const sendNotification = async ({ userId, title, content, type, io }) => {
       if(!notification) throw new ApiError(400, "Failed to create notification! Invalid payload");
 
       // Emit real-time notification
-      io.to(String(userId)).emit("notification", { title, content, type, createdAt: notification.createdAt });    
+      if(io) io.to(String(userId)).emit("notification", { title, content, type, createdAt: notification.createdAt }); 
    } 
    catch(error) 
    {

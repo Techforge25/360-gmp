@@ -20,12 +20,8 @@ const fetchMyNotifications = asyncHandler(async (request, response) => {
         sort: { createdAt: -1 }
     };
 
-    // Base filter
-    const baseFilter = { type };
-    if(type !== "Public") baseFilter.userId = userId;
-
     // Retrieve notifications
-    const notifications = await Notification.paginate(baseFilter, options);
+    const notifications = await Notification.paginate({ userId, type }, options);
     if(!notifications.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, `No ${type} notifications found`));
 
     // Response

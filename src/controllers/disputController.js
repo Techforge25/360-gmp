@@ -297,7 +297,7 @@ const fetchProductsOfDisputedOrder = asyncHandler(async (request, response) => {
 
     // Order
     const order = await Order.findById({ _id:orderId, buyerUserProfileId:userProfileId })
-    .populate({ path:"items.productId", select: "title image" }).select("items totalAmount");
+    .populate({ path:"items.productId", select: "title image" }).select("items");
     if(!order) throw new ApiError(404, "No disputed order found");
 
     // Response

@@ -41,6 +41,7 @@ const createOrder = asyncHandler(async (request, response) => {
 
     // Variables
     let sellerBusinessId = null;
+    let sellerParentUserId = null; // For sending notification to user
     let serverComputedTotal = 0;
 
     // Loop through items for validation & calculation
@@ -76,7 +77,8 @@ const createOrder = asyncHandler(async (request, response) => {
         // Enforce single seller per order
         if(!sellerBusinessId)
         {
-            sellerBusinessId = product.businessId.toString();
+            sellerBusinessId = String(product.businessId);
+            sellerParentUserId = String(businessProfile.ownerUserId);
         }
         else if(sellerBusinessId !== product.businessId.toString())
         {
@@ -125,6 +127,7 @@ const createOrder = asyncHandler(async (request, response) => {
             userId: String(userId), // Sending parent user ID for marking trial usage after order completion
             buyerUserProfileId: String(userProfile._id),
             sellerBusinessId: String(sellerBusinessId),
+            sellerParentUserId: String(sellerParentUserId),
             totalAmount: serverComputedTotal,
             shippingAddress: JSON.stringify(shippingAddress),
             items: JSON.stringify(items),
@@ -158,7 +161,9 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
     dbSession.startTransaction();
     try 
     {
-        const { userId, buyerUserProfileId, sellerBusinessId, totalAmount, shippingAddress, items, planName } = stripeSession.metadata;
+        // Extract data from metadata
+        const { userId, buyerUserProfileId, sellerBusinessId, sellerParentUserId, 
+        totalAmount, shippingAddress, items, planName } = stripeSession.metadata;
         const parsedItems = JSON.parse(items);
 
         // Stock deduction and prepare items with priceAtPurchase
@@ -269,6 +274,15 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
         // Emit real-time event to business profile for order creation
         io.to(String(sellerBusinessId)).emit("order-creation", order);
 
+        // Send notification to seller business profile
+        await sendNotification({ 
+            userId: sellerParentUserId,
+            title:"Order placement", 
+            content:`You have received a new order.`,
+            type:"BusinessProfile",
+            io
+        });
+
         // Response
         return response.status(303).redirect(`${frontendUrl}/dashboard/user/checkout/payment-confirmation/${order._id}`);
     } 
@@ -305,6 +319,7 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
     if(!items || !items.length) throw new ApiError(400, "Product item is required");
 
     let sellerBusinessId = null;
+    let sellerParentUserId = null; // For sending notification to user
     let serverComputedTotal = 0;
 
     // Validate items & compute total
@@ -340,7 +355,8 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
         // Prevent multiple sellers in single order
         if(!sellerBusinessId)
         {
-            sellerBusinessId = product.businessId.toString();
+            sellerBusinessId = String(product.businessId);
+            sellerParentUserId = String(businessProfile.ownerUserId);
         }
         else if(sellerBusinessId !== product.businessId.toString())
         {
@@ -474,7 +490,16 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
         const io = request.app.get("io");
 
         // Emit real-time event to business profile for order creation
-        io.to(String(sellerBusinessId)).emit("order-creation", order);        
+        io.to(String(sellerBusinessId)).emit("order-creation", order); 
+
+        // Send notification to seller business profile
+        await sendNotification({ 
+            userId: sellerParentUserId,
+            title:"Order placement", 
+            content:`You have received a new order.`,
+            type:"BusinessProfile",
+            io
+        });        
 
         // Response
         return response.status(201).json(new ApiResponse(201, order, "Order placed successfully using wallet"));

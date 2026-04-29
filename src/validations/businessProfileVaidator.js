@@ -56,7 +56,7 @@ const createBusinessProfileSchema = Joi.object({
     // Shipping info
     shipping: {
         capabilities:Joi.array().items(Joi.string().pattern(alphaNumericPattern)).max(10).label("Shipping Capabilities"),
-        exportExperience: Joi.boolean().required().label("Export experience")
+        exportExperience: Joi.boolean().default(false).label("Export experience")
     },
 
     // Ownership & Leadership

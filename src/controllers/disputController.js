@@ -286,6 +286,23 @@ const viewDisputeDetails = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, dispute, "Dispute details fetched successfully"));
 });
 
+// Fetch products of disputed order
+const fetchProductsOfDisputedOrder = asyncHandler(async (request, response) => {
+    const { userProfileId } = request.user.profiles || {};
+    const { orderId } = request.params;
+
+    // Validate IDs
+    if(!userProfileId) throw new ApiError(400, "User profile ID is missing");
+    if(!isValidObjectId(orderId)) throw new ApiError(400, "Invalid order ID");
+
+    const order = await Order.findById({ _id:orderId })
+    .populate({ path:"items.productId", select: "title" });
+    if(!order) throw new ApiError(404, "No disputed order found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, order, "Products of disputed orders have been fetched"));
+});
+
 // Change dispute status (admin only) - can be used to implement resolution actions later
 const changeDisputeStatus = asyncHandler(async (request, response) => {
     const { orderId } = request.params;
@@ -515,4 +532,4 @@ const adminDecision = asyncHandler(async (request, response) => {
 });
 
 module.exports = { createDispute, disputePaymentSuccess, createDisputeWithWallet, 
-viewDisputeDetails, changeDisputeStatus, sellerResponse, adminDecision };
+viewDisputeDetails, changeDisputeStatus, sellerResponse, adminDecision, fetchProductsOfDisputedOrder };

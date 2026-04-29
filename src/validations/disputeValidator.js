@@ -4,7 +4,7 @@ const joi = require("joi");
 const createDisputeValidationSchema = joi.object({
     // Dispute details
     reason: joi.string().required().trim().max(200).label("Reason"),
-    description: joi.string().trim().max(5000).label("Description"),
+    description: joi.string().trim().required().max(5000).label("Description"),
     evidences: joi.array().items(joi.string().trim().uri()).max(5).optional().default([]).label("Evidences")
 });
 

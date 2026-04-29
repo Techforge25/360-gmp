@@ -51,7 +51,7 @@ const operationsAndLogisticsValidator = joi.object({
 
         additionalWarehouseAddress: joi.string().pattern(addressPattern).max(200).trim().allow("", null).invalid(joi.ref('warehouseAddress'))
         .label("Additional Warehouse Address"),
-        additionalPickupAddress: joi.string().pattern(addressPattern).max(200).trim().allow("", null).label("Additional Pickup Address"),
+        mandatoryPickupAddress: joi.string().pattern(addressPattern).max(200).trim().allow("", null).label("Additional Pickup Address"),
 
         businessRegistrationAddress: joi.string().pattern(addressPattern).max(200).trim().required().label("Business Registration Address"),
         internationalOffices: joi.array().items(joi.string().pattern(addressPattern).max(200)).max(11).label("International Offices")
@@ -66,7 +66,7 @@ const operationsAndLogisticsValidator = joi.object({
         width: joi.number().min(0).label("Product dimension width"),
         height: joi.number().min(0).label("Product dimension height"),
         weight: joi.number().min(0).label("Product dimension weight"),
-    })
+    }).label("Standard product dimension")
 });
 
 // Business Intelligence

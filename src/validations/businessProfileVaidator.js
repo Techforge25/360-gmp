@@ -85,7 +85,7 @@ const createBusinessProfileSchema = Joi.object({
         width: Joi.number().min(0).default(0).label("Product dimension width"),
         height: Joi.number().min(0).default(0).label("Product dimension height"),
         weight: Joi.number().min(0).default(0).label("Product dimension weight"),
-    }),
+    }).label("Standard product dimension"),
 
     // Other Certifications & B2B Contact
     certifications: Joi.array().items(Joi.string().trim().uri()).min(1).max(3).default([]).label("Certification"),

@@ -32,6 +32,7 @@ io.on("connection", (socket) => {
     if(user) 
     {
         // Join parent user private room
+        socket.join(socket.user._id); // Without prefix
         socket.join(`user:${socket.user._id}`);
         console.log(`User joined private room: ${socket.user._id}`);
 
@@ -40,16 +41,16 @@ io.on("connection", (socket) => {
         // Join business profile room if they exist
         if(businessProfileId)
         {
-            socket.join(businessProfileId); // Without prefix
-            socket.join(`businessProfile:${businessProfileId}`);
+            socket.join(String(businessProfileId)); // Without prefix
+            socket.join(`businessProfile:${String(businessProfileId)}`);
             console.log(`User joined business profile room: ${businessProfileId}`);
         }
 
         // Join user profile room if it exists
         if(userProfileId)
         {
-            socket.join(userProfileId); // Without prefix
-            socket.join(`userProfile:${userProfileId}`);
+            socket.join(String(userProfileId)); // Without prefix
+            socket.join(`userProfile:${String(userProfileId)}`);
             console.log(`User joined user profile room: ${userProfileId}`);
         }
     }

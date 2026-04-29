@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const Order = require("../models/orders");
 const EscrowTransaction = require("../models/escrowTrasanction");
 const Wallet = require("../models/walletModel");
+const sendNotification = require("../utils/sendNotification");
 
 // Auto release escrow funds after 14 days of delivery
 cron.schedule("0 */12 * * *", async () => {
@@ -13,7 +14,9 @@ cron.schedule("0 */12 * * *", async () => {
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
     // Find eligible orders
-    const orders = await Order.find({ status:"delivered", "tracking.deliveredAt":{ $lte:fourteenDaysAgo }}).select("_id sellerBusinessId");
+    const orders = await Order.find({ status:"delivered", "tracking.deliveredAt":{ $lte:fourteenDaysAgo }})
+    .populate({ path:"sellerBusinessId", select:"ownerUserId" })
+    .select("_id sellerBusinessId");
 
     // If no orders found
     if(!orders.length) return console.log("No orders eligible for auto release");
@@ -28,7 +31,9 @@ cron.schedule("0 */12 * * *", async () => {
         try
         {
             // Find escrow record
-            const escrow = await EscrowTransaction.findOne({ orderId:order._id, status:"held" }).session(dbSession);
+            const escrow = await EscrowTransaction.findOne({ orderId:order._id, status:"held" })
+            .populate({ path:"sellerId", select:"ownerUserId" })
+            .session(dbSession);
 
             // Skip if escrow not found
             if(!escrow)
@@ -62,6 +67,14 @@ cron.schedule("0 */12 * * *", async () => {
             await dbSession.commitTransaction();
             dbSession.endSession();
             console.log(`Escrow auto released for order ${order._id}`);
+
+            // Send notification to business profile for order completion
+            await sendNotification({
+                userId: escrow.sellerId.ownerUserId,
+                title: "Order Completion!",
+                content: "Order has been completed!",
+                type: "BusinessProfile"
+            });
         }
         catch(error)
         {

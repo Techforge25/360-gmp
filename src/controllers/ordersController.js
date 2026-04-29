@@ -627,19 +627,22 @@ const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
 
 // Complete order (Escrow will release funds to seller's wallet)
 const completeOrder = asyncHandler(async (request, response) => {
-    const { orderId } = request.params;
     const userId = request.user._id;
+    const { userProfileId } = request.user.profiles || {};
+    const { orderId } = request.params;
 
-    // Find buyer profile
-    const buyerProfile = await UserProfile.findOne({ userId });
-    if(!buyerProfile) throw new ApiError(404, "User profile not found");
+    // Validate IDs
+    if(!userProfileId) throw new ApiError(400, "User profile ID is missing");
+    if(!isValidObjectId(userProfileId)) throw new ApiError(400, "Invalid User profile ID");
+    if(!isValidObjectId(orderId)) throw new ApiError(400, "Invalid Order ID");    
 
     // Find order
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId)
+    .populate({ path:"sellerBusinessId", select:"ownerUserId" });
     if(!order) throw new ApiError(404, "Order not found");
 
     // Authorize owner
-    if(String(buyerProfile._id) !== String(order.buyerUserProfileId)) throw new ApiError(403, "You are not authorized to complete this order");
+    if(String(userProfileId) !== String(order.buyerUserProfileId)) throw new ApiError(403, "You are not authorized to complete this order");
     
     // Check current status
     const allowedCurrentStatuses = ["paid", "delivered"];
@@ -678,7 +681,16 @@ const completeOrder = asyncHandler(async (request, response) => {
 
         // Emit event real-time
         const io = request.app.get("io");
-        io.to(String(order.sellerBusinessId)).emit("update-order-status", { orderId:order._id, status:order.status });       
+        io.to(String(order.sellerBusinessId)).emit("update-order-status", { orderId:order._id, status:order.status });
+        
+        // Send notification to business profile for order completion
+        await sendNotification({
+            userId: order.sellerBusinessId.ownerUserId,
+            title: "Order Completion!",
+            content: "Order has been completed!",
+            type: "BusinessProfile",
+            io
+        });
 
         // Response
         return response.status(200).json(new ApiResponse(200, { orderId:order._id, status:order.status }, "Order completed successfully"));

@@ -6,7 +6,7 @@ const notificationSchema = new Schema({
     userId: { type: Schema.Types.ObjectId, ref: "User", default:null },
     title: { type: String, trim: true, required: true },
     content: { type: String, trim: true, required: true },
-    type: { type: String, enum: ["System", "UserProfile", "BusinessProfile", "Public"], default:"System" },
+    type: { type: String, enum: ["System", "UserProfile", "BusinessProfile"], default:"System" },
     haveSeen: { type: Boolean, default: false }
 }, { timestamps:true });
 

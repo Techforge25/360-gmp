@@ -6,6 +6,7 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const Stripe = require("stripe");
 const mongoose = require("mongoose");
+const { isValidObjectId } = require("mongoose");
 const EscrowTransaction = require("../models/escrowTrasanction");
 const Wallet = require("../models/walletModel");
 const BusinessProfile = require("../models/businessProfileSchema");
@@ -16,6 +17,7 @@ const TrialUsage = require("../models/trialUsageModel");
 const validate = require("../utils/validate");
 const { createOrderValidationSchema, updateOrderStatusValidationSchema, 
 updateTrackingInfoValidationSchema, cancelOrderValidationSchema } = require("../validations/orderValidator");
+const sendNotification = require("../utils/sendNotification");
 
 // Create order - Purchase product using stripe payment
 const createOrder = asyncHandler(async (request, response) => {
@@ -539,19 +541,23 @@ const fetchAllUserOrders = asyncHandler(async (request, response) => {
 // Update order tracking info
 const updateOrderTrackingInfo = asyncHandler(async (request, response) => {
     const userId = request.user._id;
+    const { businessProfileId } = request.user.profiles || {};
     const { orderId } = request.params;
-    const { courierName, trackingId } = validate(updateTrackingInfoValidationSchema, request.body) || {};
 
-    // Find business
-    const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean();
-    if(!business) throw new ApiError(404, "Business profile not found");
+    // Validate IDs
+    if(!businessProfileId) throw new ApiError(400, "Business profile ID is missing");
+    if(!isValidObjectId(businessProfileId)) throw new ApiError(400, "Invalid Business profile ID");
+    if(!isValidObjectId(orderId)) throw new ApiError(400, "Invalid Order ID");
+
+    // Get validated payload
+    const { courierName, trackingId } = validate(updateTrackingInfoValidationSchema, request.body) || {};
 
     // Find order
     const order = await Order.findById(orderId).select("sellerBusinessId tracking");
     if(!order) throw new ApiError(404, "Order not found");
 
     // Authorize owner
-    if(String(order.sellerBusinessId) !== String(business._id)) throw new ApiError(403, "You are not authorized to update the tracking info");
+    if(String(order.sellerBusinessId) !== String(businessProfileId)) throw new ApiError(403, "You are not authorized to update the tracking info");
 
     // Save to db
     order.tracking.courierName = courierName;
@@ -565,19 +571,24 @@ const updateOrderTrackingInfo = asyncHandler(async (request, response) => {
 // Update order status by seller
 const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
     const userId = request.user._id;
+    const { businessProfileId } = request.user.profiles || {};    
     const { orderId } = request.params;
+
+    // Validate IDs
+    if(!businessProfileId) throw new ApiError(400, "Business profile ID is missing");
+    if(!isValidObjectId(businessProfileId)) throw new ApiError(400, "Invalid Business profile ID");
+    if(!isValidObjectId(orderId)) throw new ApiError(400, "Invalid Order ID");
+    
+    // Get validated payload
     const { status, tracking } = validate(updateOrderStatusValidationSchema, request.body);
 
-    // Find business
-    const business = await BusinessProfile.findOne({ ownerUserId:userId });
-    if(!business) throw new ApiError(404, "Business profile not found");
-
     // Find order
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId)
+    .populate({ path:"buyerUserProfileId", select:"userId" });
     if(!order) throw new ApiError(404, "Order not found");
 
     // Authorize owner
-    if(String(order.sellerBusinessId) !== String(business._id)) throw new ApiError(403, "You are not authorized to update the order status");
+    if(String(order.sellerBusinessId) !== String(businessProfileId)) throw new ApiError(403, "You are not authorized to update the order status");
 
     // Prevent duplicate status update
     if(status === order.status) return response.status(200).json(new ApiResponse(200, null, `The order status is already ${status}`));
@@ -600,6 +611,15 @@ const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
     // Emit event real-time
     const io = request.app.get("io");
     io.to(String(order.buyerUserProfileId)).emit("update-order-status", { orderId:order._id, status:order.status });
+
+    // Send notification to user profile
+    await sendNotification({
+        userId: order.buyerUserProfileId.userId,
+        title: "Order Update",
+        content: `Your order has ${status}`,
+        type: "UserProfile",
+        io
+    });
 
     // Response
     return response.status(200).json(new ApiResponse(200, order, `Status updated to ${status}`));

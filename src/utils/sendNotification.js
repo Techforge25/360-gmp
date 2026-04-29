@@ -26,7 +26,7 @@ const sendNotification = async ({ userId = null, title, content, type, io }) => 
       else
       {
          // Private notification
-         io.to(`${String(userId)}`).emit("notification", notificationPayload);
+         io.to(String(userId)).emit("notification", notificationPayload);
       }      
    } 
    catch(error) 

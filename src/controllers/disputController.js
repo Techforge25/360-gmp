@@ -269,9 +269,9 @@ const viewDisputeDetails = asyncHandler(async (request, response) => {
     // Fetch dispute with related details
     const dispute = await Dispute.findOne({ orderId })
     .populate([
-        { path: "orderId", select: "totalAmount status shippingAddress" },
+        { path: "orderId", select: "-_id totalAmount status shippingAddress" },
         { path: "buyerId", select: "fullName email phone" },
-        { path: "sellerId", select: "companyName businessType location b2bContact" }
+        { path: "sellerId", select: "companyName businessType location" }
     ]).select("-__v -updatedAt").lean();
     if(!dispute) throw new ApiError(404, "Dispute not found");
 

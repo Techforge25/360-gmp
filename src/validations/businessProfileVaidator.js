@@ -4,6 +4,7 @@ const Joi = require("joi");
 const alphaNumericPattern = /^[a-zA-Z0-9 -]*$/;
 const addressPattern = /^[a-zA-Z0-9 -,]*$/;
 const customPattern = /^[a-zA-Z0-9 \-.,\n\r]*$/;
+const ownerNamePattern = /^[a-zA-Z\s\-.']*$/;
 const operatingHourPattern = /^\d{1,2}(:\d{2})?\s?(am|pm)\s?-\s?\d{1,2}(:\d{2})?\s?(am|pm)$/i;
 
 // Location schema
@@ -30,7 +31,7 @@ const b2bContactSchema = Joi.object({
 
 // Create Business Profile schema
 const createBusinessProfileSchema = Joi.object({
-    ownerName: Joi.string().min(3).max(200).required().trim().pattern(alphaNumericPattern).label("Owner name"),
+    ownerName: Joi.string().min(3).max(200).required().trim().pattern(ownerNamePattern).label("Owner name"),
     identificationOfBusinessOwner: Joi.string().min(3).max(200).required().trim().label("Identification of business owner"),
     companyName: Joi.string().min(5).max(200).required().trim().pattern(alphaNumericPattern).label("Business name"),
     tradeName: Joi.string().max(200).trim().optional().pattern(alphaNumericPattern).label("Trade name"),
@@ -102,7 +103,7 @@ const createBusinessProfileSchema = Joi.object({
 
 // Update Business Profile schema (all fields optional)
 const updateBusinessProfileSchema = Joi.object({
-    ownerName: Joi.string().min(3).max(200).trim().required().pattern(alphaNumericPattern).label("Owner name"),
+    ownerName: Joi.string().min(3).max(200).trim().required().pattern(ownerNamePattern).label("Owner name"),
     identificationOfBusinessOwner: Joi.string().min(3).max(200).trim().required().label("Identification of business owner"),
     companyName: Joi.string().min(5).max(200).trim().required().pattern(alphaNumericPattern).label("Company name"),
     tradeName: Joi.string().max(200).trim().optional().pattern(alphaNumericPattern).label("Trade name"),

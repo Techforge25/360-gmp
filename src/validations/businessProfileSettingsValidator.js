@@ -2,7 +2,7 @@ const joi = require("joi");
 
 // Patterns
 const alphaNumericPattern = /^[a-zA-Z0-9\s\-.'&]*$/;
-const ownerNamePattern = /^[a-zA-Z\s\-.]*$/;
+const ownerNamePattern = /^[a-zA-Z\s\-.']*$/;
 const countryPattern = /^[a-zA-Z\s-]*$/;
 const cityPattern = /^[a-zA-Z\s-]*$/;
 const addressPattern = /^(?![0-9\s,.\-/#]+$)[a-zA-Z0-9\s,.\-/#]+$/;

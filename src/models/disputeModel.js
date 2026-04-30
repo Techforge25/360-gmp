@@ -32,7 +32,10 @@ const disputeSchema = new Schema({
                 validator: v => v.length <= 5,
                 message: "Maximum 5 evidence images allowed"
             }
-        }, 
+        },
+
+        // Timestamp
+        responseAt: { type:Date }
     },
     // Flag
     sellerResponseStatus: { type:Boolean, default:false },

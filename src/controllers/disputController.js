@@ -360,6 +360,7 @@ const sellerResponse = asyncHandler(async (request, response) => {
     // Save to db
     disputedOrder.sellerResponse.description = description;
     disputedOrder.sellerResponse.evidences = evidences;
+    disputedOrder.sellerResponse.responseAt = new Date();
     disputedOrder.sellerResponseStatus = true;
     await disputedOrder.save();
 

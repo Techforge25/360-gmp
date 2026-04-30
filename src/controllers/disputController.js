@@ -12,6 +12,7 @@ const Wallet = require("../models/walletModel");
 const mongoose = require("mongoose");
 const Stripe = require("stripe");
 const Transaction = require("../models/transactionModel");
+const sendNotification = require("../utils/sendNotification");
 
 // Create dispute with stripe
 const createDispute = asyncHandler(async (request, response) => {
@@ -385,7 +386,11 @@ const adminDecision = asyncHandler(async (request, response) => {
     const { adminDecision, refundAmount = 0, adminNotes } = validate(adminDecisionValidationSchema, request.body);
 
     // Validate order
-    const order = await Order.findById(orderId).select("_id").lean();
+    const order = await Order.findById(orderId)
+    .populate([
+        { path: "buyerUserProfileId", select:"userId" },
+        { path: "sellerBusinessId", select:"ownerUserId" },
+    ]).lean();
     if(!order) throw new ApiError(404, "Order not found");
     if(order.status !== "disputed") throw new ApiError(403, "You can only make a decision on orders that are currently in a disputed state");
 
@@ -434,9 +439,15 @@ const adminDecision = asyncHandler(async (request, response) => {
             );
 
             // Emit socket
-            io.to(String(updatedDispute.buyerId)).emit("update-dispute", { orderId });
-            io.to(String(updatedDispute.sellerId)).emit("update-dispute", { orderId });          
+            io.to(String(updatedDispute.buyerId)).emit("update-dispute", { data: updatedDispute });
+            io.to(String(updatedDispute.sellerId)).emit("update-dispute", { data: updatedDispute });         
+            
+            // Send notification to buyer
+            // await sendNotification({
 
+            // });
+
+            // Response
             return response.status(200).json(new ApiResponse(200, updatedDispute, "Dispute rejected successfully"));
         }
         catch(error)
@@ -516,8 +527,8 @@ const adminDecision = asyncHandler(async (request, response) => {
         dbSession.endSession();
 
         // Emit socket
-        io.to(String(escrow.buyerId)).emit("update-dispute", { orderId });
-        io.to(String(escrow.sellerId)).emit("update-dispute", { orderId });          
+        io.to(String(escrow.buyerId)).emit("update-dispute", { data: updatedDispute });
+        io.to(String(escrow.sellerId)).emit("update-dispute", { data: updatedDispute });          
 
         // Response
         return response.status(200).json(new ApiResponse(200, updatedDispute, "Refund processed successfully"));

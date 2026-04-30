@@ -7,6 +7,9 @@ const customPattern = /^[a-zA-Z0-9 \-.,\n\r]*$/;
 const ownerNamePattern = /^[a-zA-Z\s\-.']*$/;
 const operatingHourPattern = /^\d{1,2}(:\d{2})?\s?(am|pm)\s?-\s?\d{1,2}(:\d{2})?\s?(am|pm)$/i;
 
+// Critical
+const identificationPattern = /^[A-Za-z0-9Ññ\- .\/&]+$/;
+
 // Location schema
 const locationSchema = Joi.object({
     country: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Country"),
@@ -32,7 +35,7 @@ const b2bContactSchema = Joi.object({
 // Create Business Profile schema
 const createBusinessProfileSchema = Joi.object({
     ownerName: Joi.string().min(3).max(200).required().trim().pattern(ownerNamePattern).label("Owner name"),
-    identificationOfBusinessOwner: Joi.string().min(3).max(200).required().trim().label("Identification of business owner"),
+    identificationOfBusinessOwner: Joi.string().min(5).max(20).pattern(identificationPattern).required().trim().label("Identification of business owner"),
     companyName: Joi.string().min(5).max(200).required().trim().pattern(alphaNumericPattern).label("Business name"),
     tradeName: Joi.string().max(200).trim().optional().pattern(alphaNumericPattern).label("Trade name"),
     businessType: Joi.string().max(50).trim().allow("", null).pattern(alphaNumericPattern).label("Business type"),
@@ -43,8 +46,8 @@ const createBusinessProfileSchema = Joi.object({
     countryOfRegistration: Joi.string().max(50).trim().allow("", null).label("Country of registration"),
 
     // Legal & Compliance
-    businessRegistrationNumber: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Business registration number"),
-    taxIdentificationNumber: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Tax identification number"),
+    businessRegistrationNumber: Joi.string().min(5).max(20).trim().required().pattern(identificationPattern).label("Business registration number"),
+    taxIdentificationNumber: Joi.string().min(5).max(20).trim().required().pattern(identificationPattern).label("Tax identification number"),
     dunsNumber: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Data Universal Numbering System"),
     complianceScreeningStatus: Joi.boolean().default(true).label("Compliance screening status"),
 

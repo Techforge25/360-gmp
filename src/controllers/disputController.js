@@ -437,11 +437,16 @@ const adminDecision = asyncHandler(async (request, response) => {
                         availableBalance: Number(escrow.netAmount)
                     } 
                 },
+                { new:true, session:dbSession }
             );
+
+            // Comit transaction
+            await dbSession.commitTransaction();
+            dbSession.endSession();  
 
             // Emit socket
             io.to(String(updatedDispute.buyerId)).emit("update-dispute", { data: updatedDispute });
-            io.to(String(updatedDispute.sellerId)).emit("update-dispute", { data: updatedDispute });         
+            io.to(String(updatedDispute.sellerId)).emit("update-dispute", { data: updatedDispute });  
             
             // Send notification to buyer
             // await sendNotification({

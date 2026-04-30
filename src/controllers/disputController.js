@@ -272,8 +272,12 @@ const viewDisputeDetails = asyncHandler(async (request, response) => {
         { path: "orderId", select: "totalAmount status shippingAddress" },
         { path: "buyerId", select: "fullName email phone" },
         { path: "sellerId", select: "companyName businessType location b2bContact" }
-    ]).select("-__v -updatedAt");
+    ]).select("-__v -updatedAt").lean();
     if(!dispute) throw new ApiError(404, "Dispute not found");
+
+    // Add type key
+    dispute.sellerId.type = "business";
+    dispute.buyerId.type = "user";
 
     // Response
     return response.status(200).json(new ApiResponse(200, dispute, "Dispute details fetched successfully"));

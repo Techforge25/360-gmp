@@ -447,6 +447,10 @@ const adminDecision = asyncHandler(async (request, response) => {
             // Emit socket
             io.to(String(updatedDispute.buyerId)).emit("update-dispute", { data: updatedDispute });
             io.to(String(updatedDispute.sellerId)).emit("update-dispute", { data: updatedDispute });  
+
+            // Order status
+            io.to(String(updatedDispute.buyerId)).emit("update-order-status", { orderId, status:updatedOrder.status });
+            io.to(String(updatedDispute.sellerId)).emit("update-order-status", { orderId, status:updatedOrder.status });            
             
             // Send notification to buyer
             // await sendNotification({
@@ -534,7 +538,11 @@ const adminDecision = asyncHandler(async (request, response) => {
 
         // Emit socket
         io.to(String(escrow.buyerId)).emit("update-dispute", { data: updatedDispute });
-        io.to(String(escrow.sellerId)).emit("update-dispute", { data: updatedDispute });          
+        io.to(String(escrow.sellerId)).emit("update-dispute", { data: updatedDispute });  
+        
+        // Order status
+        io.to(String(updatedDispute.buyerId)).emit("update-order-status", { orderId, status: updatedOrder.status });
+        io.to(String(updatedDispute.sellerId)).emit("update-order-status", { orderId, status: updatedOrder.status });          
 
         // Response
         return response.status(200).json(new ApiResponse(200, updatedDispute, "Refund processed successfully"));

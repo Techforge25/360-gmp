@@ -11,12 +11,12 @@ const operatingHourPattern = /^\d{1,2}(:\d{2})?\s?(am|pm)\s?-\s?\d{1,2}(:\d{2})?
 const locationSchema = Joi.object({
     country: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Country"),
     city: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("City"),
-    addressLine: Joi.string().max(1000).trim().allow("", null).label("Address line"),
-    warehouseAddress: Joi.string().max(1000).trim().allow("", null).label("Warehouse Address"),
-    additionalWarehouseAddress: Joi.string().max(1000).trim().allow("", null).invalid(Joi.ref('warehouseAddress')).label("Additional Warehouse Address"),
-    mandatoryPickupAddress: Joi.string().max(1000).trim().allow("", null).label("Mandatory Pickup Address"),
-    businessRegistrationAddress: Joi.string().max(1000).trim().allow("", null).label("Business Registration Address"),
-    internationalOffices: Joi.array().items(Joi.string().pattern(addressPattern)).label("International Offices")
+    addressLine: Joi.string().max(500).trim().allow("", null).label("Address line"),
+    warehouseAddress: Joi.string().max(500).trim().allow("", null).label("Warehouse Address"),
+    additionalWarehouseAddress: Joi.string().max(500).trim().allow("", null).invalid(Joi.ref('warehouseAddress')).label("Additional Warehouse Address"),
+    mandatoryPickupAddress: Joi.string().max(500).trim().allow("", null).label("Mandatory Pickup Address"),
+    businessRegistrationAddress: Joi.string().max(500).trim().allow("", null).label("Business Registration Address"),
+    internationalOffices: Joi.array().items(Joi.string().trim().max(500).pattern(addressPattern)).label("International Offices")
 });
 
 // B2B Contact schema

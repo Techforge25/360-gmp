@@ -46,15 +46,15 @@ const operationsAndLogisticsValidator = joi.object({
         country: joi.string().pattern(countryPattern).min(2).max(100).trim().required().label("Country"),
         city: joi.string().pattern(cityPattern).min(2).max(100).trim().required().label("City"),
 
-        addressLine: joi.string().pattern(addressPattern).max(200).trim().required().label("Address line"),
-        warehouseAddress: joi.string().pattern(addressPattern).max(200).trim().required().label("Warehouse Address"),
+        addressLine: joi.string().pattern(addressPattern).max(500).trim().required().label("Address line"),
+        warehouseAddress: joi.string().pattern(addressPattern).max(500).trim().required().label("Warehouse Address"),
 
-        additionalWarehouseAddress: joi.string().pattern(addressPattern).max(200).trim().allow("", null).invalid(joi.ref('warehouseAddress'))
+        additionalWarehouseAddress: joi.string().pattern(addressPattern).max(500).trim().allow("", null).invalid(joi.ref('warehouseAddress'))
         .label("Additional Warehouse Address"),
-        mandatoryPickupAddress: joi.string().pattern(addressPattern).max(200).trim().allow("", null).label("Additional Pickup Address"),
+        mandatoryPickupAddress: joi.string().pattern(addressPattern).max(500).trim().allow("", null).label("Additional Pickup Address"),
 
-        businessRegistrationAddress: joi.string().pattern(addressPattern).max(200).trim().required().label("Business Registration Address"),
-        internationalOffices: joi.array().items(joi.string().pattern(addressPattern).max(200)).max(11).label("International Offices")
+        businessRegistrationAddress: joi.string().pattern(addressPattern).max(500).trim().required().label("Business Registration Address"),
+        internationalOffices: joi.array().items(joi.string().pattern(addressPattern).max(500)).max(11).label("International Offices")
     }),
     incoterms: joi.string().trim().required().invalid("select").label("International Commercial Terms"),
     shipping: joi.object({

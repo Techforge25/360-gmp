@@ -713,7 +713,8 @@ const cancelOrder = asyncHandler(async (request, response) => {
     if(!buyerProfile) throw new ApiError(404, "User profile not found");
 
     // Find order
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId)
+    .populate({ path:"sellerBusinessId", path:"ownerUserId" });
     if(!order) throw new ApiError(404, "Order not found");
 
     // Authorize owner
@@ -812,7 +813,7 @@ const cancelOrder = asyncHandler(async (request, response) => {
         }
 
         // Update user profile restriction data
-        await UserProfile.findByIdAndUpdate(
+        const userProfile = await UserProfile.findByIdAndUpdate(
             buyerProfile._id,
             {
                 $set:{
@@ -835,9 +836,17 @@ const cancelOrder = asyncHandler(async (request, response) => {
             status: order.status
         });
 
-        return response.status(200).json(
-            new ApiResponse(200, { orderId:order._id, status:order.status }, "Order cancelled successfully")
-        );
+        // Send notification
+        await sendNotification({
+            userId: order.sellerBusinessId.ownerUserId,
+            title: `Order cancellation`,
+            content: `${userProfile.fullName} has cancelled the order.`,
+            type: "BusinessProfile",
+            io
+        });
+
+        // Response
+        return response.status(200).json(new ApiResponse(200, { orderId:order._id, status:order.status }, "Order cancelled successfully"));
     }
     catch(error)
     {

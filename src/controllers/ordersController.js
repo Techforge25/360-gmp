@@ -18,6 +18,7 @@ const validate = require("../utils/validate");
 const { createOrderValidationSchema, updateOrderStatusValidationSchema, 
 updateTrackingInfoValidationSchema, cancelOrderValidationSchema } = require("../validations/orderValidator");
 const sendNotification = require("../utils/sendNotification");
+const Dispute = require("../models/disputeModel");
 
 // Create order - Purchase product using stripe payment
 const createOrder = asyncHandler(async (request, response) => {
@@ -1278,7 +1279,7 @@ const viewOrder = asyncHandler(async (request, response) => {
 
     // Get related products separately
     const order = await Order.findById(orderId)
-    .populate({ path: "items.productId", select: "title image" })
+    .populate({ path: "items.productId", select: "title image status" })
     .lean();
 
     if(!order) throw new ApiError(404, "No order found");
@@ -1292,11 +1293,24 @@ const viewOrder = asyncHandler(async (request, response) => {
         priceAtPurchase: item.priceAtPurchase
     }));
 
+    let disputeWinner = null;
+    // Get dispute status to determine winner
+    if(["delivered", "completed", "disputed"].includes(order.status))
+    {
+        const dispute = await Dispute.findOne({ orderId }).select("adminDecision").lean();
+        if(dispute)
+        {
+            disputeWinner = dispute.adminDecision === "full_refund" || "partial_refund" ? "buyer" : "seller"
+        }
+    }
+
     // Prepare payload
     const payload = {
         orderDetails: orderDetails[0],
         products
     };
+
+    if(disputeWinner) payload.disputeWinner = disputeWinner;
     
     // Response
     return response.status(200).json(new ApiResponse(200, payload, "Order details have been fetched"));

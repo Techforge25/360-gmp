@@ -315,8 +315,8 @@ const changeDisputeStatus = asyncHandler(async (request, response) => {
 
     // Get socket instance
     const io = request.app.get("io");
-    io.to(String(updatedDispute.buyerId)).emit("update-dispute", { orderId });
-    io.to(String(updatedDispute.sellerId)).emit("update-dispute", { orderId });    
+    io.to(String(updatedDispute.buyerId)).emit("update-dispute", { data:updatedDispute });
+    io.to(String(updatedDispute.sellerId)).emit("update-dispute", { data:updatedDispute });    
 
     // Response
     return response.status(200).json(new ApiResponse(200, updatedDispute, "Dispute status updated successfully"));
@@ -366,8 +366,8 @@ const sellerResponse = asyncHandler(async (request, response) => {
 
     // Emit real time
     const io = request.app.get("io");
-    io.to(String(disputedOrder.buyerId)).emit("update-dispute", { orderId });
-    io.to(String(disputedOrder.sellerId)).emit("update-dispute", { orderId });      
+    io.to(String(disputedOrder.buyerId)).emit("update-dispute", { data:disputedOrder });
+    io.to(String(disputedOrder.sellerId)).emit("update-dispute", { data:disputedOrder });      
 
     // Response
     return response.status(201).json(new ApiResponse(201, disputedOrder.sellerResponse, "Response has been submitted"));

@@ -252,7 +252,8 @@ const createDisputeWithWallet = asyncHandler(async (request, response) => {
         io.to(String(escrow.sellerId)).emit("dispute-creation", { orderId });
 
         // Response
-        return response.status(303).redirect(`${process.env.FRONTEND_URL}/dashboard/user/orders/OrderTrackingPage/${orderId}`);        
+        // return response.status(303).redirect(`${process.env.FRONTEND_URL}/dashboard/user/orders/OrderTrackingPage/${orderId}`);   
+        return response.status(201).json(new ApiResponse(201, true, "Dispute has been initiated"));     
     }
     catch(error)
     {

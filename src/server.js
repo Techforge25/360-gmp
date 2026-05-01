@@ -40,14 +40,16 @@ io.on("connection", (socket) => {
         // Join business profile room if they exist
         if(businessProfileId)
         {
-            socket.join(String(businessProfileId));
+            const room = `businessProfile:${businessProfileId}`;
+            socket.join(room);
             console.log(`User joined business profile room: ${String(businessProfileId)}`);
         }
 
         // Join user profile room if it exists
         if(userProfileId)
         {
-            socket.join(String(userProfileId));
+            const room = `userProfile:${userProfileId}`;
+            socket.join(room);
             console.log(`User joined user profile room: ${String(userProfileId)}`);
         }
     }

@@ -679,7 +679,7 @@ const completeOrder = asyncHandler(async (request, response) => {
 
         // Release funds (Update business profile wallet)
         await Wallet.findOneAndUpdate(
-            { ownerId:order.sellerBusinessId, ownerModel:"BusinessProfile" },
+            { ownerId:order.sellerBusinessId._id, ownerModel:"BusinessProfile" },
             { $inc:{ pendingBalance:-escrow.netAmount, availableBalance:escrow.netAmount, totalEarned:escrow.netAmount } },
             { upsert:true, session:dbSession }
         );
@@ -688,9 +688,11 @@ const completeOrder = asyncHandler(async (request, response) => {
         await dbSession.commitTransaction();
         dbSession.endSession();
 
+        console.log("Order completed", order);
+
         // Emit event real-time
         const io = request.app.get("io");
-        io.to(String(order.sellerBusinessId)).emit("update-order-status", { orderId:order._id, status:order.status });
+        io.to(String(order.sellerBusinessId._id)).emit("update-order-status", { orderId:order._id, status:order.status });
         
         // Send notification to business profile for order completion
         await sendNotification({

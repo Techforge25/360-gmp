@@ -554,7 +554,9 @@ const updateOrderTrackingInfo = asyncHandler(async (request, response) => {
     const { courierName, trackingId } = validate(updateTrackingInfoValidationSchema, request.body) || {};
 
     // Find order
-    const order = await Order.findById(orderId).select("sellerBusinessId tracking");
+    const order = await Order.findById(orderId)
+    .populate({ path: "buyerUserProfileId", select: "_id" })
+    .select("sellerBusinessId buyerUserProfileId tracking status");
     if(!order) throw new ApiError(404, "Order not found");
 
     // Authorize owner
@@ -565,11 +567,15 @@ const updateOrderTrackingInfo = asyncHandler(async (request, response) => {
     order.tracking.trackingId = trackingId;
     await order.save();
 
+    // Emit event real-time
+    const io = request.app.get("io");
+    io.to(String(order.buyerUserProfileId._id)).emit("update-order-status", { orderId:order._id, status: order.status });
+
     // Response
     return response.status(200).json(new ApiResponse(200, order.tracking, "Order tracking info has been updated"));
 });
 
-// Update order status by seller
+// Update order status by seller (Business)
 const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const { businessProfileId } = request.user.profiles || {};    

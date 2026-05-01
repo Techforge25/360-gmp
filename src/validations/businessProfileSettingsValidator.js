@@ -27,7 +27,7 @@ const updateCompanyIdentityValidator = joi.object({
     ownerName: joi.string().pattern(ownerNamePattern).min(2).max(100).trim().required().label("Owner name"),
     identificationOfBusinessOwner: joi.string().pattern(identificationPattern).min(5).max(20).trim().required().label("Identification of business owner"),
     companyName: joi.string().pattern(alphaNumericPattern).min(2).max(150).trim().required().label("Company name"),
-    tradeName: joi.string().pattern(alphaNumericPattern).min(2).max(150).trim().required().label("Trade name"),
+    tradeName: joi.string().pattern(alphaNumericPattern).min(2).max(150).trim().optional().allow("", null).label("Trade name"),
     businessType: joi.string().trim().required().invalid("select").label("Business type"),
     companySize: joi.string().trim().required().invalid("select").label("Company size"),
     foundedDate: joi.date().max('now').min('1800-01-01').allow(null),

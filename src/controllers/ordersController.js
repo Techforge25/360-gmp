@@ -570,7 +570,7 @@ const updateOrderTrackingInfo = asyncHandler(async (request, response) => {
     // Emit event real-time
     const io = request.app.get("io");
     // io.to(String(order.buyerUserProfileId._id)).emit("update-order-status", { orderId:order._id, status: order.status });
-    io.to(`userProfile:${order.buyerUserProfileId._id}`).emit("update-order-status", { orderId:order._id, status: order.status });
+    io.emit("update-order-status", { orderId:order._id, status: order.status });
 
     // Response
     return response.status(200).json(new ApiResponse(200, order.tracking, "Order tracking info has been updated"));
@@ -621,7 +621,7 @@ const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
     // Emit event real-time
     const io = request.app.get("io");
     // io.to(String(order.buyerUserProfileId._id)).emit("update-order-status", { orderId:order._id, status });
-    io.to(`userProfile:${order.buyerUserProfileId._id}`).emit("update-order-status", { orderId:order._id, status });
+    io.emit("update-order-status", { orderId:order._id, status });
 
     // Send notification to user profile
     await sendNotification({
@@ -695,7 +695,7 @@ const completeOrder = asyncHandler(async (request, response) => {
         // Emit event real-time
         const io = request.app.get("io");
         // io.to(String(order.sellerBusinessId._id)).emit("update-order-status", { orderId:order._id, status:order.status });
-        io.to(`businessProfile:${order.sellerBusinessId._id}`).emit("update-order-status", { orderId:order._id, status:order.status });
+        io.emit("update-order-status", { orderId:order._id, status:order.status });
         
         // Send notification to business profile for order completion
         await sendNotification({

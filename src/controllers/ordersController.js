@@ -1324,7 +1324,7 @@ const viewOrder = asyncHandler(async (request, response) => {
         const dispute = await Dispute.findOne({ orderId }).select("adminDecision").lean();
         if(dispute)
         {
-            disputeWinner = dispute.adminDecision === "full_refund" || "partial_refund" ? "buyer" : "seller"
+            disputeWinner = dispute.adminDecision === "reject" ? "seller" : "buyer";
         }
     }
 

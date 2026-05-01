@@ -569,7 +569,16 @@ const updateOrderTrackingInfo = asyncHandler(async (request, response) => {
 
     // Emit event real-time
     const io = request.app.get("io");
-    io.to(String(order.buyerUserProfileId._id)).emit("update-order-status", { orderId:order._id, status: order.status });
+    io.to(String(order.buyerUserProfileId._id)).timeout(5000).emit("update-order-status", { orderId:order._id, status: order.status }, (error, response) => {
+        if(error)
+        {
+            console.log("Event not recieved!", error);
+        }
+        else
+        {
+            console.log("Delivered", response);
+        }
+    });
 
     // Response
     return response.status(200).json(new ApiResponse(200, order.tracking, "Order tracking info has been updated"));

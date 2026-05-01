@@ -615,6 +615,8 @@ const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
     order.status = status;
     await order.save();
 
+    console.log("Order data:", order);
+
     // Emit event real-time
     const io = request.app.get("io");
     io.to(String(order.buyerUserProfileId._id)).emit("update-order-status", { orderId:order._id, status });

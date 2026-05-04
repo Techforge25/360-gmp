@@ -1321,13 +1321,15 @@ const viewOrder = asyncHandler(async (request, response) => {
     }));
 
     let disputeWinner = null;
+    let adminReason = null;
     // Get dispute status to determine winner
     if(["delivered", "completed", "disputed"].includes(order.status))
     {
-        const dispute = await Dispute.findOne({ orderId }).select("adminDecision").lean();
+        const dispute = await Dispute.findOne({ orderId }).select("adminDecision adminNotes").lean();
         if(dispute)
         {
             disputeWinner = dispute.adminDecision === "reject" ? "seller" : "buyer";
+            adminReason = dispute.adminNotes;
         }
     }
 
@@ -1337,7 +1339,9 @@ const viewOrder = asyncHandler(async (request, response) => {
         products
     };
 
+    // Add on payload
     if(disputeWinner) payload.disputeWinner = disputeWinner;
+    if(adminReason) payload.adminReason = adminReason;
     
     // Response
     return response.status(200).json(new ApiResponse(200, payload, "Order details have been fetched"));

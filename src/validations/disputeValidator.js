@@ -29,7 +29,7 @@ const adminDecisionValidationSchema = joi.object({
         otherwise: joi.forbidden()
     }),
 
-    adminNotes: joi.string().trim().max(2000).label("Admin Notes")
+    adminNotes: joi.string().trim().required().max(2000).label("Admin Notes")
 });
 
 module.exports = { createDisputeValidationSchema, sellerResponseValidationSchema,

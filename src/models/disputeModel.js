@@ -50,7 +50,7 @@ const disputeSchema = new Schema({
     refundAmount: { type: Number, default: 0 },
 
     // Internal notes for admins
-    adminNotes: { type: String, trim: true }
+    adminNotes: { type: String, trim: true, required:true }
 }, { timestamps: true });
 
 // Apply pagination plugin

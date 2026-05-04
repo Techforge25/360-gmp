@@ -11,6 +11,7 @@ const UserSearch = require("../models/userSearchesModel");
 const { isValidObjectId } = require("mongoose");
 const CommunityPost = require("../models/communityPostModel");
 const convertToMongoId = require("../utils/convertToMongoId");
+const sendNotification = require("../utils/sendNotification");
 
 // Helper function to get userProfileId from userId
 const getUserProfileId = async (userId) => {
@@ -22,25 +23,19 @@ const getUserProfileId = async (userId) => {
 // Create Community (only business owner)
 const createCommunity = asyncHandler(async (request, response) => {
     const userId = request.user._id;
+    const { businessProfileId } = request.user.profiles || {};
 
     const { error, value } = createCommunitySchema.validate(request.body, { abortEarly: false });
     if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
 
-    // Check if businessId exists
-    const businessProfile = await BusinessProfile.findOne({ ownerUserId:userId }).lean();
-    if(!businessProfile) throw new ApiError(404, "Business profile not found. Invalid business ID");
-    
-    // Verify that the user is the owner of the business
-    if(businessProfile.ownerUserId.toString() !== userId.toString()) throw new ApiError(403, "Only business owner can create communities");
-
     // Create community
-    const community = await Community.create({ ...value, businessId:businessProfile._id });
+    const community = await Community.create({ ...value, businessId: businessProfileId });
     if(!community) throw new ApiError(500, "Failed to create community");
 
     // Create membership for owner
     const membership = await CommunityMembership.create({
         communityId: community._id,
-        memberId: businessProfile._id,
+        memberId: businessProfileId,
         memberModel: "BusinessProfile",
         role: "owner",
         status: "approved"
@@ -54,6 +49,16 @@ const createCommunity = asyncHandler(async (request, response) => {
     // Populate business details
     await community.populate("businessId", "companyName businessType primaryIndustry logo");
 
+    // Send notification to business
+    await sendNotification({
+        userId,
+        title: "Community Creation",
+        content: "You have created a new community",
+        type: "BusinessProfile",
+        io: request.app.get("io")        
+    });      
+
+    // Response
     return response.status(201).json(new ApiResponse(201, community, "Community created successfully"));
 });
 
@@ -389,11 +394,12 @@ const updateCommunity = asyncHandler(async (request, response) => {
     if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
 
     // Get community
-    const community = await Community.findById(id);
+    const community = await Community.findById(id)
+    .populate({ path:"businessId", select:"ownerUserId" });
     if(!community) throw new ApiError(404, "Community not found");
 
     // Verify user is business owner or admin
-    const businessProfile = await BusinessProfile.findById(community.businessId);
+    const businessProfile = await BusinessProfile.findById(community.businessId._id);
     if(businessProfile.ownerUserId.toString() !== request.user._id.toString()) {
         const userProfileId = await getUserProfileId(request.user._id);
         const userMembership = await CommunityMembership.findOne({
@@ -411,16 +417,25 @@ const updateCommunity = asyncHandler(async (request, response) => {
         id,
         { $set: value },
         { new: true, runValidators: true }
-    )
-        .populate("businessId", "companyName businessType primaryIndustry logo");
+    ).populate("businessId", "companyName businessType primaryIndustry logo");
 
-    return response.status(200).json(
-        new ApiResponse(200, updatedCommunity, "Community updated successfully")
-    );
+    // Send notification to business
+    await sendNotification({
+        userId: community.businessId.ownerUserId,
+        title: "Community Updated",
+        content: "Your community settings has been updated",
+        type: "BusinessProfile",
+        io: request.app.get("io")        
+    });      
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, updatedCommunity, "Community updated successfully"));
 });
 
 // Delete Community
 const deleteCommunity = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const { businessProfileId } = request.user.profiles || {};
     const { id } = request.params;
 
     // Get community
@@ -428,10 +443,7 @@ const deleteCommunity = asyncHandler(async (request, response) => {
     if(!community) throw new ApiError(404, "Community not found");
 
     // Verify user is business owner
-    const businessProfile = await BusinessProfile.findById(community.businessId);
-    if(businessProfile.ownerUserId.toString() !== request.user._id.toString()) {
-        throw new ApiError(403, "Only business owner can delete community");
-    }
+    if(String(businessProfileId) !== String(community.businessId)) throw new ApiError(403, "Only business owner can delete the community");
 
     // Delete all memberships
     await CommunityMembership.deleteMany({ communityId: id });
@@ -439,9 +451,17 @@ const deleteCommunity = asyncHandler(async (request, response) => {
     // Delete community
     await Community.findByIdAndDelete(id);
 
-    return response.status(200).json(
-        new ApiResponse(200, null, "Community deleted successfully")
-    );
+    // Send notification to business
+    await sendNotification({
+        userId,
+        title: "Community Deletion",
+        content: "Your community has been deleted",
+        type: "BusinessProfile",
+        io: request.app.get("io")        
+    });      
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Community deleted successfully"));
 });
 
 // Leave Community

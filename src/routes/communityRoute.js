@@ -8,7 +8,7 @@ fetchSuggestedCommunities,  fetchMyCommunities } = require("../controllers/commu
 const communityRouter = Router();
 
 // Create community (business owner only)
-communityRouter.route("/").post(authentication, createCommunity);
+communityRouter.route("/").post(authentication, authorization(["business"]), createCommunity);
 
 // Get all communities (with filters and pagination)
 communityRouter.route("/").get(authentication, getAllCommunities);
@@ -20,7 +20,7 @@ communityRouter.route("/:id").get(authentication, getCommunityById);
 communityRouter.route("/:id").put(authentication, updateCommunity);
 
 // Delete community (owner only)
-communityRouter.route("/:id").delete(authentication, deleteCommunity);
+communityRouter.route("/:id").delete(authentication, authorization(["business"]), deleteCommunity);
 
 // Join community
 communityRouter.route("/:id/join").post(authentication, authorization(["user"]), joinCommunity);

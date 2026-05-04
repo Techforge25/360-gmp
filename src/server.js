@@ -8,6 +8,7 @@ const socketAuthentication = require("./middlewares/socket");
 const Chat = require("./models/chatsModel");
 const ApiError = require("./utils/ApiError");
 const generateConversationId = require("./utils/generateConversationId");
+require("./cron/autoReleaseEscrow");
 
 // Create Http server 
 const server = http.createServer(app);

@@ -7,7 +7,7 @@ const countryPattern = /^[a-zA-Z\s-]*$/;
 const cityPattern = /^[a-zA-Z\s-]*$/;
 const addressPattern = /^(?![0-9\s,.\-/#]+$)[a-zA-Z0-9\s,.\-/#]+$/;
 const customPattern = /^[a-zA-Z0-9 \-.,\n\r]*$/;
-const operatingHourPattern = /^[0-9A-Za-z:\-\s,]+$/;
+const operatingHourPattern = /^(0[1-9]|1[0-2])(AM|PM|am|pm)\s-\s(0[1-9]|1[0-2])(AM|PM|am|pm)$/;
 const alphaNumericWithHyphen = /^[A-Za-z0-9-]+$/;
 const industryPattern = /^[A-Za-z\s-]*$/;
 const websitePattern = /^https?:\/\/.+$/;
@@ -17,8 +17,7 @@ const titlePattern = /^[A-Za-z\s\-&]*$/;
 const phonePattern = /^[\d+\\s()]+$/;
 const tradeAffiliationPattern = /^[A-Za-z0-9-]*$/;
 const auditingAgencyPattern = /^[A-Za-z0-9\s,\-&]*$/;
-const cloudinaryPattern = /^https?:\/\/res\.cloudinary\.com\/.+/i;
-const emailPattern = `/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,63}$`;
+const emailPattern = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,63}$/;
 
 // Critical
 const identificationPattern = /^[A-Za-z0-9Ññ\- .\/&]+$/;
@@ -33,7 +32,7 @@ const updateCompanyIdentityValidator = joi.object({
     companySize: joi.string().trim().required().invalid("select").label("Company size"),
     foundedDate: joi.date().max('now').min('1800-01-01').allow(null),
     primaryIndustry: joi.string().pattern(industryPattern).min(2).max(100).trim().allow("", null).label("Primary industry"),
-    operationHour: joi.string().pattern(operatingHourPattern).max(100).trim().allow("", null).label("Operation hours"),
+    operationHour: joi.string().max(100).trim().allow("", null).pattern(operatingHourPattern).label("Operation hours"),
     countryOfRegistration: joi.string().trim().required().invalid("select").label("Country of registration"),
     website: joi.string().pattern(websitePattern).min(8).max(225).trim().allow("", null).label("Website"),
     description: joi.string().trim().min(10).max(5000).allow("", null).label("Business description"),
@@ -86,7 +85,7 @@ const updateBusinessIntelligenceValidator = joi.object({
         ownershipPercentage: joi.number().min(1).max(100).precision(2).label("Ownership percentage")
     })),
     
-    executiveLeadership: joi.array().min(1).max(10).items(joi.string().pattern(contactNamePattern).min(2).max(100)).label("Executive Leadership"),
+    executiveLeadership: joi.array().min(1).items(joi.string().pattern(contactNamePattern).min(2).max(100)).label("Executive Leadership"),
     regionOfOperations: joi.array().items(joi.string().pattern(alphaNumericPattern)).label("Region of operations"),  
     productionCapacity: joi.string().trim().max(1000).optional().pattern(customPattern).label("Production capacity"),     
     tradeAffiliations: joi.array().min(1).max(5).items(joi.string().pattern(tradeAffiliationPattern).min(2).max(100)).label("Trade Affiliations"),

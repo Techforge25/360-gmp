@@ -5,7 +5,10 @@ const alphaNumericPattern = /^[a-zA-Z0-9 -]*$/;
 const addressPattern = /^[a-zA-Z0-9 -,]*$/;
 const customPattern = /^[a-zA-Z0-9 \-.,\n\r]*$/;
 const ownerNamePattern = /^[a-zA-Z\s\-.']*$/;
-const operatingHourPattern = /^\d{1,2}(:\d{2})?\s?(am|pm)\s?-\s?\d{1,2}(:\d{2})?\s?(am|pm)$/i;
+const operatingHourPattern = /^(0[1-9]|1[0-2])(AM|PM|am|pm)\s-\s(0[1-9]|1[0-2])(AM|PM|am|pm)$/;
+const contactNamePattern = /^[A-Za-z\s\-.']*$/;
+const tradeAffiliationPattern = /^[A-Za-z0-9-]*$/;
+const auditingAgencyPattern = /^[A-Za-z0-9\s,\-&]*$/;
 
 // Critical
 const identificationPattern = /^[A-Za-z0-9Ññ\- .\/&]+$/;
@@ -24,7 +27,7 @@ const locationSchema = Joi.object({
 
 // B2B Contact schema
 const b2bContactSchema = Joi.object({
-    name: Joi.string().max(50).trim().allow("", null).pattern(alphaNumericPattern).label("B2B Name"),
+    name: Joi.string().max(50).trim().allow("", null).pattern(contactNamePattern).label("B2B Name"),
     title: Joi.string().max(50).trim().allow("", null).pattern(alphaNumericPattern).label("B2B Title"),
     phone: Joi.string().trim().max(15).pattern(/^\+?[1-9]\d{9,14}$/).required().messages({
         "string.pattern.base": "Phone number must be a valid international format (e.g., +923001234567)."
@@ -64,16 +67,16 @@ const createBusinessProfileSchema = Joi.object({
     },
 
     // Ownership & Leadership
-    executiveLeadership: Joi.array().items(Joi.string().pattern(alphaNumericPattern)).max(50).label("Executive Leadership"),
+    executiveLeadership: Joi.array().min(1).items(Joi.string().pattern(contactNamePattern)).min(2).max(100).label("Executive Leadership"),
     stakeholderDisclosure: Joi.array().items(Joi.object({
-        name: Joi.string().trim().min(3).required().pattern(alphaNumericPattern).label("Stake holder name"),
+        name: Joi.string().trim().min(2).required().pattern(contactNamePattern).label("Stake holder name"),
         ownershipPercentage: Joi.number().integer().min(0).max(100).positive().label("Ownership percentage")
     })),
 
     // Operational & Trade Profile   
     regionOfOperations: Joi.array().items(Joi.string().pattern(alphaNumericPattern)).label("Region of operations"),  
     productionCapacity: Joi.string().trim().max(1000).optional().pattern(customPattern).label("Production capacity"),   
-    tradeAffiliations: Joi.array().items(Joi.string().pattern(alphaNumericPattern)).label("Trade Affiliations"),
+    tradeAffiliations: Joi.array().min(1).max(5).items(Joi.string().pattern(tradeAffiliationPattern).min(2).max(100)).label("Trade Affiliations"),
 
     // Financial & Regulatory Data
     annualRevenueRange: Joi.string().trim().optional().label("Annual revenue range"),

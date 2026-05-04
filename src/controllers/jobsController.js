@@ -8,9 +8,12 @@ const UserProfile = require("../models/userProfile");
 const JobApplication = require("../models/jobApplication");
 const { emptyList } = require("../constants");
 const { isValidObjectId } = require("mongoose");
+const sendNotification = require("../utils/sendNotification");
 
 // Create Job
 const createJob = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
     // Validate
     const { error, value } = createJobSchema.validate(request.body, { abortEarly: false });
     if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
@@ -27,6 +30,15 @@ const createJob = asyncHandler(async (request, response) => {
 
     // Populate businessId
     await job.populate("businessId", "companyName businessType primaryIndustry");
+
+    // Send notification to business
+    await sendNotification({
+        userId,
+        title: "Job Creation",
+        content: "You have created a new job",
+        type: "BusinessProfile",
+        io: request.app.get("io")
+    });
 
     // Response
     return response.status(201).json(new ApiResponse(201, job, "Job has been created successfully"));
@@ -145,40 +157,66 @@ const getJobById = asyncHandler(async (request, response) => {
 
 // Update Job
 const updateJob = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
     const { id } = request.params;
   
     const { error, value } = updateJobSchema.validate(request.body, { abortEarly: false });
     if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
 
-    if(value.businessId) {
-        const businessProfile = await BusinessProfile.findById(value.businessId);
-        if(!businessProfile) {
-            throw new ApiError(404, "Business profile not found. Invalid business ID");
-        }
-    }
+    // Find job
+    const job = await Job.findById(id).lean();
+    if(!job) throw new ApiError(404, "Job not found");
+
+    // Check authorization
+    if(String(value.businessId) !== String(job.businessId)) throw new ApiError(403, "You are not authorized to update this job");
 
     // Update
-    const job = await Job.findByIdAndUpdate(
+    const updateJob = await Job.findByIdAndUpdate(
         id,
         { $set: value },
         { new: true, runValidators: true }
     );
+    if(!updateJob) throw new ApiError(404, "Job not found");
 
-    if(!job) throw new ApiError(404, "Job not found");
+    await updateJob.populate("businessId", "companyName businessType primaryIndustry");
 
-      
-    await job.populate("businessId", "companyName businessType primaryIndustry");
+    // Send notification to business
+    await sendNotification({
+        userId,
+        title: "Job Modified",
+        content: "You have updated a job",
+        type: "BusinessProfile",
+        io: request.app.get("io")        
+    });
 
-    return response.status(200).json(new ApiResponse(200, job, "Job has been updated successfully"));
+    // Response
+    return response.status(200).json(new ApiResponse(200, updateJob, "Job has been updated successfully"));
 });
 
 // Delete job
 const deleteJob = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const { businessProfileId } = request.user.profiles || {};
     const { id } = request.params;
 
-    const job = await Job.findByIdAndDelete(id);
-
+    // Delete
+    const job = await Job.findById(id);
     if(!job) throw new ApiError(404, "Job not found");
+
+    // Check authorization
+    if(String(businessProfileId) !== String(job.businessId)) throw new ApiError(403, "You are not authorized to delete this job");
+
+    // Delete
+    await job.deleteOne();
+
+    // Send notification to business
+    await sendNotification({
+        userId,
+        title: "Job Deleted",
+        content: "You have deleted a job",
+        type: "BusinessProfile",
+        io: request.app.get("io")        
+    });    
 
     return response.status(200).json(new ApiResponse(200, null, "Job has been deleted successfully"));
 });

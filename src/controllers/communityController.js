@@ -200,11 +200,12 @@ const joinCommunity = asyncHandler(async (request, response) => {
     if(!userProfileId) throw new ApiError(404, "User profile not found! Please create your profile first.");
 
     // Get community
-    const community = await Community.findById(id);
+    const community = await Community.findById(id)
+    .populate({ path:"businessId", select:"ownerUserId" });
     if(!community) throw new ApiError(404, "Community not found");
 
     // Same parent restriction
-    if(businessProfileId && String(businessProfileId) === String(community.businessId))
+    if(businessProfileId && String(businessProfileId) === String(community.businessId._id))
     {
         throw new ApiError(403, "You cannot join your own community");
     }
@@ -242,11 +243,33 @@ const joinCommunity = asyncHandler(async (request, response) => {
         isPaid: isPaid
     });
 
+    // Pending case
+    if(membershipStatus === "pending") 
+    {
+        // Send notification to business
+        await sendNotification({
+            userId: community.businessId.ownerUserId,
+            title: "New Joining Request",
+            content: "A new user wants to join your community",
+            type: "BusinessProfile",
+            io: request.app.get("io")        
+        });
+    }    
+
     // Update member count only if approved
     if(membershipStatus === "approved") 
     {
         community.memberCount += 1;
         await community.save();
+
+        // Send notification to business
+        await sendNotification({
+            userId: community.businessId.ownerUserId,
+            title: "New Joining Request",
+            content: "A new user has joined your community",
+            type: "BusinessProfile",
+            io: request.app.get("io")        
+        });         
     }
 
     // Response message based on community joining behaviour

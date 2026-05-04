@@ -334,6 +334,15 @@ const likePost = asyncHandler(async (request, response) => {
     if(likeResult.modifiedCount === 1) 
     {
         isLiked = true;
+
+        // Send notification to business
+        // await sendNotification({
+        //     userId: job.businessId.ownerUserId,
+        //     title: "Post Like",
+        //     content: "Someone liked your post",
+        //     type: "BusinessProfile",
+        //     io: request.app.get("io")        
+        // });  
     }
     else 
     {
@@ -351,19 +360,11 @@ const likePost = asyncHandler(async (request, response) => {
     // Get updated post for accurate count
     const updatedPost = await CommunityPost.findById(postId).select("likeCount");
 
-    const io = request.app.get("io");
-    io.to(post.communityId.toString()).emit("post_updated", {
-        postId: postId,
-        likeCount: updatedPost.likeCount,
-        action: "like"
-    });
+    // Prepare payload
+    const payload = { likeCount: updatedPost.likeCount, isLiked: isLiked };
 
     // Response
-    return response.status(200).json(new ApiResponse(
-        200, 
-        { likeCount: updatedPost.likeCount, isLiked: isLiked }, 
-        isLiked ? "Post liked successfully" : "Post unliked successfully")
-    );
+    return response.status(200).json(new ApiResponse(200, payload, isLiked ? "Post liked successfully" : "Post unliked successfully"));
 });
 
 // Add Comment to Post

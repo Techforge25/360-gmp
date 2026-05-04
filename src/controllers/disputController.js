@@ -472,86 +472,172 @@ const adminDecision = asyncHandler(async (request, response) => {
     const escrow = await EscrowTransaction.findOne({ orderId });
     if(!escrow) throw new ApiError(404, "Escrow transaction not found");
 
-    // Validate amounts
-    if(adminDecision === "full_refund" && refundAmount !== Number(escrow.totalAmount)) 
+    // Refund case
+    if(adminDecision === "full_refund")
     {
-        throw new ApiError(400, "Refund amount mismatch. A full refund must equal the total escrow amount.");
+        // Validate amount
+        if(refundAmount !== Number(escrow.totalAmount))
+        {
+            throw new ApiError(400, "Refund amount mismatch. A full refund must equal the total escrow amount.");
+        }
+
+        // Start transaction
+        const dbSession = await mongoose.startSession();
+        dbSession.startTransaction();
+
+        try 
+        {
+            // Get wallets
+            const buyerWallet = await Wallet.findOne({ ownerId: escrow.buyerId, ownerModel: "UserProfile"}).session(dbSession);
+            const sellerWallet = await Wallet.findOne({ ownerId: escrow.sellerId, ownerModel: "BusinessProfile"}).session(dbSession);
+
+            // Validate
+            if(!buyerWallet) throw new ApiError(404, "Buyer wallet not found");
+            if(!sellerWallet) throw new ApiError(404, "Seller wallet not found");
+            if(sellerWallet.pendingBalance < refundAmount) throw new ApiError(400, "Seller does not have sufficient balance");
+
+            // Update buyer wallet
+            await Wallet.updateOne(
+                { _id: buyerWallet._id, ownerModel:"UserProfile" },
+                { $inc: { availableBalance: Number(refundAmount) + 20 } }, // Extra 20 fee for initiating dispute
+                { session:dbSession }
+            );
+
+            // Update seller wallet
+            await Wallet.updateOne(
+                { _id: sellerWallet._id, ownerModel:"BusinessProfile" },
+                { $inc: { pendingBalance: -Number(escrow.netAmount) } },
+                { session:dbSession }
+            );
+
+            // Mark escrow status as refunded
+            escrow.status = "refunded";
+            await escrow.save({ session:dbSession });
+
+            // Mark dispute as resolved
+            const updatedDispute = await Dispute.findOneAndUpdate(
+                { orderId },
+                { $set:{ adminDecision, refundAmount, adminNotes, status: "resolved" } },
+                { new: true, session:dbSession }
+            );
+            if(!updatedDispute) throw new ApiError(404, "Dispute not found");
+
+            // Mark order as completed
+            const updatedOrder = await Order.findByIdAndUpdate(
+                orderId, 
+                { $set:{ status: "completed" } },
+                { new: true, session:dbSession }
+            );
+            if(!updatedOrder) throw new ApiError(500, "Failed to update order status");      
+
+            // Commit transaction
+            await dbSession.commitTransaction();
+            dbSession.endSession();
+
+            // Emit socket
+            io.to(String(escrow.buyerId)).emit("update-dispute", { data: updatedDispute });
+            io.to(String(escrow.sellerId)).emit("update-dispute", { data: updatedDispute });  
+            
+            // Order status
+            io.to(String(updatedDispute.buyerId)).emit("update-order-status", { orderId, status: updatedOrder.status });
+            io.to(String(updatedDispute.sellerId)).emit("update-order-status", { orderId, status: updatedOrder.status });          
+
+            // Response
+            return response.status(200).json(new ApiResponse(200, updatedDispute, "Refund processed successfully"));
+        } 
+        catch(error) 
+        {
+            await dbSession.abortTransaction();
+            dbSession.endSession();
+            throw error;
+        }
     }
 
-    if(adminDecision === "partial_refund" && (refundAmount <= 0 || refundAmount > escrow.totalAmount)) 
+    // Partial refund case
+    if(adminDecision === "partial_refund")
     {
-        throw new ApiError(400, "Invalid refund amount. It must be greater than 0 and less than or equal to the escrow total.");
-    }
+        // Validate amount
+        if(refundAmount <= 0 || refundAmount >= escrow.totalAmount || refundAmount >= escrow.netAmount)
+        {
+            throw new ApiError(400, "Invalid partial refund amount. It must be greater than 0 and less than or equal to the escrow total.");
+        }
 
-    // Start transaction
-    const dbSession = await mongoose.startSession();
-    dbSession.startTransaction();
+        // Start transaction
+        const dbSession = await mongoose.startSession();
+        dbSession.startTransaction();    
 
-    try 
-    {
-        // Get wallets
-        const buyerWallet = await Wallet.findOne({ ownerId: escrow.buyerId, ownerModel: "UserProfile"}).session(dbSession);
-        const sellerWallet = await Wallet.findOne({ ownerId: escrow.sellerId, ownerModel: "BusinessProfile"}).session(dbSession);
+        try 
+        {
+            // Get wallets
+            const buyerWallet = await Wallet.findOne({ ownerId: escrow.buyerId, ownerModel: "UserProfile"}).session(dbSession);
+            const sellerWallet = await Wallet.findOne({ ownerId: escrow.sellerId, ownerModel: "BusinessProfile"}).session(dbSession);
 
-        // Validate
-        if(!buyerWallet) throw new ApiError(404, "Buyer wallet not found");
-        if(!sellerWallet) throw new ApiError(404, "Seller wallet not found");
-        if(sellerWallet.pendingBalance < refundAmount) throw new ApiError(400, "Seller does not have sufficient balance");
+            // Validate
+            if(!buyerWallet) throw new ApiError(404, "Buyer wallet not found");
+            if(!sellerWallet) throw new ApiError(404, "Seller wallet not found");
+            if(sellerWallet.pendingBalance < refundAmount) throw new ApiError(400, "Seller does not have sufficient balance");
 
-        // Update buyer wallet
-        await Wallet.updateOne(
-            { _id: buyerWallet._id },
-            { $inc: { availableBalance: Number(refundAmount) + 20 } }, // Extra 20 fee for initiating dispute
-            { session:dbSession }
-        );
+            // Partial refund amount calculation
+            const sellerNetAmount = Number(escrow.netAmount) - refundAmount;
 
-        // Update seller wallet
-        await Wallet.updateOne(
-            { _id: sellerWallet._id },
-            { $inc: { pendingBalance: -Number(escrow.netAmount) } },
-            { session:dbSession }
-        );
+            // Update buyer wallet
+            await Wallet.updateOne(
+                { _id: buyerWallet._id, ownerModel:"UserProfile" },
+                { $inc: { availableBalance: Number(refundAmount) + 20 } }, // Extra 20 fee for initiating dispute
+                { session:dbSession }
+            );
 
-        // Mark escrow status as refunded
-        escrow.status = "refunded";
-        await escrow.save({ session:dbSession });
+            // Update seller wallet
+            await Wallet.updateOne(
+                { _id: sellerWallet._id, ownerModel:"BusinessProfile" },
+                { $inc: { 
+                    pendingBalance: -Number(sellerNetAmount), 
+                    availableBalance: Number(sellerNetAmount) 
+                } },
+                { session:dbSession }
+            );
 
-        // Mark dispute as resolved
-        const updatedDispute = await Dispute.findOneAndUpdate(
-            { orderId },
-            { adminDecision, refundAmount, adminNotes, status: "resolved" },
-            { new: true, session:dbSession }
-        );
-        if(!updatedDispute) throw new ApiError(404, "Dispute not found");
+            // Mark escrow status as refunded
+            escrow.status = "partially_refunded";
+            await escrow.save({ session:dbSession });
 
-        // Mark order as completed
-        const updatedOrder = await Order.findByIdAndUpdate(
-            orderId, 
-            { $set:{ status: "completed" } },
-            { new: true, session:dbSession }
-        );
-        if(!updatedOrder) throw new ApiError(500, "Failed to update order status");      
+            // Mark dispute as resolved
+            const updatedDispute = await Dispute.findOneAndUpdate(
+                { orderId },
+                { $set:{ adminDecision, refundAmount, adminNotes, status: "resolved" } },
+                { new: true, session:dbSession }
+            );
+            if(!updatedDispute) throw new ApiError(404, "Dispute not found");
 
-        // Commit transaction
-        await dbSession.commitTransaction();
-        dbSession.endSession();
+            // Mark order as completed
+            const updatedOrder = await Order.findByIdAndUpdate(
+                orderId, 
+                { $set:{ status: "completed" } },
+                { new: true, session:dbSession }
+            );
+            if(!updatedOrder) throw new ApiError(500, "Failed to update order status");      
 
-        // Emit socket
-        io.to(String(escrow.buyerId)).emit("update-dispute", { data: updatedDispute });
-        io.to(String(escrow.sellerId)).emit("update-dispute", { data: updatedDispute });  
-        
-        // Order status
-        io.to(String(updatedDispute.buyerId)).emit("update-order-status", { orderId, status: updatedOrder.status });
-        io.to(String(updatedDispute.sellerId)).emit("update-order-status", { orderId, status: updatedOrder.status });          
+            // Commit transaction
+            await dbSession.commitTransaction();
+            dbSession.endSession();
 
-        // Response
-        return response.status(200).json(new ApiResponse(200, updatedDispute, "Refund processed successfully"));
-    } 
-    catch(error) 
-    {
-        await dbSession.abortTransaction();
-        dbSession.endSession();
-        throw error;
+            // Emit socket
+            io.to(String(escrow.buyerId)).emit("update-dispute", { data: updatedDispute });
+            io.to(String(escrow.sellerId)).emit("update-dispute", { data: updatedDispute });  
+            
+            // Order status
+            io.to(String(updatedDispute.buyerId)).emit("update-order-status", { orderId, status: updatedOrder.status });
+            io.to(String(updatedDispute.sellerId)).emit("update-order-status", { orderId, status: updatedOrder.status });          
+
+            // Response
+            return response.status(200).json(new ApiResponse(200, updatedDispute, "Refund processed successfully"));
+        } 
+        catch(error) 
+        {
+            await dbSession.abortTransaction();
+            dbSession.endSession();
+            throw error;
+        }
     }
 });
 

@@ -14,7 +14,7 @@ const escrowTransactionSchema = new Schema({
     netAmount: { type:Number },   // Business seller profile's share
 
     // Status and payment method
-    status: { type:String, enum:['held', 'released', 'refunded'], default:'held' },
+    status: { type:String, enum:['held', 'released', 'refunded', 'partially_refunded'], default:'held' },
     paymentMethod: { type:String, required:true, enum:["stripe", "wallet"] }
 }, { timestamps: true });
 

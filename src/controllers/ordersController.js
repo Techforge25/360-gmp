@@ -1041,7 +1041,10 @@ const fetchAllBusinessOrders = asyncHandler(async (request, response) => {
     // Find orders
     const orders = await Order.paginate({ sellerBusinessId:businessProfileId }, 
         { page, limit, lean:true, select:"sellerBusinessId createdAt totalAmount status", sort:{ createdAt:-1 },
-        populate: { path:"sellerBusinessId", select:"companyName" }
+        populate:[
+            { path:"sellerBusinessId", select:"companyName" },
+            { path:"buyerUserProfileId", select:"fullName" },
+        ]
     });
     if(!orders.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No orders found"));
 

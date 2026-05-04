@@ -12,12 +12,13 @@ const alphaNumericWithHyphen = /^[A-Za-z0-9-]+$/;
 const industryPattern = /^[A-Za-z\s-]*$/;
 const websitePattern = /^https?:\/\/.+$/;
 const dunsPattern = /^\d{9}$/;
-const contactNamePattern = /^[A-Za-z\s\-']*$/;
+const contactNamePattern = /^[A-Za-z\s\-.']*$/;
 const titlePattern = /^[A-Za-z\s\-&]*$/;
-const phonePattern = /^[\d+\-\s()]+$/;
+const phonePattern = /^[\d+\\s()]+$/;
 const tradeAffiliationPattern = /^[A-Za-z0-9-]*$/;
 const auditingAgencyPattern = /^[A-Za-z0-9\s,\-&]*$/;
 const cloudinaryPattern = /^https?:\/\/res\.cloudinary\.com\/.+/i;
+const emailPattern = `/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,63}$`;
 
 // Critical
 const identificationPattern = /^[A-Za-z0-9Ññ\- .\/&]+$/;
@@ -74,21 +75,21 @@ const operationsAndLogisticsValidator = joi.object({
 // Business Intelligence
 const updateBusinessIntelligenceValidator = joi.object({
     b2bContact: joi.object({
-        name: joi.string().pattern(contactNamePattern).max(100).trim().required().label("Contact person name"),
+        name: joi.string().pattern(contactNamePattern).min(2).max(100).trim().required().label("Contact person name"),
         title: joi.string().pattern(titlePattern).max(100).trim().allow("", null).label("Title"),
         phone: joi.string().pattern(phonePattern).max(20).trim().required().label("Phone"),
-        supportEmail: joi.string().trim().email().required().label("Support email")
+        supportEmail: joi.string().trim().email().pattern(emailPattern).required().label("Support email")
     }),
 
     stakeholderDisclosure: joi.array().min(1).items(joi.object({
-        name: joi.string().pattern(contactNamePattern).min(3).max(100).trim().label("Stake holder name"),
+        name: joi.string().pattern(contactNamePattern).min(2).max(100).trim().label("Stake holder name"),
         ownershipPercentage: joi.number().min(1).max(100).precision(2).label("Ownership percentage")
     })),
     
-    executiveLeadership: joi.array().min(1).max(10).items(joi.string().pattern(contactNamePattern).min(3).max(100)).label("Executive Leadership"),
+    executiveLeadership: joi.array().min(1).max(10).items(joi.string().pattern(contactNamePattern).min(2).max(100)).label("Executive Leadership"),
     regionOfOperations: joi.array().items(joi.string().pattern(alphaNumericPattern)).label("Region of operations"),  
     productionCapacity: joi.string().trim().max(1000).optional().pattern(customPattern).label("Production capacity"),     
-    tradeAffiliations: joi.array().min(1).max(5).items(joi.string().pattern(tradeAffiliationPattern).min(3).max(100)).label("Trade Affiliations"),
+    tradeAffiliations: joi.array().min(1).max(5).items(joi.string().pattern(tradeAffiliationPattern).min(2).max(100)).label("Trade Affiliations"),
     auditingAgency: joi.string().pattern(auditingAgencyPattern).min(3).max(100).trim().label("Auditing agency")
 });
 

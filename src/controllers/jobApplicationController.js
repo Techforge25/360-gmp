@@ -1,3 +1,4 @@
+const { isValidObjectId } = require("mongoose");
 const { emptyList } = require("../constants");
 const JobApplication = require("../models/jobApplication");
 const Job = require("../models/jobsSchema");
@@ -7,28 +8,43 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
 const { createJobApplicationSchema } = require("../validations/jobApplication");
+const sendNotification = require("../utils/sendNotification");
 
 // Create job application
 const createJobApplicatiion = asyncHandler(async (request, response) => {
-    const _id = request.user?._id;
+    const userId = request.user?._id;
+    const { userProfileId } = request.user.profiles || {};
     const { jobId } = request.params;
+
+    // Validate
+    if(isValidObjectId(jobId)) throw new ApiError(400, "Invalid Job ID");
+
+    // Get validated payload
     const validatedData = validate(createJobApplicationSchema, request.body);
 
     // Find user profile
-    const [job, userProfile] = await Promise.all([
-        Job.findById(jobId).select("_id").lean(),
-        UserProfile.findOne({ userId:_id }).select("_id").lean()
-    ])
-    if(!job) throw new ApiError(404, "Job not found! Invalid job ID");
-    if(!userProfile) throw new ApiError(404, "User profile not found!");
+    const job = await Job.findById(jobId)
+    .populate({ path: "businessId", select:"ownerUserId" });
+    if(!job) throw new ApiError(404, "Job not found!");
 
     // Check if user has already applied for the job
-    const existingApplication = await JobApplication.findOne({ jobId, userProfileId:userProfile._id }).lean();
+    const existingApplication = await JobApplication.exists({ jobId, userProfileId });
     if(existingApplication) throw new ApiError(400, "You have already applied for this job");
 
     // Save job application
-    const jobApplication = await JobApplication.create({ jobId, userProfileId:userProfile._id, ...validatedData });
+    const jobApplication = await JobApplication.create({ jobId, userProfileId, ...validatedData });
     if(!jobApplication) throw new ApiError(500, "Failed to applied for job application");
+
+    // Send notification to business
+    await sendNotification({
+        userId: job.businessId.ownerUserId,
+        title: "New Job Application",
+        content: "You have recieved a new job application",
+        type: "BusinessProfile",
+        io: request.app.get("io")        
+    });  
+
+    // Response
     return response.status(200).json(new ApiResponse(200, jobApplication, "Applied for job successfully!"));
 });
 

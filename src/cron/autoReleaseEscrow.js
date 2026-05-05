@@ -5,21 +5,21 @@ const EscrowTransaction = require("../models/escrowTrasanction");
 const Wallet = require("../models/walletModel");
 const sendNotification = require("../utils/sendNotification");
 
-// const timer = "0 */12 * * *";
-const timer = "*/4 * * * *";
+const timer = "0 */12 * * *";
+// const timer = "*/4 * * * *";
 
 // Auto release escrow funds after 14 days of delivery
 cron.schedule(timer, async () => {
     console.log("Running auto escrow release job");
 
     // Calculate date (14 days ago)
-    // const fourteenDaysAgo = new Date();
-    // fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
-    const fourMinutesAgo = new Date(Date.now() - 4 * 60 * 1000);
+    // const fourMinutesAgo = new Date(Date.now() - 4 * 60 * 1000);
 
     // Find eligible orders
-    const orders = await Order.find({ status:"delivered", "tracking.deliveredAt":{ $lte:fourMinutesAgo }})
+    const orders = await Order.find({ status:"delivered", "tracking.deliveredAt":{ $lte: fourteenDaysAgo }})
     .populate({ path:"sellerBusinessId", select:"ownerUserId" })
     .select("_id sellerBusinessId");
 

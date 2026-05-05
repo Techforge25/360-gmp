@@ -12,6 +12,7 @@ const Withdrawal = require("../models/withdrawalModel");
 const User = require("../models/users");
 const Order = require("../models/orders");
 const convertToMongoId = require("../utils/convertToMongoId");
+const sendNotification = require("../utils/sendNotification");
 
 // Connect Stripe account (onboarding)
 const connectStripeAccount = asyncHandler(async (request, response) => {
@@ -75,6 +76,31 @@ const connectStripeAccount = asyncHandler(async (request, response) => {
 
     // Response
     return response.status(200).json(new ApiResponse(200, { url: accountLink.url }, "Stripe onboarding link generated"));
+});
+
+// Connect stripe account success
+const connectStripeAccountSuccess = asyncHandler(async (request, response) => {
+    const { _id:userId, role } = request.user;
+
+    // Validate
+    if(!userId) throw new ApiError(400, "User ID missing");
+    if(!role) throw new ApiError(400, "Role is missing");
+    if(!["business", "user"].includes(role)) throw new ApiError(400, "Invalid role");
+
+    // Decide notification type
+    const type = role === "business" ? "BusinessProfile" : "UserProfile";
+
+    // Send notification
+    await sendNotification({
+        userId,
+        title: "Wallet Connected",
+        content: "Your wallet account has been connected to platform's Stripe",
+        type,
+        io: request.app.get("io")
+    });
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Stripe account connected successfully")); 
 });
 
 // Withdraw funds from wallet to stripe account
@@ -240,4 +266,4 @@ const viewTransactionTimeline = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, timeline[0], "Transaction timeline has been fetched"));
 });
 
-module.exports = { connectStripeAccount, WithdrawFunds, viewTransactionTimeline };
+module.exports = { connectStripeAccount, connectStripeAccountSuccess, WithdrawFunds, viewTransactionTimeline };

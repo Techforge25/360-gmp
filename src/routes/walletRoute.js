@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
-const { connectStripeAccount, WithdrawFunds, viewTransactionTimeline } = require("../controllers/walletController");
+const { connectStripeAccount, WithdrawFunds, viewTransactionTimeline, connectStripeAccountSuccess } = require("../controllers/walletController");
 const { addFundsUser, verifyAddFundsUser, fetchUserWalletAnalytics, 
 fetchUserPurchases, fetchUserSpendingActivity } = require("../controllers/userWalletController");
 const { fetchBusinessWalletAnalytics, fetchBusinessRecentTransactions, fetchBusinessEarnings, 
@@ -14,11 +14,10 @@ walletRouter.route("/connect").post(authentication, connectStripeAccount);
 
 // For Stripe onboarding callback retry 
 walletRouter.route("/retry")
-.get((req, res) => res.json({ message: "Please try connecting again" }));
+.get((request, response) => res.json({ message: "Please try connecting again" }));
 
 // For Stripe onboarding callback success
-walletRouter.route("/success")
-.get((req, res) => res.json({ message: "Stripe account connected successfully" }));
+walletRouter.route("/success").get(authentication, authorization(["business", "user"]), connectStripeAccountSuccess);
 
 // Withdraw funds from wallet to Stripe account
 walletRouter.route("/withdraw")

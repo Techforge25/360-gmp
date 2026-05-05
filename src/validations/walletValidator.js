@@ -6,4 +6,9 @@ const transferFundsValidator = joi.object({
     recipientType: joi.string().valid("user", "business").required().label("Recipient type (user or business)")
 });
 
+// Add funds by user validator
+const addFundsUserValidator = joi.object({
+    funds: joi.number().positive().min(100).required().label("Funds"),
+});
+
 module.exports = { transferFundsValidator };

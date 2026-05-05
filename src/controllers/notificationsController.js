@@ -54,18 +54,10 @@ const markAllAsRead = asyncHandler(async (request, response) => {
     // Unread count
     const unreadCount = await Notification.countDocuments({ userId, haveSeen:false });
 
-    // Prepare socket payload
-    const payload = {
-        title: markNotifications.title,
-        content: markNotifications.content,
-        type: markNotifications.type,
-        createdAt: markNotifications.createdAt,
-        unreadCount
-    };
 
     // Emit
     const io = request.app.get("io");
-    io.to(String(userId)).emit("notification", payload);
+    io.to(String(userId)).emit("mark-as-all-read", { type, unreadCount });
 
     // Response
     return response.status(200).json(new ApiResponse(200, { allRead:true }, "All notifications have been marked as read"));

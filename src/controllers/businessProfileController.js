@@ -52,7 +52,7 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
     await sendNotification({ 
         userId,
         type: "BusinessProfile",
-        title: "Business profile created",
+        title: "Business Profile Created",
         content: "Your business profile has been successfully set up.",
         io: request.app.get("io")
     });

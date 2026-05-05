@@ -16,18 +16,20 @@ const sendNotification = async ({ userId, title, content, type, io = null }) => 
       // Count unread notification
       const unreadCount = await Notification.countDocuments({ userId, haveSeen:false });
 
-      // Prepare payload
-      const socketPayload = {
-         title,
-         content,
-         type,
-         createdAt: notification.createdAt,
-         unreadCount,
-         haveSeen: notification.haveSeen
+      // Fetch latest notifications
+      const options = {
+         page: 1,
+         limit: 10,
+         select: "-userId -updatedAt -__v",
+         sort: { createdAt: -1 }
       };
 
+      // Retrieve notifications
+      const notifications = await Notification.paginate({ userId, type }, options);
+      notifications.unreadCount = unreadCount;
+
       // Emit real-time notification
-      if(io) io.to(String(userId)).emit("notification", socketPayload); 
+      if(io) io.to(String(userId)).emit("notification", notifications);
    } 
    catch(error) 
    {

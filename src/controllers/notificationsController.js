@@ -22,10 +22,13 @@ const fetchMyNotifications = asyncHandler(async (request, response) => {
 
     // Retrieve notifications
     const notifications = await Notification.paginate({ userId, type }, options);
-    if(!notifications.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, `No ${type} notifications found`));
+
+    // Get count of unread notifications
+    const unreadCount = await Notification.countDocuments({ userId, haveSeen: false });
+    if(!notifications.totalDocs) return response.status(200).json(new ApiResponse(200, { ...emptyList, unreadCount }, `No ${type} notifications found`));
 
     // Response
-    return response.status(200).json(new ApiResponse(200, notifications, "Notifications have been fetched"));
+    return response.status(200).json(new ApiResponse(200, { ...notifications, unreadCount }, "Notifications have been fetched"));
 });
 
 // Mark all as read

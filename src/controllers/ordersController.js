@@ -277,12 +277,21 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
         // Emit real-time event to business profile for order creation
         io.to(String(sellerBusinessId)).emit("order-creation", order);
 
-        // Send notification to seller business profile
+        // Send notification to buyer (user profile)
+        await sendNotification({ 
+            userId,
+            title: "Order Placement Through Stripe", 
+            content: `Your have placed a new order successfully! Your stripe session ID is ${stripeSession.id}`,
+            type: "UserProfile",
+            io
+        });        
+
+        // Send notification to seller (business profile)
         await sendNotification({ 
             userId: sellerParentUserId,
-            title:"Order placement", 
-            content:`You have received a new order.`,
-            type:"BusinessProfile",
+            title: "Order Placement", 
+            content: `You have received a new order.`,
+            type: "BusinessProfile",
             io
         });
 
@@ -495,12 +504,21 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
         // Emit real-time event to business profile for order creation
         io.to(String(sellerBusinessId)).emit("order-creation", order); 
 
-        // Send notification to seller business profile
+        // Send notification to seller (user profile)
+        await sendNotification({ 
+            userId,
+            title: "Order Placement Through Wallet", 
+            content: `You have placed a new order successfully!`,
+            type: "UserProfile",
+            io
+        });         
+
+        // Send notification to seller (business profile)
         await sendNotification({ 
             userId: sellerParentUserId,
-            title:"Order placement", 
-            content:`You have received a new order.`,
-            type:"BusinessProfile",
+            title: "Order Placement", 
+            content: `You have received a new order.`,
+            type: "BusinessProfile",
             io
         });        
 

@@ -853,6 +853,15 @@ const cancelOrder = asyncHandler(async (request, response) => {
         {
             freezeUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000);
             cancellationCount = 0; // Reset counter after freeze
+
+            // Send notification to user
+            await sendNotification({ 
+                userId,
+                title: "Account Freeze", 
+                content: `Your account is temporarily frozen due to repeated cancellations. Please try again after 24 hours.`, 
+                type: "UserProfile",
+                io: request.app.get("io") 
+            });  
         }
 
         // Update user profile restriction data

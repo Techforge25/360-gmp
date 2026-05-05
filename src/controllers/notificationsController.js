@@ -51,14 +51,6 @@ const markAllAsRead = asyncHandler(async (request, response) => {
     );
     if(!markNotifications) throw new ApiError(500, "Failed to mark all notifications as read");
 
-    // Unread count
-    const unreadCount = await Notification.countDocuments({ userId, haveSeen:false });
-
-
-    // Emit
-    const io = request.app.get("io");
-    io.to(String(userId)).emit("mark-as-all-read", { type, unreadCount });
-
     // Response
     return response.status(200).json(new ApiResponse(200, { allRead:true }, "All notifications have been marked as read"));
 });

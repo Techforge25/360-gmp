@@ -335,14 +335,20 @@ const likePost = asyncHandler(async (request, response) => {
     {
         isLiked = true;
 
-        // Send notification to business
-        // await sendNotification({
-        //     userId: job.businessId.ownerUserId,
-        //     title: "Post Like",
-        //     content: "Someone liked your post",
-        //     type: "BusinessProfile",
-        //     io: request.app.get("io")        
-        // });  
+        const receiverId = post.authorId;
+        const receiverModel = post.authorModel;
+
+        // Do not notify self-like
+        if(String(receiverId) !== String(identity.id) || receiverModel !== identity.model) 
+        {
+            await sendNotification({
+                userId: receiverId,
+                title: "Post Like",
+                content: "Someone liked your post",
+                type: receiverModel,
+                io: request.app.get("io")        
+            });
+        } 
     }
     else 
     {

@@ -11,6 +11,7 @@ const WorkExperience = require("../models/workExperienceModel");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
+const sendNotification = require("../utils/sendNotification");
 const validate = require("../utils/validate");
 const { updateUserContactInfoValidationSchema, updateEducationValidationSchema, 
 addWorkExperienceValidationSchema, updateJobPreferencesValidationSchema, 
@@ -51,6 +52,15 @@ const createUserProfile = asyncHandler(async (request, response) => {
     // Validate
     if(!wallet) throw new ApiError(500, "Failed to setup wallet account for user");
     if(!user) throw new ApiError(500, "Failed to update user status upon user profile creation");
+
+    // Send notification to user
+    await sendNotification({ 
+        userId,
+        type: "UserProfile",
+        title: "User Profile Created",
+        content: "Your user profile has been successfully set up.",
+        io: request.app.get("io")
+    });     
 
     // Response
     return response.status(201).json(new ApiResponse(201, { profile, isNewToPlatform:user.isNewToPlatform }, "User profile has been created"));

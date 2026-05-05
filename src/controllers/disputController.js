@@ -347,7 +347,11 @@ const sellerResponse = asyncHandler(async (request, response) => {
     if(order.status !== "disputed") throw new ApiError(403, "You can only respond on orders that are currently in a disputed state");
 
     // Find disputed order
-    const disputedOrder = await Dispute.findOne({ orderId, sellerId: businessProfileId });
+    const disputedOrder = await Dispute.findOne({ orderId, sellerId: businessProfileId })
+    .populate([
+        { path:"sellerId", select:"companyName" },
+        { path:"buyerId", select:"userId" },
+    ]);
     if(!disputedOrder) throw new ApiError(404, "Disputed order not found");
 
     // Cannot respond if the status is closed or resolved
@@ -368,8 +372,17 @@ const sellerResponse = asyncHandler(async (request, response) => {
 
     // Emit real time
     const io = request.app.get("io");
-    io.to(String(disputedOrder.buyerId)).emit("update-dispute", { data:disputedOrder });
-    io.to(String(disputedOrder.sellerId)).emit("update-dispute", { data:disputedOrder });      
+    io.to(String(disputedOrder.buyerId._id)).emit("update-dispute", { data:disputedOrder });
+    io.to(String(disputedOrder.sellerId._id)).emit("update-dispute", { data:disputedOrder });
+    
+    // Send notification to business
+    await sendNotification({ 
+        userId: disputedOrder.buyerId.userId,
+        title: "Dispute Response", 
+        content: `${disputedOrder.sellerId.companyName} have respond to your dispute`, 
+        type: "BusinessProfile",
+        io: request.app.get("io") 
+    });     
 
     // Response
     return response.status(201).json(new ApiResponse(201, disputedOrder.sellerResponse, "Response has been submitted"));

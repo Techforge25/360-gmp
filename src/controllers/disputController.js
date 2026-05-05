@@ -312,13 +312,42 @@ const changeDisputeStatus = asyncHandler(async (request, response) => {
     const { status } = validate(changeDisputeStatusValidationSchema, request.body);
 
     // Update dispute status
-    const updatedDispute = await Dispute.findOneAndUpdate({ orderId }, { $set:{ status } }, { new: true });
-    if(!updatedDispute) throw new ApiError(404, "Dispute not found");
+    const dispute = await Dispute.findOne({ orderId })
+    .populate([
+        { path:"sellerId", select:"ownerUserId" },
+        { path:"buyerId", select:"userId" },       
+    ]);
+    if(!dispute) throw new ApiError(404, "Dispute not found");
+
+    // Prevent duplicate action for same status
+    if(status === dispute.status) throw new ApiError(400, `Dispute status is already in ${status} state`);
+
+    // Save
+    dispute.status = status;
+    await dispute.save();      
 
     // Get socket instance
     const io = request.app.get("io");
     io.to(String(updatedDispute.buyerId)).emit("update-dispute", { data:updatedDispute });
-    io.to(String(updatedDispute.sellerId)).emit("update-dispute", { data:updatedDispute });    
+    io.to(String(updatedDispute.sellerId)).emit("update-dispute", { data:updatedDispute }); 
+
+    // Send notification to user
+    await sendNotification({ 
+        userId: dispute.buyerId.userId,
+        title: "Dispute Update", 
+        content: `Admin has responded to your dispute`, 
+        type: "UserProfile",
+        io: request.app.get("io") 
+    });   
+
+    // Send notification to business
+    await sendNotification({ 
+        userId: dispute.sellerId.ownerUserId,
+        title: "Dispute Update", 
+        content: `Admin has responded to your dispute`, 
+        type: "BusinessProfile",
+        io: request.app.get("io") 
+    });     
 
     // Response
     return response.status(200).json(new ApiResponse(200, updatedDispute, "Dispute status updated successfully"));

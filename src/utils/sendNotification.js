@@ -16,8 +16,18 @@ const sendNotification = async ({ userId, title, content, type, io = null }) => 
       // Count unread notification
       const unreadCount = await Notification.countDocuments({ userId, haveSeen:false });
 
+      // Prepare payload
+      const socketPayload = {
+         title,
+         content,
+         type,
+         createdAt: notification.createdAt,
+         unreadCount,
+         haveSeen: notification.haveSeen
+      };
+
       // Emit real-time notification
-      if(io) io.to(String(userId)).emit("notification", { title, content, type, createdAt: notification.createdAt, unreadCount }); 
+      if(io) io.to(String(userId)).emit("notification", socketPayload); 
    } 
    catch(error) 
    {

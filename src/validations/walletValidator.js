@@ -11,4 +11,4 @@ const addFundsUserValidator = joi.object({
     funds: joi.number().positive().min(100).required().label("Funds"),
 });
 
-module.exports = { transferFundsValidator };
+module.exports = { transferFundsValidator, addFundsUserValidator };

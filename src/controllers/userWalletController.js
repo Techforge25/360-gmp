@@ -9,23 +9,20 @@ const UserProfile = require("../models/userProfile");
 const Transaction = require("../models/transactionModel");
 const convertToMongoId = require("../utils/convertToMongoId");
 const { emptyList } = require("../constants");
+const sendNotification = require("../utils/sendNotification");
+const { addFundsUserValidator } = require("../validations/walletValidator");
+const validate = require("../utils/validate");
 
 // Add funds
 const addFundsUser = asyncHandler(async (request, response) => {
     const userId = request.user._id;
-    const funds = Number(request.body?.funds) || 0;
+    const { userProfileId } = request.user.profiles || {};
 
-    // Find user profile
-    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
-    if(!userProfile) throw new ApiError(404, "User profile not found");
-
-    // Validate funds
-    if(!funds) throw new ApiError(400, "Please add some funds");
-    if(typeof funds !== "number") throw new ApiError(400, "Funds must be of number type");
-    if(funds <= 0) throw new ApiError(400, "Funds must be greater than zero");
+    // Get validated payload
+    const { funds } = validate(addFundsUserValidator, request.body) || {};
 
     // Find wallet
-    const wallet = await Wallet.findOne({ ownerId:userProfile._id, ownerModel:"UserProfile" }).select("_id").lean();
+    const wallet = await Wallet.findOne({ ownerId:userProfileId, ownerModel:"UserProfile" }).select("_id").lean();
     if(!wallet) return response.status(200).json(new ApiResponse(200, null, "Wallet account not found! Please setup your payout account first"));
 
     // Initialize stripe SDK
@@ -35,7 +32,7 @@ const addFundsUser = asyncHandler(async (request, response) => {
     const session = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         mode: "payment",
-        client_reference_id:userId.toString(), // Tie session to logged in user
+        client_reference_id: String(userId), // Tie session to logged in user
         line_items: [{
             price_data: {
                 currency: "usd",
@@ -50,7 +47,10 @@ const addFundsUser = asyncHandler(async (request, response) => {
             },
             quantity: 1,
         }],
-        metadata: { userProfileId:userProfile._id.toString() },
+        metadata: { 
+            userProfileId: String(userProfileId),
+            userId: String(userId)
+        },
         success_url: `${process.env.BACKEND_URL}/api/v1/wallet/user/add-funds/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.BACKEND_URL}/api/v1/wallet/user/add-funds/cancel`
     });
@@ -87,8 +87,8 @@ const verifyAddFundsUser = asyncHandler(async (request, response) => {
     if(session.payment_status === "paid") 
     {
         // Get metadata
-        const { userProfileId } = session.metadata;
-        if (!userProfileId) throw new ApiError(400, "User profile ID is missing in stripe metadata");
+        const { userProfileId, userId } = session.metadata;
+        if(!userProfileId) throw new ApiError(400, "User profile ID is missing in stripe metadata");
 
         // Extract amount from stripe session
         const amountPaid = session.amount_total / 100;
@@ -116,7 +116,7 @@ const verifyAddFundsUser = asyncHandler(async (request, response) => {
             if(!wallet) throw new ApiError(404, "Wallet not found");
 
             // Save transaction log
-            const transaction = await Transaction.create([{
+            const [transaction] = await Transaction.create([{
                 ownerId: userProfileId,
                 ownerModel: "UserProfile",
                 type: "deposit",
@@ -129,7 +129,16 @@ const verifyAddFundsUser = asyncHandler(async (request, response) => {
 
             // Commit changes
             await dbSession.commitTransaction();
-            dbSession.endSession();           
+            dbSession.endSession();
+            
+            // Send notification
+            await sendNotification({
+                userId: String(userId),
+                title: "Funds Added",
+                content: `${Number(amountPaid)} funds added to your wallet account`,
+                type: "UserProfile",
+                io: request.app.get("io")
+            });            
 
             // Response
             return response.status(303).redirect(`${process.env.FRONTEND_URL}/wallet/user`);

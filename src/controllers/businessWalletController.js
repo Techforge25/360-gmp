@@ -11,6 +11,7 @@ const { emptyList } = require("../constants");
 const validate = require("../utils/validate");
 const { transferFundsValidator } = require("../validations/walletValidator");
 const { startSession } = require("mongoose");
+const sendNotification = require("../utils/sendNotification");
 
 // Fetch wallet analytics for business
 const fetchBusinessWalletAnalytics = asyncHandler(async (request, response) => {
@@ -277,6 +278,8 @@ const fetchBusinessWithdrawal = asyncHandler(async (request, response) => {
 
 // Transfer funds between business and user
 const transferFunds = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
     // Get sub profile IDs
     const { userProfileId, businessProfileId } = request.user.profiles || {};
 
@@ -338,6 +341,15 @@ const transferFunds = asyncHandler(async (request, response) => {
                 userBalance: userWallet.availableBalance,
                 businessBalance: businessWallet.availableBalance
             };
+
+            // Send notification to user
+            await sendNotification({ 
+                userId,
+                title: "Funds Recieved", 
+                content: `You have recieved funds ${amount} from your business profile account`, 
+                type: "UserProfile",
+                io: request.app.get("io") 
+            });             
 
             // Response
             return response.status(200)
@@ -401,6 +413,15 @@ const transferFunds = asyncHandler(async (request, response) => {
                 userBalance: userWallet.availableBalance,
                 businessBalance: businessWallet.availableBalance
             };
+
+            // Send notification to business
+            await sendNotification({ 
+                userId,
+                title: "Funds Recieved", 
+                content: `You have recieved funds ${amount} from your user profile account`, 
+                type: "BusinessProfile",
+                io: request.app.get("io") 
+            });              
 
             // Response
             return response.status(200)

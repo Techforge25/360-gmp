@@ -573,7 +573,7 @@ const updateOrderTrackingInfo = asyncHandler(async (request, response) => {
 
     // Find order
     const order = await Order.findById(orderId)
-    .populate({ path: "buyerUserProfileId", select: "_id" })
+    .populate({ path: "buyerUserProfileId", select: "_id userId" })
     .select("sellerBusinessId buyerUserProfileId tracking status");
     if(!order) throw new ApiError(404, "Order not found");
 
@@ -587,16 +587,16 @@ const updateOrderTrackingInfo = asyncHandler(async (request, response) => {
 
     // Emit event real-time
     const io = request.app.get("io");
-    io.to(String(order.buyerUserProfileId._id)).timeout(5000).emit("update-order-status", { orderId:order._id, status: order.status }, (error, response) => {
-        if(error)
-        {
-            console.log("Event not recieved!", error);
-        }
-        else
-        {
-            console.log("Delivered", response);
-        }
-    });
+    io.to(String(order.buyerUserProfileId._id)).emit("update-order-status", { orderId:order._id, status: order.status });
+
+    // Send notification to user
+    await sendNotification({ 
+        userId: order.buyerUserProfileId.userId,
+        title: "Order Update", 
+        content: `Courier info has been attached to your order`, 
+        type: "UserProfile",
+        io: request.app.get("io") 
+    }); 
 
     // Response
     return response.status(200).json(new ApiResponse(200, order.tracking, "Order tracking info has been updated"));

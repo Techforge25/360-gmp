@@ -141,7 +141,6 @@ const WithdrawFunds = asyncHandler(async (request, response) => {
     const account = await stripe.accounts.retrieve(owner.stripeConnectId);
     if(!account.payouts_enabled) return response.status(200).json(new ApiResponse(200, { onboardingRequired:true }, "Your payout account is not verified yet"));
 
-
     // Start db session
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -156,17 +155,18 @@ const WithdrawFunds = asyncHandler(async (request, response) => {
             { $inc:{ availableBalance: -amount } },
             { new:true, session }
         );
-        if (!updatedWallet) throw new ApiError(400, "Balance already used in another withdrawal");
+        if(!updatedWallet) throw new ApiError(400, "Balance already used in another withdrawal");
 
         // Create withdrawal record
-        withdrawalDoc = await Withdrawal.create([{
-            ownerId:owner._id,
+        [withdrawalDoc] = await Withdrawal.create([{
+            ownerId: owner._id,
             ownerModel,
             amount,
             currency: wallet.currency,
             status: "pending"
         }], { session });
 
+        // Commit transaction
         await session.commitTransaction();
         session.endSession();
     } 
@@ -185,11 +185,20 @@ const WithdrawFunds = asyncHandler(async (request, response) => {
             currency: wallet.currency,
             destination: owner.stripeConnectId,
             description: `Wallet withdrawal`,
-            metadata: { withdrawalId: withdrawalDoc[0]._id.toString() }
+            metadata: { withdrawalId: String(withdrawalDoc._id) }
         });
 
         // Mark success
-        await Withdrawal.findByIdAndUpdate(withdrawalDoc[0]._id, { stripeTransferId:transfer.id, status:"completed" });
+        await Withdrawal.findByIdAndUpdate(withdrawalDoc._id, { stripeTransferId:transfer.id, status:"completed" });
+
+        // Send notification
+        await sendNotification({ 
+            userId: "",
+            title: "Withdrawal", 
+            content: `You have withdrawn amount of ${amount}`, 
+            type: ownerModel,
+            io: request.app.get("io") 
+        });        
 
         // Response
         return response.status(200).json(new ApiResponse(200, { transferId: transfer.id }, "Funds sent successfully"));
@@ -203,7 +212,7 @@ const WithdrawFunds = asyncHandler(async (request, response) => {
         );
 
         // Mark status failed
-        await Withdrawal.findByIdAndUpdate(withdrawalDoc[0]._id, { status:"failed" });
+        await Withdrawal.findByIdAndUpdate(withdrawalDoc._id, { status:"failed" });
         throw new ApiError(500, "Transfer failed. Amount refunded to wallet.");
     }
 });

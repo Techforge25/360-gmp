@@ -24,7 +24,11 @@ const fetchMyNotifications = asyncHandler(async (request, response) => {
     const notifications = await Notification.paginate({ userId, type }, options);
 
     // Get count of unread notifications
-    const unreadCount = await Notification.countDocuments({ userId, haveSeen: false });
+    const unreadCount = await Notification.countDocuments({ 
+        userId, 
+        type: { $in: [type, "System"] },
+        haveSeen: false 
+    });
     if(!notifications.totalDocs) return response.status(200).json(new ApiResponse(200, { ...emptyList, unreadCount }, `No ${type} notifications found`));
 
     // Response

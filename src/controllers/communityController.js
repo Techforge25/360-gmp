@@ -269,7 +269,7 @@ const joinCommunity = asyncHandler(async (request, response) => {
             content: "A new user has joined your community",
             type: "BusinessProfile",
             io: request.app.get("io")        
-        });         
+        });
     }
 
     // Response message based on community joining behaviour
@@ -313,16 +313,40 @@ const approveMembership = asyncHandler(async (request, response) => {
     );
     if(!membership) throw new ApiError(404, "Membership request not found");
 
-    // Update member count
-    if(value.status === "approved") community.memberCount += 1;
-    await community.save();
 
     // Emit notification to user about approval/rejection
     const userProfile = await UserProfile.findById(value.userProfileId).select("userId").lean();
-    if(userProfile) 
+
+    // If approved
+    if(value.status === "approved")
     {
-        const notificationTitle = value.status === "approved" ? "Community Join Request Approved" : "Community Join Request Rejected";
+        community.memberCount += 1;
+
+        // Send notification to user
+        await sendNotification({ 
+            userId: userProfile?.userId,
+            title: "Community Joining Request", 
+            content: `Your request for joining ${community.name} has been approved by the admin`, 
+            type: "UserProfile",
+            io: request.app.get("io") 
+        });            
     }
+
+    // If rejected
+    if(value.status === "rejected")
+    {
+        // Send notification to user
+        await sendNotification({ 
+            userId: userProfile?.userId,
+            title: "Community Joining Request", 
+            content: `Your request for joining ${community.name} has been rejected by the admin`, 
+            type: "UserProfile",
+            io: request.app.get("io") 
+        });            
+    }
+
+    // Save
+    await community.save();    
 
     // Response
     return response.status(200).json(new ApiResponse(200, membership, `Membership ${value.status} successfully`));

@@ -757,7 +757,7 @@ const cancelOrder = asyncHandler(async (request, response) => {
 
     // Find order
     const order = await Order.findById(orderId)
-    .populate({ path:"sellerBusinessId", path:"ownerUserId" });
+    .populate({ path:"sellerBusinessId", select:"ownerUserId" });
     if(!order) throw new ApiError(404, "Order not found");
 
     // Authorize owner

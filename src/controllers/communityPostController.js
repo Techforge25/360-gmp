@@ -298,30 +298,49 @@ const deletePost = asyncHandler(async (request, response) => {
 
 // Like/Unlike Post
 const likePost = asyncHandler(async (request, response) => {
+    const { userProfileId, businessProfileId } = request.user.profiles || {};
+    const { role } = request.user;
     const { postId } = request.params;
 
+    let likerId = null;
+    let likerModel = null;
+    if(role === "user")
+    {
+        likerId = userProfileId;
+        likerModel = "UserProfile";
+    }
+
+    if(role === "business")
+    {
+        likerId = businessProfileId;
+        likerModel = "BusinessProfile";
+    }    
+
     // Get post
-    const post = await CommunityPost.findById(postId);
+    const post = await CommunityPost.findById(postId)
+    .populate({ path: "authorId", select: "userId ownerUserId" });
     if(!post) throw new ApiError(404, "Post not found");
 
-    // Get identity (UserProfile or BusinessProfile)
-    const identity = await getIdentity(request.user._id, post.communityId);
-
     // Check membership
-    await checkCommunityMembership(post.communityId, identity.id, identity.model);
+    const membership = await CommunityMembership.findOne({ 
+        communityId: post.communityId,
+        memberId: likerId, 
+        memberModel: likerModel
+    });
+    if(!membership) throw new ApiError(403, "To like this post, you must be a member of this community");
 
     // Try to ADD like (ONLY if not already liked)
     const likeResult = await CommunityPost.updateOne(
         {
             _id: postId,
-            "likes.userId": { $ne: identity.id }   // only if user has NOT liked already
+            "likes.userId": { $ne: likerId }   // only if user has NOT liked already
         },
         {
             $addToSet: {
                 likes: {
-                    userId: identity.id,
-                    onModel: identity.model,
-                    likedAt: new Date()
+                    userId: likerId,
+                    onModel: likerModel,
+                    likedAt: new Date()                    
                 }
             },
             $inc: { likeCount: 1 }
@@ -335,17 +354,24 @@ const likePost = asyncHandler(async (request, response) => {
     {
         isLiked = true;
 
-        const receiverId = post.authorId;
+        const receiverId = post.authorId._id;
         const receiverModel = post.authorModel;
 
+        const isSelfLike = String(receiverId._id) === String(likerId) && receiverModel === likerModel;
+
         // Do not notify self-like
-        if(String(receiverId) !== String(identity.id) || receiverModel !== identity.model) 
+        if(!isSelfLike) 
         {
+            let parentUserId;
+            if(post.authorModel === "UserProfile") parentUserId = post.authorId?.userId;
+            if(post.authorModel === "BusinessProfile") parentUserId = post.authorId?.ownerUserId;
+            
+            // Send notification
             await sendNotification({
-                userId: receiverId,
+                userId: parentUserId,
                 title: "Post Like",
                 content: "Someone liked your post",
-                type: receiverModel,
+                type: post.authorModel,
                 io: request.app.get("io")        
             });
         } 
@@ -356,7 +382,7 @@ const likePost = asyncHandler(async (request, response) => {
         await CommunityPost.updateOne(
             { _id: postId },
             {
-                $pull: { likes: { userId: identity.id } },
+                $pull: { likes: { userId: likerId } },
                 $inc: { likeCount: -1 }
             }
         );

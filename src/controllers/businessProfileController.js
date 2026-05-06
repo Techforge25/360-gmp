@@ -284,15 +284,19 @@ const fetchBusinessCommunities = asyncHandler(async (request, response) => {
     const { businessId } = request.params;
     if(!isValidObjectId(businessId)) throw new ApiError(400, "Invalid business ID");
 
-    // Pagination options
+    // Pagination
     const { page = 1, limit = 10 } = request.query;
+
+    // Options
     const options = {
         page: Number(page),
         limit: Number(limit),
-        select: "-__v -updatedAt -postingPermissions -colorHashcode -rules",
+        select: "-__v -updatedAt -postingPermissions -colorHashcode -rules -industry -purpose -bannerTagLine",
         sort:{ createdAt:-1 },
     };
-    const communities = await Community.paginate({ businessId }, { page, limit });
+
+
+    const communities = await Community.paginate({ businessId }, options);
     if(!communities.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No business communities found"));
 
     // Response

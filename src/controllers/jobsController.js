@@ -9,6 +9,7 @@ const JobApplication = require("../models/jobApplication");
 const { emptyList } = require("../constants");
 const { isValidObjectId } = require("mongoose");
 const sendNotification = require("../utils/sendNotification");
+const validate = require("../utils/validate");
 
 // Create Job
 const createJob = asyncHandler(async (request, response) => {
@@ -158,22 +159,29 @@ const getJobById = asyncHandler(async (request, response) => {
 // Update Job
 const updateJob = asyncHandler(async (request, response) => {
     const userId = request.user._id;
+    const { businessProfileId } = request.user.profiles || {};
     const { id } = request.params;
+
+    // Validate ID
+    if(!isValidObjectId(id)) throw new ApiError(400, "Invalid Job ID");
   
-    const { error, value } = updateJobSchema.validate(request.body, { abortEarly: false });
-    if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
+    // Get validated Payload
+    const { 
+        jobTitle, jobCategory, employmentType, experienceLevel, description,
+        salaryMin, salaryMax, location 
+    } = validate(updateJobSchema, request.body);
 
     // Find job
     const job = await Job.findById(id).lean();
     if(!job) throw new ApiError(404, "Job not found");
 
     // Check authorization
-    if(String(value.businessId) !== String(job.businessId)) throw new ApiError(403, "You are not authorized to update this job");
+    if(String(businessProfileId) !== String(job.businessId)) throw new ApiError(403, "You are not authorized to update this job");
 
     // Update
     const updateJob = await Job.findByIdAndUpdate(
         id,
-        { $set: value },
+        { $set: { jobTitle, jobCategory, employmentType, experienceLevel, description, salaryMin, salaryMax, location } },
         { new: true, runValidators: true }
     );
     if(!updateJob) throw new ApiError(404, "Job not found");

@@ -716,7 +716,10 @@ const addVote = asyncHandler(async (request, response) => {
 
     // Fetch post
     const post = await CommunityPost.findById(postId)
-    .populate({ path:"communityId", select:"businessId" });
+    .populate([
+        { path:"communityId", select:"businessId" },
+        { path: "authorId", select:"_id" },
+    ]);
 
     // Validate post
     if(!post) throw new ApiError(404, "Post not found");
@@ -766,7 +769,7 @@ const addVote = asyncHandler(async (request, response) => {
 
         // Emit real-time
         const io = request.app.get("io");
-        io.to(String(userId)).emit("vote-update", { postId });
+        io.to(String(post.authorId._id)).emit("vote-update", { postId });
 
         // Response
         return response.status(200).json(new ApiResponse(200, updatedPost, "Vote removed successfully"));
@@ -801,7 +804,7 @@ const addVote = asyncHandler(async (request, response) => {
 
     // Emit real-time
     const io = request.app.get("io");
-    io.to(String(userId)).emit("vote-update", { postId });
+    io.to(String(post.authorId._id)).emit("vote-update", { postId });
 
     // Response
     return response.status(200).json(new ApiResponse(200, updatedPost, "Vote added successfully"));

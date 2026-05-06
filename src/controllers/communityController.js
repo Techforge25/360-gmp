@@ -252,7 +252,7 @@ const joinCommunity = asyncHandler(async (request, response) => {
         await sendNotification({
             userId: community.businessId.ownerUserId,
             title: "New Joining Request",
-            content: `${userProfile?.fullName} user wants to join your community ${community?.name}`,
+            content: `${userProfile?.fullName} wants to join your community ${community?.name}`,
             type: "BusinessProfile",
             io: request.app.get("io")        
         });
@@ -264,11 +264,13 @@ const joinCommunity = asyncHandler(async (request, response) => {
         community.memberCount += 1;
         await community.save();
 
+        const userProfile = await UserProfile.findById(userProfileId).select("fullName").lean();
+
         // Send notification to business
         await sendNotification({
             userId: community.businessId.ownerUserId,
             title: "New User Joined",
-            content: `A new user has joined your community ${community?.name}`,
+            content: `${userProfile?.fullName} has joined your community ${community?.name}`,
             type: "BusinessProfile",
             io: request.app.get("io")        
         });

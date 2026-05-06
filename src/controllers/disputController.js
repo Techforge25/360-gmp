@@ -436,12 +436,12 @@ const sellerResponse = asyncHandler(async (request, response) => {
     io.to(String(disputedOrder.buyerId._id)).emit("update-dispute", { data:disputedOrder });
     io.to(String(disputedOrder.sellerId._id)).emit("update-dispute", { data:disputedOrder });
     
-    // Send notification to business
+    // Send notification to user
     await sendNotification({ 
         userId: disputedOrder.buyerId.userId,
         title: "Dispute Response", 
-        content: `${disputedOrder.sellerId.companyName} have respond to your dispute`, 
-        type: "BusinessProfile",
+        content: `${disputedOrder.sellerId.companyName} have responded to your dispute`, 
+        type: "UserProfile",
         io: request.app.get("io") 
     });     
 
@@ -526,10 +526,23 @@ const adminDecision = asyncHandler(async (request, response) => {
             io.to(String(updatedDispute.buyerId)).emit("update-order-status", { orderId, status:updatedOrder.status });
             io.to(String(updatedDispute.sellerId)).emit("update-order-status", { orderId, status:updatedOrder.status });            
             
-            // Send notification to buyer
-            // await sendNotification({
+            // Send notification to seller (business)
+            await sendNotification({
+                userId: order.sellerBusinessId.ownerUserId,
+                title: `Admin Response`,
+                content: `Admin has rejected the dispute. Order ID: ${orderId}`,
+                type: "BusinessProfile",
+                io,
+            });
 
-            // });
+            // Send notification to buyer (user)
+            await sendNotification({
+                userId: order.buyerUserProfileId.userId,
+                title: `Admin Response`,
+                content: `Admin has rejected your dispute. Order ID: ${orderId}`,
+                type: "UserProfile",
+                io,
+            });            
 
             // Response
             return response.status(200).json(new ApiResponse(200, updatedDispute, "Dispute rejected successfully"));
@@ -614,7 +627,25 @@ const adminDecision = asyncHandler(async (request, response) => {
             
             // Order status
             io.to(String(updatedDispute.buyerId)).emit("update-order-status", { orderId, status: updatedOrder.status });
-            io.to(String(updatedDispute.sellerId)).emit("update-order-status", { orderId, status: updatedOrder.status });          
+            io.to(String(updatedDispute.sellerId)).emit("update-order-status", { orderId, status: updatedOrder.status });
+            
+            // Send notification to seller (business)
+            await sendNotification({
+                userId: order.sellerBusinessId.ownerUserId,
+                title: `Admin Response`,
+                content: `The admin has fully refunded the amount $${refundAmount} to the buyer's wallet. Order ID: ${orderId}`,
+                type: "BusinessProfile",
+                io,
+            });  
+            
+            // Send notification to buyer (user)
+            await sendNotification({
+                userId: order.buyerUserProfileId.userId,
+                title: `Admin Response`,
+                content: `The admin has fully refunded the amount $${refundAmount} to your wallet. Order ID: ${orderId}`,
+                type: "UserProfile",
+                io,
+            });              
 
             // Response
             return response.status(200).json(new ApiResponse(200, updatedDispute, "Refund processed successfully"));
@@ -701,7 +732,25 @@ const adminDecision = asyncHandler(async (request, response) => {
             
             // Order status
             io.to(String(updatedDispute.buyerId)).emit("update-order-status", { orderId, status: updatedOrder.status });
-            io.to(String(updatedDispute.sellerId)).emit("update-order-status", { orderId, status: updatedOrder.status });          
+            io.to(String(updatedDispute.sellerId)).emit("update-order-status", { orderId, status: updatedOrder.status });   
+            
+            // Send notification to seller (business)
+            await sendNotification({
+                userId: order.sellerBusinessId.ownerUserId,
+                title: `Admin Response`,
+                content: `The admin has partially refunded the amount $${refundAmount} to the buyer's wallet. Order ID: ${orderId}`,
+                type: "BusinessProfile",
+                io,
+            });   
+            
+            // Send notification to buyer (user)
+            await sendNotification({
+                userId: order.buyerUserProfileId.userId,
+                title: `Admin Response`,
+                content: `The admin has partially refunded the amount $${refundAmount} to your wallet. Order ID: ${orderId}`,
+                type: "UserProfile",
+                io,
+            });             
 
             // Response
             return response.status(200).json(new ApiResponse(200, updatedDispute, "Refund processed successfully"));

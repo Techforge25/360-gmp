@@ -411,25 +411,98 @@ const likePost = asyncHandler(async (request, response) => {
 });
 
 // Add Comment to Post
+// const addComment = asyncHandler(async (request, response) => {
+//     const { role } = request.user;
+//     const { userProfileId, businessProfileId } = request.user.profiles || {};
+
+//     const { postId } = request.params;
+//     const { error, value } = addCommentSchema.validate(request.body, { abortEarly: false });
+//     if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
+
+//     // Get post
+//     const post = await CommunityPost.findById(postId);
+//     if(!post) throw new ApiError(404, "Post not found");
+
+//     // Get user profile
+//     const identity = await getIdentity(request.user._id, post.communityId);
+
+//     // Check if user is member of the community
+//     await checkCommunityMembership(post.communityId, identity.id, identity.model);
+
+//     // Add comment
+//     post.comments.push({
+//         userId: identity.id,
+//         onModel: identity.model,
+//         content: value.content,
+//         commentedAt: new Date()
+//     });
+
+//     post.commentCount += 1;
+//     await post.save();
+
+//     // Populate latest comment properly
+//     await post.populate({
+//         path: `comments.${post.comments.length - 1}.userId`,
+//         select: "companyName logo fullName logo"
+//     });
+
+//     // Get latest populated comment
+//     const latestComment = post.comments[post.comments.length - 1];
+
+//     // Send notification
+
+//     // Response
+//     return response.status(201).json(new ApiResponse(201, { comment: latestComment, commentCount: post.commentCount }, "Comment added successfully"));
+// });
 const addComment = asyncHandler(async (request, response) => {
+    const { role } = request.user;
+    const { userProfileId, businessProfileId } = request.user.profiles || {};
     const { postId } = request.params;
+
     const { error, value } = addCommentSchema.validate(request.body, { abortEarly: false });
     if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
 
-    // Get post
-    const post = await CommunityPost.findById(postId);
+    let commenterId = null;
+    let commenterModel = null;
+    let username = null;
+
+    // Resolve identity + name
+    if(role === "user") 
+    {
+        commenterId = userProfileId;
+        commenterModel = "UserProfile";
+
+        const userProfile = await UserProfile.findById(userProfileId).select("fullName").lean();
+        username = userProfile?.fullName;
+    }
+
+    if(role === "business") 
+    {
+        commenterId = businessProfileId;
+        commenterModel = "BusinessProfile";
+
+        const businessProfile = await BusinessProfile.findById(businessProfileId).select("companyName").lean();
+        username = businessProfile?.companyName;
+    }
+
+    // Get post + populate author (same as like controller)
+    const post = await CommunityPost.findById(postId)
+    .populate({ path: "authorId", select: "userId fullName ownerUserId companyName" });
+
     if(!post) throw new ApiError(404, "Post not found");
 
-    // Get user profile
-    const identity = await getIdentity(request.user._id, post.communityId);
-
-    // Check if user is member of the community
-    await checkCommunityMembership(post.communityId, identity.id, identity.model);
+    // Check membership
+    const membership = await CommunityMembership.findOne({
+        communityId: post.communityId,
+        memberId: commenterId,
+        memberModel: commenterModel
+    });
+    if(!membership) throw new ApiError(403, "To comment on this post, you must be a member of this community");
 
     // Add comment
     post.comments.push({
-        userId: identity.id,
-        onModel: identity.model,
+        userId: commenterId,
+        onModel: commenterModel,
         content: value.content,
         commentedAt: new Date()
     });
@@ -437,25 +510,44 @@ const addComment = asyncHandler(async (request, response) => {
     post.commentCount += 1;
     await post.save();
 
-    // Populate latest comment properly
+    // Populate latest comment
     await post.populate({
         path: `comments.${post.comments.length - 1}.userId`,
-        select: "companyName logo fullName logo"
+        select: "companyName logo fullName"
     });
 
-    // Get latest populated comment
     const latestComment = post.comments[post.comments.length - 1];
 
-    // Socket Emit
-    const io = request.app.get("io");
-    io.to(post.communityId).emit("new_comment", {
-        postId: post._id,
-        comment: latestComment,
-        commentCount: post.commentCount
-    });
+    // Notification logic
+    const receiverProfileId = post.authorId._id;
+    const receiverModel = post.authorModel;
+
+    const isSelfComment = String(receiverProfileId) === String(commenterId) && receiverModel === commenterModel;
+    if(!isSelfComment) 
+    {
+        let parentUserId;
+
+        if(receiverModel === "UserProfile") parentUserId = post.authorId?.userId;
+        if(receiverModel === "BusinessProfile") parentUserId = post.authorId?.ownerUserId;
+
+        if (parentUserId) 
+        {
+            // Send notification
+            await sendNotification({
+                userId: parentUserId,
+                title: "New Comment",
+                content: `${username} commented on your post`,
+                type: receiverModel,
+                io: request.app.get("io")
+            });
+        }
+    }
+
+    // Prepare payload
+    const payload = { comment: latestComment, commentCount: post.commentCount };
 
     // Response
-    return response.status(201).json(new ApiResponse(201, { comment: latestComment, commentCount: post.commentCount }, "Comment added successfully"));
+    return response.status(201).json(new ApiResponse(201, payload,"Comment added successfully"));
 });
 
 // Get Post Comments (with pagination)

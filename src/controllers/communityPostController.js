@@ -90,6 +90,95 @@ const createPost = asyncHandler(async (request, response) => {
 });
 
 // Get All Posts in Community (with pagination)
+// const getCommunityPosts = asyncHandler(async (request, response) => {
+//     const { userProfileId, businessProfileId } = request.user.profiles || {};
+//     const { _id:userId, role } = request.user;
+//     const { id } = request.params; // communityId
+//     const { page = 1, limit = 20 } = request.query;
+
+//     // Get community
+//     const community = await Community.findById(id).populate("businessId");
+//     if(!community) throw new ApiError(404, "Community not found");
+
+//     // Check if user is member (for private communities)
+//     let isMember = false;
+//     let hasAccess = false;
+//     let currentUserProfileId = null;
+
+//     if(role === "business")
+//     {
+//         // Always accessible to business community owner
+//         const isBusinessOwner = String(community.businessId._id) === String(businessProfileId);        
+//         if(isBusinessOwner)
+//         {
+//             isMember = true;
+//             hasAccess = true;
+//         }
+//     }
+
+//     if(role === "user")
+//     {
+//        if(!userProfileId) throw new ApiError(404, "User profile ID is missing while watching a post as a user");
+//        const membership = await CommunityMembership.findOne({
+//             communityId: id,
+//             memberId: userProfileId,
+//             memberModel: "UserProfile",
+//             status: "approved"
+//         });
+//         if(membership)
+//         {
+//             isMember = true;
+//             hasAccess = true;
+//             currentUserProfileId = userProfileId;
+//         }        
+//     }    
+
+//     if(!hasAccess) throw new ApiError(403, "You must be a member to view posts in this community");
+
+//     // Pagination
+//     const pageNumber = Number.parseInt(page, 10);
+//     const limitNumber = Number.parseInt(limit, 10);
+//     const skip = (pageNumber - 1) * limitNumber;
+
+//     // Get total count
+//     const totalPosts = await CommunityPost.countDocuments({ communityId: id });
+//     const totalPages = Math.ceil(totalPosts / limitNumber);
+
+//     // Get posts
+//     const posts = await CommunityPost.find({ communityId: id })
+//     .populate("authorId", "fullName logo companyName logo")
+//     .sort({ createdAt: -1 })
+//     .skip(skip)
+//     .limit(limitNumber).lean();
+
+//     // Check if user liked each post
+//     if(currentUserProfileId) {
+//         try {
+//             // const userProfileId = await getUserProfileId(request.user._id);
+//             for(let post of posts) {
+//                 post.likedByUser = post.likes.some(
+//                     like =>  like.userId && like.userId === currentUserProfileId
+//                 );
+//             }
+//         } catch(err) {
+//             // User not logged in
+//         }
+//     }
+
+//     const paginationInfo = {
+//         currentPage: pageNumber,
+//         totalPages: totalPages,
+//         totalPosts: totalPosts,
+//         hasNextPage: pageNumber < totalPages,
+//         hasPrevPage: pageNumber > 1,
+//         limit: limitNumber
+//     };
+
+//     // Response
+//     return response.status(200).json(new ApiResponse(200, { community, posts, pagination: paginationInfo }, "Posts fetched successfully"));
+// });
+
+// Get All Posts in Community (with pagination)
 const getCommunityPosts = asyncHandler(async (request, response) => {
     const { userProfileId, businessProfileId } = request.user.profiles || {};
     const { _id:userId, role } = request.user;
@@ -103,7 +192,6 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
     // Check if user is member (for private communities)
     let isMember = false;
     let hasAccess = false;
-    let currentUserProfileId = null;
 
     if(role === "business")
     {
@@ -118,18 +206,19 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
 
     if(role === "user")
     {
-       if(!userProfileId) throw new ApiError(404, "User profile ID is missing while watching a post as a user");
-       const membership = await CommunityMembership.findOne({
+        if(!userProfileId) throw new ApiError(404, "User profile ID is missing while watching a post as a user");
+
+        const membership = await CommunityMembership.findOne({
             communityId: id,
             memberId: userProfileId,
             memberModel: "UserProfile",
             status: "approved"
         });
+
         if(membership)
         {
             isMember = true;
             hasAccess = true;
-            currentUserProfileId = userProfileId;
         }        
     }    
 
@@ -146,23 +235,38 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
 
     // Get posts
     const posts = await CommunityPost.find({ communityId: id })
-        .populate("authorId", "fullName logo companyName logo")
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limitNumber).lean();
+    .populate("authorId", "fullName logo companyName")
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limitNumber)
+    .lean();
 
-    // Check if user liked each post
-    if(currentUserProfileId) {
-        try {
-            // const userProfileId = await getUserProfileId(request.user._id);
-            for(let post of posts) {
-                post.likedByUser = post.likes.some(
-                    like =>  like.userId && like.userId === currentUserProfileId
-                );
-            }
-        } catch(err) {
-            // User not logged in
-        }
+    // Determine current identity
+    let currentProfileId = null;
+    let currentProfileModel = null;
+
+    if(role === "user" && userProfileId)
+    {
+        currentProfileId = userProfileId;
+        currentProfileModel = "UserProfile";
+    }
+
+    if(role === "business" && businessProfileId)
+    {
+        currentProfileId = businessProfileId;
+        currentProfileModel = "BusinessProfile";
+    }
+
+    // Add hasLiked flag
+    for(let post of posts)
+    {
+        post.hasLiked = currentProfileId
+            ? post.likes?.some(like =>
+                like.userId &&
+                String(like.userId) === String(currentProfileId) &&
+                like.onModel === currentProfileModel
+            )
+            : false;
     }
 
     const paginationInfo = {
@@ -174,9 +278,8 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
         limit: limitNumber
     };
 
-    return response.status(200).json(
-        new ApiResponse(200, { community, posts, pagination: paginationInfo }, "Posts fetched successfully")
-    );
+    // Response
+    return response.status(200).json(new ApiResponse(200,{ community, posts, pagination: paginationInfo },"Posts fetched successfully"));
 });
 
 // Get Post By ID
@@ -454,6 +557,8 @@ const likePost = asyncHandler(async (request, response) => {
 //     // Response
 //     return response.status(201).json(new ApiResponse(201, { comment: latestComment, commentCount: post.commentCount }, "Comment added successfully"));
 // });
+
+// Add Comment to Post
 const addComment = asyncHandler(async (request, response) => {
     const { role } = request.user;
     const { userProfileId, businessProfileId } = request.user.profiles || {};

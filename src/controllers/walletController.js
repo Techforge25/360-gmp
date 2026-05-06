@@ -193,7 +193,7 @@ const WithdrawFunds = asyncHandler(async (request, response) => {
 
         // Send notification
         await sendNotification({ 
-            userId: "",
+            userId,
             title: "Withdrawal", 
             content: `You have withdrawn amount of ${amount}`, 
             type: ownerModel,

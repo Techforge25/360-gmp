@@ -211,8 +211,7 @@ const joinCommunity = asyncHandler(async (request, response) => {
     }
 
     // Check if already a member
-    const existingMembership = await CommunityMembership.findOne({ communityId:id, memberId: userProfileId })
-    .populate({ path: "memberId", select: "fullName" });
+    const existingMembership = await CommunityMembership.findOne({ communityId:id, memberId: userProfileId });
     if(existingMembership) 
     {
         if(existingMembership.status === "approved") throw new ApiError(400, "You are already a member of this community");
@@ -247,11 +246,13 @@ const joinCommunity = asyncHandler(async (request, response) => {
     // Pending case
     if(membershipStatus === "pending") 
     {
+        const userProfile = await UserProfile.findById(userProfileId).select("fullName").lean();
+
         // Send notification to business
         await sendNotification({
             userId: community.businessId.ownerUserId,
             title: "New Joining Request",
-            content: `${existingMembership?.memberId?.fullName} user wants to join your community ${community?.name}`,
+            content: `${userProfile?.fullName} user wants to join your community ${community?.name}`,
             type: "BusinessProfile",
             io: request.app.get("io")        
         });

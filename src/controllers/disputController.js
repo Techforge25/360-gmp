@@ -146,6 +146,22 @@ const disputePaymentSuccess = asyncHandler(async (request, response) => {
         io.to(String(buyerId)).emit("dispute-creation", { orderId });
         io.to(String(sellerId)).emit("dispute-creation", { orderId });
 
+        // Order details for notification context
+        const orderDetails = await Order.findById(orderId)
+        .populate([
+            { path: "buyerUserProfileId", select:"fullName" },
+            { path: "sellerBusinessId", select:"ownerUserId" },
+        ]).lean();
+
+        // Send notification to business
+        await sendNotification({
+            userId: orderDetails?.sellerBusinessId?.ownerUserId,
+            title: `Dispute Raised`,
+            content: `${orderDetails?.buyerUserProfileId?.fullName} has initiated a dispute regarding your order`,
+            type: "BusinessProfile",
+            io
+        });
+
         // Response
         return response.status(303).redirect(`${process.env.FRONTEND_URL}/dashboard/user/orders/OrderTrackingPage/${orderId}`);
         // /dashboard/user/orders/OrderTrackingPage/69f09d71b6e4b66c096c7320
@@ -250,6 +266,22 @@ const createDisputeWithWallet = asyncHandler(async (request, response) => {
         const io = request.app.get("io");
         io.to(String(userProfileId)).emit("dispute-creation", { orderId });
         io.to(String(escrow.sellerId)).emit("dispute-creation", { orderId });
+
+        // Order details for notification context
+        const orderDetails = await Order.findById(orderId)
+        .populate([
+            { path: "buyerUserProfileId", select:"fullName" },
+            { path: "sellerBusinessId", select:"ownerUserId" },
+        ]).lean();
+
+        // Send notification to business
+        await sendNotification({
+            userId: orderDetails?.sellerBusinessId?.ownerUserId,
+            title: `Dispute Raised`,
+            content: `${orderDetails?.buyerUserProfileId?.fullName} has initiated a dispute regarding your order`,
+            type: "BusinessProfile",
+            io
+        });        
 
         // Response
         // return response.status(303).redirect(`${process.env.FRONTEND_URL}/dashboard/user/orders/OrderTrackingPage/${orderId}`);   

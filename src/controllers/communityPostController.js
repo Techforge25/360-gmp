@@ -305,16 +305,25 @@ const likePost = asyncHandler(async (request, response) => {
 
     let likerId = null;
     let likerModel = null;
+    let username = null;
     if(role === "user")
     {
         likerId = userProfileId;
         likerModel = "UserProfile";
+
+        // Get name
+        const userProfile = await UserProfile.findById(userProfileId).select("fullName").lean();
+        username = userProfile?.fullName;
     }
 
     if(role === "business")
     {
         likerId = businessProfileId;
         likerModel = "BusinessProfile";
+
+        // Get name
+        const businessProfile = await BusinessProfile.findById(businessProfileId).select("companyName").lean();
+        username = businessProfile?.companyName;        
     }    
 
     // Get post
@@ -363,24 +372,16 @@ const likePost = asyncHandler(async (request, response) => {
         // Do not notify self-like
         if(!isSelfLike) 
         {
+            // Get parent USER ID
             let parentUserId;
-            let parentName;
-            if(post.authorModel === "UserProfile")
-            {
-                parentUserId = post.authorId?.userId;
-                parentName = post.authorId?.fullName;
-            }
-            if(post.authorModel === "BusinessProfile")
-            {
-                parentUserId = post.authorId?.ownerUserId;
-                parentName = post.authorId?.companyName;
-            }
+            if(post.authorModel === "UserProfile") parentUserId = post.authorId?.userId;
+            if(post.authorModel === "BusinessProfile") parentUserId = post.authorId?.ownerUserId;
             
             // Send notification
             await sendNotification({
                 userId: parentUserId,
                 title: "Post Like",
-                content: `${parentName} has liked your post`,
+                content: `${username} has liked your post`,
                 type: post.authorModel,
                 io: request.app.get("io")        
             });

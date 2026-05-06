@@ -514,51 +514,6 @@ const likePost = asyncHandler(async (request, response) => {
 });
 
 // Add Comment to Post
-// const addComment = asyncHandler(async (request, response) => {
-//     const { role } = request.user;
-//     const { userProfileId, businessProfileId } = request.user.profiles || {};
-
-//     const { postId } = request.params;
-//     const { error, value } = addCommentSchema.validate(request.body, { abortEarly: false });
-//     if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
-
-//     // Get post
-//     const post = await CommunityPost.findById(postId);
-//     if(!post) throw new ApiError(404, "Post not found");
-
-//     // Get user profile
-//     const identity = await getIdentity(request.user._id, post.communityId);
-
-//     // Check if user is member of the community
-//     await checkCommunityMembership(post.communityId, identity.id, identity.model);
-
-//     // Add comment
-//     post.comments.push({
-//         userId: identity.id,
-//         onModel: identity.model,
-//         content: value.content,
-//         commentedAt: new Date()
-//     });
-
-//     post.commentCount += 1;
-//     await post.save();
-
-//     // Populate latest comment properly
-//     await post.populate({
-//         path: `comments.${post.comments.length - 1}.userId`,
-//         select: "companyName logo fullName logo"
-//     });
-
-//     // Get latest populated comment
-//     const latestComment = post.comments[post.comments.length - 1];
-
-//     // Send notification
-
-//     // Response
-//     return response.status(201).json(new ApiResponse(201, { comment: latestComment, commentCount: post.commentCount }, "Comment added successfully"));
-// });
-
-// Add Comment to Post
 const addComment = asyncHandler(async (request, response) => {
     const { role } = request.user;
     const { userProfileId, businessProfileId } = request.user.profiles || {};

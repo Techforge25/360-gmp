@@ -260,13 +260,18 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
     // Add hasLiked flag
     for(let post of posts)
     {
-        post.hasLiked = currentProfileId
-            ? post.likes?.some(like =>
-                like.userId &&
-                String(like.userId) === String(currentProfileId) &&
-                like.onModel === currentProfileModel
-            )
-            : false;
+        post.hasLiked = currentProfileId ? post.likes?.some(like =>
+            like.userId && String(like.userId) === String(currentProfileId) && like.onModel === currentProfileModel
+        ) : false;
+
+        // Has voted flag for poll post
+        post.hasVoted = false;
+        if (post.type === "poll" && currentProfileId)
+        {
+            post.hasVoted = post.poll?.options?.some(option =>
+                option.votedBy?.some(id => String(id) === String(currentProfileId))
+            );
+        }        
     }
 
     const paginationInfo = {

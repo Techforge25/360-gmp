@@ -29,13 +29,12 @@ const createJobSchema = Joi.object({
     salaryMax: Joi.number().min(0).allow(null).greater(Joi.ref("salaryMin")).messages({
         "number.greater": "Maximum salary must be greater than minimum salary"
     }),
-    location: jobLocationSchema.allow(null),
+    location: jobLocationSchema.allow({}, null),
     status: Joi.string().pattern(alphaNumericPattern).trim().allow("", null)
 });
 
 // Update Job schema (all fields optional)
 const updateJobSchema = Joi.object({
-    businessId: Joi.string().allow("", null),
     jobTitle: Joi.string().pattern(jobTitlePattern).trim().allow("", null).messages({
         "string.pattern.base": "Job title can only contain letters, numbers, spaces, hyphens, and parentheses"
     }),
@@ -47,8 +46,7 @@ const updateJobSchema = Joi.object({
     salaryMax: Joi.number().min(0).allow(null).greater(Joi.ref("salaryMin")).messages({
         "number.greater": "Maximum salary must be greater than minimum salary"
     }),
-    location: jobLocationSchema.allow(null),
-    status: Joi.string().pattern(alphaNumericPattern).trim().allow("", null)
+    location: jobLocationSchema.allow({}, null)
 });
 
 module.exports = { createJobSchema, updateJobSchema };

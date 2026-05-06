@@ -19,7 +19,7 @@ jobsRouter.route("/latest/marketplace")
 // Fetch Single job / Edit job / Delete job
 jobsRouter.route("/:id")
 .get(authentication, checkSubscription, getJobById)
-.put(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, updateJob)
+.patch(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, updateJob)
 .delete(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, deleteJob);
 
 // Fetch applied jobs

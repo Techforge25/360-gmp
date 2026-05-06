@@ -14,10 +14,10 @@ const sendNotification = require("../utils/sendNotification");
 const createJobApplicatiion = asyncHandler(async (request, response) => {
     const userId = request.user?._id;
     const { userProfileId } = request.user.profiles || {};
-    const { jobId } = request.params;
+    const { jobId } = request.params; 
 
     // Validate
-    if(isValidObjectId(jobId)) throw new ApiError(400, "Invalid Job ID");
+    if(!isValidObjectId(jobId)) throw new ApiError(400, "Invalid Job ID");
 
     // Get validated payload
     const validatedData = validate(createJobApplicationSchema, request.body);

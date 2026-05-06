@@ -286,6 +286,12 @@ const fetchBusinessCommunities = asyncHandler(async (request, response) => {
 
     // Pagination options
     const { page = 1, limit = 10 } = request.query;
+    const options = {
+        page: Number(page),
+        limit: Number(limit),
+        select: "-__v -updatedAt -postingPermissions -colorHashcode -rules",
+        sort:{ createdAt:-1 },
+    };
     const communities = await Community.paginate({ businessId }, { page, limit });
     if(!communities.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No business communities found"));
 

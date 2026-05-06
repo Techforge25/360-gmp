@@ -701,7 +701,7 @@ const getPostComments = asyncHandler(async (request, response) => {
 
 // Add vote to poll option
 const addVote = asyncHandler(async (request, response) => {
-    const { role } = request.user;
+    const { _id:userId, role } = request.user;
     const { userProfileId, businessProfileId } = request.user.profiles || {};
     const voterId = role === "user" ? userProfileId : businessProfileId;
 
@@ -764,6 +764,11 @@ const addVote = asyncHandler(async (request, response) => {
             { new: true }
         );
 
+        // Emit real-time
+        const io = request.app.get("io");
+        io.to(String(userId)).emit("vote-update", { postId });
+
+        // Response
         return response.status(200).json(new ApiResponse(200, updatedPost, "Vote removed successfully"));
     }
 
@@ -793,6 +798,10 @@ const addVote = asyncHandler(async (request, response) => {
         { new: true }
     );
     if(!updatedPost) throw new ApiError(400, "Failed to update vote");
+
+    // Emit real-time
+    const io = request.app.get("io");
+    io.to(String(userId)).emit("vote-update", { postId });
 
     // Response
     return response.status(200).json(new ApiResponse(200, updatedPost, "Vote added successfully"));

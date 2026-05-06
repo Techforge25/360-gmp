@@ -8,6 +8,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const { createPostSchema, updatePostSchema, addCommentSchema } = require("../validations/communityPostValidator");
 const BusinessProfile = require("../models/businessProfileSchema");
 const { isValidObjectId } = require("mongoose");
+const sendNotification = require("../utils/sendNotification");
 
 // Helper function to get userProfileId from userId
 const getUserProfileId = async (userId) => {
@@ -411,7 +412,6 @@ const addComment = asyncHandler(async (request, response) => {
 
     // Get user profile
     const identity = await getIdentity(request.user._id, post.communityId);
-
 
     // Check if user is member of the community
     await checkCommunityMembership(post.communityId, identity.id, identity.model);

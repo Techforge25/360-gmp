@@ -319,7 +319,7 @@ const likePost = asyncHandler(async (request, response) => {
 
     // Get post
     const post = await CommunityPost.findById(postId)
-    .populate({ path: "authorId", select: "userId ownerUserId" });
+    .populate({ path: "authorId", select: "userId fullName ownerUserId companyName" });
     if(!post) throw new ApiError(404, "Post not found");
 
     // Check membership
@@ -364,14 +364,23 @@ const likePost = asyncHandler(async (request, response) => {
         if(!isSelfLike) 
         {
             let parentUserId;
-            if(post.authorModel === "UserProfile") parentUserId = post.authorId?.userId;
-            if(post.authorModel === "BusinessProfile") parentUserId = post.authorId?.ownerUserId;
+            let parentName;
+            if(post.authorModel === "UserProfile")
+            {
+                parentUserId = post.authorId?.userId;
+                parentName = post.authorId?.fullName;
+            }
+            if(post.authorModel === "BusinessProfile")
+            {
+                parentUserId = post.authorId?.ownerUserId;
+                parentName = post.authorId?.companyName;
+            }
             
             // Send notification
             await sendNotification({
                 userId: parentUserId,
                 title: "Post Like",
-                content: "Someone liked your post",
+                content: `${parentName} has liked your post`,
                 type: post.authorModel,
                 io: request.app.get("io")        
             });

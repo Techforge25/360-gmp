@@ -80,10 +80,26 @@ const updateBusinessIntelligenceValidator = joi.object({
         supportEmail: joi.string().trim().email().pattern(emailPattern).required().label("Support email")
     }),
 
+    // stakeholderDisclosure: joi.array().min(1).items(joi.object({
+    //     name: joi.string().pattern(contactNamePattern).min(2).max(100).trim().label("Stake holder name"),
+    //     ownershipPercentage: joi.number().min(1).max(100).precision(2).label("Ownership percentage")
+    // })),
+
     stakeholderDisclosure: joi.array().min(1).items(joi.object({
         name: joi.string().pattern(contactNamePattern).min(2).max(100).trim().label("Stake holder name"),
         ownershipPercentage: joi.number().min(1).max(100).precision(2).label("Ownership percentage")
-    })),
+    })).custom((value, helpers) => {
+        const totalOwnership = value.reduce((sum, stakeholder) => {
+            return sum + (stakeholder.ownershipPercentage || 0);
+        }, 0);
+
+        if(Number(totalOwnership.toFixed(2)) !== 100)
+        {
+            return helpers.message("Total ownership percentage of all stakeholders must equal 100%");
+        }
+
+        return value;
+    }),    
     
     executiveLeadership: joi.array().min(1).items(joi.string().pattern(contactNamePattern).min(2).max(100)).label("Executive Leadership"),
     regionOfOperations: joi.array().items(joi.string().pattern(alphaNumericPattern)).label("Region of operations"),  

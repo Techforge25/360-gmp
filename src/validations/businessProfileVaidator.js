@@ -70,10 +70,22 @@ const createBusinessProfileSchema = Joi.object({
 
     // Ownership & Leadership
     executiveLeadership: Joi.array().min(1).items(Joi.string().pattern(contactNamePattern)).min(2).max(100).label("Executive Leadership"),
-    stakeholderDisclosure: Joi.array().items(Joi.object({
-        name: Joi.string().trim().min(2).required().pattern(contactNamePattern).label("Stake holder name"),
-        ownershipPercentage: Joi.number().integer().min(0).max(100).positive().label("Ownership percentage")
-    })),
+    
+    stakeholderDisclosure: Joi.array().min(1).items(Joi.object({
+        name: Joi.string().pattern(contactNamePattern).min(2).max(100).trim().label("Stake holder name"),
+        ownershipPercentage: Joi.number().min(1).max(100).precision(2).label("Ownership percentage")
+    })).custom((value, helpers) => {
+        const totalOwnership = value.reduce((sum, stakeholder) => {
+            return sum + (stakeholder.ownershipPercentage || 0);
+        }, 0);
+
+        if(Number(totalOwnership.toFixed(2)) !== 100)
+        {
+            return helpers.message("Total ownership percentage of all stakeholders must equal 100%");
+        }
+
+        return value;
+    }),    
 
     // Operational & Trade Profile   
     regionOfOperations: Joi.array().items(Joi.string().pattern(alphaNumericPattern)).label("Region of operations"),  

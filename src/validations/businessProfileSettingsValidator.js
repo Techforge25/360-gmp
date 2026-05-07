@@ -80,11 +80,6 @@ const updateBusinessIntelligenceValidator = joi.object({
         supportEmail: joi.string().trim().email().pattern(emailPattern).required().label("Support email")
     }),
 
-    // stakeholderDisclosure: joi.array().min(1).items(joi.object({
-    //     name: joi.string().pattern(contactNamePattern).min(2).max(100).trim().label("Stake holder name"),
-    //     ownershipPercentage: joi.number().min(1).max(100).precision(2).label("Ownership percentage")
-    // })),
-
     stakeholderDisclosure: joi.array().min(1).items(joi.object({
         name: joi.string().pattern(contactNamePattern).min(2).max(100).trim().label("Stake holder name"),
         ownershipPercentage: joi.number().min(1).max(100).precision(2).label("Ownership percentage")

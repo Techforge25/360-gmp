@@ -14,10 +14,10 @@ const dunsPattern = /^\d{9}$/;
 const contactNamePattern = /^[A-Za-z\s\-.']*$/;
 const titlePattern = /^[A-Za-z\s\-&]*$/;
 const phonePattern = /^[\d+\\s()]+$/;
-const tradeAffiliationPattern = /^[A-Za-z0-9-]*$/;
+const tradeAffiliationPattern = /^[A-Za-z0-9 -]*$/;
 const auditingAgencyPattern = /^[A-Za-z0-9\s,\-&]*$/;
 const emailPattern = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,63}$/;
-const primaryIndustryPattern = /^[a-zA-Z0-9 -&/]*$/;
+const primaryIndustryPattern = /^[A-Za-z0-9\- &/]*$/;
 
 // Critical
 const identificationPattern = /^[A-Za-z0-9Ññ\- .\/&]+$/;
@@ -48,14 +48,14 @@ const operationsAndLogisticsValidator = joi.object({
         country: joi.string().pattern(countryPattern).min(2).max(100).trim().required().label("Country"),
         city: joi.string().pattern(cityPattern).min(2).max(100).trim().required().label("City"),
 
-        addressLine: joi.string().pattern(addressPattern).max(500).trim().required().label("Address line"),
-        warehouseAddress: joi.string().pattern(addressPattern).max(500).trim().required().label("Warehouse Address"),
+        addressLine: joi.string().pattern(addressPattern).min(10).max(500).trim().required().label("Address line"),
+        warehouseAddress: joi.string().pattern(addressPattern).min(10).max(500).trim().required().label("Warehouse Address"),
 
-        additionalWarehouseAddress: joi.string().pattern(addressPattern).max(500).trim().allow("", null).invalid(joi.ref('warehouseAddress'))
+        additionalWarehouseAddress: joi.string().pattern(addressPattern).min(10).max(500).trim().allow("", null).invalid(joi.ref('warehouseAddress'))
         .label("Additional Warehouse Address"),
-        mandatoryPickupAddress: joi.string().pattern(addressPattern).max(500).trim().allow("", null).label("Additional Pickup Address"),
+        mandatoryPickupAddress: joi.string().pattern(addressPattern).min(10).max(500).trim().allow("", null).label("Additional Pickup Address"),
 
-        businessRegistrationAddress: joi.string().pattern(addressPattern).max(500).trim().required().label("Business Registration Address"),
+        businessRegistrationAddress: joi.string().pattern(addressPattern).min(10).max(500).trim().required().label("Business Registration Address"),
         internationalOffices: joi.array().items(joi.string().pattern(addressPattern).max(500)).max(11).label("International Offices")
     }),
     incoterms: joi.string().trim().required().invalid("select").label("International Commercial Terms"),

@@ -7,10 +7,10 @@ const customPattern = /^[a-zA-Z0-9 \-.,\n\r]*$/;
 const ownerNamePattern = /^[a-zA-Z\s\-.']*$/;
 const operatingHourPattern = /^(0?[1-9]|1[0-2])(AM|PM|am|pm)\s-\s(0[1-9]|1[0-2])(AM|PM|am|pm)$/;
 const contactNamePattern = /^[A-Za-z\s\-.']*$/;
-const tradeAffiliationPattern = /^[A-Za-z0-9-]*$/;
+const tradeAffiliationPattern = /^[A-Za-z0-9 -]*$/;
 const auditingAgencyPattern = /^[A-Za-z0-9\s,\-&]*$/;
 const cityPattern = /^(?=.*[A-Za-zÀ-ÖØ-öø-ÿ])[A-Za-z0-9À-ÖØ-öø-ÿ\s\-'.]+$/;
-const primaryIndustryPattern = /^[a-zA-Z0-9 -&/]*$/;
+const primaryIndustryPattern = /^[A-Za-z0-9\- &/]*$/;
 
 // Critical
 const identificationPattern = /^[A-Za-z0-9Ññ\- .\/&]+$/;
@@ -19,11 +19,11 @@ const identificationPattern = /^[A-Za-z0-9Ññ\- .\/&]+$/;
 const locationSchema = Joi.object({
     country: Joi.string().max(100).trim().allow("", null).pattern(alphaNumericPattern).label("Country"),
     city: Joi.string().max(100).trim().allow("", null).pattern(cityPattern).label("City"),
-    addressLine: Joi.string().max(500).trim().allow("", null).label("Address line"),
-    warehouseAddress: Joi.string().max(500).trim().allow("", null).label("Warehouse Address"),
-    additionalWarehouseAddress: Joi.string().max(500).trim().allow("", null).invalid(Joi.ref('warehouseAddress')).label("Additional Warehouse Address"),
-    mandatoryPickupAddress: Joi.string().max(500).trim().allow("", null).label("Mandatory Pickup Address"),
-    businessRegistrationAddress: Joi.string().max(500).trim().allow("", null).label("Business Registration Address"),
+    addressLine: Joi.string().min(10).max(500).trim().allow("", null).label("Address line"),
+    warehouseAddress: Joi.string().min(10).max(500).trim().allow("", null).label("Warehouse Address"),
+    additionalWarehouseAddress: Joi.string().min(10).max(500).trim().allow("", null).invalid(Joi.ref('warehouseAddress')).label("Additional Warehouse Address"),
+    mandatoryPickupAddress: Joi.string().min(10).max(500).trim().allow("", null).label("Mandatory Pickup Address"),
+    businessRegistrationAddress: Joi.string().min(10).max(500).trim().allow("", null).label("Business Registration Address"),
     internationalOffices: Joi.array().items(Joi.string().trim().max(500).pattern(addressPattern)).label("International Offices")
 });
 
@@ -34,7 +34,7 @@ const b2bContactSchema = Joi.object({
     phone: Joi.string().trim().max(15).pattern(/^\+?[1-9]\d{9,14}$/).required().messages({
         "string.pattern.base": "Phone number must be a valid international format (e.g., +923001234567)."
     }).label("Phone"),
-    supportEmail: Joi.string().trim().email().lowercase().allow("", null).label("Email")
+    supportEmail: Joi.string().trim().email().lowercase().required().label("Support Email")
 });
 
 // Create Business Profile schema

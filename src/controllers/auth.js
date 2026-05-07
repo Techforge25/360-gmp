@@ -393,6 +393,26 @@ const resetPassword = asyncHandler(async (request, response) => {
     user.passwordResetTokenExpires = null;
     await user.save();
 
+    // Time
+    const time = new Date().toLocaleString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true
+    })
+
+    // Send notification to parent
+    await sendNotification({
+        userId: user._id,
+        type: "System",
+        title: "Security Alert",
+        content: `Your password has reset at ${time}`,
+        io: request.app.get("io")
+    });
+
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Password has been reset successfully"));
 });

@@ -60,7 +60,11 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
         payment_method_types: ["card"],
         mode: "subscription", // For subscription based (Auto deduction)
         line_items: [{ price: stripePriceId, quantity: 1 }],
-        metadata: { userId, planId, planName:name },
+        metadata: { 
+            userId: String(userId), 
+            planId: String(planId), 
+            planName: name 
+        },
         success_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/cancel`
     };
@@ -81,6 +85,21 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
     // Get session for payment verification
     const { session_id } = request.query;
     if(!session_id) throw new ApiError(400, "Session ID is missing");
+
+    // Fetch session
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripeSession = await stripe.checkout.sessions.retrieve(session_id);
+
+    const { userId, planName } = stripeSession.metadata;
+
+    // Send notification to parent
+    await sendNotification({
+        userId: String(userId),
+        type: "System",
+        title: "Subscription Alert",
+        content: `You have successfully subscribed to ${planName}`,
+        io: request.app.get("io")
+    });    
 
     // Redirect to frontend
     const redirectUrl = `${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`;

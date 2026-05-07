@@ -70,7 +70,7 @@ const connectStripeAccount = asyncHandler(async (request, response) => {
     const accountLink = await stripe.accountLinks.create({
         account: stripeAccountId,
         refresh_url: `${process.env.FRONTEND_URL}/stripe/onboarding/refresh`,
-        return_url: `${process.env.FRONTEND_URL}/wallet/${role}`,
+        return_url: `${process.env.FRONTEND_URL}/wallet/${role}?isConnected=${true}`,
         type: "account_onboarding"
     });
 

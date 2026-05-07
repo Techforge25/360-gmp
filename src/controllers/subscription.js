@@ -84,22 +84,7 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
 const verifyStripePayment = asyncHandler(async (request, response) => {
     // Get session for payment verification
     const { session_id } = request.query;
-    if(!session_id) throw new ApiError(400, "Session ID is missing");
-
-    // Fetch session
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const stripeSession = await stripe.checkout.sessions.retrieve(session_id);
-
-    const { userId, planName } = stripeSession.metadata;
-
-    // Send notification to parent
-    await sendNotification({
-        userId: String(userId),
-        type: "System",
-        title: "Subscription Alert",
-        content: `You have successfully subscribed to ${planName}`,
-        io: request.app.get("io")
-    });    
+    if(!session_id) throw new ApiError(400, "Session ID is missing");   
 
     // Redirect to frontend
     const redirectUrl = `${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`;
@@ -219,12 +204,17 @@ const stripeWebhook = asyncHandler(async (request, response) => {
                     status: "paid" 
                 }], { session: dbSession });
 
+                // Get plan name for notification context
+                const plan = await Plan.findById(planId).select("name").lean();
+
                 // Notification
                 await sendNotification({
                     userId,
                     title: "Subscription Updated",
-                    content: "Your subscription has been updated successfully",
-                    type:"System",
+                    content: plan 
+                    ? `Your subscription has been renewed successfully to the ${plan}`
+                    : `Your subscription has been updated successfully`,
+                    type: "System",
                     io: request.app.get("io")
                 });    
                 
@@ -254,12 +244,15 @@ const stripeWebhook = asyncHandler(async (request, response) => {
                     status: "paid"
                 }], { session: dbSession });
 
+                // Get plan name for notification context
+                const plan = await Plan.findById(planId).select("name").lean();                  
+
                 // Notification
                 await sendNotification({
                     userId,
                     title: "Subscription Activated",
-                    content: "You have successfully subscribed to your plan",
-                    type:"System",
+                    content: `You have successfully subscribed to ${plan.name}`,
+                    type: "System",
                     io: request.app.get("io")
                 });  
 

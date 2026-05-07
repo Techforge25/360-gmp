@@ -34,6 +34,8 @@ io.on("connection", (socket) => {
     {
         // Join parent user private room
         socket.join(String(socket.user._id));
+        socket.join(`userProfile:${String(socket.user._id)}`);
+        socket.join(`businessProfile:${String(socket.user._id)}`);
         console.log(`User joined private room: ${String(socket.user._id)}`);
 
         const { businessProfileId, userProfileId } = user.profiles || {};

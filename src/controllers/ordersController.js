@@ -587,7 +587,8 @@ const updateOrderTrackingInfo = asyncHandler(async (request, response) => {
 
     // Emit event real-time
     const io = request.app.get("io");
-    io.to(String(order.buyerUserProfileId._id)).emit("update-order-status", { orderId:order._id, status: order.status });
+    // io.to(String(order.buyerUserProfileId._id)).emit("update-order-status", { orderId:order._id, status: order.status });
+    io.to(`userProfile:${String(userId)}`).emit("update-order-status", { orderId:order._id, status: order.status });
 
     // Send notification to user
     await sendNotification({ 
@@ -644,16 +645,18 @@ const updateOrderStatusBySeller = asyncHandler(async (request, response) => {
 
     // Emit event real-time
     const io = request.app.get("io");
-    io.to(String(order.buyerUserProfileId._id)).timeout(5000).emit("update-order-status", { orderId:order._id, status }, (error, response) => {
-        if(error)
-        {
-            console.log("Event not recieved!", error);
-        }
-        else
-        {
-            console.log("Delivered", response);
-        }
-    });
+    // io.to(String(order.buyerUserProfileId._id)).timeout(5000).emit("update-order-status", { orderId:order._id, status }, (error, response) => {
+    //     if(error)
+    //     {
+    //         console.log("Event not recieved!", error);
+    //     }
+    //     else
+    //     {
+    //         console.log("Delivered", response);
+    //     }
+    // });
+
+    io.to(`userProfile:${String(userId)}`).emit("update-order-status", { orderId:order._id, status });
 
     // Send notification to user profile
     await sendNotification({
@@ -724,7 +727,8 @@ const completeOrder = asyncHandler(async (request, response) => {
 
         // Emit event real-time
         const io = request.app.get("io");
-        io.to(String(order.sellerBusinessId._id)).emit("update-order-status", { orderId:order._id, status:order.status });
+        // io.to(String(order.sellerBusinessId._id)).emit("update-order-status", { orderId:order._id, status:order.status });
+        io.to(`businessProfile:${String(userId)}`).emit("update-order-status", { orderId:order._id, status: order.status });
         
         // Send notification to business profile for order completion
         await sendNotification({
@@ -883,10 +887,8 @@ const cancelOrder = asyncHandler(async (request, response) => {
 
         // Emit real-time update
         const io = request.app.get("io");
-        io.to(String(order.sellerBusinessId)).emit("update-order-status", {
-            orderId: order._id,
-            status: order.status
-        });
+        // io.to(String(order.sellerBusinessId)).emit("update-order-status", { orderId: order._id, status: order.status });
+        io.to(`businessProfile:${String(userId)}`).emit("update-order-status", { orderId: order._id, status: order.status });
 
         // Send notification
         await sendNotification({

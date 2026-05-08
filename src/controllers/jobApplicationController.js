@@ -68,11 +68,22 @@ const fetchjobApplications = asyncHandler(async (request, response) => {
 
 // view Job application
 const viewJobapplication = asyncHandler(async (request, response) => {
+    const { businessProfileId } = request.user.profiles || {};
     const { jobApplicationId } = request.params;
 
     // Find job application
-    const jobApplication = await JobApplication.findById(jobApplicationId);
+    const jobApplication = await JobApplication.findById(jobApplicationId)
+    .populate([
+        { path:"jobId", select:"businessId" },
+        { path:"userProfileId", select:"fullName" },
+    ]).select("-__v -updatedAt");
     if(!jobApplication) throw new ApiError(404, "Job application not found! Invalid job application ID");
+
+    // Authorize check
+    if(String(jobApplication.jobId.businessId) !== String(businessProfileId))
+    {
+        throw new ApiError(403, "You are not authorized to view this job application");
+    }
 
     // Update status to viewed if it's pending
     if(jobApplication.status === "pending") 

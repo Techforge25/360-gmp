@@ -102,6 +102,6 @@ io.on("connection", (socket) => {
 connectDB()
 .then(() => {
     server.on("error", () => console.log("Failed to listen"));
-    server.listen(port, "0.0.0.0", () => console.log(`Server is up and running on port ${port}`));
+    server.listen(port, "0.0.0.0", () => console.log(`Server is up and running on port ${port} ...`));
 })
 .catch(error => console.log("Failed to connect with database", error.message));

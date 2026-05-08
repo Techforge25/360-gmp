@@ -71,6 +71,9 @@ const viewJobapplication = asyncHandler(async (request, response) => {
     const { businessProfileId } = request.user.profiles || {};
     const { jobApplicationId } = request.params;
 
+    // Validate ID
+    if(!isValidObjectId(jobApplicationId)) throw new ApiError(400, "Invalid job application ID");
+
     // Find job application
     const jobApplication = await JobApplication.findById(jobApplicationId)
     .populate([

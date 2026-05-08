@@ -148,6 +148,7 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
         { 
             $project: { 
                 logo: 1,
+                banner: 1,
                 companyName: 1, 
                 totalReviews: 1, 
                 averageRating: 1, 

@@ -63,11 +63,8 @@ const getAllJobs = asyncHandler(async (request, response) => {
     if(payRange) 
     {
         const amount = Number(payRange);
-        // filter.salaryMin = { $lte:amount };
-        // filter.salaryMax = { $gte:amount };
-
-        filter.salaryMin = { $gte: amount };
-        filter.salaryMax = { $lte: amount };        
+        filter.salaryMin = { $lte:amount };
+        filter.salaryMax = { $gte:amount };
     }
 
     // Date Posted Filters unseen

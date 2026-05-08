@@ -109,7 +109,7 @@ app.use("/api/v1/admin/financialHub", financialHubRouter);
 app.use("/api/v1/admin/com&net", comAndNetRouter);
 
 // API status route
-app.get("/", (request, response) => response.send(`Server is up and running at port ${port}.`));
+app.get("/", (request, response) => response.send(`Server is up and running at port ${port}`));
 
 // Error handling middleware
 app.use(errorHandler);

@@ -116,7 +116,7 @@ const fetchAllProducts = asyncHandler(async (request, response) => {
         },        
 
         // Filter by rating
-        ...(rating ? [{ $match: { avgRating: { $eq: Number(rating) } } }] : []),         
+        ...(rating ? [{ $match: { avgRating: { $gte: Number(rating) } } }] : []),         
 
         // Sort by avgRating then totalReviews
         {

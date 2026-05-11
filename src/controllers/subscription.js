@@ -211,8 +211,8 @@ const stripeWebhook = asyncHandler(async (request, response) => {
                 await sendNotification({
                     userId,
                     title: "Subscription Updated",
-                    content: plan 
-                    ? `Your subscription has been renewed successfully to the ${plan}`
+                    content: `You have successfully re-subscribed to ${plan.name}` 
+                    ? `Your subscription has been renewed successfully to the ${plan.name}`
                     : `Your subscription has been updated successfully`,
                     type: "System",
                     io: request.app.get("io")

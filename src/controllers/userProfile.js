@@ -71,7 +71,8 @@ const viewUserProfile = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     
     // Get user profile
-    const userProfile = await UserProfile.findOne({ userId }).lean();
+    const userProfile = await UserProfile.findOne({ userId })
+    .select("-__v -updatedAt -isVerified -cancellationCount -lastCancellationAt -accountFrozenUntil").lean();
     if(!userProfile) throw new ApiError(404, "User profile not found");
 
     // Response

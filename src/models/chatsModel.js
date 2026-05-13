@@ -17,7 +17,14 @@ const chatSchema = new Schema({
     // Message details
     message: { type:String, trim:true, required:true },
     messageType: { type:String, enum:["text", "file", "customOffer"], default:"text" },
+
+    // Read status
     isRead: { type:Boolean, default:false },
+    readAt: { type:Date, default:null },
+
+    // Last message tracking
+    lastMessage: { type:String, trim:true },
+    lastMessageAt: { type:Date, default: Date.now },
 
     // Media
     fileUrl: { type:String, trim:true }

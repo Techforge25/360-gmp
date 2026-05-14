@@ -117,7 +117,7 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
         },
 
         // Filter by rating
-        ...(rating ? [{ $match: { averageRating: { $eq: Number(rating) } } }] : []),     
+        ...(rating ? [{ $match: { averageRating: { $gte: Number(rating) } } }] : []),     
 
         // Existing product lookup
         {
@@ -295,7 +295,6 @@ const fetchBusinessCommunities = asyncHandler(async (request, response) => {
         select: "-__v -updatedAt -postingPermissions -colorHashcode -rules -industry -purpose -bannerTagLine",
         sort:{ createdAt:-1 },
     };
-
 
     const communities = await Community.paginate({ businessId }, options);
     if(!communities.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No business communities found"));

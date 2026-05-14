@@ -1236,6 +1236,8 @@ const viewOrder = asyncHandler(async (request, response) => {
     const orderId = convertToMongoId(request.params.orderId);
     const { userProfileId } = request.user.profiles || {};
 
+    if(!isValidObjectId(orderId)) throw new ApiError(400, "Invalid Order ID");
+    
     // Fetch order details
     const orderDetails = await Order.aggregate([
             // Match order ID

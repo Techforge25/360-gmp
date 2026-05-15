@@ -28,8 +28,8 @@ const createProductSchema = Joi.object({
     lowStockThreshold: Joi.number().integer().min(1).allow(null).label("Lock threeshold"),    
     shippingCost: Joi.number().min(0).required().label("Shipping Cost"),
     estimatedDeliveryDays: Joi.string().pattern(qtyPattern).required().label("Estimated Delivery Days"),    
-    isFeatured: Joi.boolean().default(false),
-    isSingleProductAvailable: Joi.boolean().default(false),
+    isFeatured: Joi.boolean(),
+    isSingleProductAvailable: Joi.boolean(),
     status: Joi.string().valid("pending", "approved", "rejected", "draft"),
     shippingTerms: Joi.string().pattern(customPattern).allow("", null)
 });

@@ -5,6 +5,7 @@ const alphaNumericPattern = /^[a-zA-Z0-9 -]*$/;
 const namePattern = /^[a-zA-Z ]*$/;
 const customPattern = /^[a-zA-Z0-9 \-.,\n\r]*$/;
 const titlePattern = /^[a-zA-Z0-9 \-(),.'&]*$/;
+const jobTitlePattern = /^[a-zA-Z0-9 \-(),.'&/]*$/;
 const addressPattern = /^[a-zA-Z0-9 -,]*$/;
 
 const educationSchema = joi.object({
@@ -27,7 +28,7 @@ const createUserProfileSchema = joi.object({
     fullName: joi.string().pattern(namePattern).min(3).max(40).required().label("Full name").messages({
         "string.pattern.base": "Full name can only contain letters and spaces"
     }),
-    title: joi.string().pattern(titlePattern).max(40).allow("", null).label("Title"),
+    title: joi.string().pattern(jobTitlePattern).max(40).allow("", null).label("Title"),
     phone: joi.string().trim().max(15).pattern(/^\+?[1-9]\d{9,14}$/).required().messages({
         "string.pattern.base": "Phone number must be a valid international format (e.g., +923001234567)."
     }).label("Phone"),
@@ -42,7 +43,7 @@ const createUserProfileSchema = joi.object({
     employmentType:joi.array().items(joi.string().pattern(alphaNumericPattern)).allow("", null).label("Employment type"),
 
     // Job preferences
-    targetJob: joi.string().pattern(titlePattern).max(200).allow("", null).label("Target job"),
+    targetJob: joi.string().pattern(jobTitlePattern).max(200).allow("", null).label("Target job"),
     minSalary: joi.number().min(0).label("Minimum salary"),
     maxSalary: joi.number().greater(joi.ref("minSalary")).label("Maximum salary"),
     education: educationSchema.default({}).label("Education")
@@ -79,7 +80,7 @@ const allowedEmploymentTypes = ["Full-Time", "Remote", "Contract", "Hybrid", "Pa
 
 // Add work experience validation schema
 const addWorkExperienceValidationSchema = joi.object({
-    jobTitle: joi.string().pattern(titlePattern).trim().max(50).required().label("Job title"),
+    jobTitle: joi.string().pattern(jobTitlePattern).trim().max(50).required().label("Job title"),
     employmentType: joi.array().items(joi.string().trim().valid(...allowedEmploymentTypes)).min(1).max(5).label("Employment type"),
     companyName: joi.string().pattern(titlePattern).trim().max(50).required().label("Company name"),
     startDate: joi.date().required().label("Starting date"),
@@ -96,7 +97,7 @@ const addWorkExperienceValidationSchema = joi.object({
 
 // Update job preferences validation schema
 const updateJobPreferencesValidationSchema = joi.object({
-    targetJob: joi.string().pattern(titlePattern).max(50).allow("", null).label("Target job"),
+    targetJob: joi.string().pattern(jobTitlePattern).max(50).allow("", null).label("Target job"),
     employmentType: joi.array().items(joi.string().trim().valid(...allowedEmploymentTypes)).min(1).max(5).label("Employment type"),
 });
 

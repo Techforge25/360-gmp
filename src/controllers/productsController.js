@@ -172,8 +172,6 @@ const fetchFeaturedProducts = asyncHandler(async (request, response) => {
 // Fetch business featured products (Shown on business profile)
 const fetchBusinessFeaturedProducts = asyncHandler(async (request, response) => {
     const { businessId } = request.params;
-    const business = await BusinessProfile.findById(businessId).lean();
-    if(!business) throw new ApiError(404, "Business not found");    
 
     // Pagination options
     const { page = 1, limit = 10 } = request.query;

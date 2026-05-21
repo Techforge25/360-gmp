@@ -41,7 +41,7 @@ const b2bContactSchema = Joi.object({
 const createBusinessProfileSchema = Joi.object({
     ownerName: Joi.string().min(3).max(200).required().trim().pattern(ownerNamePattern).label("Owner name"),
     identificationOfBusinessOwner: Joi.string().min(5).max(20).pattern(identificationPattern).required().trim().label("Identification of business owner"),
-    companyName: Joi.string().min(5).max(200).required().trim().pattern(alphaNumericPattern).label("Business name"),
+    companyName: Joi.string().min(3).max(50).required().trim().pattern(alphaNumericPattern).label("Business name"),
     tradeName: Joi.string().max(200).trim().optional().pattern(alphaNumericPattern).label("Trade name"),
     businessType: Joi.string().max(50).trim().allow("", null).pattern(alphaNumericPattern).label("Business type"),
     companySize: Joi.string().trim().allow("", null).pattern(alphaNumericPattern).label("Company size"),

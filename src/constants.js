@@ -5,7 +5,7 @@ const frontendUrl = isProduction ? process.env.FRONTEND_URL : "http://localhost:
 
 // Cors options
 const corsOptions = {
-    origin:[frontendUrl, "https://360-gmp-front-end-git-staging-aftabs-projects-80f407ba.vercel.app"],
+    origin:[frontendUrl, "https://360-gmp-front-end-git-staging-aftabs-projects-80f407ba.vercel.app", "http://localhost:3000"],
     credentials:true,
     methods:["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders:["Content-Type", "Authorization"]

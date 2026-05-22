@@ -13,11 +13,7 @@ const jobLocationSchema = Joi.object({
 
 // Create Job schema
 const createJobSchema = Joi.object({
-    businessId: Joi.string().required().messages({
-        "any.required": "Business ID is required",
-        "string.empty": "Business ID cannot be empty"
-    }),
-    jobTitle: Joi.string().pattern(jobTitlePattern).trim().required().messages({
+    jobTitle: Joi.string().pattern(jobTitlePattern).trim().min(2).max(50).required().messages({
         "any.required": "Job title is required",
         "string.pattern.base": "Job title can only contain letters, numbers, spaces, hyphens, and parentheses"
     }),
@@ -29,8 +25,7 @@ const createJobSchema = Joi.object({
     salaryMax: Joi.number().min(0).allow(null).greater(Joi.ref("salaryMin")).messages({
         "number.greater": "Maximum salary must be greater than minimum salary"
     }),
-    location: jobLocationSchema.allow({}, null),
-    status: Joi.string().pattern(alphaNumericPattern).trim().allow("", null)
+    location: jobLocationSchema.allow({}, null)
 });
 
 // Update Job schema (all fields optional)

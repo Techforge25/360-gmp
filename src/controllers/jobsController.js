@@ -14,9 +14,11 @@ const validate = require("../utils/validate");
 // Create Job
 const createJob = asyncHandler(async (request, response) => {
     const userId = request.user._id;
+    const { businessProfileId } = request.user.profiles || {};
 
     // Validate
-    const { error, value } = createJobSchema.validate(request.body, { abortEarly: false });
+    const { jobTitle, jobCategory, employmentType, experienceLevel,
+    description, salaryMin, salaryMax, location } = validate(createJobSchema, request.body);
     if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
 
     // Check if businessId exists
@@ -26,7 +28,17 @@ const createJob = asyncHandler(async (request, response) => {
     }
 
     // Create job
-    const job = await Job.create(value);
+    const job = await Job.create({ 
+        businessProfileId, 
+        jobTitle, 
+        jobCategory, 
+        employmentType, 
+        experienceLevel,
+        description,
+        salaryMin,
+        salaryMax,
+        location
+    });
     if(!job) throw new ApiError(500, "Failed to create job");
 
     // Populate businessId

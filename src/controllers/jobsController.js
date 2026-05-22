@@ -21,12 +21,6 @@ const createJob = asyncHandler(async (request, response) => {
     description, salaryMin, salaryMax, location } = validate(createJobSchema, request.body);
     if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
 
-    // Check if businessId exists
-    const businessProfile = await BusinessProfile.findById(value.businessId);
-    if(!businessProfile) {
-        throw new ApiError(404, "Business profile not found. Invalid business ID");
-    }
-
     // Create job
     const job = await Job.create({ 
         businessProfileId, 

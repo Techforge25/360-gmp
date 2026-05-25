@@ -362,11 +362,10 @@ const verifypasswordResetToken = asyncHandler(async (request, response) => {
     const { email, passwordResetToken } = validate(verifyPasswordResetTokenSchema, request.body);
 
     // Find user
-    const user = await User.findOne({ email: email.toLowerCase() });
-    if(!user) throw new ApiError(404, "User not found associated with this email");
+    const user = await User.findOne({ email, passwordResetToken });
+    if(!user) throw new ApiError(400, "Invalid reset token");
 
-    // Validate token
-    if(user.passwordResetToken !== passwordResetToken) throw new ApiError(400, "Invalid reset token");
+    // Validate token expriy
     if(user.passwordResetTokenExpires < Date.now()) throw new ApiError(400, "Reset token has expired");
 
     // Response

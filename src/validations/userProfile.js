@@ -9,9 +9,9 @@ const jobTitlePattern = /^[a-zA-Z0-9 \-(),.'&/]*$/;
 const addressPattern = /^[a-zA-Z0-9 -,]*$/;
 
 const educationSchema = joi.object({
-    institution: joi.string().pattern(titlePattern).trim().min(1).max(50).required().label("Institution"),
-    degree: joi.string().pattern(titlePattern).trim().min(1).max(50).required().label("Degree"),
-    fieldOfStudy: joi.string().pattern(titlePattern).trim().min(1).max(50).required().label("Field of Study"),
+    institution: joi.string().pattern(titlePattern).trim().min(1).max(50).optional().label("Institution"),
+    degree: joi.string().pattern(titlePattern).trim().min(1).max(50).optional().label("Degree"),
+    fieldOfStudy: joi.string().pattern(titlePattern).trim().min(1).max(50).optional().label("Field of Study"),
     startDate: joi.date().required().label("Start date"),
 
     endDate: joi.date().min(joi.ref("startDate")).when("isCurrent", { 
@@ -21,7 +21,7 @@ const educationSchema = joi.object({
     isCurrent: joi.boolean().default(false),
     description: joi.string().trim().max(2000).optional().label("Educational description"),
     grade: joi.string().pattern(/^[a-zA-Z0-9 -.]*$/).max(20).allow("", null)
-});
+}).optional();
 
 // Create user profile validation schema
 const createUserProfileSchema = joi.object({

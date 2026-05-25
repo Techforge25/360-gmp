@@ -18,8 +18,8 @@ const BusinessProfileSchema = new Schema({
     countryOfRegistration: { type: String, trim: true },
 
     // Legal & Compliance
-    businessRegistrationNumber: { type: String, trim: true }, // New
-    taxIdentificationNumber: { type: String, trim: true }, // TIN / VAT / EIN
+    businessRegistrationNumber: { type: String, trim: true, unique: [true, "This business registration number has already taken"] }, // New
+    taxIdentificationNumber: { type: String, trim: true, unique:[true, "This tax identification number has already been taken"] }, // TIN / VAT / EIN
     dunsNumber: { type: String, trim: true }, // New (Data Universal Numbering System for international trade credibility)
     complianceScreeningStatus: { type: Boolean, required:true }, // AML/PEP results
 

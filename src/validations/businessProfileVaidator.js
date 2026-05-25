@@ -89,7 +89,7 @@ const createBusinessProfileSchema = Joi.object({
 
     // Operational & Trade Profile   
     regionOfOperations: Joi.array().items(Joi.string().pattern(alphaNumericPattern)).label("Region of operations"),  
-    productionCapacity: Joi.string().trim().max(1000).optional().pattern(customPattern).label("Production capacity"),   
+    productionCapacity: Joi.number().integer().positive().optional().label("Production capacity"),   
     tradeAffiliations: Joi.array().min(1).max(5).items(Joi.string().pattern(tradeAffiliationPattern).min(2).max(100)).label("Trade Affiliations"),
 
     // Financial & Regulatory Data
@@ -160,8 +160,8 @@ const updateBusinessProfileSchema = Joi.object({
     })),  
     
     // Operational & Trade Profile   
-    regionOfOperations: Joi.array().items(Joi.string().pattern(alphaNumericPattern)).label("Region of operations"),  
-    productionCapacity: Joi.string().trim().max(1000).optional().pattern(customPattern).label("Production capacity"),  
+    regionOfOperations: Joi.array().items(Joi.string().pattern(alphaNumericPattern)).label("Region of operations"),   
+    productionCapacity: Joi.number().integer().positive().optional().label("Production capacity"),
     tradeAffiliations: Joi.array().items(Joi.string().pattern(alphaNumericPattern)).label("Trade Affiliations"),
 
     // Financial & Regulatory Data

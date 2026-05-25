@@ -51,7 +51,7 @@ const BusinessProfileSchema = new Schema({
 
     // Operational & Trade Profile
     regionOfOperations: { type:[String] }, // New
-    productionCapacity: { type: String, trim: true }, // New
+    productionCapacity: { type: Number, trim: true }, // New
     tradeAffiliations: { type: [String], default: [] }, // New
 
     // Financial & Regulatory Data

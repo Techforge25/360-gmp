@@ -305,14 +305,16 @@ const switchRole = asyncHandler(async (request, response) => {
     if(role.toLowerCase() === "user")
     {
         const userProfile = await getUserProfile(userId);
-        if(!userProfile) return response.status(303).redirect(`${frontendUrl}/dashboard/user`);
+        // if(!userProfile) return response.status(303).redirect(`${frontendUrl}/dashboard/user`);
+        if(!userProfile) throw new ApiError(400, "User profile not found! Please create user profile first");
     }
 
     // Check if business profile actually exist before switching
     if(role.toLowerCase() === "business")
     {
         const businessProfile = await getBusinessProfile(userId);
-        if(!businessProfile) return response.status(303).redirect(`${frontendUrl}/dashboard/business`);
+        // if(!businessProfile) return response.status(303).redirect(`${frontendUrl}/dashboard/business`);
+        if(!businessProfile) throw new ApiError(400, "Business profile not found! Please create business profile first");
         if(request.user.planName === "TRIAL") throw new ApiError(403, "Switching to a business profile is not allowed while you are on a trial plan");
     }    
 

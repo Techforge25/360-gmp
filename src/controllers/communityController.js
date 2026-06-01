@@ -77,7 +77,7 @@ const getAllCommunities = asyncHandler(async (request, response) => {
     if(search) filter.name = { $regex: search, $options: "i" };
     if(industry) filter.industry = { $regex:industry, $options:"i" };
     if(region) filter.region = { $regex:region, $options:"i" };
-    if(businessId) filter.businessId = businessId;
+    if(businessId) filter.businessId = convertToMongoId(businessId);
     if(type) filter.type = type;
     if(status) filter.status = status;
     if(category) filter.category = category;

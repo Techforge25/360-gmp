@@ -1,5 +1,5 @@
 const { isValidObjectId } = require("mongoose");
-const { cookieOptions } = require("../constants");
+const { cookieOptions, frontendUrl } = require("../constants");
 const BusinessProfile = require("../models/businessProfileSchema");
 const UserProfile = require("../models/userProfile");
 const User = require("../models/users");
@@ -215,7 +215,7 @@ const logout = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Clear refresh token from db
-    const user = await User.findByIdAndUpdate(userId, { refreshToken:null }, { new:true, lean:true }).select("_id");
+    const user = await User.findByIdAndUpdate(userId, { $set:{ refreshToken:null } });
     if(!user) throw new ApiError(500, "Failed to clear refresh token from db"); 
 
     // Response
@@ -278,21 +278,23 @@ const refreshAccessToken = asyncHandler(async (request, response) => {
 const switchRole = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const role = request.query?.role || null;
+
+    // Validate
     if(!role) throw new ApiError(400, "Role is required for switching a profile");
-    if(role.toLowerCase() !== "user" && role.toLowerCase() !== "business") throw new ApiError(400, "Invalid role");
+    if(!["user", "business"].includes(role.toLowerCase())) throw new ApiError(400, "Invalid role. Role must be either 'user' or 'business'");
 
     // Check if user profile actually exist before switching
     if(role.toLowerCase() === "user")
     {
         const userProfile = await getUserProfile(userId);
-        if(!userProfile) throw new ApiError(404, "User profile not found! Please create user profile first");
+        if(!userProfile) return response.status(303).redirect(`${frontendUrl}/dashboard/user`);
     }
 
     // Check if business profile actually exist before switching
     if(role.toLowerCase() === "business")
     {
         const businessProfile = await getBusinessProfile(userId);
-        if(!businessProfile) throw new ApiError(404, "Business profile not found! Please create business profile first");
+        if(!businessProfile) return response.status(303).redirect(`${frontendUrl}/dashboard/business`);
         if(request.user.planName === "TRIAL") throw new ApiError(403, "Switching to a business profile is not allowed while you are on a trial plan");
     }    
 
@@ -323,7 +325,7 @@ const switchRole = asyncHandler(async (request, response) => {
     // Response
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
-    .json(new ApiResponse(200, { profilePayload }, `Access token has been refreshed! role has changed to ${role}`));
+    .json(new ApiResponse(200, { profilePayload }, `Role has changed to ${role}`));
 });
 
 // Forgot password

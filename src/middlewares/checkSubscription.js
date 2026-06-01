@@ -1,3 +1,4 @@
+const { frontendUrl } = require("../constants");
 const Subscription = require("../models/subscription");
 const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
@@ -5,10 +6,11 @@ const asyncHandler = require("../utils/asyncHandler");
 // Main middleware to check subscription and attach plan info
 const checkSubscription = asyncHandler(async (request, response, next) => {
     const userId = request.user?._id;
+    const role = request.user?.role;
     
     // Find subscription with populated plan details
-    const subscription = await Subscription.findOne({ userId, status:"active" }).populate("planId");
-    if(!subscription) throw new ApiError(400, "No active subscription found");
+    const subscription = await Subscription.findOne({ userId, status: "active" }).populate("planId");
+    if(!subscription) return response.status(303).redirect(`${frontendUrl}/dashboard/${role}/subscriptions`);
 
     // Check expiry
     const currentDate = new Date();
@@ -16,7 +18,7 @@ const checkSubscription = asyncHandler(async (request, response, next) => {
     {
         subscription.status = "expired";
         await subscription.save();
-        throw new ApiError(403, "Your subscription has been expired! Please renew");
+        return response.status(303).redirect(`${frontendUrl}/dashboard/${role}/subscriptions`);
     }
 
     // Attach subscription and plan info to request object

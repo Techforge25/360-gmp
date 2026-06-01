@@ -17,6 +17,7 @@ const { userSignupValidator, userLoginValidator, verifyOtpValidator, resendOtpVa
 const verifyPasswordResetTokenSchema = require("../validations/verifyPasswordResetTokenValidator");
 const bcrypt = require("bcrypt");
 const sendNotification = require("../utils/sendNotification");
+const Subscription = require("../models/subscription");
 
 // User signup
 const userSignup = asyncHandler(async (request, response) => {
@@ -201,7 +202,24 @@ const userLogin = asyncHandler(async (request, response) => {
     await User.updateOne({ _id: user._id }, { $set: { refreshToken } });
 
     // Is new user flag
-    const isNewUser = Boolean(!user.role);    
+    const isNewUser = Boolean(!user.role);
+    
+    // If any profile created
+    if(user.role !== null)
+    {
+        // Find subscription
+        const subscription = await Subscription.findOne({ userId: user._id, status: "active" });
+        if(!subscription) return response.status(303).redirect(`${frontendUrl}/dashboard/${user.role}/subscriptions`);
+
+        // Check expiry
+        const currentDate = new Date();
+        if(new Date(subscription.endDate) < currentDate)
+        {
+            subscription.status = "expired";
+            await subscription.save();
+            return response.status(303).redirect(`${frontendUrl}/dashboard/${user.role}/subscriptions`);
+        }         
+    }
 
     // Response
     return response.status(200)

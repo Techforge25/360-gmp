@@ -13,7 +13,7 @@ const { getUserProfile, getBusinessProfile } = require("../utils/getProfiles");
 const validate = require("../utils/validate");
 const forgotPasswordSchema = require("../validations/forgotPasswordValidator");
 const resetPasswordSchema = require("../validations/resetPasswordValidator");
-const { userSignupValidator, userLoginValidator } = require("../validations/user");
+const { userSignupValidator, userLoginValidator, verifyOtpValidator } = require("../validations/user");
 const verifyPasswordResetTokenSchema = require("../validations/verifyPasswordResetTokenValidator");
 const bcrypt = require("bcrypt");
 const sendNotification = require("../utils/sendNotification");
@@ -98,12 +98,10 @@ const resendOTPToken = asyncHandler(async (request, response) => {
 
 // Verify OTP
 const verifyOTP = asyncHandler(async (request, response) => {
-    const { userId, accountVerificationToken } = request.body || {};
+    const { userId, accountVerificationToken } = validate(verifyOtpValidator, request.body) || {};
 
     // Validate
-    if(!userId) throw new ApiError(400, "User ID is missing");
     if(!isValidObjectId(userId)) throw new ApiError(400, "User ID is not a valid MongoDB ID");
-    if(!accountVerificationToken) throw new ApiError(400, "OTP Token is missing");
 
     // Find user
     const user = await User.findById(userId);

@@ -18,4 +18,10 @@ const userLoginValidator = joi.object({
     passwordHash: joi.string().trim().required().label("Password")
 });
 
-module.exports = { userSignupValidator, userLoginValidator };
+// Verify otp validator
+const verifyOtpValidator = joi.object({
+    userId: joi.string().trim().required().label("User ID"),
+    accountVerificationToken: joi.string().trim().length(6).required().label("OTP")
+});
+
+module.exports = { userSignupValidator, userLoginValidator, verifyOtpValidator };

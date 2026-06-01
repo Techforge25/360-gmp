@@ -98,7 +98,7 @@ const updateBusinessIntelligenceValidator = joi.object({
     
     executiveLeadership: joi.array().min(1).items(joi.string().pattern(contactNamePattern).min(2).max(100)).label("Executive Leadership"),
     regionOfOperations: joi.array().items(joi.string().pattern(alphaNumericPattern)).label("Region of operations"),   
-    productionCapacity: Joi.number().integer().positive().optional().label("Production capacity"),   
+    productionCapacity: joi.number().integer().positive().optional().label("Production capacity"),   
     tradeAffiliations: joi.array().min(1).max(5).items(joi.string().pattern(tradeAffiliationPattern).min(2).max(100)).label("Trade Affiliations"),
     auditingAgency: joi.string().pattern(auditingAgencyPattern).min(3).max(100).trim().label("Auditing agency")
 });

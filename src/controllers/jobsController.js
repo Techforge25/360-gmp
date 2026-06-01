@@ -19,7 +19,6 @@ const createJob = asyncHandler(async (request, response) => {
     // Validate
     const { jobTitle, jobCategory, employmentType, experienceLevel,
     description, salaryMin, salaryMax, location } = validate(createJobSchema, request.body);
-    if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
 
     // Create job
     const job = await Job.create({ 

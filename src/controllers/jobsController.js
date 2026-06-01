@@ -96,7 +96,8 @@ const getAllJobs = asyncHandler(async (request, response) => {
         populate: {
             path: "businessId",
             select: "companyName businessType primaryIndustry logo"
-        }
+        },
+        select: "-viewedBy -updatedAt -__v -viewsCount"
     });
 
     // Response

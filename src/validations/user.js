@@ -24,4 +24,9 @@ const verifyOtpValidator = joi.object({
     accountVerificationToken: joi.string().trim().length(6).required().label("OTP")
 });
 
-module.exports = { userSignupValidator, userLoginValidator, verifyOtpValidator };
+// Resend OTP validator
+const resendOtpValidator = joi.object({
+    email: joi.string().trim().email().lowercase().required().label("Email")
+});
+
+module.exports = { userSignupValidator, userLoginValidator, verifyOtpValidator, resendOtpValidator };

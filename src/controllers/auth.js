@@ -13,7 +13,7 @@ const { getUserProfile, getBusinessProfile } = require("../utils/getProfiles");
 const validate = require("../utils/validate");
 const forgotPasswordSchema = require("../validations/forgotPasswordValidator");
 const resetPasswordSchema = require("../validations/resetPasswordValidator");
-const { userSignupValidator, userLoginValidator, verifyOtpValidator } = require("../validations/user");
+const { userSignupValidator, userLoginValidator, verifyOtpValidator, resendOtpValidator } = require("../validations/user");
 const verifyPasswordResetTokenSchema = require("../validations/verifyPasswordResetTokenValidator");
 const bcrypt = require("bcrypt");
 const sendNotification = require("../utils/sendNotification");
@@ -24,7 +24,7 @@ const userSignup = asyncHandler(async (request, response) => {
     const { email, passwordHash } = validate(userSignupValidator, request.body) || {};
 
     // Check if email exist
-    const user = await User.findOne({ email: email.toLowerCase() }).select("_id email status").lean();
+    const user = await User.findOne({ email }).select("_id email status").lean();
     if(user)
     {
         if(user.status === "pending")
@@ -36,7 +36,6 @@ const userSignup = asyncHandler(async (request, response) => {
             throw new ApiError(400, "This email has already been taken");
         }
     }
-    
 
     // Generate OTP token
     const { code:accountVerificationToken } = generateCode(6);
@@ -65,12 +64,10 @@ const userSignup = asyncHandler(async (request, response) => {
 
 // Resend OTP token for account verification
 const resendOTPToken = asyncHandler(async (request, response) => {
-    const { email } = request.body || {};
-    if(!email) throw new ApiError(400, "Email is required");
-    const validEmail = email.toLowerCase();
+    const { email } = validate(resendOtpValidator, request.body) || {};
 
     // Find user
-    const user = await User.findOne({ email: validEmail });
+    const user = await User.findOne({ email });
     if(!user) throw new ApiError(404, "User not found associated with this email");
     if(user.status !== "pending") throw new ApiError(400, "Your account is already activated");
 
@@ -82,7 +79,7 @@ const resendOTPToken = asyncHandler(async (request, response) => {
     user.accountVerificationToken = accountVerificationToken;
 
     // Send email
-    const result = await sendEmail(validEmail, "Account Activation Token", 
+    const result = await sendEmail(email, "Account Activation Token", 
         `<p>Your OTP Token is: <strong>${accountVerificationToken}</strong></p>
         <p>Please use this token to activate your account.</p>`
         );

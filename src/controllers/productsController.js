@@ -93,11 +93,55 @@ const fetchAllProducts = asyncHandler(async (request, response) => {
             }
         },
 
+        // Lookup order
+        {
+            $lookup:{
+                from: "orders",
+                let: { productId: "$_id" },
+                pipeline: [
+                    { $match: { status: "completed" } },
+                    {
+                        $match: {
+                            $expr: {
+                                $in: ["$$productId", "$items.productId"]
+                            }
+                        }
+                    }
+                ],
+                as:"orders"
+            }
+        },
+
         // Add totalReviews and avgRating
         {
             $addFields: {
                 totalReviews: { $size: "$reviews" },
-                avgRating: { $avg: "$reviews.rating" }
+                avgRating: { $avg: "$reviews.rating" },
+                sold: {
+                    $sum: {
+                        $map: {
+                            input: "$orders",
+                            as: "order",
+                            in: {
+                                $sum: {
+                                    $map: {
+                                        input: {
+                                            $filter: {
+                                                input: "$$order.items",
+                                                as: "item",
+                                                cond: {
+                                                    $eq: ["$$item.productId", "$_id"]
+                                                }
+                                            }
+                                        },
+                                        as: "matchedItem",
+                                        in: "$$matchedItem.quantity"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
 
@@ -128,13 +172,46 @@ const fetchAllProducts = asyncHandler(async (request, response) => {
         },
 
         // Projection
-        { $project:{ __v:0, updatedAt:0, reviews:0 } }
+        { $project:{ __v:0, updatedAt:0, reviews:0, orders:0 } }
     ], { page, limit });
     if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Products not found"));
 
     // Response
     return response.status(200).json(new ApiResponse(200, products, "All products have been fetched"));
 });
+
+// Fetch featured products (Shown on market place)
+// const fetchFeaturedProducts = asyncHandler(async (request, response) => {
+//     const userId = request.user._id;
+
+//     // Pagination options
+//     const { page = 1, limit = 10 } = request.query;
+
+//     const options = {
+//         page: Number(page),
+//         limit: Number(limit),
+//         populate:{ path:"businessId", select:"ownerUserId" },
+//         sort:{ createdAt:-1 }
+//     };
+    
+//     // Find products
+//     const products = await Product.paginate({ isFeatured:true, status:"approved" }, options);
+//     if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Featured Products not found")); 
+
+//     // Get owner flag
+//     const updatedProducts = products.docs.map((product) => {
+//         let isOwner = false;
+//         if(product.businessId)
+//         {    
+//             const { ownerUserId } = product.businessId;
+//             isOwner = ownerUserId?.equals(userId);
+//             return { ...product.toObject(), isOwner };
+//         }
+//     });    
+
+//     // Response
+//     return response.status(200).json(new ApiResponse(200, updatedProducts, "All Featured products have been fetched"));
+// });
 
 // Fetch featured products (Shown on market place)
 const fetchFeaturedProducts = asyncHandler(async (request, response) => {
@@ -154,15 +231,37 @@ const fetchFeaturedProducts = asyncHandler(async (request, response) => {
     const products = await Product.paginate({ isFeatured:true, status:"approved" }, options);
     if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Featured Products not found")); 
 
+    // Get product ids
+    const productIds = products.docs.map((product) => product._id);
+
+    // Fetch completed orders
+    const orders = await Order.find({ status:"completed", "items.productId": { $in:productIds }}).select("items");
+
+    // Calculate total sold
+    const totalSoldMap = {};
+
+    orders.forEach((order) => {
+        order.items.forEach((item) => {
+            const productId = String(item.productId);
+
+            if(!totalSoldMap[productId]) totalSoldMap[productId] = 0;
+            totalSoldMap[productId] += item.quantity;
+        });
+    });
+
     // Get owner flag
     const updatedProducts = products.docs.map((product) => {
         let isOwner = false;
+
         if(product.businessId)
         {    
             const { ownerUserId } = product.businessId;
             isOwner = ownerUserId?.equals(userId);
-            return { ...product.toObject(), isOwner };
+
+            return { ...product.toObject(), isOwner, sold: totalSoldMap[product._id.toString()] || 0 };
         }
+
+        return { ...product.toObject(), isOwner, sold: 0 };
     });    
 
     // Response
@@ -419,15 +518,53 @@ const fetchTopRankingProducts = asyncHandler(async (request, response) => {
 });
 
 // Fetch new products (Latest 30 products) (Shown on market place)
+// const fetchNewProducts = asyncHandler(async (request, response) => {    
+
+//     // Find products
+//     const products = await Product.find({ status:"approved" })
+//     .select("title detail image minOrderQty pricePerUnit").sort("-createdAt").limit(30)
+//     if(!products.length) return response.status(200).json(new ApiResponse(200, emptyList, "Latest products not found"));
+
+//     // Response
+//     return response.status(200).json(new ApiResponse(200, products, "Latest products have been fetched"));
+// });
+
+// Fetch new products (Latest 30 products) (Shown on market place)
 const fetchNewProducts = asyncHandler(async (request, response) => {    
 
     // Find products
     const products = await Product.find({ status:"approved" })
-    .select("title detail image minOrderQty pricePerUnit").sort("-createdAt").limit(30)
+    .select("title detail image minOrderQty pricePerUnit")
+    .sort("-createdAt").limit(30).lean();
+
     if(!products.length) return response.status(200).json(new ApiResponse(200, emptyList, "Latest products not found"));
 
+    // Get product ids
+    const productIds = products.map((product) => product._id);
+
+    // Fetch completed orders
+    const orders = await Order.find({ status:"completed", "items.productId": { $in:productIds }}).select("items");
+
+    // Calculate total sold
+    const totalSoldMap = {};
+
+    orders.forEach((order) => {
+        order.items.forEach((item) => {
+            const productId = item.productId.toString();
+
+            if(!totalSoldMap[productId]) totalSoldMap[productId] = 0;
+            totalSoldMap[productId] += item.quantity;
+        });
+    });
+
+    // Attach total sold
+    const updatedProducts = products.map((product) => ({
+        ...product,
+        sold: totalSoldMap[product._id.toString()] || 0
+    }));
+
     // Response
-    return response.status(200).json(new ApiResponse(200, products, "Latest products have been fetched"));
+    return response.status(200).json(new ApiResponse(200, updatedProducts, "Latest products have been fetched"));
 });
 
 // Fetch flash deals (Top-deals products) (Shown on market place)

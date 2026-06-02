@@ -3,9 +3,12 @@ const port = process.env.PORT || 8000;
 const isProduction = process.env.NODE_ENV === "production";
 const frontendUrl = isProduction ? process.env.FRONTEND_URL : "http://localhost:3000";
 
+// Staging URL
+const frontendStagingUrl = "https://360-gmp-front-end-git-staging-aftabs-projects-80f407ba.vercel.app";
+
 // Cors options
 const corsOptions = {
-    origin:[frontendUrl, "https://360-gmp-front-end-git-staging-aftabs-projects-80f407ba.vercel.app", "http://localhost:3000"],
+    origin:[frontendUrl, frontendStagingUrl, "http://localhost:3000"],
     credentials:true,
     methods:["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders:["Content-Type", "Authorization"]
@@ -42,6 +45,7 @@ module.exports = {
     port,
     isProduction,
     frontendUrl,
+    frontendStagingUrl,
     corsOptions,
     cookieOptions,
     emptyList,

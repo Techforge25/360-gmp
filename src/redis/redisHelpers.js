@@ -16,7 +16,7 @@ const setCache = async (key, value, minutes = 1) => {
     } 
     catch (error) 
     {
-        console.log("Failed to set string cache", error.message);
+        console.log("Failed to set cache", error.message);
         return false;
     }
 };
@@ -32,7 +32,7 @@ const getCache = async (key) => {
     } 
     catch(error) 
     {
-        console.log("Failed to get string in cache", error.message);
+        console.log("Failed to get cache", error.message);
         return null;
     }
 };

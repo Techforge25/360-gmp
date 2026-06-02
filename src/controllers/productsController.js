@@ -446,14 +446,10 @@ const fetchTopRankingProducts = asyncHandler(async (request, response) => {
 
     const topProducts = await Order.aggregate([
         // Only completed orders (closed deals)
-        {
-            $match: { status: "completed" }
-        },
+        { $match: { status: "completed" } },
 
         // Break items array
-        {
-            $unwind: "$items"
-        },
+        { $unwind: "$items" },
 
         // Group by productId
         {
@@ -469,14 +465,10 @@ const fetchTopRankingProducts = asyncHandler(async (request, response) => {
         },
 
         // Sort by quantity sold
-        {
-            $sort: { totalSoldQty: -1 }
-        },
+        { $sort: { totalSoldQty: -1 } },
 
         // Limit results
-        {
-            $limit: Number(limit)
-        },
+        { $limit: Number(limit) },
 
         // Join product details
         {
@@ -489,8 +481,38 @@ const fetchTopRankingProducts = asyncHandler(async (request, response) => {
         },
 
         // Flatten product array
+        { $unwind: "$product" },
+
+        // Join product reviews
         {
-            $unwind: "$product"
+            $lookup:{
+                from: "productreviews",
+                localField: "_id",
+                foreignField: "productId",
+                as: "reviews"
+            }
+        },
+
+        // Add review stats
+        {
+            $addFields:{
+                avgRating: { $avg: "$reviews.rating" },
+                totalReviews: { $size: "$reviews" }
+            }
+        },
+
+        // Default avg rating to 0
+        {
+            $addFields:{
+                avgRating: { $ifNull: ["$avgRating", 0] }
+            }
+        },
+
+        // Round rating
+        {
+            $addFields:{
+                avgRating: { $round: ["$avgRating", 1] }
+            }
         },
 
         // Shape response
@@ -503,8 +525,10 @@ const fetchTopRankingProducts = asyncHandler(async (request, response) => {
                 moq: "$product.minOrderQty",
                 image: "$product.image",
                 pricePerUnit: "$product.pricePerUnit",
+                avgRating: 1,
+                totalReviews: 1,
+                totalSoldQty: 1
                 // category: "$product.category",
-                // totalSoldQty: 1,
                 // totalRevenue: 1,
             }
         }

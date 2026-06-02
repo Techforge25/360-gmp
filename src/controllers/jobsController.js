@@ -23,7 +23,7 @@ const createJob = asyncHandler(async (request, response) => {
 
     // Create job
     const job = await Job.create({ 
-        businessProfileId, 
+        businessId: businessProfileId, 
         jobTitle, 
         jobCategory, 
         employmentType, 

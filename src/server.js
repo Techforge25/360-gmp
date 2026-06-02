@@ -9,6 +9,7 @@ const Chat = require("./models/chatsModel");
 const ApiError = require("./utils/ApiError");
 const generateConversationId = require("./utils/generateConversationId");
 require("./cron/autoReleaseEscrow");
+require("./workers/emailWorker");
 
 // Create Http server 
 const server = http.createServer(app);

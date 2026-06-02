@@ -20,6 +20,7 @@ const sendNotification = require("../utils/sendNotification");
 const Subscription = require("../models/subscription");
 const { setCache, getCache, deleteCache } = require("../redis/redisHelpers");
 const { getOTPKey } = require("../utils/redisKeys");
+const emailQueue = require("../queues/emailQueue");
 
 // User signup
 const userSignup = asyncHandler(async (request, response) => {
@@ -51,12 +52,8 @@ const userSignup = asyncHandler(async (request, response) => {
     const createdUser = await User.create({ email, passwordHash, role: null });
     if(!createdUser) throw new ApiError(500, "Unable to signup");    
 
-    // Send email
-    const result = await sendEmail(createdUser.email, "Account Activation Token", 
-    `<p>Your OTP Token is: <strong>${accountVerificationToken}</strong></p>
-    <p>Please use this token to activate your account.</p>`
-    );
-    if(!result) throw new ApiError(500, "Failed to send password reset email");
+    // Send email in backgrouund
+    await emailQueue.add("sendOTPEmail", { email, accountVerificationToken });
 
     // Response
     return response.status(200).json(new ApiResponse(200, createdUser._id, "Signup successful! We have sent you an OTP to your email"));     

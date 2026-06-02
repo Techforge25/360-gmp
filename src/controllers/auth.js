@@ -18,6 +18,8 @@ const verifyPasswordResetTokenSchema = require("../validations/verifyPasswordRes
 const bcrypt = require("bcrypt");
 const sendNotification = require("../utils/sendNotification");
 const Subscription = require("../models/subscription");
+const { setCache, getCache, deleteCache } = require("../redis/redisHelpers");
+const { getOTPKey } = require("../utils/redisKeys");
 
 // User signup
 const userSignup = asyncHandler(async (request, response) => {
@@ -42,14 +44,11 @@ const userSignup = asyncHandler(async (request, response) => {
     const { code:accountVerificationToken } = generateCode(6);
     if(!accountVerificationToken) throw new ApiError(500, "Failed to generate OTP");
 
+    // Store in redis
+    await setCache(getOTPKey(email), accountVerificationToken);
+
     // Create user
-    const createdUser = await User.create({ 
-        email, 
-        passwordHash, 
-        role:null,
-        accountVerificationToken,
-        accountVerificationTokenExpires: Date.now() + 1 * 60 * 1000
-    });
+    const createdUser = await User.create({ email, passwordHash, role: null });
     if(!createdUser) throw new ApiError(500, "Unable to signup");    
 
     // Send email
@@ -72,23 +71,23 @@ const resendOTPToken = asyncHandler(async (request, response) => {
     if(!user) throw new ApiError(404, "User not found associated with this email");
     if(user.status !== "pending") throw new ApiError(400, "Your account is already activated");
 
+    // Check exisiting otp
+    const exist = await getCache(getOTPKey(email));
+    if(exist) throw new ApiError(400, "Please wait until your current OTP expires before requesting a new one");
+
     // Generate new OTP token
     const { code:accountVerificationToken } = generateCode(6);
     if(!accountVerificationToken) throw new ApiError(500, "Failed to generate OTP");
 
-    // Update user with new OTP token
-    user.accountVerificationToken = accountVerificationToken;
+    // Store OTP in redis
+    await setCache(getOTPKey(email), accountVerificationToken);
 
     // Send email
     const result = await sendEmail(email, "Account Activation Token", 
         `<p>Your OTP Token is: <strong>${accountVerificationToken}</strong></p>
         <p>Please use this token to activate your account.</p>`
         );
-    if(!result) throw new ApiError(500, "Failed to send OTP");
-
-    // Set timer
-    user.accountVerificationTokenExpires = Date.now() + 1 * 60 * 1000;
-    await user.save();    
+    if(!result) throw new ApiError(500, "Failed to send OTP");    
 
     // Response
     return response.status(200).json(new ApiResponse(200, user._id, "We have re-sent you an OTP to your email"));         
@@ -105,15 +104,19 @@ const verifyOTP = asyncHandler(async (request, response) => {
     const user = await User.findById(userId);
     if(!user) throw new ApiError(404, "User not found!");
 
-    // Verify otp token
-    if(user.accountVerificationToken !== accountVerificationToken) throw new ApiError(400, "Invalid OTP");
-    if(user.accountVerificationTokenExpires < Date.now()) throw new ApiError(400, "This OTP has been expired! Request new one");
+    // Get OTP from redis
+    const otp = await getCache(getOTPKey(user.email));
+
+    // Validate
+    if(!otp) throw new ApiError(400, "Invalid or expired OTP");
+    if(otp !== accountVerificationToken) throw new ApiError(400, "Invalid OTP");
 
     // Save to db
-    user.accountVerificationToken = null;
-    user.accountVerificationTokenExpires = null;
     user.status = "active";
     await user.save();
+
+    // Delete from redis
+    await deleteCache(getOTPKey(user.email));
 
     // Send notification to parent user upon account creation
     await sendNotification({ 

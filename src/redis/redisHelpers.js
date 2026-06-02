@@ -1,4 +1,4 @@
-const redis = require("./connection");
+const { redis } = require("./connection");
 
 // Set Cache
 const setCache = async (key, value, minutes = 1) => {

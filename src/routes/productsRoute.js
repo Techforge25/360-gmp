@@ -3,7 +3,7 @@ const { authentication, authorization } = require("../middlewares/auth");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
 const { createProduct, fetchAllProducts, viewProduct, updateProduct, 
 deleteProduct, fetchBusinessFeaturedProducts, setFeaturedProduct, fetchFeaturedProducts, 
-fetchTopRankingProducts, fetchNewProducts, fetchFlashDeals } = require("../controllers/productsController");
+fetchTopRankingProducts, fetchNewProducts, fetchFlashDeals, fetchRelatedProducts } = require("../controllers/productsController");
 
 // Router instance
 const productsRouter = Router();
@@ -37,5 +37,9 @@ productsRouter.route("/:productId")
 // Set featured product
 productsRouter.route("/:productId/featured")
 .patch(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, setFeaturedProduct);
+
+// Fetch related products
+productsRouter.route("/:productId/related-products")
+.get(authentication, checkSubscription, fetchRelatedProducts);
 
 module.exports = productsRouter;

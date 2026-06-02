@@ -616,6 +616,25 @@ const fetchFlashDeals = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, updatedProducts, "Latest products fetched"));
 });
 
+// Fetch related products based on category
+const fetchRelatedProducts = asyncHandler(async (request, response) => {
+    const { productId } = request.params;
+    if(!isValidObjectId(productId)) throw new ApiError(400, "Invalid product ID");
+
+    // Find product
+    const product = await Product.findById(productId).select("-_id category").lean();
+    if(!product) throw new ApiError(404, "Product not found");
+
+    // Fetch related products
+    const relatedProducts = await Product.find({ category: product.category })
+    .sort("-createdAt").limit(4)
+    .select("image title detail pricePerUnit minOrderQty").lean();
+    if(!relatedProducts.length) return response.status(200).json(new ApiResponse(200, [], "No related products found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, relatedProducts, "Related products have been fetched"));
+});
+
 module.exports = { createProduct, fetchAllProducts, fetchFeaturedProducts,
 fetchBusinessFeaturedProducts, viewProduct, updateProduct, setFeaturedProduct, 
-deleteProduct, fetchTopRankingProducts, fetchNewProducts, fetchFlashDeals };
+deleteProduct, fetchTopRankingProducts, fetchNewProducts, fetchFlashDeals, fetchRelatedProducts };

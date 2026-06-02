@@ -10,6 +10,7 @@ const { emptyList } = require("../constants");
 const { isValidObjectId } = require("mongoose");
 const sendNotification = require("../utils/sendNotification");
 const validate = require("../utils/validate");
+const convertToMongoId = require("../utils/convertToMongoId");
 
 // Create Job
 const createJob = asyncHandler(async (request, response) => {
@@ -58,7 +59,7 @@ const getAllJobs = asyncHandler(async (request, response) => {
     // Filter and searches
     const filter = {};
     if(search) filter.jobTitle = { $regex:search, $options:"i" };
-    if(businessId) filter.businessId = businessId;
+    if(businessId) filter.businessId = convertToMongoId(businessId);
     if(status) filter.status = { $regex:status, $options:"i" };
     if(jobCategory) filter.jobCategory = { $regex:jobCategory, $options:"i" };
     if(employmentType) filter.employmentType = { $regex:employmentType, $options:"i" };

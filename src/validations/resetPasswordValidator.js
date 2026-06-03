@@ -4,6 +4,7 @@ const passwordPattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&^#()[\\]{}
 
 // Reset password schema
 const resetPasswordSchema = joi.object({ 
+    email: joi.string().trim().lowercase().email().required().label("Email"),
     newPassword: joi.string().min(8).max(128)
     .pattern(new RegExp(passwordPattern)).required().messages({
         "string.pattern.base": "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.",

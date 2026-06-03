@@ -181,39 +181,6 @@ const fetchAllProducts = asyncHandler(async (request, response) => {
 });
 
 // Fetch featured products (Shown on market place)
-// const fetchFeaturedProducts = asyncHandler(async (request, response) => {
-//     const userId = request.user._id;
-
-//     // Pagination options
-//     const { page = 1, limit = 10 } = request.query;
-
-//     const options = {
-//         page: Number(page),
-//         limit: Number(limit),
-//         populate:{ path:"businessId", select:"ownerUserId" },
-//         sort:{ createdAt:-1 }
-//     };
-    
-//     // Find products
-//     const products = await Product.paginate({ isFeatured:true, status:"approved" }, options);
-//     if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Featured Products not found")); 
-
-//     // Get owner flag
-//     const updatedProducts = products.docs.map((product) => {
-//         let isOwner = false;
-//         if(product.businessId)
-//         {    
-//             const { ownerUserId } = product.businessId;
-//             isOwner = ownerUserId?.equals(userId);
-//             return { ...product.toObject(), isOwner };
-//         }
-//     });    
-
-//     // Response
-//     return response.status(200).json(new ApiResponse(200, updatedProducts, "All Featured products have been fetched"));
-// });
-
-// Fetch featured products (Shown on market place)
 const fetchFeaturedProducts = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
@@ -541,25 +508,13 @@ const fetchTopRankingProducts = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, topProducts, "Top selling products fetched successfully")); 
 });
 
-// Fetch new products (Latest 30 products) (Shown on market place)
-// const fetchNewProducts = asyncHandler(async (request, response) => {    
-
-//     // Find products
-//     const products = await Product.find({ status:"approved" })
-//     .select("title detail image minOrderQty pricePerUnit").sort("-createdAt").limit(30)
-//     if(!products.length) return response.status(200).json(new ApiResponse(200, emptyList, "Latest products not found"));
-
-//     // Response
-//     return response.status(200).json(new ApiResponse(200, products, "Latest products have been fetched"));
-// });
-
-// Fetch new products (Latest 30 products) (Shown on market place)
+// Fetch new products (Latest 8 products) (Shown on market place)
 const fetchNewProducts = asyncHandler(async (request, response) => {    
 
     // Find products
     const products = await Product.find({ status:"approved" })
     .select("title detail image minOrderQty pricePerUnit")
-    .sort("-createdAt").limit(30).lean();
+    .sort("-createdAt").limit(8).lean();
 
     if(!products.length) return response.status(200).json(new ApiResponse(200, emptyList, "Latest products not found"));
 

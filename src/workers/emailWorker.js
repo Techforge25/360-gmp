@@ -10,11 +10,23 @@ const worker = new Worker("emailQueue", async (job) => {
     {
         const { email, accountVerificationToken } = job.data;
         const result = await sendEmail(email, "Account Activation Token", 
-        `<p>Your OTP Token is: <strong>${accountVerificationToken}</strong></p>
-        <p>Please use this token to activate your account.</p>`
+            `<p>Your OTP Token is: <strong>${accountVerificationToken}</strong></p>
+            <p>Please use this token to activate your account.</p>`
         );
-        if(!result) throw new ApiError(500, "Failed to send password reset email"); 
+        if(!result) throw new ApiError(500, "Failed to send OTP email");
     }
+
+    // Send Reset password email
+    if(job.name === "sendResetPasswordEmail")
+    {
+        const { email, resetToken } = job.data;
+        // Send email
+        const result = await sendEmail(email, "Password Reset Request", 
+            `<p>Your password reset token is: <strong>${resetToken}</strong></p>
+            <p>Please use this token to reset your password.</p>`
+        );
+        if(!result) throw new ApiError(500, "Failed to send password reset email");
+    }    
 }, { connection: redisConfigOptions, concurrency: 5 });
 
 // Attach events

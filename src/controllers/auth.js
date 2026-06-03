@@ -205,7 +205,8 @@ const userLogin = asyncHandler(async (request, response) => {
     {
         // Find subscription
         const subscription = await Subscription.findOne({ userId: user._id, status: "active" });
-        if(!subscription) return response.status(303).redirect(`${frontendUrl}/dashboard/${user.role}/subscriptions`);
+        // if(!subscription) return response.status(303).redirect(`${frontendUrl}/dashboard/${user.role}/subscriptions`);
+        if(!subscription) throw new ApiError(400, "Your subscription has been expired! Please renew");
 
         // Check expiry
         const currentDate = new Date();

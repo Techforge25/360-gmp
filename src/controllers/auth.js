@@ -404,6 +404,9 @@ const resetPassword = asyncHandler(async (request, response) => {
     user.passwordHash = newPassword;
     await user.save();
 
+    // Delete cache from redis
+    await deleteCache(getResetPasswordKey(email));
+
     // Time
     const time = new Date().toLocaleString("en-US", {
         weekday: "long",

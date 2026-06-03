@@ -19,7 +19,7 @@ const bcrypt = require("bcrypt");
 const sendNotification = require("../utils/sendNotification");
 const Subscription = require("../models/subscription");
 const { setCache, getCache, deleteCache } = require("../redis/redisHelpers");
-const { getOTPKey } = require("../utils/redisKeys");
+const { getOTPKey, getResetPasswordKey } = require("../utils/redisKeys");
 const emailQueue = require("../queues/emailQueue");
 
 // User signup
@@ -45,12 +45,12 @@ const userSignup = asyncHandler(async (request, response) => {
     const { code:accountVerificationToken } = generateCode(6);
     if(!accountVerificationToken) throw new ApiError(500, "Failed to generate OTP");
 
-    // Store in redis
-    await setCache(getOTPKey(email), accountVerificationToken);
-
     // Create user
     const createdUser = await User.create({ email, passwordHash, role: null });
-    if(!createdUser) throw new ApiError(500, "Unable to signup");    
+    if(!createdUser) throw new ApiError(500, "Unable to signup");  
+    
+    // Store in redis
+    await setCache(getOTPKey(email), accountVerificationToken);    
 
     // Send email in backgrouund
     await emailQueue.add("sendOTPEmail", { email, accountVerificationToken });
@@ -79,12 +79,8 @@ const resendOTPToken = asyncHandler(async (request, response) => {
     // Store OTP in redis
     await setCache(getOTPKey(email), accountVerificationToken);
 
-    // Send email
-    const result = await sendEmail(email, "Account Activation Token", 
-        `<p>Your OTP Token is: <strong>${accountVerificationToken}</strong></p>
-        <p>Please use this token to activate your account.</p>`
-        );
-    if(!result) throw new ApiError(500, "Failed to send OTP");    
+    // Send email in backgrouund
+    await emailQueue.add("sendOTPEmail", { email, accountVerificationToken }); 
 
     // Response
     return response.status(200).json(new ApiResponse(200, user._id, "We have re-sent you an OTP to your email"));         
@@ -359,31 +355,26 @@ const forgotPassword = asyncHandler(async (request, response) => {
     const { code:resetToken } = generateCode(6);
     if(!resetToken) throw new ApiError(500, "Failed to generate password reset token");
 
-    // Save token to db
-    user.passwordResetToken = resetToken;
-    user.passwordResetTokenExpires = Date.now() + 5 * 60 * 1000; // 5 minutes from now
-    await user.save();
+    // Store token in redis
+    await setCache(getResetPasswordKey(email), resetToken, 5);
 
-    // Send email
-    const result = await sendEmail(email, "Password Reset Request", 
-    `<p>Your password reset token is: <strong>${resetToken}</strong></p>
-    <p>Please use this token to reset your password.</p>`
-    );
+    // Send email in backgrouund
+    await emailQueue.add("sendResetPasswordEmail", { email, resetToken });
 
-    if(!result) throw new ApiError(500, "Failed to send password reset email");
+    // Response
     return response.status(200).json(new ApiResponse(200, null, "Password reset token has been sent to your email"));
 });
 
 // Verify password reset token
 const verifypasswordResetToken = asyncHandler(async (request, response) => {
-    const { email, passwordResetToken } = validate(verifyPasswordResetTokenSchema, request.body);
+    const { email, passwordResetToken } = validate(verifyPasswordResetTokenSchema, request.body) || {};
 
-    // Find user
-    const user = await User.findOne({ email, passwordResetToken });
-    if(!user) throw new ApiError(400, "Invalid reset token");
+    // Get token from redis
+    const resetToken = await getCache(getResetPasswordKey(email));
 
-    // Validate token expriy
-    if(user.passwordResetTokenExpires < Date.now()) throw new ApiError(400, "Reset token has expired");
+    // Validate
+    if(!resetToken) throw new ApiError(400, "Invalid or expired reset token");
+    if(resetToken !== passwordResetToken) throw new ApiError(400, "Invalid reset token");
 
     // Response
     return response.status(200).json(new ApiResponse(200, passwordResetToken, "Password reset token verified successfully"));
@@ -391,13 +382,19 @@ const verifypasswordResetToken = asyncHandler(async (request, response) => {
 
 // Reset password
 const resetPassword = asyncHandler(async (request, response) => {
-    const { newPassword } = validate(resetPasswordSchema, request.body);
+    const { email, newPassword } = validate(resetPasswordSchema, request.body) || {};
     const { passwordResetToken } = request.params;
 
-    // Find user
-    const user = await User.findOne({ passwordResetToken }).select("passwordHash passwordResetToken passwordResetTokenExpires");
-    if(!user) throw new ApiError(400, "Invalid reset token");
-    if(user.passwordResetTokenExpires < Date.now()) throw new ApiError(400, "Reset token has expired");
+    // Get token from redis
+    const resetToken = await getCache(getResetPasswordKey(email));
+
+    // Validate
+    if(!resetToken) throw new ApiError(400, "Invalid or expired reset token");
+    if(resetToken !== passwordResetToken) throw new ApiError(400, "Invalid reset token");    
+
+    // Find user associated with this email
+    const user = await User.findOne({ email }).select("_id passwordHash");
+    if(!user) throw new ApiError(404, "User not found");
 
     // Prevent restting password as old password
     const matchPassword = await user.matchPassword(newPassword);
@@ -405,8 +402,6 @@ const resetPassword = asyncHandler(async (request, response) => {
 
     // Update password
     user.passwordHash = newPassword;
-    user.passwordResetToken = null;
-    user.passwordResetTokenExpires = null;
     await user.save();
 
     // Time

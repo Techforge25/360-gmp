@@ -180,7 +180,7 @@ const userLogin = asyncHandler(async (request, response) => {
         const attempts = await redis.incr(key);
 
         // Set expiry only on first failed attempt
-        if(attempts === 1) await redis.expire(key, 60 * 2); // 2 minutes
+        if(attempts === 1) await redis.expire(key, 60 * 5); // 5 minutes
         throw new ApiError(400, "Invalid email or password");
     }
 
@@ -191,7 +191,7 @@ const userLogin = asyncHandler(async (request, response) => {
         const attempts = await redis.incr(key);
 
         // Set expiry only on first failed attempt
-        if(attempts === 1) await redis.expire(key, 60 * 2); // 2 minutes
+        if(attempts === 1) await redis.expire(key, 60 * 5); // 5 minutes
         throw new ApiError(400, "Invalid email or password");
     }
 

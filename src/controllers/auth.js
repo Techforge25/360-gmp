@@ -128,13 +128,16 @@ const verifyOTP = asyncHandler(async (request, response) => {
 // User login
 const userLogin = asyncHandler(async (request, response) => {
     const { email, passwordHash } = validate(userLoginValidator, request.body) || {};
-    console.log("X-Real-IP is:", request.headers["x-real-ip"]);
 
-    const ip = request.socket.remoteAddress;
+    // Get IP (IPv4)
+    const ip = request.headers["x-real-ip"];
     const key = `invalidCredetialsAttempts:${ip}`;
+
+    // Check total attempts
     const totalAttempts = await getCache(key);
     if(totalAttempts === 5) throw new ApiError(429, "Too many failed login attempts. Please try again later.");
 
+    // Aggregate
     const [user] = await User.aggregate([
         // Match
         { $match:{ email } },

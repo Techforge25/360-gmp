@@ -129,7 +129,7 @@ const verifyOTP = asyncHandler(async (request, response) => {
 const userLogin = asyncHandler(async (request, response) => {
     const { email, passwordHash } = validate(userLoginValidator, request.body) || {};
 
-    const ip = request.headers["x-forwarded-for"]?.split(",")[0] || request.socket.remoteAddress;
+    const ip = request.socket.remoteAddress;
     const key = `invalidCredetialsAttempts:${ip}`;
     const totalAttempts = await getCache(key);
     if(totalAttempts === 5) throw new ApiError(429, "Too many failed login attempts. Please try again later.");

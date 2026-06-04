@@ -21,6 +21,7 @@ const Subscription = require("../models/subscription");
 const { setCache, getCache, deleteCache } = require("../redis/redisHelpers");
 const { getOTPKey, getResetPasswordKey } = require("../utils/redisKeys");
 const emailQueue = require("../queues/emailQueue");
+const { redis } = require("../redis/connection");
 
 // User signup
 const userSignup = asyncHandler(async (request, response) => {
@@ -128,6 +129,11 @@ const verifyOTP = asyncHandler(async (request, response) => {
 const userLogin = asyncHandler(async (request, response) => {
     const { email, passwordHash } = validate(userLoginValidator, request.body) || {};
 
+    const ip = request.headers["x-forwarded-for"]?.split(",")[0] || request.socket.remoteAddress;
+    const key = `invalidCredetialsAttempts:${ip}`;
+    const totalAttempts = await getCache(key);
+    if(totalAttempts === 5) throw new ApiError(429, "Too many failed login attempts. Please try again later.");
+
     const [user] = await User.aggregate([
         // Match
         { $match:{ email } },
@@ -169,11 +175,25 @@ const userLogin = asyncHandler(async (request, response) => {
             }
         }
     ]);
-    if(!user) throw new ApiError(400, "Invalid email or password");
+    if(!user) 
+    {
+        const attempts = await redis.incr(key);
+
+        // Set expiry only on first failed attempt
+        if(attempts === 1) await redis.expire(key, 60 * 2); // 2 minutes
+        throw new ApiError(400, "Invalid email or password");
+    }
 
     // Match password
     const isMatched = await bcrypt.compare(passwordHash, user.passwordHash);
-    if(!isMatched) throw new ApiError(400, "Invalid email or password");
+    if(!isMatched)
+    {
+        const attempts = await redis.incr(key);
+
+        // Set expiry only on first failed attempt
+        if(attempts === 1) await redis.expire(key, 60 * 2); // 2 minutes
+        throw new ApiError(400, "Invalid email or password");
+    }
 
     // Only approved account can log in
     if(user.status === "pending") throw new ApiError(400, "Your account is not activated yet. Please verify your identity via OTP.");
@@ -199,24 +219,9 @@ const userLogin = asyncHandler(async (request, response) => {
 
     // Is new user flag
     const isNewUser = Boolean(!user.role);
-    
-    // If any profile created
-    if(user.role !== null)
-    {
-        // Find subscription
-        const subscription = await Subscription.findOne({ userId: user._id, status: "active" });
-        // if(!subscription) return response.status(303).redirect(`${frontendUrl}/dashboard/${user.role}/subscriptions`);
-        if(!subscription) throw new ApiError(400, "Your subscription has been expired! Please renew");
 
-        // Check expiry
-        const currentDate = new Date();
-        if(new Date(subscription.endDate) < currentDate)
-        {
-            subscription.status = "expired";
-            await subscription.save();
-            return response.status(303).redirect(`${frontendUrl}/dashboard/${user.role}/subscriptions`);
-        }         
-    }
+    // Delete attempts
+    await deleteCache(key);
 
     // Response
     return response.status(200)

@@ -128,7 +128,7 @@ const verifyOTP = asyncHandler(async (request, response) => {
 // User login
 const userLogin = asyncHandler(async (request, response) => {
     const { email, passwordHash } = validate(userLoginValidator, request.body) || {};
-    console.log(request.headers);
+    console.log("X-Real-IP is:", request.headers["x-real-ip"]);
 
     const ip = request.socket.remoteAddress;
     const key = `invalidCredetialsAttempts:${ip}`;

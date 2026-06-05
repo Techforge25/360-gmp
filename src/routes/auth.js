@@ -6,6 +6,7 @@ const { authentication } = require("../middlewares/auth");
 const passport = require("passport");
 const { checkSubscription } = require("../middlewares/checkSubscription");
 const limitRequest = require("../middlewares/rateLimit");
+const { frontendStagingUrl } = require("../constants");
 
 // Router instance
 const authRouter = Router();
@@ -49,6 +50,8 @@ authRouter.route("/resetPassword/:passwordResetToken").post(resetPassword);
 
 // Login as google
 authRouter.route('/google').get(passport.authenticate('google', { scope:['profile', 'email'], prompt:"select_account" }));
-authRouter.route('/google/callback').get(passport.authenticate('google', { session:false }), googleLogin);
+authRouter.route('/google/callback').get(passport.authenticate('google', { session:false, 
+failureRedirect: `${frontendStagingUrl}/login`, 
+}), googleLogin);
 
 module.exports = authRouter;

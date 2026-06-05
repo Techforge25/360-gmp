@@ -7,7 +7,7 @@ const Stripe = require("stripe");
 const convertToMongoId = require("../utils/convertToMongoId");
 const sendNotification = require("../utils/sendNotification");
 const SubscriptionHistory = require("../models/subscriptionHistoryModel");
-const { emptyList } = require("../constants");
+const { emptyList, frontendStagingUrl } = require("../constants");
 const mongoose = require("mongoose");
 const User = require("../models/users");
 
@@ -87,8 +87,9 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
     if(!session_id) throw new ApiError(400, "Session ID is missing");   
 
     // Redirect to frontend
-    const redirectUrl = `${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`;
-    // const redirectUrl = `http://localhost:3000/subscription/success?session_id=${session_id}`;
+    // const redirectUrl = `${process.env.FRONTEND_URL}/subscription/success?session_id=${session_id}`;
+    const redirectUrl = `${frontendStagingUrl}/subscription/success?session_id=${session_id}`;
+
     return response.status(303).redirect(redirectUrl);
 });
 

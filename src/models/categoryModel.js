@@ -1,12 +1,20 @@
 const { Schema, model } = require("mongoose");
 
-// Schema
+// Category Schema
 const categorySchema = new Schema({
+    title: { type:String, required:true, trim:true, index:true },
+    description: { type:String, trim:true },
+}, { timestamps: true });
+
+// Subcategory Schema
+const subCategorySchema = new Schema({
+    categoryId: { type: Schema.Types.ObjectId, ref: "Category" },
     title:{ type:String, required:true, trim:true, index:true },
     description:{ type:String, trim:true },
 }, { timestamps:true });
 
-// Model
+// Models
 const Category = model("Category", categorySchema);
+const Subcategory = model("Subcategory", subCategorySchema);
 
-module.exports = Category;
+module.exports = { Category, Subcategory };

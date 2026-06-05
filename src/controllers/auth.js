@@ -200,7 +200,7 @@ const userLogin = asyncHandler(async (request, response) => {
     }
 
     // Only approved account can log in
-    if(user.status === "pending") throw new ApiError(400, "Your account is not activated yet. Please verify your identity via OTP.");
+    if(user.status === "pending") return response.status(200).json(new ApiResponse(200, { otpRequired: true }, "Please verify your identity via OTP."));
     if(user.status === "flagged") throw new ApiError(400, "Your account is flagged. You cannot log-in to your account");    
 
     // Generate access token & refresh tokens

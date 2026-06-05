@@ -2,13 +2,15 @@ const { Worker } = require("bullmq");
 const { redisConfigOptions } = require("../redis/connection");
 const sendEmail = require("../service/email");
 const ApiError = require("../utils/ApiError");
+const fs = require("fs");
+const path = require("path");
 
 // Email Worker
 const worker = new Worker("emailQueue", async (job) => {
     // Send OTP Email
     if(job.name === "sendOTPEmail")
     {
-        const { email, accountVerificationToken } = job.data;
+        const { email, accountVerificationToken } = job.data;       
         const result = await sendEmail(email, "Account Activation Token", 
             `<p>Your OTP Token is: <strong>${accountVerificationToken}</strong></p>
             <p>Please use this token to activate your account.</p>`
@@ -20,11 +22,24 @@ const worker = new Worker("emailQueue", async (job) => {
     if(job.name === "sendResetPasswordEmail")
     {
         const { email, resetToken } = job.data;
+
+        // Get HTML template
+        const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/forgotPasswordEmail.html"), "utf-8");
+
+        // Replace placeholders
+        const filledHtml = html
+        .replace('{{resetToken}}', resetToken); 
+
         // Send email
+        // const result = await sendEmail(email, "Password Reset Request", 
+        //     `<p>Your password reset token is: <strong>${resetToken}</strong></p>
+        //     <p>Please use this token to reset your password.</p>`
+        // );
+
         const result = await sendEmail(email, "Password Reset Request", 
             `<p>Your password reset token is: <strong>${resetToken}</strong></p>
             <p>Please use this token to reset your password.</p>`
-        );
+        );        
         if(!result) throw new ApiError(500, "Failed to send password reset email");
     }    
 }, { connection: redisConfigOptions, concurrency: 5 });

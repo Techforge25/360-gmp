@@ -39,8 +39,7 @@ authRouter.route("/refreshToken").get(refreshAccessToken);
 authRouter.route("/refreshToken/updateRole").get(authentication, checkSubscription, switchRole);
 
 // Forgot password
-authRouter.route("/forgotPassword")
-.post(limitRequest({ minutes:5, maxRequests:1, message:"Please wait 5 minutes for next password reset request" }), forgotPassword);
+authRouter.route("/forgotPassword").post(forgotPassword);
 
 // Password reset token verification
 authRouter.route("/verifyPasswordResetToken").post(verifypasswordResetToken);

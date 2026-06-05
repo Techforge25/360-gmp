@@ -5,11 +5,13 @@ const asyncHandler = require("../utils/asyncHandler");
 // Authentication
 const authentication = asyncHandler((request, response, next) => {
     const accessToken = getAccessToken(request);
-    if(!accessToken) throw new ApiError(401, "Unauthorized!");
+    // if(!accessToken) throw new ApiError(401, "Unauthorized!");
+    if(!accessToken) return response.status(303).redirect("https://360-gmp-front-end.vercel.app");
 
     // Verify
     const user = verifyAccessToken(accessToken);
-    if(!user) throw new ApiError(401, "Invalid access token");
+    // if(!user) throw new ApiError(401, "Invalid access token");
+    if(!user) return response.status(303).redirect("https://360-gmp-front-end.vercel.app");
 
     // Pass through
     request.user = user;

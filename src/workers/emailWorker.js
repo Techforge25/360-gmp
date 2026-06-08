@@ -28,13 +28,8 @@ const worker = new Worker("emailQueue", async (job) => {
 
         // Replace placeholders
         const filledHtml = html
-        .replace('{{resetToken}}', resetToken); 
-
-        // Send email
-        // const result = await sendEmail(email, "Password Reset Request", 
-        //     `<p>Your password reset token is: <strong>${resetToken}</strong></p>
-        //     <p>Please use this token to reset your password.</p>`
-        // );
+        .replaceAll('{{email}}', email)
+        .replaceAll('{{resetToken}}', resetToken); 
 
         const result = await sendEmail(email, "Password Reset Request", filledHtml);        
         if(!result) throw new ApiError(500, "Failed to send password reset email");

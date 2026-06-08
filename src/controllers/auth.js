@@ -301,7 +301,7 @@ const refreshAccessToken = asyncHandler(async (request, response) => {
 // Switch role
 const switchRole = asyncHandler(async (request, response) => {
     const userId = request.user._id;
-    const role = request.query?.role || null;
+    const { role = null } = request.query;
 
     // Validate
     if(!role) throw new ApiError(400, "Role is required for switching a profile");
@@ -311,14 +311,22 @@ const switchRole = asyncHandler(async (request, response) => {
     if(role.toLowerCase() === "user")
     {
         const userProfile = await getUserProfile(userId);
-        if(!userProfile) throw new ApiError(400, "User profile not found! Please create user profile first");
+        if(!userProfile) 
+        {
+            const redirectURL = `${process.env.FRONTEND_URL}/onboarding/user-profile`;
+            return response.status(200).json(new ApiResponse(200, { redirectURL }, "Onboarding required for user profile"));
+        }
     }
 
     // Check if business profile actually exist before switching
     if(role.toLowerCase() === "business")
     {
         const businessProfile = await getBusinessProfile(userId);
-        if(!businessProfile) throw new ApiError(400, "Business profile not found! Please create business profile first");
+        if(!businessProfile)
+        {
+            const redirectURL = `${process.env.FRONTEND_URL}/onboarding/business-profile`;
+            return response.status(200).json(new ApiResponse(200, { redirectURL }, "Onboarding required for business profile"));            
+        }
         if(request.user.planName === "TRIAL") throw new ApiError(403, "Switching to a business profile is not allowed while you are on a trial plan");
     }    
 

@@ -136,48 +136,7 @@ const userLogin = asyncHandler(async (request, response) => {
     const totalAttempts = await getCache(key);
     if(totalAttempts === 5) throw new ApiError(429, "Too many failed login attempts. Please try again later.");
 
-    // Aggregate
-    // const [user] = await User.aggregate([
-    //     // Match
-    //     { $match:{ email } },
-
-    //     // Lookup inside user profile
-    //     {
-    //         $lookup:{
-    //             from:"userprofiles",
-    //             localField:"_id",
-    //             foreignField:"userId",
-    //             as:"userProfile"
-    //         }
-    //     },
-
-    //     // Lookup inside business profile
-    //     {
-    //         $lookup:{
-    //             from:"businessprofiles",
-    //             localField:"_id",
-    //             foreignField:"ownerUserId",
-    //             as:"businessProfile"
-    //         }
-    //     },
-
-    //     // $unwind
-    //     { $unwind:{ path:"$userProfile", preserveNullAndEmptyArrays:true } },
-    //     { $unwind:{ path:"$businessProfile", preserveNullAndEmptyArrays:true } },
-        
-    //     // Projection
-    //     {
-    //         $project:{
-    //             email:1, 
-    //             passwordHash:1,
-    //             status:1,
-    //             role:1,
-    //             refreshToken:1,
-    //             userProfileId: { $ifNull:["$userProfile._id", null] },
-    //             businessProfileId: { $ifNull:["$businessProfile._id", null] }
-    //         }
-    //     }
-    // ]);
+    // Find user
     const user = await User.findOne({ email });
     if(!user) 
     {

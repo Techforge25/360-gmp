@@ -10,7 +10,7 @@ const { isValidObjectId } = require("mongoose");
 const EscrowTransaction = require("../models/escrowTrasanction");
 const Wallet = require("../models/walletModel");
 const BusinessProfile = require("../models/businessProfileSchema");
-const { emptyList, frontendUrl, frontendStagingUrl } = require("../constants");
+const { emptyList } = require("../constants");
 const convertToMongoId = require("../utils/convertToMongoId");
 const Transaction = require("../models/transactionModel");
 const TrialUsage = require("../models/trialUsageModel");
@@ -296,7 +296,7 @@ const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
         });
 
         // Response
-        return response.status(303).redirect(`${frontendStagingUrl}/dashboard/user/checkout/payment-confirmation/${order._id}`);
+        return response.status(303).redirect(`${process.env.FRONTEND_URL}/dashboard/user/checkout/payment-confirmation/${order._id}`);
     } 
     catch(error) 
     {

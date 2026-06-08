@@ -1,5 +1,5 @@
 const { isValidObjectId } = require("mongoose");
-const { cookieOptions, frontendUrl } = require("../constants");
+const { cookieOptions } = require("../constants");
 const BusinessProfile = require("../models/businessProfileSchema");
 const UserProfile = require("../models/userProfile");
 const User = require("../models/users");
@@ -311,7 +311,6 @@ const switchRole = asyncHandler(async (request, response) => {
     if(role.toLowerCase() === "user")
     {
         const userProfile = await getUserProfile(userId);
-        // if(!userProfile) return response.status(303).redirect(`${frontendUrl}/dashboard/user`);
         if(!userProfile) throw new ApiError(400, "User profile not found! Please create user profile first");
     }
 
@@ -319,7 +318,6 @@ const switchRole = asyncHandler(async (request, response) => {
     if(role.toLowerCase() === "business")
     {
         const businessProfile = await getBusinessProfile(userId);
-        // if(!businessProfile) return response.status(303).redirect(`${frontendUrl}/dashboard/business`);
         if(!businessProfile) throw new ApiError(400, "Business profile not found! Please create business profile first");
         if(request.user.planName === "TRIAL") throw new ApiError(403, "Switching to a business profile is not allowed while you are on a trial plan");
     }    

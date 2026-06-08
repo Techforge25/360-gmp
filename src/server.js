@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config({ path:`.env.${process.env.NODE_ENV}` });
 const http = require("http"); 
 const { Server } = require("socket.io"); 
 const app = require("./app");

@@ -2,15 +2,14 @@ const {Router} = require("express");
 const { createJob, getAllJobs, getJobById, updateJob, deleteJob, fetchLatestJobs, 
 fetchMyAppliedJobs, fetchHiredJobs } = require("../controllers/jobsController");
 const { authentication, authorization } = require("../middlewares/auth");
-const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
 const jobsRouter = Router();
 
 // Create job / Fetch jobs
 jobsRouter.route("/")
-.post(authentication, checkSubscription,checkBusinessAccess, createJob)
-.get(authentication, checkSubscription, getAllJobs);
+.post(authentication, createJob)
+.get(authentication, getAllJobs);
 
 // Get latest jobs (For market place)
 jobsRouter.route("/latest/marketplace")
@@ -18,9 +17,9 @@ jobsRouter.route("/latest/marketplace")
 
 // Fetch Single job / Edit job / Delete job
 jobsRouter.route("/:id")
-.get(authentication, checkSubscription, getJobById)
-.patch(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, updateJob)
-.delete(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, deleteJob);
+.get(authentication, getJobById)
+.patch(authentication, authorization(["business"]), updateJob)
+.delete(authentication, authorization(["business"]), deleteJob);
 
 // Fetch applied jobs
 jobsRouter.route("/user/applied")

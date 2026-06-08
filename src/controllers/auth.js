@@ -231,7 +231,7 @@ const userLogin = asyncHandler(async (request, response) => {
     const subscription = await Subscription.findOne({ userId: user._id, status:"active" });
     if(!subscription)
     {
-        return response.status(200)
+        return response
         .cookie("accessToken", accessToken, cookieOptions)
         .cookie("refreshToken", refreshToken, cookieOptions)
         .redirect("https://www.google.com")

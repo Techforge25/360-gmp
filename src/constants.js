@@ -23,7 +23,7 @@ const corsOptions = {
 // Cookie options
 const cookieOptions = {
     httpOnly:true,
-    secure: isProduction,
+    secure: process.env.NODE_ENV === "local" ? false : true,
     signed: true,
     maxAge: 1000 * 60 * 60 * 24 * 90,
     sameSite: process.env.NODE_ENV === "local" ? "lax" : "none",

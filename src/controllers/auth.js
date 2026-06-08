@@ -15,7 +15,6 @@ const forgotPasswordSchema = require("../validations/forgotPasswordValidator");
 const resetPasswordSchema = require("../validations/resetPasswordValidator");
 const { userSignupValidator, userLoginValidator, verifyOtpValidator, resendOtpValidator } = require("../validations/user");
 const verifyPasswordResetTokenSchema = require("../validations/verifyPasswordResetTokenValidator");
-const bcrypt = require("bcrypt");
 const sendNotification = require("../utils/sendNotification");
 const Subscription = require("../models/subscription");
 const { setCache, getCache, deleteCache } = require("../redis/redisHelpers");
@@ -138,47 +137,48 @@ const userLogin = asyncHandler(async (request, response) => {
     if(totalAttempts === 5) throw new ApiError(429, "Too many failed login attempts. Please try again later.");
 
     // Aggregate
-    const [user] = await User.aggregate([
-        // Match
-        { $match:{ email } },
+    // const [user] = await User.aggregate([
+    //     // Match
+    //     { $match:{ email } },
 
-        // Lookup inside user profile
-        {
-            $lookup:{
-                from:"userprofiles",
-                localField:"_id",
-                foreignField:"userId",
-                as:"userProfile"
-            }
-        },
+    //     // Lookup inside user profile
+    //     {
+    //         $lookup:{
+    //             from:"userprofiles",
+    //             localField:"_id",
+    //             foreignField:"userId",
+    //             as:"userProfile"
+    //         }
+    //     },
 
-        // Lookup inside business profile
-        {
-            $lookup:{
-                from:"businessprofiles",
-                localField:"_id",
-                foreignField:"ownerUserId",
-                as:"businessProfile"
-            }
-        },
+    //     // Lookup inside business profile
+    //     {
+    //         $lookup:{
+    //             from:"businessprofiles",
+    //             localField:"_id",
+    //             foreignField:"ownerUserId",
+    //             as:"businessProfile"
+    //         }
+    //     },
 
-        // $unwind
-        { $unwind:{ path:"$userProfile", preserveNullAndEmptyArrays:true } },
-        { $unwind:{ path:"$businessProfile", preserveNullAndEmptyArrays:true } },
+    //     // $unwind
+    //     { $unwind:{ path:"$userProfile", preserveNullAndEmptyArrays:true } },
+    //     { $unwind:{ path:"$businessProfile", preserveNullAndEmptyArrays:true } },
         
-        // Projection
-        {
-            $project:{
-                email:1, 
-                passwordHash:1,
-                status:1,
-                role:1,
-                refreshToken:1,
-                userProfileId: { $ifNull:["$userProfile._id", null] },
-                businessProfileId: { $ifNull:["$businessProfile._id", null] }
-            }
-        }
-    ]);
+    //     // Projection
+    //     {
+    //         $project:{
+    //             email:1, 
+    //             passwordHash:1,
+    //             status:1,
+    //             role:1,
+    //             refreshToken:1,
+    //             userProfileId: { $ifNull:["$userProfile._id", null] },
+    //             businessProfileId: { $ifNull:["$businessProfile._id", null] }
+    //         }
+    //     }
+    // ]);
+    const user = await User.findOne({ email });
     if(!user) 
     {
         const attempts = await redis.incr(key);
@@ -189,7 +189,7 @@ const userLogin = asyncHandler(async (request, response) => {
     }
 
     // Match password
-    const isMatched = await bcrypt.compare(passwordHash, user.passwordHash);
+    const isMatched = await user.matchPassword(passwordHash);
     if(!isMatched)
     {
         const attempts = await redis.incr(key);
@@ -201,25 +201,32 @@ const userLogin = asyncHandler(async (request, response) => {
 
     // Only approved account can log in
     if(user.status === "pending") return response.status(200).json(new ApiResponse(200, { otpRequired: true }, "Please verify your identity via OTP."));
-    if(user.status === "flagged") throw new ApiError(400, "Your account is flagged. You cannot log-in to your account");    
+    if(user.status === "flagged") throw new ApiError(400, "Your account is flagged. You cannot log-in to your account");  
+    
+    // Find profiles
+    const [userProfile, businessProfile] = await Promise.all([
+        UserProfile.findOne({ userId: user._id }),
+        BusinessProfile.findOne({ ownerUserId: user._id }),
+    ]);
 
     // Generate access token & refresh tokens
     const accessToken = generateAccessToken({ 
-        _id:user._id, 
-        role:user.role, 
+        _id: user._id, 
+        role: user.role, 
         profiles: {
-            businessProfileId: user.businessProfileId,
-            userProfileId: user.userProfileId
+            userProfileId: userProfile?._id || null,
+            businessProfileId: businessProfile?._id || null,
         }
     });
-    const refreshToken = generateRefreshToken({ _id:user._id });
+    const refreshToken = generateRefreshToken({ _id: user._id });
 
     // Validate
     if(!accessToken) throw new ApiError(500, "Failed to generate access token");
     if(!refreshToken) throw new ApiError(500, "Failed to generate refresh token");
 
     // Save to db
-    await User.updateOne({ _id: user._id }, { $set: { refreshToken } });
+    user.refreshToken = refreshToken;
+    await user.save();
 
     // Is new user flag
     const isNewUser = Boolean(!user.role);

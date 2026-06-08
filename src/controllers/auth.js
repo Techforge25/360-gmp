@@ -227,6 +227,16 @@ const userLogin = asyncHandler(async (request, response) => {
     // Delete attempts
     await deleteCache(key);
 
+    // Check subscription
+    const subscription = await Subscription.findOne({ userId: user._id, status:"active" });
+    if(!subscription)
+    {
+        return response.status(200)
+        .cookie("accessToken", accessToken, cookieOptions)
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .redirect("https://www.google.com")
+    }
+
     // Response
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)

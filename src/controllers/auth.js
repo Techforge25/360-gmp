@@ -391,11 +391,11 @@ const verifypasswordResetToken = asyncHandler(async (request, response) => {
     const resetToken = await getCache(getResetPasswordKey(email));
 
     // Validate
-    if(!resetToken) throw new ApiError(400, "Invalid or expired reset token");
-    if(resetToken !== passwordResetToken) throw new ApiError(400, "Invalid reset token");
+    if(!resetToken) throw new ApiError(400, "Invalid or expired OTP");
+    if(resetToken !== passwordResetToken) throw new ApiError(400, "Invalid OTP");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, passwordResetToken, "Password reset token verified successfully"));
+    return response.status(200).json(new ApiResponse(200, passwordResetToken, "OTP verified successfully"));
 });
 
 // Reset password

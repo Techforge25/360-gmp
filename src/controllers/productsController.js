@@ -581,7 +581,7 @@ const fetchRelatedProducts = asyncHandler(async (request, response) => {
     if(!product) throw new ApiError(404, "Product not found");
 
     // Fetch related products
-    const relatedProducts = await Product.find({ category: product.category })
+    const relatedProducts = await Product.find({ category: product.category, _id:{ $ne:productId } })
     .sort("-createdAt").limit(4)
     .select("image title detail pricePerUnit minOrderQty").lean();
     if(!relatedProducts.length) return response.status(200).json(new ApiResponse(200, [], "No related products found"));

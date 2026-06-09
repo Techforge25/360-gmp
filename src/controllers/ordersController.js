@@ -1095,7 +1095,10 @@ const fetchBusinessNewOrders = asyncHandler(async (request, response) => {
     // Find orders
     const orders = await Order.paginate({ sellerBusinessId:businessProfileId, status:{ $in: ["pending"] } }, 
         { page, limit, lean:true, select:"sellerBusinessId createdAt totalAmount status", sort:{ createdAt:-1 },
-        populate: { path:"sellerBusinessId", select:"companyName" }
+        populate:[
+            { path:"sellerBusinessId", select:"companyName" },
+            { path:"buyerUserProfileId", select:"fullName" },
+        ]
     });
     if(!orders.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No new orders found"));
 
@@ -1119,7 +1122,10 @@ const fetchBusinessProcessingOrders = asyncHandler(async (request, response) => 
     // Find orders
     const orders = await Order.paginate({ sellerBusinessId:businessProfileId, status:{ $in: ["processing"] } }, 
         { page, limit, lean:true, select:"sellerBusinessId createdAt totalAmount status", sort:{ createdAt:-1 },
-        populate: { path:"sellerBusinessId", select:"companyName" }
+        populate:[
+            { path:"sellerBusinessId", select:"companyName" },
+            { path:"buyerUserProfileId", select:"fullName" },
+        ]
     });
     if(!orders.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No processing orders found"));
 
@@ -1143,7 +1149,10 @@ const fetchBsuinessInTransitOrders = asyncHandler(async (request, response) => {
     // Find orders
     const orders = await Order.paginate({ sellerBusinessId:businessProfileId, status:"in-transit" }, 
         { page, limit, lean:true, select:"sellerBusinessId createdAt totalAmount status", sort:{ createdAt:-1 },
-        populate: { path:"sellerBusinessId", select:"companyName" }
+        populate:[
+            { path:"sellerBusinessId", select:"companyName" },
+            { path:"buyerUserProfileId", select:"fullName" },
+        ]
     });
     if(!orders.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No in-transit orders found"));
 
@@ -1167,7 +1176,10 @@ const fetchBusinessDeliveredOrders = asyncHandler(async (request, response) => {
     // Find orders
     const orders = await Order.paginate({ sellerBusinessId:businessProfileId, status:"delivered" }, 
         { page, limit, lean:true, select:"sellerBusinessId createdAt totalAmount status", sort:{ createdAt:-1 },
-        populate: { path:"sellerBusinessId", select:"companyName" }
+        populate:[
+            { path:"sellerBusinessId", select:"companyName" },
+            { path:"buyerUserProfileId", select:"fullName" },
+        ]
     });
     if(!orders.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No delivered orders found"));
 
@@ -1191,7 +1203,10 @@ const fetchBusinessCompletedOrders = asyncHandler(async (request, response) => {
     // Find orders
     const orders = await Order.paginate({ sellerBusinessId:businessProfileId, status:"completed" }, 
         { page, limit, lean:true, select:"sellerBusinessId createdAt totalAmount status", sort:{ createdAt:-1 },
-        populate: { path:"sellerBusinessId", select:"companyName" }
+        populate:[
+            { path:"sellerBusinessId", select:"companyName" },
+            { path:"buyerUserProfileId", select:"fullName" },
+        ]
     });
     if(!orders.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No completed orders found"));
 
@@ -1215,7 +1230,10 @@ const fetchBusinessCancelledOrders = asyncHandler(async (request, response) => {
     // Find orders
     const orders = await Order.paginate({ sellerBusinessId:businessProfileId, status:"cancelled" }, 
         { page, limit, lean:true, select:"sellerBusinessId createdAt totalAmount status", sort:{ createdAt:-1 },
-        populate: { path:"sellerBusinessId", select:"companyName" }
+        populate:[
+            { path:"sellerBusinessId", select:"companyName" },
+            { path:"buyerUserProfileId", select:"fullName" },
+        ]
     });
     if(!orders.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No cancelled orders found"));
 

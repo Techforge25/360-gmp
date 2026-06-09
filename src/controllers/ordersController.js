@@ -1082,7 +1082,7 @@ const fetchAllBusinessOrders = asyncHandler(async (request, response) => {
     }));    
 
     // Response
-    return response.status(200).json(new ApiResponse(200, orders, "Business orders fetch successfully"));
+    return response.status(200).json(new ApiResponse(200, orders, "Business orders has been fetched successfully"));
 });
 
 // Fetch new orders for business
@@ -1109,7 +1109,7 @@ const fetchBusinessNewOrders = asyncHandler(async (request, response) => {
     }));    
 
     // Response
-    return response.status(200).json(new ApiResponse(200, orders, "New orders have been fetch")); 
+    return response.status(200).json(new ApiResponse(200, orders, "New orders have been fetched")); 
 });
 
 // Fetch processing orders for business
@@ -1136,7 +1136,7 @@ const fetchBusinessProcessingOrders = asyncHandler(async (request, response) => 
     }));   
 
     // Response
-    return response.status(200).json(new ApiResponse(200, orders, "Processing orders have been fetch")); 
+    return response.status(200).json(new ApiResponse(200, orders, "Processing orders have been fetched")); 
 });
 
 // Fetch in-transit orders for business

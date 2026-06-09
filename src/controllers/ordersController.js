@@ -1273,19 +1273,6 @@ const viewOrder = asyncHandler(async (request, response) => {
             { $unwind: "$items" },
 
             // Review lookup
-            // {
-            //     $lookup: {
-            //         from: "productreviews",
-            //         let: { productId: "$items.productId" },
-            //         pipeline: [
-            //             { $match: { userProfileId: convertToMongoId(userProfileId) } },
-            //             { $match: { $expr: { $eq: ["$productId", "$$productId"] } } }
-            //         ],
-            //         as: "itemReview"
-            //     }
-            // },
-
-            // Review lookup
             {
                 $lookup: {
                     from: "productreviews",

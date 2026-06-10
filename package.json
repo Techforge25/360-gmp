@@ -6,7 +6,8 @@
   "scripts": {
     "start:production": "cross-env NODE_ENV=production node ./src/server.js",
     "start:staging": "cross-env NODE_ENV=staging node ./src/server.js",
-    "dev": "cross-env NODE_ENV=local node --watch ./src/server.js"
+    "dev": "cross-env NODE_ENV=local node --watch ./src/server.js",
+    "build": "npm install"
   },
   "keywords": [],
   "author": "",

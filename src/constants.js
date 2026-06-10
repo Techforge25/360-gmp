@@ -1,5 +1,6 @@
 // Port and environment
 const port = process.env.PORT || 8000;
+const isLocal = process.env.NODE_ENV === "local";
 const isProduction = process.env.NODE_ENV === "production";
 
 // Cors options
@@ -11,23 +12,13 @@ const corsOptions = {
 };
 
 // Cookie options
-// const cookieOptions = {
-//     httpOnly:true,
-//     secure: isProduction,
-//     signed: true,
-//     maxAge: 1000 * 60 * 60 * 24 * 90,
-//     sameSite: isProduction ? "none" : "lax",
-//     domain: isProduction ? ".techforgeinnovations.com" : undefined
-// };
-
-// Cookie options
 const cookieOptions = {
     httpOnly:true,
-    secure: process.env.NODE_ENV === "local" ? false : true,
+    secure: !isLocal,
     signed: true,
     maxAge: 1000 * 60 * 60 * 24 * 90,
-    sameSite: process.env.NODE_ENV === "local" ? "lax" : "none",
-    domain: process.env.NODE_ENV === "local" ? undefined : ".techforgeinnovations.com"
+    sameSite: isLocal ? "lax" : "none",
+    domain: isProduction ? ".techforgeinnovations.com" : undefined
 };
 
 // Empty list
@@ -49,6 +40,7 @@ const allowedNotificationTypes = ["System", "UserProfile", "BusinessProfile"];
 
 module.exports = {
     port,
+    isLocal,
     isProduction,
     corsOptions,
     cookieOptions,

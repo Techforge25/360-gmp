@@ -40,6 +40,6 @@ productsRouter.route("/:productId/featured")
 
 // Fetch related products
 productsRouter.route("/:productId/related-products")
-.get(authentication, checkSubscription, fetchRelatedProducts);
+.get(authentication, fetchRelatedProducts);
 
 module.exports = productsRouter;

@@ -248,6 +248,7 @@ const fetchBusinessFeaturedProducts = asyncHandler(async (request, response) => 
     return response.status(200).json(new ApiResponse(200, products, "Business featured products have been fetched"));
 });
 
+// View product
 const viewProduct = asyncHandler(async (request, response) => {
     const userId = convertToMongoId(request.user._id);
     const { productId } = request.params;
@@ -581,10 +582,82 @@ const fetchRelatedProducts = asyncHandler(async (request, response) => {
     if(!product) throw new ApiError(404, "Product not found");
 
     // Fetch related products
-    const relatedProducts = await Product.find({ category: product.category, _id:{ $ne:productId } })
-    .sort("-createdAt").limit(4)
-    .select("image title detail pricePerUnit minOrderQty").lean();
-    if(!relatedProducts.length) return response.status(200).json(new ApiResponse(200, [], "No related products found"));
+    // const relatedProducts = await Product.find({ category: product.category, _id:{ $ne:productId } })
+    // .sort("-createdAt").limit(4)
+    // .select("image title detail pricePerUnit minOrderQty stockQty").lean();
+    // if(!relatedProducts.length) return response.status(200).json(new ApiResponse(200, [], "No related products found"));
+
+    const relatedProducts = await Product.aggregate([
+        { $match: { category: product.category, _id: { $ne: convertToMongoId(productId) } }},
+
+        // Reviews
+        {
+            $lookup: {
+                from: "productreviews",
+                localField: "_id",
+                foreignField: "productId",
+                as: "reviews"
+            }
+        },
+
+        // Orders (sold count)
+        {
+            $lookup: {
+                from: "orders",
+                let: { productId: "$_id" },
+                pipeline: [
+                    { $match: { status: "completed" } },
+                    {
+                        $match: {
+                            $expr: { $in: ["$$productId", "$items.productId"] }
+                        }
+                    }
+                ],
+                as: "orders"
+            }
+        },
+
+        // Add fields
+        {
+            $addFields: {
+                avgRating: {
+                    $round: [
+                        {
+                            $ifNull: [
+                                { $avg: "$reviews.rating" },
+                                0
+                            ]
+                        },
+                        1
+                    ]
+                },
+                totalReviews: { $size: "$reviews" },
+                sold: { $size: "$orders" }
+            }
+        },
+
+        // Sort
+        { $sort: { createdAt: -1 } },
+
+        // Limit
+        { $limit: 4 },
+
+        // Projection
+        {
+            $project: {
+                image: 1,
+                title: 1,
+                detail: 1,
+                pricePerUnit: 1,
+                minOrderQty: 1,
+                stockQty: 1,
+                avgRating: 1,
+                totalReviews: 1,
+                sold: 1
+            }
+        }
+    ]);
+    if(!relatedProducts.length) return response.status(200).json(new ApiResponse(200, [], "No related products found"));    
 
     // Response
     return response.status(200).json(new ApiResponse(200, relatedProducts, "Related products have been fetched"));

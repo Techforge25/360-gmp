@@ -82,6 +82,9 @@ const fetchProductReviews = asyncHandler(async (request, response) => {
         // Unwind
         { $unwind: "$userProfile" },
 
+        // Sort
+        { $sort:{ createdAt: -1 } },
+
         // Projection
         { 
             $project: { 

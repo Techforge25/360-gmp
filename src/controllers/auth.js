@@ -197,7 +197,7 @@ const userLogin = asyncHandler(async (request, response) => {
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .json(new ApiResponse(200, { role:user.role, isNewToPlatform:isNewUser }, "Login successful"));
+    .json(new ApiResponse(200, { role:user.role, isNewToPlatform:isNewUser, accessToken, refreshToken }, "Login successful"));
 });
 
 // Logout
@@ -261,7 +261,7 @@ const refreshAccessToken = asyncHandler(async (request, response) => {
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .json(new ApiResponse(200, null, "Refresh token has been issued"));
+    .json(new ApiResponse(200, { accessToken, refreshToken }, "Refresh token has been issued"));
 });
 
 // Switch role
@@ -323,7 +323,7 @@ const switchRole = asyncHandler(async (request, response) => {
     // Response
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
-    .json(new ApiResponse(200, { profilePayload }, `Role has changed to ${role}`));
+    .json(new ApiResponse(200, { profilePayload, accessToken }, `Role has changed to ${role}`));
 });
 
 // Forgot password

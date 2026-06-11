@@ -960,13 +960,19 @@ const fetchProcessingOrders = asyncHandler(async (request, response) => {
 
 // Fetch in-transit orders for users
 const fetchInTransitOrders = asyncHandler(async (request, response) => {
-    const { userProfileId } = request.user.profiles || {};
+    const { role } = request.user;
+    const { userProfileId, businessProfileId } = request.user.profiles || {};
+
+    // Set payload based on condition
+    let baseFilter = {};
+    if(role === "user") baseFilter.buyerUserProfileId = userProfileId;
+    if(role === "business") baseFilter.sellerBusinessId = businessProfileId;
 
     // Pagination options
     const { page = 1, limit = 10 } = request.query;
 
     // Find orders
-    const orders = await Order.paginate({ buyerUserProfileId:userProfileId, status:"in-transit" }, 
+    const orders = await Order.paginate({ ...baseFilter, status: { $in:["in-transit", "shipped"] } }, 
         { page, limit, lean:true, select:"sellerBusinessId createdAt totalAmount status", sort:{ createdAt:-1 },
         populate: { path:"sellerBusinessId", select:"companyName" }
     });
@@ -1147,7 +1153,7 @@ const fetchBsuinessInTransitOrders = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
 
     // Find orders
-    const orders = await Order.paginate({ sellerBusinessId:businessProfileId, status:"in-transit" }, 
+    const orders = await Order.paginate({ sellerBusinessId:businessProfileId, status:{ $in:["in-transit", "shipped"] } }, 
         { page, limit, lean:true, select:"sellerBusinessId createdAt totalAmount status", sort:{ createdAt:-1 },
         populate:[
             { path:"sellerBusinessId", select:"companyName" },

@@ -437,16 +437,17 @@ const fetchJobMatches = asyncHandler(async (request, response) => {
 
 // Add social link
 const createUserSocialLink = asyncHandler(async (request, response) => {
-    const userId = request.user._id;
-
-    // Find user
-    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
-    if(!userProfile) throw new ApiError(404, "User profile not found");
+    const { userProfileId } = request.user.profiles || {};
 
     // Get validated payload
     const { platformName, url } = validate(userSocialLinkValidationSchema, request.body) || {};
 
-    const social = await UserSocialLink.create({ userProfileId:userProfile._id, platformName, url });
+    // Prevent multiple
+    const exist = await UserSocialLink.exists({ userProfileId, platformName });
+    if(exist) throw new ApiError(409, `${platformName} platform has already been added to your profile`);
+
+    // Add
+    const social = await UserSocialLink.create({ userProfileId, platformName, url });
     if(!social) throw new ApiError(500, "Failed to create social link");
 
     // Response

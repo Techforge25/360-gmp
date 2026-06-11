@@ -8,7 +8,7 @@ const userSocialLinkSchema = new Schema({
 }, { timestamps:true });
 
 // Prevent duplicate platform per user
-userSocialLinkSchema.index({ userProfileId:1, platformName:1 }, { unique:[true, "This social media platform has already been added to your profile."] });
+userSocialLinkSchema.index({ userProfileId:1, platformName:1 }, { unique:true });
 
 // Model
 const UserSocialLink = model("UserSocialLink", userSocialLinkSchema);

@@ -484,7 +484,7 @@ const userAuthCheck = asyncHandler(async (request, response) => {
     // const { _id:userId, role, profiles } = request.user;
     // const { userProfileId = null, businessProfileId = null } = profiles || {};
 
-    const { _id:userId, role } = request.user;
+    const { _id:userId, role, profiles } = request.user;
     const { userProfileId = null, businessProfileId = null } = profiles || {};
 
     // Redirect url key

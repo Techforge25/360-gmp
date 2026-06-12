@@ -1,23 +1,26 @@
 const Subscription = require("../models/subscription");
 const ApiError = require("../utils/ApiError");
+const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 
 // Main middleware to check subscription and attach plan info
 const checkSubscription = asyncHandler(async (request, response, next) => {
-    const userId = request.user?._id;
-    const role = request.user?.role;
+    const { _id:userId, role } = request.user;
+
+    // Redirect url key
+    const redirectURL = `${process.env.FRONTEND_URL}/onboarding/plans`;
     
     // Find subscription with populated plan details
     const subscription = await Subscription.findOne({ userId, status: "active" }).populate("planId");
-    if(!subscription) throw new ApiError(403, "No subscription found");
-
+    if(!subscription) return response.status(402).json(new ApiResponse(402, { redirectURL }, "Subscription required"));
+    
     // Check expiry
     const currentDate = new Date();
     if(new Date(subscription.endDate) < currentDate)
     {
         subscription.status = "expired";
         await subscription.save();
-        throw new ApiError(403, "Subscription has been expired! Please renew");
+        return response.status(402).json(new ApiResponse(402, { redirectURL }, "Subscription has been expired! Please renew"));
     }
 
     // Attach subscription and plan info to request object
@@ -61,8 +64,6 @@ const restrictTrialUser = asyncHandler(async (request, response, next) => {
 });
 
 module.exports = { checkSubscription, checkUserAccess, checkBusinessAccess, restrictTrialUser };
-
- 
 
 /*
 const { checkSubscription, checkUserAccess, checkBusinessAccess } = require("../middlewares/checkSubscription");

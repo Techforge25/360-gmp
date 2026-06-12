@@ -13,7 +13,7 @@ const checkSubscription = asyncHandler(async (request, response, next) => {
     
     // Find subscription with populated plan details
     const subscription = await Subscription.findOne({ userId, status: "active" }).populate("planId");
-    if(!subscription) return response.status(402).json(new ApiResponse(402, { redirectURL }, "Subscription required"));
+    if(!subscription) return response.status(303).json(new ApiResponse(303, { redirectURL }, "Subscription required"));
     
     // Check expiry
     const currentDate = new Date();
@@ -21,7 +21,7 @@ const checkSubscription = asyncHandler(async (request, response, next) => {
     {
         subscription.status = "expired";
         await subscription.save();
-        return response.status(402).json(new ApiResponse(402, { redirectURL }, "Subscription has been expired! Please renew"));
+        return response.status(303).json(new ApiResponse(303, { redirectURL }, "Subscription has been expired! Please renew"));
     }
 
     // Attach subscription and plan info to request object

@@ -489,8 +489,7 @@ const userAuthCheck = asyncHandler(async (request, response) => {
     const payload = { userId, userProfileId, businessProfileId, role };
 
     // Redirect url key
-    // const redirectURL = `${process.env.FRONTEND_URL}/onboarding/plans`;
-    const redirectURL = `http://localhost:3000/onboarding/plans`;
+    const redirectURL = `${process.env.FRONTEND_URL}/onboarding/plans`;
     
     // Find subscription with populated plan details
     const subscription = await Subscription.findOne({ userId, status: "active" }).populate("planId");

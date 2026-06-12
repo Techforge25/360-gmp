@@ -481,8 +481,27 @@ const userExistence = asyncHandler(async (request, response) => {
 
 // User auth check
 const userAuthCheck = asyncHandler(async (request, response) => {
-    const { _id:userId, role, profiles } = request.user;
+    // const { _id:userId, role, profiles } = request.user;
+    // const { userProfileId = null, businessProfileId = null } = profiles || {};
+
+    const { _id:userId, role } = request.user;
     const { userProfileId = null, businessProfileId = null } = profiles || {};
+
+    // Redirect url key
+    const redirectURL = `${process.env.FRONTEND_URL}/onboarding/plans`;
+    
+    // Find subscription with populated plan details
+    const subscription = await Subscription.findOne({ userId, status: "active" }).populate("planId");
+    if(!subscription) return response.status(402).json(new ApiResponse(402, { redirectURL }, "Subscription required"));
+    
+    // Check expiry
+    const currentDate = new Date();
+    if(new Date(subscription.endDate) < currentDate)
+    {
+        subscription.status = "expired";
+        await subscription.save();
+        return response.status(402).json(new ApiResponse(402, { redirectURL }, "Subscription has been expired! Please renew"));
+    }    
 
     // Response
     return response.status(200).json(new ApiResponse(200, { userId, userProfileId, businessProfileId, role }, "Authenticated!"));

@@ -485,7 +485,8 @@ const userAuthCheck = asyncHandler(async (request, response) => {
     const { userProfileId = null, businessProfileId = null } = profiles || {};
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { userId, userProfileId, businessProfileId, role }, "Authenticated!"));
+    // return response.status(200).json(new ApiResponse(200, { userId, userProfileId, businessProfileId, role }, "Authenticated!"));
+    return response.status(303).redirect(`${process.env.FRONTEND_URL}/login`);
 });
 
 module.exports = { userSignup, userLogin, logout, refreshAccessToken, switchRole, forgotPassword, 

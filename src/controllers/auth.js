@@ -486,13 +486,14 @@ const userAuthCheck = asyncHandler(async (request, response) => {
 
     const { _id:userId, role, profiles } = request.user;
     const { userProfileId = null, businessProfileId = null } = profiles || {};
+    const payload = { userId, userProfileId, businessProfileId, role };
 
     // Redirect url key
     const redirectURL = `${process.env.FRONTEND_URL}/onboarding/plans`;
     
     // Find subscription with populated plan details
     const subscription = await Subscription.findOne({ userId, status: "active" }).populate("planId");
-    if(!subscription) return response.status(402).json(new ApiResponse(402, { redirectURL }, "Subscription required"));
+    if(!subscription) return response.status(402).json(new ApiResponse(402, { ...payload, redirectURL }, "Subscription required"));
     
     // Check expiry
     const currentDate = new Date();
@@ -500,11 +501,11 @@ const userAuthCheck = asyncHandler(async (request, response) => {
     {
         subscription.status = "expired";
         await subscription.save();
-        return response.status(402).json(new ApiResponse(402, { redirectURL }, "Subscription has been expired! Please renew"));
+        return response.status(402).json(new ApiResponse(402, { ...payload, redirectURL }, "Subscription has been expired! Please renew"));
     }    
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { userId, userProfileId, businessProfileId, role }, "Authenticated!"));
+    return response.status(200).json(new ApiResponse(200, payload, "Authenticated!"));
 });
 
 module.exports = { userSignup, userLogin, logout, refreshAccessToken, switchRole, forgotPassword, 

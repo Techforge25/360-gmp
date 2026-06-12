@@ -27,7 +27,7 @@ authRouter.route("/user/login").post(userLogin);
 authRouter.route("/user/existence").post(userExistence);
 
 // User auth check
-authRouter.route("/user/me").get(authentication, userAuthCheck);
+authRouter.route("/user/me").post(authentication, userAuthCheck);
 
 // Logout
 authRouter.route("/logout").get(authentication, logout);

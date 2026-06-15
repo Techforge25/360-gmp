@@ -193,11 +193,18 @@ const userLogin = asyncHandler(async (request, response) => {
     // Delete attempts
     await deleteCache(key);
 
+    // Role based redirect
+    const role = user.role;
+    let redirectURL;
+    if(!role) redirectURL = `${process.env.FRONTEND_URL}/onboarding/plans`;
+    if(role === "user") redirectURL = `${process.env.FRONTEND_URL}/dashboard/user`;
+    if(role === "business") redirectURL = `${process.env.FRONTEND_URL}/dashboard/business`;
+
     // Response
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .json(new ApiResponse(200, { role:user.role, isNewToPlatform:isNewUser, accessToken, refreshToken }, "Login successful"));
+    .json(new ApiResponse(200, { role, isNewToPlatform:isNewUser, accessToken, refreshToken, redirectURL }, "Login successful"));
 });
 
 // Logout

@@ -1,5 +1,5 @@
 const { isValidObjectId } = require("mongoose");
-const { cookieOptions, frontendURL } = require("../constants");
+const { cookieOptions } = require("../constants");
 const BusinessProfile = require("../models/businessProfileSchema");
 const UserProfile = require("../models/userProfile");
 const User = require("../models/users");
@@ -196,9 +196,12 @@ const userLogin = asyncHandler(async (request, response) => {
     // Role based redirect
     const role = user.role;
     let redirectURL;
-    if(!role) redirectURL = `${frontendURL}/onboarding/plans`;
-    if(role === "user") redirectURL = `${frontendURL}/dashboard/user`;
-    if(role === "business") redirectURL = `${frontendURL}/dashboard/business`;
+    // if(!role) redirectURL = `${frontendURL}/onboarding/plans`;
+    // if(role === "user") redirectURL = `${frontendURL}/dashboard/user`;
+    // if(role === "business") redirectURL = `${frontendURL}/dashboard/business`;
+    if(!role) redirectURL = `http://localhost:3000/onboarding/plans`;
+    if(role === "user") redirectURL = `http://localhost:3000/dashboard/user`;
+    if(role === "business") redirectURL = `http://localhost:3000/dashboard/business`;    
 
     // Response
     return response.status(200)

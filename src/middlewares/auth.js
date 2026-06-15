@@ -4,7 +4,8 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 
 // Redirect url
-const redirectURL = `${process.env.FRONTEND_URL}/login`;
+// const redirectURL = `${process.env.FRONTEND_URL}/login`;
+const redirectURL = `http://localhost:3000/login`;
 
 // Authentication
 const authentication = asyncHandler((request, response, next) => {

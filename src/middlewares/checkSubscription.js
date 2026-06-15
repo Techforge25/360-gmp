@@ -13,7 +13,7 @@ const checkSubscription = asyncHandler(async (request, response, next) => {
     
     // Find subscription with populated plan details
     const subscription = await Subscription.findOne({ userId, status: "active" }).populate("planId");
-    if(!subscription) return response.status(303).json(new ApiResponse(303, { redirectURL }, "Subscription required"));
+    if(!subscription) return response.status(402).json(new ApiResponse(402, { redirectURL }, "Subscription required"));
     
     // Check expiry
     const currentDate = new Date();
@@ -21,7 +21,7 @@ const checkSubscription = asyncHandler(async (request, response, next) => {
     {
         subscription.status = "expired";
         await subscription.save();
-        return response.status(303).json(new ApiResponse(303, { redirectURL }, "Subscription has been expired! Please renew"));
+        return response.status(402).json(new ApiResponse(402, { redirectURL }, "Subscription has been expired! Please renew"));
     }
 
     // Attach subscription and plan info to request object
@@ -65,16 +65,3 @@ const restrictTrialUser = asyncHandler(async (request, response, next) => {
 });
 
 module.exports = { checkSubscription, checkUserAccess, checkBusinessAccess, restrictTrialUser };
-
-/*
-const { checkSubscription, checkUserAccess, checkBusinessAccess } = require("../middlewares/checkSubscription");
-
-// For user features (TRIAL and SILVER both have access)
-router.get("/user-profile", authentication, checkSubscription, checkUserAccess, getUserProfile);
-
-// For business features (only SILVER has access)
-router.post("/create-business", authentication, checkSubscription, checkBusinessAccess, createBusiness);
-
-// Just check subscription (plan info available in request.user)
-router.get("/dashboard", authentication, checkSubscription, getDashboard);
-*/

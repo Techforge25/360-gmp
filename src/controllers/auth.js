@@ -324,10 +324,13 @@ const switchRole = asyncHandler(async (request, response) => {
     });
     if(!accessToken) throw new ApiError(400, "Failed to re-generate access token");
 
+    // Redirect URL
+    const redirectURL = `${process.env.FRONTEND_URL}/dashboard/${role}`;
+
     // Response
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
-    .json(new ApiResponse(200, { profilePayload, accessToken }, `Role has changed to ${role}`));
+    .json(new ApiResponse(200, { profilePayload, accessToken, redirectURL }, `Role has changed to ${role}`));
 });
 
 // Forgot password

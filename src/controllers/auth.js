@@ -202,7 +202,10 @@ const userLogin = asyncHandler(async (request, response) => {
     if(!subscription)
     {
         redirectURL = `http://localhost:3000/onboarding/plans`;
-        return response.status(200).json(new ApiResponse(200, { redirectURL }, "Subscription required"));
+        return response.status(200)
+        .cookie("accessToken", accessToken, cookieOptions)
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .json(new ApiResponse(200, { redirectURL }, "Subscription required"));
     }
     
     // Check expiry
@@ -212,7 +215,10 @@ const userLogin = asyncHandler(async (request, response) => {
         subscription.status = "expired";
         await subscription.save();
         redirectURL = `http://localhost:3000/onboarding/plans`;
-        return response.status(200).json(new ApiResponse(200, { redirectURL }, "Subscription has been expired! Please renew"));
+        return response.status(200)
+        .cookie("accessToken", accessToken, cookieOptions)
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .json(new ApiResponse(200, { redirectURL }, "Subscription has been expired! Please renew"));
     }
 
     // Role based redirection

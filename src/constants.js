@@ -3,17 +3,6 @@ const port = process.env.PORT || 8000;
 const isLocal = process.env.NODE_ENV === "local";
 const isProduction = process.env.NODE_ENV === "production";
 
-// Frontend URL
-let frontendURL;
-if(isLocal)
-{
-    frontendURL = "http://localhost:3000";
-}
-else
-{
-    frontendURL = process.env.FRONTEND_URL;
-}
-
 // Cors options
 const corsOptions = {
     origin:[process.env.FRONTEND_URL, "http://localhost:3000", "http://192.168.1.14:3000", "http://192.168.1.10:3000"],
@@ -53,7 +42,6 @@ module.exports = {
     port,
     isLocal,
     isProduction,
-    frontendURL,
     corsOptions,
     cookieOptions,
     emptyList,

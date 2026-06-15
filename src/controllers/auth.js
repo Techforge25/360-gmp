@@ -193,9 +193,37 @@ const userLogin = asyncHandler(async (request, response) => {
     // Delete attempts
     await deleteCache(key);
 
-    // Role based redirect
+    // Conditional redirection
     const role = user.role;
-    const redirectURL = role ? `http://localhost:3000/dashboard/${role}` : `http://localhost:3000/onboarding/plans`;
+    let redirectURL;
+
+    // Find subscription
+    const subscription = await Subscription.findOne({ userId: user._id, status: "active" }).populate("planId");
+    if(!subscription)
+    {
+        redirectURL = `http://localhost:3000/onboarding/plans`;
+        return response.status(402).json(new ApiResponse(402, { redirectURL }, "Subscription required"));
+    }
+    
+    // Check expiry
+    const currentDate = new Date();
+    if(new Date(subscription.endDate) < currentDate)
+    {
+        subscription.status = "expired";
+        await subscription.save();
+        redirectURL = `http://localhost:3000/onboarding/plans`;
+        return response.status(402).json(new ApiResponse(402, { redirectURL }, "Subscription has been expired! Please renew"));
+    }
+
+    // Role based redirection
+    if(!role)
+    {
+        redirectURL = `http://localhost:3000/onboarding/role`;
+    }
+    else
+    {
+        redirectURL = `http://localhost:3000/dashboard/${role}`;
+    }    
 
     // Response
     return response.status(200)

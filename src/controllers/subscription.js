@@ -70,7 +70,7 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
     };
 
     // If trial plan selected → apply 14 days trial
-    if(name === "TRIAL") sessionConfig.subscription_data = { trial_period_days: 14 }; // Auto charge after 14 days
+    if(name === "Sneak Peek Free – 14 Days") sessionConfig.subscription_data = { trial_period_days: 14 }; // Auto charge after 14 days
 
     // Create checkout session
     const session = await stripe.checkout.sessions.create(sessionConfig);

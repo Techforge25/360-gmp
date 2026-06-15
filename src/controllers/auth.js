@@ -195,13 +195,7 @@ const userLogin = asyncHandler(async (request, response) => {
 
     // Role based redirect
     const role = user.role;
-    let redirectURL;
-    // if(!role) redirectURL = `${frontendURL}/onboarding/plans`;
-    // if(role === "user") redirectURL = `${frontendURL}/dashboard/user`;
-    // if(role === "business") redirectURL = `${frontendURL}/dashboard/business`;
-    if(!role) redirectURL = `http://localhost:3000/onboarding/plans`;
-    if(role === "user") redirectURL = `http://localhost:3000/dashboard/user`;
-    if(role === "business") redirectURL = `http://localhost:3000/dashboard/business`;    
+    const redirectURL = role ? `http://localhost:3000/dashboard/${role}` : `http://localhost:3000/onboarding/plans`;
 
     // Response
     return response.status(200)

@@ -325,7 +325,8 @@ const switchRole = asyncHandler(async (request, response) => {
     if(!accessToken) throw new ApiError(400, "Failed to re-generate access token");
 
     // Redirect URL
-    const redirectURL = `${process.env.FRONTEND_URL}/dashboard/${role}`;
+    // const redirectURL = `${process.env.FRONTEND_URL}/dashboard/${role}`;
+    const redirectURL = `http://localhost:3000/dashboard/${role}`;
 
     // Response
     return response.status(200)

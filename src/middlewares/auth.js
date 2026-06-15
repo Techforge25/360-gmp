@@ -9,13 +9,13 @@ const redirectURL = `${process.env.FRONTEND_URL}/login`;
 // Authentication
 const authentication = asyncHandler((request, response, next) => {
     const accessToken = getAccessToken(request);
-    if(!accessToken) throw new ApiError(401, "Unauthorized!");
-    //if(!accessToken) return response.status(401).json(new ApiResponse(401, { redirectURL }, "Unauthorized!"));
+    // if(!accessToken) throw new ApiError(401, "Unauthorized!");
+    if(!accessToken) return response.status(401).json(new ApiResponse(401, { redirectURL }, "Unauthorized!"));
 
     // Verify
     const user = verifyAccessToken(accessToken);
-    if(!user) throw new ApiError(401, "Invalid access token");
-    // if(!user) return response.status(401).json(new ApiResponse(401, { redirectURL }, "Unauthorized"));
+    // if(!user) throw new ApiError(401, "Invalid access token");
+    if(!user) return response.status(401).json(new ApiResponse(401, { redirectURL }, "Unauthorized"));
 
     // Pass through
     request.user = user;

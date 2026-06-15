@@ -268,6 +268,19 @@ const fetchBusinessProducts = asyncHandler(async (request, response) => {
             }
         },
 
+        // Lookup business
+        {
+            $lookup:{
+                from: "businessprofiles",
+                localField: "businessId",
+                foreignField: "_id",
+                as: "businessId",
+                pipeline:[
+                    { $project:{ companyName: 1, logo: 1, isVerified: 1 } }
+                ]
+            }
+        },
+
         // Lookup order
         {
             $lookup:{
@@ -286,6 +299,9 @@ const fetchBusinessProducts = asyncHandler(async (request, response) => {
                 as:"orders"
             }
         },
+
+        // Unwind
+        { $unwind:{ path:"$businessId", preserveNullAndEmptyArrays:true } },
 
         // Add totalReviews and avgRating
         {
@@ -340,7 +356,17 @@ const fetchBusinessProducts = asyncHandler(async (request, response) => {
         },
 
         // Projection
-        { $project:{ image: 1, title: 1, minOrderQty:1, pricePerUnit:1, sold:1, avgRating: 1 } }
+        { 
+            $project: { 
+                businessId:"$businessId", 
+                image: 1, 
+                title: 1, 
+                minOrderQty: 1, 
+                pricePerUnit: 1, 
+                sold: 1, 
+                avgRating: 1 
+            } 
+        }
     ], { page, limit });    
     if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Business products not found"));
 

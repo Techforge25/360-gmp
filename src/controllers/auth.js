@@ -1,5 +1,5 @@
 const { isValidObjectId } = require("mongoose");
-const { cookieOptions } = require("../constants");
+const { cookieOptions, errorMessage } = require("../constants");
 const BusinessProfile = require("../models/businessProfileSchema");
 const UserProfile = require("../models/userProfile");
 const User = require("../models/users");
@@ -127,6 +127,8 @@ const verifyOTP = asyncHandler(async (request, response) => {
 // User login
 const userLogin = asyncHandler(async (request, response) => {
     const { email, passwordHash } = validate(userLoginValidator, request.body) || {};
+
+    throw new ApiError(400, errorMessage);
 
     // Get IP (IPv4)
     const ip = request.headers["x-real-ip"];

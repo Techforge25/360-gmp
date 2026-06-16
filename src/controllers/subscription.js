@@ -477,7 +477,7 @@ const checkSubscriptionExistense = asyncHandler(async (request, response) => {
 
     // Check if user had ever purchased a subscription
     const subscription = await Subscription.findOne({ userId })
-    .populate({ path:"planId", select:"name" })
+    .populate({ path:"planId", select:"name price" })
     .select("_id endDate status");
     if(!subscription)
     {
@@ -489,7 +489,8 @@ const checkSubscriptionExistense = asyncHandler(async (request, response) => {
     // Prepare payload
     const payload = {
         subscriptionStatus: subscription.status,
-        planName: subscription.planId?.name || "Plan name not specified"
+        planName: subscription.planId?.name || "Plan name not specified",
+        price: subscription.planId?.price || 0
     };
 
     // Response

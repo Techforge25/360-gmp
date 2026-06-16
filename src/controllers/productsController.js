@@ -241,7 +241,108 @@ const fetchBusinessFeaturedProducts = asyncHandler(async (request, response) => 
 
     // Pagination options
     const { page = 1, limit = 10 } = request.query;
-    const products = await Product.paginate({ businessId, isFeatured:true }, { page, limit, sort:{ createdAt:-1 } });
+
+    // const products = await Product.paginate({ businessId, isFeatured:true }, { page, limit, sort:{ createdAt:-1 } });
+    // Aggregate pipeline
+    const products = await Product.aggregatePaginate([
+        { $match: { businessId: convertToMongoId(businessId), isFeatured:true } },
+
+        // Join reviews
+        {
+            $lookup: {
+                from: "productreviews",
+                localField: "_id",
+                foreignField: "productId",
+                as: "reviews"
+            }
+        },
+
+        // Lookup order
+        {
+            $lookup:{
+                from: "orders",
+                let: { productId: "$_id" },
+                pipeline: [
+                    { $match: { status: "completed" } },
+                    {
+                        $match: {
+                            $expr: {
+                                $in: ["$$productId", "$items.productId"]
+                            }
+                        }
+                    }
+                ],
+                as:"orders"
+            }
+        },
+
+        // Unwind
+        { $unwind:{ path:"$businessId", preserveNullAndEmptyArrays:true } },
+
+        // Add totalReviews and avgRating
+        {
+            $addFields: {
+                totalReviews: { $size: "$reviews" },
+                avgRating: { $avg: "$reviews.rating" },
+                sold: {
+                    $sum: {
+                        $map: {
+                            input: "$orders",
+                            as: "order",
+                            in: {
+                                $sum: {
+                                    $map: {
+                                        input: {
+                                            $filter: {
+                                                input: "$$order.items",
+                                                as: "item",
+                                                cond: {
+                                                    $eq: ["$$item.productId", "$_id"]
+                                                }
+                                            }
+                                        },
+                                        as: "matchedItem",
+                                        in: "$$matchedItem.quantity"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+
+        // Default 0 if no reviews
+        {
+            $addFields: {
+                avgRating: { $ifNull: ["$avgRating", 0] }
+            }
+        },
+
+        // Round rating
+        {
+            $addFields: {
+                avgRating: { $round: ["$avgRating", 1] }
+            }
+        },              
+
+        // Sort by avgRating then totalReviews
+        {
+            $sort: { createdAt: -1 }
+        },
+
+        // Projection
+        { 
+            $project: { 
+                image: 1, 
+                title: 1, 
+                minOrderQty: 1, 
+                pricePerUnit: 1, 
+                sold: 1, 
+                avgRating: 1 
+            } 
+        }
+    ], { page, limit });     
     if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Business featured products not found"));
 
     // Response

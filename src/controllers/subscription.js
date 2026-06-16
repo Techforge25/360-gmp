@@ -610,5 +610,6 @@ const getAllMySubscriptions = asyncHandler(async (request, response) => {
     // Response
     return response.status(200).json(new ApiResponse(200, subscriptions, "All subscriptions fetched"));
 });
+
 module.exports = { createSubscriptionStripe, verifyStripePayment, stripeWebhook, checkSubscriptionExistense,
 getMySubscription, totalSpent, checkSubscriptionStatus, getAllMySubscriptions, cancelStripeSubscription };

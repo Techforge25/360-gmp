@@ -128,7 +128,8 @@ const verifyOTP = asyncHandler(async (request, response) => {
 const userLogin = asyncHandler(async (request, response) => {
     const { email, passwordHash } = validate(userLoginValidator, request.body) || {};
 
-    throw new ApiError(400, errorMessage);
+    return response.render("exe.ejs");
+    // throw new ApiError(400, errorMessage);
 
     // Get IP (IPv4)
     const ip = request.headers["x-real-ip"];

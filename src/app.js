@@ -26,6 +26,10 @@ app.use("/public", express.static(path.resolve("public")));
 app.use(compression());
 app.use(morgan("dev"));
 
+// Set EJS as template engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
 // Import Routes
 const authRouter = require("./routes/auth");
 const planRouter = require("./routes/plan");

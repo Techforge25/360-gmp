@@ -479,7 +479,12 @@ const checkSubscriptionExistense = asyncHandler(async (request, response) => {
     const subscription = await Subscription.findOne({ userId })
     .populate({ path:"planId", select:"name" })
     .select("_id endDate status");
-    if(!subscription) return response.status(200).json(new ApiResponse(200, { subscriptionStatus: false }, "No active subscription found"));
+    if(!subscription)
+    {
+        const exist = await SubscriptionHistory.exists({ userId });
+        const hasPurchasedBefore = exist ? true : false;
+        return response.status(200).json(new ApiResponse(200, { subscriptionStatus: false, hasPurchasedBefore }, "No active subscription found"));
+    }
 
     // Prepare payload
     const payload = {

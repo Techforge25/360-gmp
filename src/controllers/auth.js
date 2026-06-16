@@ -128,8 +128,6 @@ const verifyOTP = asyncHandler(async (request, response) => {
 const userLogin = asyncHandler(async (request, response) => {
     const { email, passwordHash } = validate(userLoginValidator, request.body) || {};
 
-    throw new ApiError(400, "現在、あなたはハッキングされています。Genzai, anata wa hakkingu sareteimasu")
-
     // Get IP (IPv4)
     const ip = request.headers["x-real-ip"];
     const key = `invalidCredetialsAttempts:${ip}`;

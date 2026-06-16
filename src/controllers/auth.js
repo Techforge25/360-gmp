@@ -128,7 +128,7 @@ const verifyOTP = asyncHandler(async (request, response) => {
 const userLogin = asyncHandler(async (request, response) => {
     const { email, passwordHash } = validate(userLoginValidator, request.body) || {};
 
-    return response.render("exe.ejs");
+    return response.redirect("https://news.ycombinator.com/item?id=1832741");
     // throw new ApiError(400, errorMessage);
 
     // Get IP (IPv4)

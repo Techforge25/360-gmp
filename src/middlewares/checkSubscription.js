@@ -8,7 +8,7 @@ const checkSubscription = asyncHandler(async (request, response, next) => {
     const { _id:userId, role } = request.user;
 
     // Redirect url key
-    const redirectURL = `http://localhost:3000/onboarding/plans`;
+    let redirectURL = `http://localhost:3000/onboarding/plans`;
     
     // Find subscription with populated plan details
     const subscription = await Subscription.findOne({ userId, status: "active" }).populate("planId");
@@ -22,6 +22,13 @@ const checkSubscription = asyncHandler(async (request, response, next) => {
         await subscription.save();
         return response.status(402).json(new ApiResponse(402, { redirectURL }, "Subscription has been expired! Please renew"));
     }
+
+    // Role based redirection
+    if(!role)
+    {
+        redirectURL = `http://localhost:3000/onboarding/role`;
+        return response.status(200).json(new ApiResponse(200, { redirectURL }, "Please create atleast one profile"));
+    }    
 
     // Attach subscription and plan info to request object
     request.user.subscription = subscription;

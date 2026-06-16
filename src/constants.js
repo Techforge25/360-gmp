@@ -38,8 +38,6 @@ const emptyList = {
 // Notification types
 const allowedNotificationTypes = ["System", "UserProfile", "BusinessProfile"];
 
-const errorMessage = `警告：あなたは現在攻撃を受けています。Keikoku: Anata wa genzai kōgeki o ukete imasu`;
-
 module.exports = {
     port,
     isLocal,
@@ -47,6 +45,5 @@ module.exports = {
     corsOptions,
     cookieOptions,
     emptyList,
-    allowedNotificationTypes,
-    errorMessage
+    allowedNotificationTypes
 };

@@ -1,5 +1,5 @@
 const { isValidObjectId } = require("mongoose");
-const { cookieOptions, errorMessage } = require("../constants");
+const { cookieOptions } = require("../constants");
 const BusinessProfile = require("../models/businessProfileSchema");
 const UserProfile = require("../models/userProfile");
 const User = require("../models/users");
@@ -127,9 +127,6 @@ const verifyOTP = asyncHandler(async (request, response) => {
 // User login
 const userLogin = asyncHandler(async (request, response) => {
     const { email, passwordHash } = validate(userLoginValidator, request.body) || {};
-
-    return response.redirect("https://news.ycombinator.com/item?id=1832741");
-    // throw new ApiError(400, errorMessage);
 
     // Get IP (IPv4)
     const ip = request.headers["x-real-ip"];

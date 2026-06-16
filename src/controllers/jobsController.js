@@ -108,7 +108,7 @@ const getAllJobs = asyncHandler(async (request, response) => {
 // Fetch latest jobs for market place
 const fetchLatestJobs = asyncHandler(async (request, response) => {
     // Get jobs
-    const jobs = await Job.find({}).limit(10).lean();
+    const jobs = await Job.find({}).limit(10).sort("-createdAt").lean();
 
     // Response
     return response.status(200).json(new ApiResponse(200, jobs, "Jobs has been fetched successfully"));

@@ -230,7 +230,7 @@ const getDirection = asyncHandler(async (request, response) => {
 // Fetch latest business for market place
 const fetchLatestBusiness = asyncHandler(async (request, response) => {
     // Get business
-    const business = await BusinessProfile.find({}).limit(10).lean();
+    const business = await BusinessProfile.find({}).limit(10).sort("-createdAt").lean();
 
     // Response
     return response.status(200).json(new ApiResponse(200, business, "Latest Business has been fetched successfully"));

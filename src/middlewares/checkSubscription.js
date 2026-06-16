@@ -8,7 +8,6 @@ const checkSubscription = asyncHandler(async (request, response, next) => {
     const { _id:userId, role } = request.user;
 
     // Redirect url key
-    // const redirectURL = `${process.env.FRONTEND_URL}/onboarding/plans`;
     const redirectURL = `http://localhost:3000/onboarding/plans`;
     
     // Find subscription with populated plan details

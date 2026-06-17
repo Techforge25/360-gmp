@@ -4,7 +4,7 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 
 // Redirect url
-const redirectURL = `http://localhost:3000/login`;
+const redirectURL = `http://localhost:3000`;
 
 // Authentication
 const authentication = asyncHandler((request, response, next) => {

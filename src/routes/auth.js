@@ -30,7 +30,7 @@ authRouter.route("/user/existence").post(userExistence);
 // User auth check
 authRouter.route("/user/me").get(authentication, checkSubscription, userAuthCheck);
 
-// User auth check
+// User auth status for login page
 authRouter.route("/user/status").get(authStatus);
 
 // Logout

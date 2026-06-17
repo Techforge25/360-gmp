@@ -530,7 +530,7 @@ const userAuthCheck = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, { userId, role, userProfileId, businessProfileId }, "Authenticated!"));
 });
 
-// Auth status
+// Auth status for login page rendering
 const authStatus = asyncHandler(async (request, response) => {
     const accessToken = getAccessToken(request);
     if(!accessToken) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));

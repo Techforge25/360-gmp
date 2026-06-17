@@ -4,7 +4,7 @@ const BusinessProfile = require("../models/businessProfileSchema");
 const UserProfile = require("../models/userProfile");
 const User = require("../models/users");
 const sendEmail = require("../service/email");
-const { generateAccessToken, getRefreshToken, verifyRefreshToken, generateRefreshToken } = require("../utils/accessToken");
+const { generateAccessToken, getRefreshToken, verifyRefreshToken, generateRefreshToken, getAccessToken, verifyAccessToken } = require("../utils/accessToken");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
@@ -530,6 +530,19 @@ const userAuthCheck = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, { userId, role, userProfileId, businessProfileId }, "Authenticated!"));
 });
 
+// Auth status
+const authStatus = asyncHandler(async (request, response) => {
+    const accessToken = getAccessToken(request);
+    if(!accessToken) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));
+
+    // Verify
+    const user = verifyAccessToken(accessToken);
+    if(!user) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!")); 
+    
+    // Response
+    return response.status(200).json(new ApiResponse(200, { isLoggedIn: true }, "Login session found")); 
+});
+
 module.exports = { userSignup, userLogin, logout, refreshAccessToken, switchRole, forgotPassword, 
 resendOTPToken, verifyOTP, verifypasswordResetToken, resetPassword, googleLogin, userExistence,
-userAuthCheck };
+userAuthCheck, authStatus };

@@ -134,7 +134,7 @@ const userLogin = asyncHandler(async (request, response) => {
 
     // Check total attempts
     const totalAttempts = await getCache(key);
-    if(totalAttempts === 5) throw new ApiError(429, "Too many failed login attempts. Please try again later.");
+    if(totalAttempts >= 5) throw new ApiError(429, "Too many failed login attempts. Please try again later.");
 
     // Find user
     const user = await User.findOne({ email });

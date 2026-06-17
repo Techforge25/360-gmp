@@ -540,7 +540,7 @@ const authStatus = asyncHandler(async (request, response) => {
     if(!user) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!")); 
     
     // Response
-    return response.status(200).json(new ApiResponse(200, { isLoggedIn: true }, "Login session found")); 
+    return response.status(200).json(new ApiResponse(200, { isLoggedIn: true, role: user.role }, "Login session found")); 
 });
 
 module.exports = { userSignup, userLogin, logout, refreshAccessToken, switchRole, forgotPassword, 

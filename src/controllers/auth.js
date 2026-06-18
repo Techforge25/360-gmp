@@ -68,9 +68,9 @@ const resendOTPToken = asyncHandler(async (request, response) => {
     if(!user) throw new ApiError(404, "User not found associated with this email");
     if(user.status !== "pending") throw new ApiError(400, "Your account is already activated");
 
-    // Check exisiting otp
-    const exist = await getCache(getOTPKey(email));
-    if(exist) throw new ApiError(400, "Please wait until your current OTP expires before requesting a new one");
+    // Check existing otp
+    // const exist = await getCache(getOTPKey(email));
+    // if(exist) throw new ApiError(400, "Please wait until your current OTP expires before requesting a new one");
 
     // Generate new OTP token
     const { code:accountVerificationToken } = generateCode(6);
@@ -375,7 +375,8 @@ const forgotPassword = asyncHandler(async (request, response) => {
     // Check attempts
     const key = `forgotPasswordEmailAttempts:${email}`;
     const totalAttempts = await getCache(key);
-    if(totalAttempts >= 1) throw new ApiError(400, "Please wait 5 minutes for next password reset request");
+    // if(totalAttempts >= 1) throw new ApiError(400, "Please wait 5 minutes for next password reset request");
+    if(totalAttempts >= 50) throw new ApiError(400, "Please wait 5 minutes for next password reset request");
 
     // Find user
     const user = await User.findOne({ email });
@@ -386,11 +387,13 @@ const forgotPassword = asyncHandler(async (request, response) => {
     if(!resetToken) throw new ApiError(500, "Failed to generate password reset token");
 
     // Store token in redis
-    await setCache(getResetPasswordKey(email), resetToken, 5);
+    // await setCache(getResetPasswordKey(email), resetToken, 5);
+    await setCache(getResetPasswordKey(email), resetToken, 60); // 1 hour
 
     // Track attempts
     const attempts = await redis.incr(key);
-    if(attempts === 1) await redis.expire(key, 60 * 5); // 5 minutes
+    // if(attempts === 1) await redis.expire(key, 60 * 5); // 5 minutes
+    if(attempts === 1) await redis.expire(key, 60 * 60); // 1 hour
 
     // Send email in backgrouund
     await emailQueue.add("sendResetPasswordEmail", { email, resetToken });

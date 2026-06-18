@@ -381,6 +381,7 @@ const forgotPassword = asyncHandler(async (request, response) => {
     // Find user
     const user = await User.findOne({ email });
     if(!user) throw new ApiError(404, "User not found associated with this email");
+    if(user.googleAccount) throw new ApiError(403, "This account was registered using Google Sign-In. OTP verification is not available for Google-linked accounts.");
 
     // Generate a reset token
     const { code:resetToken } = generateCode(6);
@@ -430,8 +431,9 @@ const resetPassword = asyncHandler(async (request, response) => {
     if(resetToken !== passwordResetToken) throw new ApiError(400, "Invalid reset token");    
 
     // Find user associated with this email
-    const user = await User.findOne({ email }).select("_id passwordHash");
-    if(!user) throw new ApiError(404, "User not found");
+    const user = await User.findOne({ email }).select("_id passwordHash googleAccount");
+    if(!user) throw new ApiError(404, "User not found associated with this email");
+    if(user.googleAccount) throw new ApiError(403, "This account was registered using Google Sign-In. OTP verification is not available for Google-linked accounts.");
 
     // Prevent restting password as old password
     const matchPassword = await user.matchPassword(newPassword);

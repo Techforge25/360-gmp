@@ -23,7 +23,8 @@ async (accessToken, refreshToken, profile, done) => {
         const createUser = await User.create({
             gid:gid,
             email:email,
-            passwordHash:`${Date.now()}-GoogleLogin`
+            passwordHash:`${Date.now()}-GoogleLogin`,
+            googleAccount: true
         });
         return done(null, createUser);
     } 

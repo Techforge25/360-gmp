@@ -20,7 +20,10 @@ const userSchema = new Schema({
     passwordResetTokenExpires: { type:Date, default:null },
 
     // Refresh token
-    refreshToken: { type:String, default:null }
+    refreshToken: { type:String, default:null },
+
+    // Google account flag
+    googleAccount: { type:Boolean, default:false }
 }, { timestamps: true });
 
 // Hash password

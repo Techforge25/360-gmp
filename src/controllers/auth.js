@@ -433,7 +433,7 @@ const resetPassword = asyncHandler(async (request, response) => {
     // Find user associated with this email
     const user = await User.findOne({ email }).select("_id passwordHash googleAccount");
     if(!user) throw new ApiError(404, "User not found associated with this email");
-    if(user.googleAccount) throw new ApiError(403, "This account was registered using Google Sign-In. OTP verification is not available for Google-linked accounts.");
+    if(user.googleAccount) throw new ApiError(403, "This account was registered using Google Sign-In. Reset password feature is not available for Google-linked accounts.");
 
     // Prevent restting password as old password
     const matchPassword = await user.matchPassword(newPassword);

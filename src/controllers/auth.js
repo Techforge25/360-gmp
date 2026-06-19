@@ -33,11 +33,12 @@ const userSignup = asyncHandler(async (request, response) => {
     {
         if(user.status === "pending")
         {
-            throw new ApiError(400, "Your account is not activated yet. Please verify your identity via OTP.");
+            return response.status(200)
+            .json(new ApiResponse(200, { optRequired:true }, "Your account is not activated yet. Please verify your identity via OTP."));
         }
         else
         {
-            throw new ApiError(400, "This email has already been taken");
+            throw new ApiError(409, "This email has already been taken");
         }
     }
 
@@ -57,7 +58,7 @@ const userSignup = asyncHandler(async (request, response) => {
     await emailQueue.add("sendOTPEmail", { email, accountVerificationToken });
 
     // Response
-    return response.status(200).json(new ApiResponse(200, createdUser._id, "Signup successful! We have sent you an OTP to your email"));     
+    return response.status(200).json(new ApiResponse(200, { optRequired: true }, "Signup successful! We have sent you an OTP to your email"));     
 });
 
 // Resend OTP token for account verification

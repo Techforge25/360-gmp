@@ -79,7 +79,8 @@ const resendOTPToken = asyncHandler(async (request, response) => {
     if(!accountVerificationToken) throw new ApiError(500, "Failed to generate OTP");
 
     // Store OTP in redis
-    await setCache(getOTPKey(email), accountVerificationToken);
+    // await setCache(getOTPKey(email), accountVerificationToken);
+    await setCache(getOTPKey(email), accountVerificationToken, 60);
 
     // Send email in backgrouund
     await emailQueue.add("sendOTPEmail", { email, accountVerificationToken }); 

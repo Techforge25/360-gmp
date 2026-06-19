@@ -33,8 +33,8 @@ const userSignup = asyncHandler(async (request, response) => {
     {
         if(user.status === "pending")
         {
-            return response.status(200)
-            .json(new ApiResponse(200, { optRequired:true }, "Your account is not activated yet. Please verify your identity via OTP."));
+            return response.status(400)
+            .json(new ApiResponse(400, { optRequired:true }, "Your account is not activated yet. Please verify your identity via OTP."));
         }
         else
         {

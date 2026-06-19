@@ -34,7 +34,7 @@ const userSignup = asyncHandler(async (request, response) => {
         if(user.status === "pending")
         {
             return response.status(400)
-            .json(new ApiResponse(400, { optRequired:true }, "Your account is not activated yet. Please verify your identity via OTP."));
+            .json(new ApiResponse(400, { otpRequired:true }, "Your account is not activated yet. Please verify your identity via OTP."));
         }
         else
         {
@@ -58,7 +58,7 @@ const userSignup = asyncHandler(async (request, response) => {
     await emailQueue.add("sendOTPEmail", { email, accountVerificationToken });
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { optRequired: true }, "Signup successful! We have sent you an OTP to your email"));     
+    return response.status(200).json(new ApiResponse(200, { otpRequired:true }, "Signup successful! We have sent you an OTP to your email"));     
 });
 
 // Resend OTP token for account verification

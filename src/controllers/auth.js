@@ -226,13 +226,18 @@ const userLogin = asyncHandler(async (request, response) => {
     }
 
     // Role based redirection
+    // if(!role)
+    // {
+    //     redirectURL = `http://localhost:3000/onboarding/role`;
+    // }
+    // else
+    // {
+    //     redirectURL = `http://localhost:3000/dashboard/${role}`;
+    // }    
+
     if(!role)
     {
-        redirectURL = `http://localhost:3000/onboarding/role`;
-    }
-    else
-    {
-        redirectURL = `http://localhost:3000/dashboard/${role}`;
+        redirectURL = `http://localhost:3000/onboarding/user-profile`;
     }    
 
     // Response

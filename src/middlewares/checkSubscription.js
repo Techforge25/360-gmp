@@ -9,10 +9,12 @@ const checkSubscription = asyncHandler(async (request, response, next) => {
 
     // Redirect url key
     let redirectURL = `http://localhost:3000/onboarding/plans`;
-    
+
+    // userId, role, userProfileId, businessProfileId
+
     // Find subscription with populated plan details
     const subscription = await Subscription.findOne({ userId, status: "active" }).populate("planId");
-    if(!subscription) return response.status(200).json(new ApiResponse(200, { redirectURL }, "Subscription required"));
+    if(!subscription) return response.status(200).json(new ApiResponse(200, { userId, role, redirectURL }, "Subscription required"));
     
     // Check expiry
     const currentDate = new Date();
@@ -20,15 +22,15 @@ const checkSubscription = asyncHandler(async (request, response, next) => {
     {
         subscription.status = "expired";
         await subscription.save();
-        return response.status(200).json(new ApiResponse(200, { redirectURL }, "Subscription has been expired! Please renew"));
+        return response.status(200).json(new ApiResponse(200, { userId, role, redirectURL }, "Subscription has been expired! Please renew"));
     }
 
     // Role based redirection
-    if(!role)
-    {
-        redirectURL = `http://localhost:3000/onboarding/role`;
-        return response.status(200).json(new ApiResponse(200, { redirectURL }, "Please create atleast one profile"));
-    }    
+    // if(!role)
+    // {
+    //     redirectURL = `http://localhost:3000/onboarding/role`;
+    //     return response.status(200).json(new ApiResponse(200, { userId, role, redirectURL }, "Please create atleast one profile"));
+    // }    
 
     // Attach subscription and plan info to request object
     request.user.subscription = subscription;

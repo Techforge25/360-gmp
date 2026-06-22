@@ -58,7 +58,7 @@ const userSignup = asyncHandler(async (request, response) => {
     await emailQueue.add("sendOTPEmail", { email, accountVerificationToken });
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { otpRequired:true }, "Signup successful! We have sent you an OTP to your email"));     
+    return response.status(200).json(new ApiResponse(200, { otpRequired:true, userId: user._id }, "Signup successful! We have sent you an OTP to your email"));     
 });
 
 // Resend OTP token for account verification

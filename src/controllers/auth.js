@@ -239,6 +239,10 @@ const userLogin = asyncHandler(async (request, response) => {
     {
         redirectURL = `http://localhost:3000/onboarding/user-profile`;
     }    
+    else
+    {
+        redirectURL = `http://localhost:3000/dashboard/${role}`;
+    }
 
     // Response
     return response.status(200)

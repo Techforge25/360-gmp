@@ -552,9 +552,17 @@ const authStatus = asyncHandler(async (request, response) => {
     // Verify
     const user = verifyAccessToken(accessToken);
     if(!user) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!")); 
+
+    // Subscription flag
+    let subscriptionPurchased = false;
+
+    // Find subscription
+    const currentDate = new Date();
+    const subscription = await Subscription.findOne({ userId: user._id, status: "active", endDate:{ $gt: currentDate }});
+    if(subscription) subscriptionPurchased = true;
     
     // Response
-    return response.status(200).json(new ApiResponse(200, { isLoggedIn: true, role: user.role }, "Login session found")); 
+    return response.status(200).json(new ApiResponse(200, { isLoggedIn: true, role: user.role, subscriptionPurchased }, "Login session found")); 
 });
 
 module.exports = { userSignup, userLogin, logout, refreshAccessToken, switchRole, forgotPassword, 

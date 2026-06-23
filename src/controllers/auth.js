@@ -330,7 +330,8 @@ const switchRole = asyncHandler(async (request, response) => {
         const userProfile = await getUserProfile(userId);
         if(!userProfile) 
         {
-            const redirectURL = `${process.env.FRONTEND_URL}/onboarding/user-profile`;
+            // const redirectURL = `${process.env.FRONTEND_URL}/onboarding/user-profile`;
+            const redirectURL = `http://localhost:3000/onboarding/user-profile`;
             return response.status(200).json(new ApiResponse(200, { redirectURL }, "Onboarding required for user profile"));
         }
     }
@@ -341,7 +342,8 @@ const switchRole = asyncHandler(async (request, response) => {
         const businessProfile = await getBusinessProfile(userId);
         if(!businessProfile)
         {
-            const redirectURL = `${process.env.FRONTEND_URL}/onboarding/business-profile`;
+            // const redirectURL = `${process.env.FRONTEND_URL}/onboarding/business-profile`;
+            const redirectURL = `http://localhost:3000/onboarding/business-profile`;
             return response.status(200).json(new ApiResponse(200, { redirectURL }, "Onboarding required for business profile"));            
         }
         if(request.user.planName === "TRIAL") throw new ApiError(403, "Switching to a business profile is not allowed while you are on a trial plan");

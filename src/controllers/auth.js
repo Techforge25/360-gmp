@@ -546,6 +546,13 @@ const userAuthCheck = asyncHandler(async (request, response) => {
     const { _id:userId, role, profiles } = request.user;
     const { userProfileId = null, businessProfileId = null } = profiles || {};  
 
+    // If no profile created
+    if(!role)
+    {
+        const redirectURL = `http://localhost:3000/onboarding/user-profile`;
+        return response.status(200).json(new ApiResponse(200, { userId, role, redirectURL }, "Please create atleast one profile"));
+    }     
+
     // Response
     return response.status(200).json(new ApiResponse(200, { userId, role, userProfileId, businessProfileId }, "Authenticated!"));
 });

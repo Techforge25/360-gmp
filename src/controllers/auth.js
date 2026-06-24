@@ -513,11 +513,31 @@ const googleLogin = asyncHandler(async (request, response) => {
     user.refreshToken = refreshToken;
     await user.save();
 
+    let redirectURL;
+    // Find subscription
+    const subscription = await Subscription.findOne({ userId: user._id, status: "active", endDate:{ $lt: new Date() } });
+    if(!subscription)
+    {
+        redirectURL = `http://localhost:3000/onboarding/plans`;
+    }
+    else
+    {
+        if(!user.role)
+        {
+            redirectURL = `http://localhost:3000/onboarding/user-profile`;
+        }
+        else
+        {
+            redirectURL = `http://localhost:3000/dashboard/${user.role}`;
+        }
+    }
+
     // Redirect to application
     return response.status(303)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .redirect(`${process.env.FRONTEND_URL}/authSuccess`);    
+    // .redirect(`${process.env.FRONTEND_URL}/authSuccess`); 
+    .redirect(redirectURL);     
 });
 
 // User existence

@@ -7,7 +7,7 @@ const Stripe = require("stripe");
 const convertToMongoId = require("../utils/convertToMongoId");
 const sendNotification = require("../utils/sendNotification");
 const SubscriptionHistory = require("../models/subscriptionHistoryModel");
-const { emptyList } = require("../constants");
+const { emptyList, cookieOptions } = require("../constants");
 const mongoose = require("mongoose");
 const User = require("../models/users");
 
@@ -123,7 +123,10 @@ const cancelStripeSubscription = asyncHandler(async (request, response) => {
     };
 
     // Response
-    return response.status(200).json(new ApiResponse(200, payload, "Subscription has been cancelled"));
+    return response.status(200)
+    .clearCookie("accessToken", cookieOptions)
+    .clearCookie("refreshToken", cookieOptions)
+    .json(new ApiResponse(200, payload, "Subscription has been cancelled"));
 });
 
 // Stripe webhook (Handle recurring subscription lifecycle)

@@ -486,7 +486,7 @@ const resetPassword = asyncHandler(async (request, response) => {
 });
 
 // Login as gmail
-const googleLogin = async (request, response) => {
+const googleLogin = asyncHandler(async (request, response) => {
     if(!request.user) throw new ApiError(404, "User not found");
 
     // Get user id
@@ -495,7 +495,7 @@ const googleLogin = async (request, response) => {
 
     // Find profiles
     const [user, businessProfile, userProfile] = await Promise.all([
-        User.findById(userId).lean(),
+        User.findById(userId),
         BusinessProfile.findOne({ ownerUserId:userId }).lean(),
         UserProfile.findOne({ userId:userId }).lean()
     ]);   
@@ -518,12 +518,16 @@ const googleLogin = async (request, response) => {
     if(!accessToken) throw new ApiError(400, "Failed to generate access token");
     if(!refreshToken) throw new ApiError(400, "Failed to generate refresh token");
 
+    // Save to db
+    user.refreshToken = refreshToken;
+    await user.save();
+
     // Redirect to application
     return response.status(303)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .redirect(`${process.env.FRONTEND_URL}/authSuccess`);
-}
+    .redirect(`${process.env.FRONTEND_URL}/authSuccess`);    
+});
 
 // User existence
 const userExistence = asyncHandler(async (request, response) => {

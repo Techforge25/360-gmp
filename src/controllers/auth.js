@@ -225,16 +225,7 @@ const userLogin = asyncHandler(async (request, response) => {
         .json(new ApiResponse(200, { redirectURL }, "Subscription has been expired! Please renew"));
     }
 
-    // Role based redirection
-    // if(!role)
-    // {
-    //     redirectURL = `http://localhost:3000/onboarding/role`;
-    // }
-    // else
-    // {
-    //     redirectURL = `http://localhost:3000/dashboard/${role}`;
-    // }    
-
+    // Role based redirection 
     if(!role)
     {
         redirectURL = `http://localhost:3000/onboarding/user-profile`;

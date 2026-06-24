@@ -205,7 +205,7 @@ const userLogin = asyncHandler(async (request, response) => {
     const subscription = await Subscription.findOne({ userId: user._id, status: "active" }).populate("planId");
     if(!subscription)
     {
-        redirectURL = `http://localhost:3000/onboarding/plans`;
+        redirectURL = `${process.env.FRONTEND_URL}/onboarding/plans`;
         return response.status(200)
         .cookie("accessToken", accessToken, cookieOptions)
         .cookie("refreshToken", refreshToken, cookieOptions)
@@ -217,8 +217,8 @@ const userLogin = asyncHandler(async (request, response) => {
     if(new Date(subscription.endDate) < currentDate)
     {
         subscription.status = "expired";
-        await subscription.save();
-        redirectURL = `http://localhost:3000/onboarding/plans`;
+        await subscription.save(); 
+        redirectURL = `${process.env.FRONTEND_URL}/onboarding/plans`;
         return response.status(200)
         .cookie("accessToken", accessToken, cookieOptions)
         .cookie("refreshToken", refreshToken, cookieOptions)
@@ -228,11 +228,11 @@ const userLogin = asyncHandler(async (request, response) => {
     // Role based redirection 
     if(!role)
     {
-        redirectURL = `http://localhost:3000/onboarding/user-profile`;
+        redirectURL = `${process.env.FRONTEND_URL}/onboarding/user-profile`;
     }    
     else
     {
-        redirectURL = `http://localhost:3000/dashboard/${role}`;
+        redirectURL = `${process.env.FRONTEND_URL}/dashboard/${role}`;
     }
 
     // Response
@@ -321,8 +321,7 @@ const switchRole = asyncHandler(async (request, response) => {
         const userProfile = await getUserProfile(userId);
         if(!userProfile) 
         {
-            // const redirectURL = `${process.env.FRONTEND_URL}/onboarding/user-profile`;
-            const redirectURL = `http://localhost:3000/onboarding/user-profile`;
+            const redirectURL = `${process.env.FRONTEND_URL}/onboarding/user-profile`;
             return response.status(200).json(new ApiResponse(200, { redirectURL }, "Onboarding required for user profile"));
         }
     }
@@ -333,8 +332,7 @@ const switchRole = asyncHandler(async (request, response) => {
         const businessProfile = await getBusinessProfile(userId);
         if(!businessProfile)
         {
-            // const redirectURL = `${process.env.FRONTEND_URL}/onboarding/business-profile`;
-            const redirectURL = `http://localhost:3000/onboarding/business-profile`;
+            const redirectURL = `${process.env.FRONTEND_URL}/onboarding/business-profile`;
             return response.status(200).json(new ApiResponse(200, { redirectURL }, "Onboarding required for business profile"));            
         }
         if(request.user.planName === "TRIAL") throw new ApiError(403, "Switching to a business profile is not allowed while you are on a trial plan");
@@ -365,8 +363,7 @@ const switchRole = asyncHandler(async (request, response) => {
     if(!accessToken) throw new ApiError(400, "Failed to re-generate access token");
 
     // Redirect URL
-    // const redirectURL = `${process.env.FRONTEND_URL}/dashboard/${role}`;
-    const redirectURL = `http://localhost:3000/dashboard/${role}`;
+    const redirectURL = `${process.env.FRONTEND_URL}/dashboard/${role}`;
 
     // Response
     return response.status(200)
@@ -518,17 +515,17 @@ const googleLogin = asyncHandler(async (request, response) => {
     const subscription = await Subscription.findOne({ userId: user._id, status: "active", endDate:{ $lt: new Date() } });
     if(!subscription)
     {
-        redirectURL = `http://localhost:3000/onboarding/plans`;
+        redirectURL = `${process.env.FRONTEND_URL}/onboarding/plans`;
     }
     else
     {
         if(!user.role)
         {
-            redirectURL = `http://localhost:3000/onboarding/user-profile`;
+            redirectURL = `${process.env.FRONTEND_URL}/onboarding/user-profile`;
         }
         else
         {
-            redirectURL = `http://localhost:3000/dashboard/${user.role}`;
+            redirectURL = `${process.env.FRONTEND_URL}/dashboard/${user.role}`;
         }
     }
 
@@ -564,7 +561,7 @@ const userAuthCheck = asyncHandler(async (request, response) => {
     // If no profile created
     if(!role)
     {
-        const redirectURL = `http://localhost:3000/onboarding/user-profile`;
+        const redirectURL = `${process.env.FRONTEND_URL}/onboarding/user-profile`;
         return response.status(200).json(new ApiResponse(200, { userId, role, redirectURL }, "Please create atleast one profile"));
     }     
 

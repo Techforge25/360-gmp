@@ -87,7 +87,7 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
     if(!session_id) throw new ApiError(400, "Session ID is missing");   
 
     // Redirect to frontend
-    const redirectUrl = `http://localhost:3000/onboarding/user-profile`;
+    const redirectUrl = `${process.env.FRONTEND_URL}/onboarding/user-profile`;
     // const redirectUrl = `http://localhost:3000/subscription/success?session_id=${session_id}`;
     return response.status(303).redirect(redirectUrl);
 });

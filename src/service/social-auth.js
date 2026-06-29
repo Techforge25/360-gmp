@@ -24,7 +24,8 @@ async (accessToken, refreshToken, profile, done) => {
             gid:gid,
             email:email,
             passwordHash:`${Date.now()}-GoogleLogin`,
-            googleAccount: true
+            googleAccount: true,
+            status: 'active'
         });
         return done(null, createUser);
     } 

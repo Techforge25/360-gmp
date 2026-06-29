@@ -490,6 +490,12 @@ const googleLogin = asyncHandler(async (request, response) => {
     
     // Validate
     if(!user) throw new ApiError(400, "Failed to fetch user on google login!");
+    if(user.status === "pending")
+    {
+        return response.status(400)
+        .json(new ApiResponse(400, { otpRequired:true, userId }, "Your account is not activated yet. Please verify your identity via OTP."));
+    }
+    if(user.status === "flagged") throw new ApiError(400, "Your account has been flagged. Please contact support for assistance.");
 
     // Generate access & refresh tokens
     const accessToken = generateAccessToken({ 

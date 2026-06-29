@@ -2,28 +2,81 @@ const { Schema, model } = require("mongoose");
 const paginate = require("mongoose-paginate-v2");
 const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
+// Schema
 const BusinessProfileSchema = new Schema({
-    // Basic info
+    /* REFERENCING & STRIPE CONNECTION */ 
     ownerUserId: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true, index: true },
-    ownerName: { type:String, trim:true, required:true }, // New
-    identificationOfBusinessOwner: { type:String, trim:true }, // New
-    companyName: { type: String, required: true, trim: true, unique:[true, "This Company name has already been registered"] },
-    tradeName: { type: String, trim: true }, // New: Optional trade name
-    businessType: { type: String, trim: true },
-    companySize: { type: String, trim: true },
-    foundedDate: { type:Date },
-    primaryIndustry: { type: String, trim: true },
-    stripeConnectId: { type: String, trim: true, default:null },
-    operationHour: { type: String, trim: true },
-    countryOfRegistration: { type: String, trim: true },
+    stripeConnectId: { type: String, trim: true, default:null }, // For withdrawal
 
-    // Legal & Compliance
-    businessRegistrationNumber: { type: String, trim: true, unique: [true, "This business registration number has already taken"] }, // New
+    /* BASIC IDENTITY & LEGAL */ 
+    ownerName: { type:String, trim:true, required:true }, 
+    companyName: { type: String, required: true, trim: true, unique:[true, "This Company name has already been registered"] },
+    tradeName: { type: String, trim: true },
+    businessRegistrationNumber: { type: String, trim: true, unique: [true, "This business registration number has already taken"] },
     taxIdentificationNumber: { type: String, trim: true, unique:[true, "This tax identification number has already been taken"] }, // TIN / VAT / EIN
     dunsNumber: { type: String, trim: true }, // New (Data Universal Numbering System for international trade credibility)
-    complianceScreeningStatus: { type: Boolean, required:true }, // AML/PEP results
+    countryOfRegistration: { type: String, trim: true },
+    businessType: { type: String, trim: true },
+    primaryIndustry: { type: String, trim: true },
+    foundedDate: { type:Date },
+    companySize: { type: String, trim: true },
+    operationHour: { type: String, trim: true },
+    website: { type: String, trim: true },
+    description: { type:String },
+    logo: { type:String },
+    banner: { type:String },     
 
-    // Location  
+    // identificationOfBusinessOwner: { type:String, trim:true },    
+    // complianceScreeningStatus: { type: Boolean, required:true }, // AML/PEP results
+
+    /* BUSINESS OPERATION */  
+    // Head office address
+    headOffice:{
+      country: { type: String, trim: true },
+      city: { type: String, trim: true },
+      addressLine: { type: String, trim: true },      
+    },
+
+    // Warehouse address
+    warehouseAddress:{
+      country: { type: String, trim: true },
+      city: { type: String, trim: true },
+      addressLine: { type: String, trim: true },       
+    },
+
+    // Additional warehouse address
+    additionalWarehouseAddress:[{
+      _id: false,
+      country: { type: String, trim: true },
+      city: { type: String, trim: true },
+      addressLine: { type: String, trim: true },        
+    }],
+
+    // New (International Commercial Terms)
+    incoterms: { type: String, trim: true }, 
+    termsAndCapability: { type:String, trim:true },
+
+    /* INTERNATIONAL OFFICE */
+    internationalOffice:{
+      officeName: { type:String, trim:true, required:true },
+      country: { type: String, trim: true },
+      city: { type: String, trim: true },
+      state: { type: String, trim: true },
+      addressLine: { type: String, trim: true },
+      zipCode: { type:String, trim:true }
+    },
+
+    /* BUSINESS INTELLIGENCE & LEADERSHIP */
+    primaryContactPerson: {
+      name: { type: String, trim: true },
+      title: { type: String, trim: true },
+      phone: { type: String, trim: true, unique:[true, "This contact number has already been taken"] },
+      supportEmail: { type: String, trim: true, lowercase: true }      
+    },
+
+    /* EXECUTIVE LEADERSHIP & STAKEHOLDER */
+    
+
     location: {
       country: { type: String, trim: true },
       city: { type: String, trim: true },
@@ -34,7 +87,7 @@ const BusinessProfileSchema = new Schema({
       businessRegistrationAddress: { type: String, trim: true, required:true }, // New
       internationalOffices: { type:[String] },
     },
-    incoterms: { type: String, trim: true }, // New (International Commercial Terms)
+    
 
     // Shipping info
     shipping: {
@@ -74,22 +127,19 @@ const BusinessProfileSchema = new Schema({
     certifications:{ type:[String], default:[] },
 
     // B2B contact  
-    b2bContact: {
-      name: { type: String, trim: true },
-      title: { type: String, trim: true },
-      phone: { type: String, trim: true, unique:[true, "This contact number has already been taken"] },
-      supportEmail: {
-        type: String,
-        trim: true,
-        lowercase: true
-      }
-    },
+    // b2bContact: {
+    //   name: { type: String, trim: true },
+    //   title: { type: String, trim: true },
+    //   phone: { type: String, trim: true, unique:[true, "This contact number has already been taken"] },
+    //   supportEmail: {
+    //     type: String,
+    //     trim: true,
+    //     lowercase: true
+    //   }
+    // },
 
     // Branding info
-    website: { type: String, trim: true },
-    description: { type:String },
-    logo: { type:String },
-    banner: { type:String },
+
     isVerified: { type: Boolean, default: false },
     isLocked: { type: Boolean, default: true },
     mapURL: { type:String },

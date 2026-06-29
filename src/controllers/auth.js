@@ -516,31 +516,30 @@ const googleLogin = asyncHandler(async (request, response) => {
     user.refreshToken = refreshToken;
     await user.save();
 
-    let redirectURL;
     // Find subscription
     const subscription = await Subscription.findOne({ userId: user._id, status: "active", endDate:{ $lt: new Date() } });
     if(!subscription)
     {
-        redirectURL = `${process.env.FRONTEND_URL}/onboarding/plans`;
-    }
-    else
-    {
-        if(!user.role)
-        {
-            redirectURL = `${process.env.FRONTEND_URL}/onboarding/user-profile`;
-        }
-        else
-        {
-            redirectURL = `${process.env.FRONTEND_URL}/dashboard/${user.role}`;
-        }
+        return response.status(303)
+        .cookie("accessToken", accessToken, cookieOptions)
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .redirect(`${process.env.FRONTEND_URL}/onboarding/plans`);         
     }
 
-    // Redirect to application
+    // If no profile created, navigate to onboarding user-profile by default
+    if(!user.role)
+    {
+        return response.status(303)
+        .cookie("accessToken", accessToken, cookieOptions)
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .redirect(`${process.env.FRONTEND_URL}/onboarding/user-profile`);          
+    }
+
+    // Redirect to dashboard of their respective profile
     return response.status(303)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    // .redirect(`${process.env.FRONTEND_URL}/authSuccess`); 
-    .redirect(redirectURL);     
+    .redirect(`${process.env.FRONTEND_URL}/dashboard/${user.role}`);    
 });
 
 // User existence

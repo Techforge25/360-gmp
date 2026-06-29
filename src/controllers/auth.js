@@ -51,8 +51,7 @@ const userSignup = asyncHandler(async (request, response) => {
     if(!createdUser) throw new ApiError(500, "Unable to signup");  
     
     // Store in redis
-    // await setCache(getOTPKey(email), accountVerificationToken);    
-    await setCache(getOTPKey(email), accountVerificationToken, 60);
+    await setCache(getOTPKey(email), accountVerificationToken);    
 
     // Send email in backgrouund
     await emailQueue.add("sendOTPEmail", { email, accountVerificationToken });
@@ -72,16 +71,15 @@ const resendOTPToken = asyncHandler(async (request, response) => {
     if(user.status !== "pending") throw new ApiError(400, "Your account is already activated");
 
     // Check existing otp
-    // const exist = await getCache(getOTPKey(email));
-    // if(exist) throw new ApiError(400, "Please wait until your current OTP expires before requesting a new one");
+    const exist = await getCache(getOTPKey(email));
+    if(exist) throw new ApiError(400, "Please wait until your current OTP expires before requesting a new one");
 
     // Generate new OTP token
     const { code:accountVerificationToken } = generateCode(6);
     if(!accountVerificationToken) throw new ApiError(500, "Failed to generate OTP");
 
     // Store OTP in redis
-    // await setCache(getOTPKey(email), accountVerificationToken);
-    await setCache(getOTPKey(email), accountVerificationToken, 60);
+    await setCache(getOTPKey(email), accountVerificationToken);
 
     // Send email in backgrouund
     await emailQueue.add("sendOTPEmail", { email, accountVerificationToken }); 
@@ -138,7 +136,7 @@ const userLogin = asyncHandler(async (request, response) => {
 
     // Check total attempts
     const totalAttempts = await getCache(key);
-    if(totalAttempts >= 5) throw new ApiError(429, "Too many failed login attempts. Please try again later.");
+    if(totalAttempts >= 5) throw new ApiError(429, "Too many failed login attempts. Please try again after 15 minutes");
 
     // Find user
     const user = await User.findOne({ email });
@@ -147,7 +145,7 @@ const userLogin = asyncHandler(async (request, response) => {
         const attempts = await redis.incr(key);
 
         // Set expiry only on first failed attempt
-        if(attempts === 1) await redis.expire(key, 60 * 5); // 5 minutes
+        if(attempts === 1) await redis.expire(key, 60 * 15); // 15 minutes
         throw new ApiError(400, "Invalid email or password");
     }
 
@@ -158,7 +156,7 @@ const userLogin = asyncHandler(async (request, response) => {
         const attempts = await redis.incr(key);
 
         // Set expiry only on first failed attempt
-        if(attempts === 1) await redis.expire(key, 60 * 5); // 5 minutes
+        if(attempts === 1) await redis.expire(key, 60 * 15); // 15 minutes
         throw new ApiError(400, "Invalid email or password");
     }
 
@@ -384,26 +382,23 @@ const forgotPassword = asyncHandler(async (request, response) => {
     // Check attempts
     const key = `forgotPasswordEmailAttempts:${email}`;
     const totalAttempts = await getCache(key);
-    // if(totalAttempts >= 1) throw new ApiError(400, "Please wait 5 minutes for next password reset request");
-    if(totalAttempts >= 50) throw new ApiError(400, "Please wait 5 minutes for next password reset request");
+    if(totalAttempts >= 1) throw new ApiError(400, "Please wait 5 minutes for next password reset request");
 
     // Find user
     const user = await User.findOne({ email });
     if(!user) throw new ApiError(404, "User not found associated with this email");
-    if(user.googleAccount) throw new ApiError(403, "This account was registered using Google Sign-In. OTP verification is not available for Google-linked accounts.");
+    if(user.googleAccount) throw new ApiError(403, "OTP verification is not available for Google-linked accounts.");
 
     // Generate a reset token
     const { code:resetToken } = generateCode(6);
     if(!resetToken) throw new ApiError(500, "Failed to generate password reset token");
 
     // Store token in redis
-    // await setCache(getResetPasswordKey(email), resetToken, 5);
-    await setCache(getResetPasswordKey(email), resetToken, 60); // 1 hour
+    await setCache(getResetPasswordKey(email), resetToken, 5); // 5 minutes
 
     // Track attempts
     const attempts = await redis.incr(key);
-    // if(attempts === 1) await redis.expire(key, 60 * 5); // 5 minutes
-    if(attempts === 1) await redis.expire(key, 60 * 60); // 1 hour
+    if(attempts === 1) await redis.expire(key, 60 * 5); // 5 minutes
 
     // Send email in backgrouund
     await emailQueue.add("sendResetPasswordEmail", { email, resetToken });
@@ -442,7 +437,7 @@ const resetPassword = asyncHandler(async (request, response) => {
     // Find user associated with this email
     const user = await User.findOne({ email }).select("_id passwordHash googleAccount");
     if(!user) throw new ApiError(404, "User not found associated with this email");
-    if(user.googleAccount) throw new ApiError(403, "This account was registered using Google Sign-In. Reset password feature is not available for Google-linked accounts.");
+    if(user.googleAccount) throw new ApiError(403, "Reset password feature is not available for Google-linked accounts.");
 
     // Prevent restting password as old password
     const matchPassword = await user.matchPassword(newPassword);

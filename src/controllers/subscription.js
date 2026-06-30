@@ -42,7 +42,7 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
     // Prevent duplicate active subscription and downgrade subscription
     // const existingSubscription = await Subscription.findOne({ userId, planId, status:"active", endDate:{ $gt:new Date() } });
     const existingSubscription = await Subscription.findOne({ userId });
-    if(existingSubscription && name === "TRIAL" || name === "Sneak Peek Free – 14 Days")
+    if(existingSubscription && name === "TRIAL" || existingSubscription && name === "Sneak Peek Free – 14 Days")
     {
         throw new ApiError(400, "You cannot downgrade your subscription plan");
     }

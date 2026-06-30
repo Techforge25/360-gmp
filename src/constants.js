@@ -1,7 +1,15 @@
 // Port and environment
 const port = process.env.PORT || 8000;
-const isLocal = process.env.NODE_ENV === "local";
 const isProduction = process.env.NODE_ENV === "production";
+const isStaging = process.env.NODE_ENV === "staging";
+const isLocal = process.env.NODE_ENV === "local";
+
+
+// Dynamic frontend url based on node environemnt
+let frontendURL = null;
+if(isProduction) frontendURL = "https://360-gmp-front-end.vercel.app";
+if(isStaging) frontendURL = "https://360-gmp-front-end-git-staging-aftabs-projects-80f407ba.vercel.app";
+if(isLocal) frontendURL = "http://localhost:3000";
 
 // Cors options
 const corsOptions = {
@@ -40,8 +48,10 @@ const allowedNotificationTypes = ["System", "UserProfile", "BusinessProfile"];
 
 module.exports = {
     port,
-    isLocal,
     isProduction,
+    isStaging,
+    isLocal,
+    frontendURL,
     corsOptions,
     cookieOptions,
     emptyList,

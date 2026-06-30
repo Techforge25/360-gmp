@@ -534,7 +534,7 @@ const googleLogin = asyncHandler(async (request, response) => {
         // Mark as expired
         subscription.status = "expired";
         await subscription.save(); 
-        
+
         return response.status(303)
         .cookie("accessToken", accessToken, cookieOptions)
         .cookie("refreshToken", refreshToken, cookieOptions)
@@ -581,7 +581,7 @@ const userAuthCheck = asyncHandler(async (request, response) => {
     // If no profile created
     if(!role)
     {
-        const redirectURL = `${process.env.FRONTEND_URL}/onboarding/user-profile`;
+        const redirectURL = `${frontendURL}/onboarding/user-profile`;
         return response.status(200).json(new ApiResponse(200, { userId, role, redirectURL }, "Please create atleast one profile"));
     }     
 

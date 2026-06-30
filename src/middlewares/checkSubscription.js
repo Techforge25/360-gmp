@@ -1,3 +1,4 @@
+const { frontendURL } = require("../constants");
 const Subscription = require("../models/subscription");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
@@ -8,7 +9,7 @@ const checkSubscription = asyncHandler(async (request, response, next) => {
     const { _id:userId, role } = request.user;
 
     // Redirect url key
-    const redirectURL = `${process.env.FRONTEND_URL}/onboarding/plans`;
+    const redirectURL = `${frontendURL}/onboarding/plans`;
 
     // Find subscription with populated plan details
     const subscription = await Subscription.findOne({ userId, status: "active" }).populate("planId");

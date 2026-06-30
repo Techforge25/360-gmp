@@ -1,10 +1,11 @@
+const { frontendURL } = require("../constants");
 const { getAccessToken, verifyAccessToken } = require("../utils/accessToken");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 
 // Redirect url
-const redirectURL = `${process.env.FRONTEND_URL}`;
+const redirectURL = `${frontendURL}`;
 
 // Authentication
 const authentication = asyncHandler((request, response, next) => {

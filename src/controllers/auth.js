@@ -521,38 +521,26 @@ const googleLogin = asyncHandler(async (request, response) => {
     const subscription = await Subscription.findOne({ userId: user._id, status: "active", endDate:{ $lt: new Date() } });
     if(!subscription)
     {
-        return response.status(200)
+        return response.status(303)
         .cookie("accessToken", accessToken, cookieOptions)
         .cookie("refreshToken", refreshToken, cookieOptions)
-        .json(new ApiResponse(200, { accessToken, refreshToken }, "Google login successful"));
-        // return response.status(303)
-        // .cookie("accessToken", accessToken, cookieOptions)
-        // .cookie("refreshToken", refreshToken, cookieOptions)
-        // .redirect(`${process.env.FRONTEND_URL}/onboarding/plans`);         
+        .redirect(`${process.env.FRONTEND_URL}/onboarding/plans`);         
     }
 
     // If no profile created, navigate to onboarding user-profile by default
     if(!user.role)
     {
-        return response.status(200)
+        return response.status(303)
         .cookie("accessToken", accessToken, cookieOptions)
         .cookie("refreshToken", refreshToken, cookieOptions)
-        .json(new ApiResponse(200, { accessToken, refreshToken }, "Google login successful"));        
-        // return response.status(303)
-        // .cookie("accessToken", accessToken, cookieOptions)
-        // .cookie("refreshToken", refreshToken, cookieOptions)
-        // .redirect(`${process.env.FRONTEND_URL}/onboarding/user-profile`);          
+        .redirect(`${process.env.FRONTEND_URL}/onboarding/user-profile`);          
     }
 
     // Redirect to dashboard of their respective profile
-    return response.status(200)
+    return response.status(303)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .json(new ApiResponse(200, { accessToken, refreshToken }, "Google login successful"));    
-    // return response.status(303)
-    // .cookie("accessToken", accessToken, cookieOptions)
-    // .cookie("refreshToken", refreshToken, cookieOptions)
-    // .redirect(`${process.env.FRONTEND_URL}/dashboard/${user.role}`);    
+    .redirect(`${process.env.FRONTEND_URL}/dashboard/${user.role}`);    
 });
 
 // User existence

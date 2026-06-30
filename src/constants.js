@@ -25,7 +25,8 @@ const cookieOptions = {
     secure: !isLocal,
     signed: true,
     maxAge: 1000 * 60 * 60 * 24 * 90,
-    sameSite: isLocal ? "lax" : "none",
+    // sameSite: isLocal ? "lax" : "none",
+    sameSite: "none",
     domain: isProduction ? ".techforgeinnovations.com" : undefined
 };
 

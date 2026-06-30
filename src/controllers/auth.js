@@ -518,7 +518,7 @@ const googleLogin = asyncHandler(async (request, response) => {
     await user.save();
 
     // Find subscription
-    const subscription = await Subscription.findOne({ userId: user._id, status: "active", endDate:{ $lt: new Date() } });
+    const subscription = await Subscription.findOne({ userId: user._id, status: "active" });
     if(!subscription)
     {
         return response.status(303)
@@ -526,6 +526,20 @@ const googleLogin = asyncHandler(async (request, response) => {
         .cookie("refreshToken", refreshToken, cookieOptions)
         .redirect(`${process.env.FRONTEND_URL}/onboarding/plans`);         
     }
+
+    // Check expiry
+    const currentDate = new Date();
+    if(new Date(subscription.endDate) < currentDate)
+    {
+        // Mark as expired
+        subscription.status = "expired";
+        await subscription.save(); 
+        
+        return response.status(303)
+        .cookie("accessToken", accessToken, cookieOptions)
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .redirect(`${process.env.FRONTEND_URL}/onboarding/plans`); 
+    }    
 
     // If no profile created, navigate to onboarding user-profile by default
     if(!user.role)

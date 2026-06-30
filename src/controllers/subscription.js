@@ -44,7 +44,7 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
     const existingSubscription = await Subscription.findOne({ userId });
     if(existingSubscription && name === "TRIAL" || existingSubscription && name === "Sneak Peek Free – 14 Days")
     {
-        throw new ApiError(400, "You cannot downgrade your subscription plan");
+        throw new ApiError(400, "You cannot downgrade your subscription to the Sneak Peek plan.");
     }
     if(String(existingSubscription?.planId) === String(planId) 
     && existingSubscription?.status === "active" && new Date(existingSubscription?.endDate) > new Date())

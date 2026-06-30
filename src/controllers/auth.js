@@ -1,5 +1,5 @@
 const { isValidObjectId } = require("mongoose");
-const { cookieOptions } = require("../constants");
+const { cookieOptions, frontendURL } = require("../constants");
 const BusinessProfile = require("../models/businessProfileSchema");
 const UserProfile = require("../models/userProfile");
 const User = require("../models/users");
@@ -226,11 +226,11 @@ const userLogin = asyncHandler(async (request, response) => {
     // Role based redirection 
     if(!role)
     {
-        redirectURL = `${process.env.FRONTEND_URL}/onboarding/user-profile`;
+        redirectURL = `${frontendURL}/onboarding/user-profile`;
     }    
     else
     {
-        redirectURL = `${process.env.FRONTEND_URL}/dashboard/${role}`;
+        redirectURL = `${frontendURL}/dashboard/${role}`;
     }
 
     // Response

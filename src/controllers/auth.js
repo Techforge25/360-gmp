@@ -427,8 +427,8 @@ const resetPassword = asyncHandler(async (request, response) => {
     const resetToken = await getCache(getResetPasswordKey(email));
 
     // Validate
-    if(!resetToken) throw new ApiError(400, "Invalid or expired reset token");
-    if(resetToken !== passwordResetToken) throw new ApiError(400, "Invalid reset token");    
+    if(!resetToken) throw new ApiError(400, "Invalid or expired OTP");
+    if(resetToken !== passwordResetToken) throw new ApiError(400, "Invalid OTP");    
 
     // Find user associated with this email
     const user = await User.findOne({ email }).select("_id passwordHash googleAccount");

@@ -257,7 +257,7 @@ const logout = asyncHandler(async (request, response) => {
 
 // Refresh access token
 const refreshAccessToken = asyncHandler(async (request, response) => {
-    const redirectURL = `${process.env.FRONTEND_URL}/login`;
+    const redirectURL = `${frontendURL}/login`;
 
     // Get token
     const token = getRefreshToken(request);

@@ -2,7 +2,7 @@ require("dotenv").config();
 const http = require("http"); 
 const { Server } = require("socket.io"); 
 const app = require("./app");
-const { port, corsOptions, frontendURL } = require("./constants");
+const { port, corsOptions } = require("./constants");
 const connectDB = require("./database/connection");
 const socketAuthentication = require("./middlewares/socket");
 const Chat = require("./models/chatsModel");
@@ -106,5 +106,3 @@ connectDB()
     server.listen(port, "0.0.0.0", () => console.log(`Server is up and running on port ${port}`));
 })
 .catch(error => console.log("Failed to connect with database", error.message));
-
-console.log(`Frontend URL: ${frontendURL}`);

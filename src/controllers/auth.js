@@ -203,7 +203,7 @@ const userLogin = asyncHandler(async (request, response) => {
     const subscription = await Subscription.findOne({ userId: user._id, status: "active" }).populate("planId");
     if(!subscription)
     {
-        redirectURL = `${process.env.FRONTEND_URL}/onboarding/plans`;
+        redirectURL = `${frontendURL}/onboarding/plans`;
         return response.status(200)
         .cookie("accessToken", accessToken, cookieOptions)
         .cookie("refreshToken", refreshToken, cookieOptions)
@@ -216,7 +216,7 @@ const userLogin = asyncHandler(async (request, response) => {
     {
         subscription.status = "expired";
         await subscription.save(); 
-        redirectURL = `${process.env.FRONTEND_URL}/onboarding/plans`;
+        redirectURL = `${frontendURL}/onboarding/plans`;
         return response.status(200)
         .cookie("accessToken", accessToken, cookieOptions)
         .cookie("refreshToken", refreshToken, cookieOptions)
@@ -257,7 +257,7 @@ const logout = asyncHandler(async (request, response) => {
 
 // Refresh access token
 const refreshAccessToken = asyncHandler(async (request, response) => {
-    const redirectURL = `${process.env.FRONTEND_URL}/login`;
+    const redirectURL = `${frontendURL}/login`;
 
     // Get token
     const token = getRefreshToken(request);
@@ -321,7 +321,7 @@ const switchRole = asyncHandler(async (request, response) => {
         const userProfile = await getUserProfile(userId);
         if(!userProfile) 
         {
-            const redirectURL = `${process.env.FRONTEND_URL}/onboarding/user-profile`;
+            const redirectURL = `${frontendURL}/onboarding/user-profile`;
             return response.status(200).json(new ApiResponse(200, { redirectURL }, "Onboarding required for user profile"));
         }
     }
@@ -332,7 +332,7 @@ const switchRole = asyncHandler(async (request, response) => {
         const businessProfile = await getBusinessProfile(userId);
         if(!businessProfile)
         {
-            const redirectURL = `${process.env.FRONTEND_URL}/onboarding/business-profile`;
+            const redirectURL = `${frontendURL}/onboarding/business-profile`;
             return response.status(200).json(new ApiResponse(200, { redirectURL }, "Onboarding required for business profile"));            
         }
         if(request.user.planName === "TRIAL") throw new ApiError(403, "Switching to a business profile is not allowed while you are on a trial plan");
@@ -363,7 +363,7 @@ const switchRole = asyncHandler(async (request, response) => {
     if(!accessToken) throw new ApiError(400, "Failed to re-generate access token");
 
     // Redirect URL
-    const redirectURL = `${process.env.FRONTEND_URL}/dashboard/${role}`;
+    const redirectURL = `${frontendURL}/dashboard/${role}`;
 
     // Response
     return response.status(200)
@@ -427,8 +427,8 @@ const resetPassword = asyncHandler(async (request, response) => {
     const resetToken = await getCache(getResetPasswordKey(email));
 
     // Validate
-    if(!resetToken) throw new ApiError(400, "Invalid or expired reset token");
-    if(resetToken !== passwordResetToken) throw new ApiError(400, "Invalid reset token");    
+    if(!resetToken) throw new ApiError(400, "Invalid or expired OTP");
+    if(resetToken !== passwordResetToken) throw new ApiError(400, "Invalid OTP");    
 
     // Find user associated with this email
     const user = await User.findOne({ email }).select("_id passwordHash googleAccount");
@@ -520,7 +520,7 @@ const googleLogin = asyncHandler(async (request, response) => {
         return response.status(303)
         .cookie("accessToken", accessToken, cookieOptions)
         .cookie("refreshToken", refreshToken, cookieOptions)
-        .redirect(`${process.env.FRONTEND_URL}/onboarding/plans`);         
+        .redirect(`${frontendURL}/onboarding/plans`);         
     }
 
     // Check expiry
@@ -534,7 +534,7 @@ const googleLogin = asyncHandler(async (request, response) => {
         return response.status(303)
         .cookie("accessToken", accessToken, cookieOptions)
         .cookie("refreshToken", refreshToken, cookieOptions)
-        .redirect(`${process.env.FRONTEND_URL}/onboarding/plans`); 
+        .redirect(`${frontendURL}/onboarding/plans`); 
     }    
 
     // If no profile created, navigate to onboarding user-profile by default
@@ -543,14 +543,14 @@ const googleLogin = asyncHandler(async (request, response) => {
         return response.status(303)
         .cookie("accessToken", accessToken, cookieOptions)
         .cookie("refreshToken", refreshToken, cookieOptions)
-        .redirect(`${process.env.FRONTEND_URL}/onboarding/user-profile`);          
+        .redirect(`${frontendURL}/onboarding/user-profile`);          
     }
 
     // Redirect to dashboard of their respective profile
     return response.status(303)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .redirect(`${process.env.FRONTEND_URL}/dashboard/${user.role}`);    
+    .redirect(`${frontendURL}/dashboard/${user.role}`);    
 });
 
 // User existence

@@ -13,7 +13,7 @@ if(isLocal) frontendURL = "http://localhost:3000";
 
 // Cors options
 const corsOptions = {
-    origin:[process.env.FRONTEND_URL, "http://localhost:3000", "http://192.168.1.16:3000"],
+    origin:[frontendURL, process.env.FRONTEND_URL, "http://localhost:3000"],
     credentials:true,
     methods:["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders:["Content-Type", "Authorization"]
@@ -21,7 +21,7 @@ const corsOptions = {
 
 // Cookie options
 const cookieOptions = {
-    httpOnly:true,
+    httpOnly: true,
     secure: isLocal ? false : true,
     signed: true,
     maxAge: 1000 * 60 * 60 * 24 * 90,

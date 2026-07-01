@@ -22,12 +22,11 @@ const corsOptions = {
 // Cookie options
 const cookieOptions = {
     httpOnly: true,
-    secure: false,
+    secure: isLocal ? false : true,
     signed: true,
     maxAge: 1000 * 60 * 60 * 24 * 90,
-    sameSite: "lax",
-    // sameSite: isLocal ? "lax" : "none",
-    // domain: isProduction ? ".techforgeinnovations.com" : undefined
+    sameSite: isLocal ? "lax" : "none",
+    domain: isProduction ? ".techforgeinnovations.com" : undefined
 };
 
 // Empty list

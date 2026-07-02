@@ -261,18 +261,18 @@ const refreshAccessToken = asyncHandler(async (request, response) => {
 
     // Get token
     const token = getRefreshToken(request);
-    if(!token) return response.status(401).json(new ApiResponse(401, null, "Unauthorized! Refresh token is missing"));
+    if(!token) throw new ApiError(401, "Unauthorized! Refresh token is missing");
 
     // Verify refresh token
     const payload = verifyRefreshToken(token);
-    if(!payload) return response.status(401).json(new ApiResponse(401, null, "Unauthorized! Invalid refresh token"));
+    if(!payload) throw new ApiError(401, "Unauthorized! Invalid refresh token");
 
     // Find user
     const user = await User.findById(payload._id).select("_id role refreshToken");
-    if(!user) return response.status(401).json(new ApiResponse(401, null, "User not found associated with the provided refresh token"));
+    if(!user) throw new ApiError(401, "User not found associated with the provided refresh token");
 
     // Compare tokens
-    if(user.refreshToken !== token) return response.status(401).json(new ApiResponse(401, null, "Refresh token mismatch"));
+    if(user.refreshToken !== token) throw new ApiError(401, "Refresh token mismatch");
 
     // Fetch child profiles
     const [userProfile, businessProfile] = await Promise.all([

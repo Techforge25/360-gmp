@@ -26,9 +26,6 @@ const BusinessProfileSchema = new Schema({
     logo: { type:String },
     banner: { type:String },     
 
-    // identificationOfBusinessOwner: { type:String, trim:true },    
-    // complianceScreeningStatus: { type: Boolean, required:true }, // AML/PEP results
-
     /* BUSINESS OPERATION */  
     // Head office address
     headOffice:{
@@ -56,15 +53,15 @@ const BusinessProfileSchema = new Schema({
     incoterms: { type: String, trim: true }, 
     termsAndCapability: { type:String, trim:true },
 
-    /* INTERNATIONAL OFFICE */
-    internationalOffice:{
-      officeName: { type:String, trim:true, required:true },
+    /* INTERNATIONAL OFFICES */
+    internationalOffices: [{
+      officeName: { type:String, trim:true },
       country: { type: String, trim: true },
       city: { type: String, trim: true },
       state: { type: String, trim: true },
       addressLine: { type: String, trim: true },
       zipCode: { type:String, trim:true }
-    },
+    }],
 
     /* BUSINESS INTELLIGENCE & LEADERSHIP */
     primaryContactPerson: {
@@ -80,73 +77,56 @@ const BusinessProfileSchema = new Schema({
       ownershipPercentage: { type:Number, required:true },
       role: { type:String, trim:true, required:true },
 
-      votingRights: { type:String, trim:true, default:null }, // If ownership percentage is less than 25%
+      // If ownership percentage is less than 25%
+      votingRights: { type:[String] }, 
+
+      // If ownership percentage is equal or greater than 25% (Apply KYC)
+      dob: { type:Date },
+      nationality: { type: String, trim: true },
+      phone: { type: String, trim: true },
+      residentialAddress: { type: String, trim: true },
+      governmentIdType: { type: String, trim: true, enum:["National ID", "Passport", "Driving License"] },
+      idNumber: { type: String, trim: true },
+
+      // Media files (Documents)
+      idFront: { type: String, trim: true },
+      idBack: { type: String, trim: true },
+      proofOfResidentialAddress: { type: String, trim: true },
+      proofOfOwnership: { type: String, trim: true }
     }], 
 
-    location: {
-      country: { type: String, trim: true },
-      city: { type: String, trim: true },
-      addressLine: { type: String, trim: true },
-      warehouseAddress: { type: String, trim: true }, // New
-      additionalWarehouseAddress: { type: String, trim: true }, // New
-      mandatoryPickupAddress: { type: String, trim: true }, // New
-      businessRegistrationAddress: { type: String, trim: true, required:true }, // New
-      internationalOffices: { type:[String] },
+    ownedByAnotherCompany: { type: Boolean, default: false },
+    // Parent company details if incase owned by another comapany
+    parentCompany: {
+      companyName: { type: String, trim: true },
+      ownershipPercentage: { type: String, trim: true },
+      countryOfIncorporation: { type: String, trim: true }
     },
 
-    // Shipping info
-    shipping: {
-      capabilities:{ type:[String] },
-      exportExperience:{ type:Boolean, default:false }
+    /* OPERATIONAL & TRADE PROFILE */
+    operationalAndTradeProfile: {
+      auditingAgency: { type: String, trim: true },
+      regionOfOperations: { type: [String], default: [] },
+      tradeAffiliations: { type: [String], default: [] },
     },
 
-    // Ownership & Leadership
-    executiveLeadership: { type: [String], default: [] }, // New: CEO, MD, Officers
-    stakeholderDisclosure: [{
-        name: { type: String, trim: true },
-        ownershipPercentage: { type: Number, min: 0, max: 100 }
-    }], // New
+    /* AML & TRANSACTION PROFILE */
+    amlAndTransactionProfile: {
+      purpose: { type: String, trim: true },
+      revenueRange: { type: String, trim: true },
+      mainCounterParties: { type: [String] },
+      tradeCorridors: { type: [String] },
+      pep: { type: Boolean, default: false } // Is politically expose person
+    },
 
-    // Operational & Trade Profile
-    regionOfOperations: { type:[String] }, // New
-    productionCapacity: { type: Number, trim: true }, // New
-    tradeAffiliations: { type: [String], default: [] }, // New
+    /* REQUIRED DOCUMENTS */
+    certificateOfIncorporation: { type: String, trim: true },
+    taxRegistrationCertificate: { type: String, trim: true },
+    shareHolderRegister: { type: String, trim: true },
+    operatingLicense: { type: String, trim: true },
 
-    // Financial & Regulatory Data
-    annualRevenueRange: { type: String, trim: true }, // New
-    auditingAgency: { type: String, trim: true }, // CPA or firm
-
-    // Documentation & Verification Assets
-    certificateOfIncorporation: { type: String, trim: true }, // file path
-    taxRegistrationCertificate: { type: String, trim: true }, // file path
-
-    // Product Packaging Defaults (Logistics Prep)
-    standardProductDimensions: {
-        length: { type: Number, default: 0 },
-        width: { type: Number, default: 0 },
-        height: { type: Number, default: 0 },
-        weight: { type: Number, default: 0 },
-    }, // New
-
-    // Other certifications (ISO 9001)
-    certifications:{ type:[String], default:[] },
-
-    // B2B contact  
-    // b2bContact: {
-    //   name: { type: String, trim: true },
-    //   title: { type: String, trim: true },
-    //   phone: { type: String, trim: true, unique:[true, "This contact number has already been taken"] },
-    //   supportEmail: {
-    //     type: String,
-    //     trim: true,
-    //     lowercase: true
-    //   }
-    // },
-
-    // Branding info
-
+    // Other
     isVerified: { type: Boolean, default: false },
-    isLocked: { type: Boolean, default: true },
     mapURL: { type:String },
     latitude: { type:Number, default:0 },
     longitude: { type:Number, default:0 },

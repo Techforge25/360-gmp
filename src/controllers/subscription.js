@@ -7,7 +7,7 @@ const Stripe = require("stripe");
 const convertToMongoId = require("../utils/convertToMongoId");
 const sendNotification = require("../utils/sendNotification");
 const SubscriptionHistory = require("../models/subscriptionHistoryModel");
-const { emptyList, cookieOptions } = require("../constants");
+const { emptyList, cookieOptions, frontendURL } = require("../constants");
 const mongoose = require("mongoose");
 const User = require("../models/users");
 
@@ -22,7 +22,7 @@ const getSubscriptionDates = (startingDate) => {
 
 // Create subscription via stripe (Recurring Monthly + Trial Support)
 const createSubscriptionStripe = asyncHandler(async (request, response) => {
-    const userId = request.user._id;
+    const { _id:userId, role } = request.user;
     const { planId, profile } = request.query;
 
     // Validate
@@ -62,6 +62,7 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
         line_items: [{ price: stripePriceId, quantity: 1 }],
         metadata: { 
             userId: String(userId), 
+            role,
             planId: String(planId), 
             planName: name 
         },
@@ -84,12 +85,23 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
 const verifyStripePayment = asyncHandler(async (request, response) => {
     // Get session for payment verification
     const { session_id } = request.query;
-    if(!session_id) throw new ApiError(400, "Session ID is missing");   
+    if(!session_id) throw new ApiError(400, "Session ID is missing");
+    
+    // Stripe instance
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);    
+
+    // Get checkout session details
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+
+    // Validate session
+    if(!session || !session.id) throw new ApiError(404, "Session not found");
+
+    // Extract role
+    const { role } = session.metadata;
+    if(!role) return response.status(301).redirect(`${frontendURL}/onboarding/user-profile`);
 
     // Redirect to frontend
-    const redirectUrl = `${process.env.FRONTEND_URL}/onboarding/user-profile`;
-    // const redirectUrl = `http://localhost:3000/subscription/success?session_id=${session_id}`;
-    return response.status(303).redirect(redirectUrl);
+    return response.status(301).redirect(`${frontendURL}/dashboard/${role}/subscriptions`);
 });
 
 // Delete subscription (Cancel via app)

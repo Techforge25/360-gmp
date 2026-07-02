@@ -179,8 +179,7 @@ const BusinessProfileSchema = new Schema({
 }, { timestamps: true });
 
 // Indexes that actually matter
-BusinessProfileSchema.index({ "location.country": 1 });
-BusinessProfileSchema.index({ isVerified: 1 });
+BusinessProfileSchema.index({ "companyName": 1 });
 
 // Inject plugin
 BusinessProfileSchema.plugin(paginate);

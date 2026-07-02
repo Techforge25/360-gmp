@@ -77,7 +77,7 @@ const BusinessProfileSchema = new Schema({
     b2bContact: {
       name: { type: String, trim: true },
       title: { type: String, trim: true },
-      phone: { type: String, trim: true, unique:[true, "This contact number has already been taken"] },
+      phone: { type: String, trim: true },
       supportEmail: {
         type: String,
         trim: true,
@@ -124,8 +124,7 @@ const BusinessProfileSchema = new Schema({
 }, { timestamps: true });
 
 // Indexes that actually matter
-BusinessProfileSchema.index({ "location.country": 1 });
-BusinessProfileSchema.index({ isVerified: 1 });
+BusinessProfileSchema.index({ "companyName": 1 });
 
 // Inject plugin
 BusinessProfileSchema.plugin(paginate);

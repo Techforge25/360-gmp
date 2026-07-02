@@ -80,18 +80,20 @@ const BusinessProfileSchema = new Schema({
       votingRights: { type:[String] }, 
 
       // If ownership percentage is equal or greater than 25% (Apply KYC)
-      dob: { type:Date },
-      nationality: { type: String, trim: true },
-      phone: { type: String, trim: true },
-      residentialAddress: { type: String, trim: true },
-      governmentIdType: { type: String, trim: true, enum:["National ID", "Passport", "Driving License"] },
-      idNumber: { type: String, trim: true },
+      kyc: {
+        dob: { type:Date },
+        nationality: { type: String, trim: true },
+        phone: { type: String, trim: true },
+        residentialAddress: { type: String, trim: true },
+        governmentIdType: { type: String, trim: true, enum:["National ID", "Passport", "Driving License"] },
+        idNumber: { type: String, trim: true },
 
-      // Media files (Documents)
-      idFront: { type: String, trim: true },
-      idBack: { type: String, trim: true },
-      proofOfResidentialAddress: { type: String, trim: true },
-      proofOfOwnership: { type: String, trim: true }
+        // Media files (Documents)
+        idFront: { type: String, trim: true },
+        idBack: { type: String, trim: true },
+        proofOfResidentialAddress: { type: String, trim: true },
+        proofOfOwnership: { type: String, trim: true }
+      },
     }], 
 
     ownedByAnotherCompany: { type: Boolean, default: false },

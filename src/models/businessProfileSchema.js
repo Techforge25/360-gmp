@@ -43,7 +43,6 @@ const BusinessProfileSchema = new Schema({
 
     // Additional warehouse address
     additionalWarehouseAddress:[{
-      _id: false,
       country: { type: String, trim: true },
       city: { type: String, trim: true },
       addressLine: { type: String, trim: true },        

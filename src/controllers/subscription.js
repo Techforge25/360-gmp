@@ -505,32 +505,35 @@ const checkSubscriptionExistense = asyncHandler(async (request, response) => {
 const totalSpent = asyncHandler(async (request, response) => {
     const userId = convertToMongoId(request.user._id);
 
-    // Sum
-    const result = await Subscription.aggregate([
+    // Calculate total spending
+    const [result] = await SubscriptionHistory.aggregate([
         // Match
-        { $match:{ userId } },
+        { $match: { userId, status: "paid" } },
 
         // Lookup
         {
             $lookup: {
-                from:"plans",
-                localField:"planId",
-                foreignField:"_id",
-                as:"plan"
+                from: "plans",
+                localField: "planId",
+                foreignField: "_id",
+                as: "plan"
             }
         },
 
-        // Plain array to object
+        // Unwind
         { $unwind: "$plan" },
 
         // Sum
         {
-            $group:{ _id:null, totalSpent:{ $sum:"$plan.price" } }
+            $group: {
+                _id: null,
+                totalSpent: { $sum: "$plan.price" }
+            }
         }
     ]);
 
     // Total spent
-    const totalSpent = result[0]?.totalSpent || 0;
+    const totalSpent = result?.totalSpent || 0;
 
     // Response
     return response.status(200).json(new ApiResponse(200, totalSpent, "Total subscription amount calculated"));

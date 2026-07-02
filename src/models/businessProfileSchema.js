@@ -75,7 +75,13 @@ const BusinessProfileSchema = new Schema({
     },
 
     /* EXECUTIVE LEADERSHIP & STAKEHOLDER */
-    
+    executiveAndLeadership: [{
+      name: { type:String, trim:true, required:true },
+      ownershipPercentage: { type:Number, required:true },
+      role: { type:String, trim:true, required:true },
+
+      votingRights: { type:String, trim:true, default:null }, // If ownership percentage is less than 25%
+    }], 
 
     location: {
       country: { type: String, trim: true },
@@ -87,7 +93,6 @@ const BusinessProfileSchema = new Schema({
       businessRegistrationAddress: { type: String, trim: true, required:true }, // New
       internationalOffices: { type:[String] },
     },
-    
 
     // Shipping info
     shipping: {

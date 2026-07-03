@@ -121,10 +121,11 @@ const BusinessProfileSchema = new Schema({
     },
 
     /* REQUIRED DOCUMENTS (MEDIA FILES) */
-    certificateOfIncorporation: { type: String, trim: true },
-    taxRegistrationCertificate: { type: String, trim: true },
-    shareHolderRegister: { type: String, trim: true },
-    operatingLicense: { type: String, trim: true },
+    certificateOfIncorporation: { type: String, trim: true, required: true },
+    taxRegistrationCertificate: { type: String, trim: true, required: true },
+    shareHolderRegister: { type: String, trim: true, required: true },
+    operatingLicense: { type: String, trim: true, required: true },
+    evidenceOfFunds: { type: String, trim: true, required: true },
 
     // Other
     isVerified: { type: Boolean, default: false },

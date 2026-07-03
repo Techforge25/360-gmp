@@ -151,6 +151,7 @@ const createBusinessProfileSchema = joi.object({
     taxRegistrationCertificate: joi.string().trim().uri().required().label("Certificate of tax registration"),
     shareHolderRegister: joi.string().trim().uri().required().label("Share holder register"),
     operatingLicense: joi.string().trim().uri().required().label("Operating license"),
+    evidenceOfFunds: joi.string().trim().uri().required().label("Evidence of funds"),
 });
 
 // Gallery validation schema

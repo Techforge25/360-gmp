@@ -120,7 +120,7 @@ const BusinessProfileSchema = new Schema({
       pep: { type: Boolean, default: false } // Is politically expose person
     },
 
-    /* REQUIRED DOCUMENTS */
+    /* REQUIRED DOCUMENTS (MEDIA FILES) */
     certificateOfIncorporation: { type: String, trim: true },
     taxRegistrationCertificate: { type: String, trim: true },
     shareHolderRegister: { type: String, trim: true },

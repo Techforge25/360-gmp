@@ -14,7 +14,7 @@ const BusinessProfileSchema = new Schema({
     tradeName: { type: String, trim: true },
     businessRegistrationNumber: { type: String, trim: true, unique: [true, "This business registration number has already taken"], required: true },
     taxIdentificationNumber: { type: String, trim: true, unique:[true, "This tax identification number has already been taken"], required: true }, // TIN / VAT / EIN
-    dunsNumber: { type: Number, trim: true }, // New (Data Universal Numbering System for international trade credibility)
+    dunsNumber: { type: String, trim: true }, // New (Data Universal Numbering System for international trade credibility)
     countryOfRegistration: { type: String, trim: true, required: true },
     businessType: { type: String, trim: true, required: true },
     primaryIndustry: { type: String, trim: true, required: true },

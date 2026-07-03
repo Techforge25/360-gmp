@@ -38,23 +38,23 @@ const createBusinessProfileSchema = joi.object({
     /* BUSINESS OPERATION */
     // Head office address
     headOffice: joi.object({
-        country: joi.string().max(100).trim().allow("", null).label("Country"),
-        city: joi.string().max(100).trim().allow("", null).label("City"),
-        addressLine: joi.string().min(10).max(500).trim().allow("", null).label("Address line"),
+        country: joi.string().max(100).trim().allow("", null).label("Head office country"),
+        city: joi.string().max(100).trim().allow("", null).label("Head office city"),
+        addressLine: joi.string().min(10).max(500).trim().allow("", null).label("Head office address line"),
     }).label("Head Office"),
 
     // Warehouse address
     warehouseAddress: joi.object({
-        country: joi.string().max(100).trim().allow("", null).label("Country"),
-        city: joi.string().max(100).trim().allow("", null).label("City"),
-        addressLine: joi.string().min(10).max(500).trim().allow("", null).label("Address line"),
+        country: joi.string().max(100).trim().allow("", null).label("Warehouse country"),
+        city: joi.string().max(100).trim().allow("", null).label("Warehouse city"),
+        addressLine: joi.string().min(10).max(500).trim().allow("", null).label("Warehouse address line"),
     }).label("Warehouse Address"),
 
     // Additional warehouse address
     additionalWarehouseAddress: joi.array().max(5).items(joi.object({
-        country: joi.string().trim().max(100).allow("", null).label("Country"),
-        city: joi.string().trim().max(100).allow("", null).label("City"),
-        addressLine: joi.string().trim().min(10).max(500).allow("", null).label("Address line"),        
+        country: joi.string().trim().max(100).allow("", null).label("Additional warehouse country"),
+        city: joi.string().trim().max(100).allow("", null).label("Additional warehouse city"),
+        addressLine: joi.string().trim().min(10).max(500).allow("", null).label("Additional warehouse address line"),        
     })).label("Additional Warehouse Address"),
 
     // International Commercial Terms

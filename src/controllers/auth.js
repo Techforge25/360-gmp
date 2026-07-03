@@ -261,7 +261,6 @@ const refreshAccessToken = asyncHandler(async (request, response) => {
 
     // Get token
     const token = getRefreshToken(request);
-    // if(!token) throw new ApiError(401, "Unauthorized! Refresh token is missing");
     if(!token)
     {
         return response.status(401)
@@ -272,7 +271,6 @@ const refreshAccessToken = asyncHandler(async (request, response) => {
 
     // Verify refresh token
     const payload = verifyRefreshToken(token);
-    // if(!payload) throw new ApiError(401, "Unauthorized! Invalid refresh token");
     if(!payload) 
     {
         return response.status(401)
@@ -283,7 +281,6 @@ const refreshAccessToken = asyncHandler(async (request, response) => {
 
     // Find user
     const user = await User.findById(payload._id).select("_id role refreshToken");
-    // if(!user) throw new ApiError(401, "User not found associated with the provided refresh token");
     if(!user) 
     {
         return response.status(401)
@@ -293,7 +290,6 @@ const refreshAccessToken = asyncHandler(async (request, response) => {
     }
 
     // Compare tokens
-    // if(user.refreshToken !== token) throw new ApiError(401, "Refresh token mismatch");
     if(user.refreshToken !== token)
     {
         return response.status(401)

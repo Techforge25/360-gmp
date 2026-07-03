@@ -2,7 +2,7 @@ const BusinessProfile = require("../models/businessProfileSchema");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
-const { createBusinessProfileSchema, updateBusinessProfileSchema } = require("../validations/businessProfileVaidator");
+const { createBusinessProfileSchema } = require("../validations/businessProfileVaidator");
 const User = require("../models/users");
 const Wallet = require("../models/walletModel");
 const { emptyList } = require("../constants");
@@ -184,23 +184,6 @@ const fetchMyBusinessProfile = asyncHandler(async (request, response) => {
 
     // Response
     return response.status(200).json(new ApiResponse(200, businessProfile, "Business profile has been fetched successfully"));
-});
-
-const updateBusinessProfile = asyncHandler(async (request, response) => {
-    // Validate
-    const { error, value } = updateBusinessProfileSchema.validate(request.body, { abortEarly: false });
-    if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
-
-    // Find and update profile
-    const profile = await BusinessProfile.findOneAndUpdate(
-        { ownerUserId: request.user._id },
-        { $set: value },
-        { new: true, runValidators: true }
-    );
-    if(!profile) throw new ApiError(404, "Business profile not found");
-
-    // Response
-    return response.status(200).json(new ApiResponse(200, profile, "Business profile has been updated"));
 });
 
 // Delete my business profile
@@ -413,5 +396,5 @@ const fetchBusinessCommunities = asyncHandler(async (request, response) => {
 
 
 module.exports = { createBusinessProfile, fetchBusinessProfiles, fetchMyBusinessProfile, 
-updateBusinessProfile, deleteMyBusinessProfile, getDirection, fetchLatestBusiness, 
-fetchBusinessCountries, fetchBusinessJobs, fetchBusinessProducts, fetchBusinessCommunities };
+deleteMyBusinessProfile, getDirection, fetchLatestBusiness, fetchBusinessCountries, fetchBusinessJobs, 
+fetchBusinessProducts, fetchBusinessCommunities };

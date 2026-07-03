@@ -23,7 +23,7 @@ const createBusinessProfileSchema = joi.object({
     tradeName: joi.string().max(200).trim().optional().allow("", null).label("Trade name"),
     businessRegistrationNumber: joi.string().max(50).trim().required().label("Business Registration Number"),
     taxIdentificationNumber: joi.string().min(5).max(20).trim().required().label("Tax identification number"),
-    dunsNumber: joi.string().length(9).optional().label("Data Universal Numbering System"),
+    dunsNumber: joi.string().length(9).optional().allow("", null).label("Data Universal Numbering System"),
     countryOfRegistration: joi.string().max(50).trim().required().label("Country of registration"),
     businessType: joi.string().max(50).trim().required().label("Business type"),
     primaryIndustry: joi.string().max(500).trim().required().label("Primary industry"),

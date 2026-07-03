@@ -21,41 +21,41 @@ const createBusinessProfileSchema = joi.object({
     ownerName: joi.string().min(3).max(50).trim().required().label("Owner name"),
     companyName: joi.string().min(3).max(50).trim().required().label("Company name"),
     tradeName: joi.string().max(200).trim().optional().allow("", null).label("Trade name"),
-    businessRegistrationNumber: joi.string().max(50).trim().optional().allow("", null).label("Business Registration Number"),
+    businessRegistrationNumber: joi.string().max(50).trim().required().label("Business Registration Number"),
     taxIdentificationNumber: joi.string().min(5).max(20).trim().required().label("Tax identification number"),
-    dunsNumber: joi.string().max(100).trim().allow("", null).label("Data Universal Numbering System"),
-    countryOfRegistration: joi.string().max(50).trim().allow("", null).label("Country of registration"),
-    businessType: joi.string().max(50).trim().allow("", null).label("Business type"),
-    primaryIndustry: joi.string().max(500).trim().allow("", null).label("Primary industry"),
-    foundedDate: joi.date().max("now").allow(null).label("Founded date"),
-    companySize: joi.string().trim().allow("", null).label("Company size"),
-    operationHour: joi.string().max(50).trim().allow("", null).label("Operation hours"),
+    dunsNumber: joi.number().max(9).optional().label("Data Universal Numbering System"),
+    countryOfRegistration: joi.string().max(50).trim().required().label("Country of registration"),
+    businessType: joi.string().max(50).trim().required().label("Business type"),
+    primaryIndustry: joi.string().max(500).trim().required().label("Primary industry"),
+    foundedDate: joi.date().max("now").required().label("Founded date"),
+    companySize: joi.string().trim().required().label("Company size"),
+    operationHour: joi.string().max(50).trim().required().label("Operation hours"),
     website: joi.string().uri().max(100).trim().allow("", null).label("Website"),
-    description: joi.string().trim().max(5000).allow("", null).label("Business description"),
+    description: joi.string().trim().max(5000).required().label("Business description"),
     logo: joi.string().trim().uri().allow("", null).label("Logo"),
     banner: joi.string().trim().uri().allow("", null).label("Banner"),
 
     /* BUSINESS OPERATION */
     // Head office address
     headOffice: joi.object({
-        country: joi.string().max(100).trim().allow("", null).label("Head office country"),
-        city: joi.string().max(100).trim().allow("", null).label("Head office city"),
-        addressLine: joi.string().min(10).max(500).trim().allow("", null).label("Head office address line"),
-    }).label("Head Office"),
+        country: joi.string().max(100).trim().required().label("Head office country"),
+        city: joi.string().max(100).trim().required().label("Head office city"),
+        addressLine: joi.string().min(10).max(500).trim().required().label("Head office address line"),
+    }).required().label("Head Office"),
 
     // Warehouse address
     warehouseAddress: joi.object({
         country: joi.string().max(100).trim().allow("", null).label("Warehouse country"),
         city: joi.string().max(100).trim().allow("", null).label("Warehouse city"),
         addressLine: joi.string().min(10).max(500).trim().allow("", null).label("Warehouse address line"),
-    }).label("Warehouse Address"),
+    }).optional().label("Warehouse Address"),
 
     // Additional warehouse address
     additionalWarehouseAddress: joi.array().max(5).items(joi.object({
         country: joi.string().trim().max(100).allow("", null).label("Additional warehouse country"),
         city: joi.string().trim().max(100).allow("", null).label("Additional warehouse city"),
         addressLine: joi.string().trim().min(10).max(500).allow("", null).label("Additional warehouse address line"),        
-    })).label("Additional Warehouse Address"),
+    })).optional().label("Additional Warehouse Address"),
 
     // International Commercial Terms
     incoterms: joi.string().max(500).trim().allow("", null).label("International Commercial Terms"),
@@ -64,22 +64,22 @@ const createBusinessProfileSchema = joi.object({
     /* INTERNATIONAL OFFICES */
     internationalOffices: joi.array().max(5).items(joi.object({
         officeName: joi.string().trim().min(2).max(5).optional().allow("", null).label("Office name"),
-        country: joi.string().trim().max(100).allow("", null).label("Country"),
-        city: joi.string().trim().max(100).allow("", null).label("City"),
-        state: joi.string().trim().max(100).allow("", null).label("State"),
-        addressLine: joi.string().trim().min(10).max(500).allow("", null).label("Address line"), 
-        zipCode: joi.string().trim().min(5).max(50).allow("", null).label("Zip code"), 
-    })).label("International Offices"),
+        country: joi.string().trim().max(100).optional().allow("", null).label("Country"),
+        city: joi.string().trim().max(100).optional().allow("", null).label("City"),
+        state: joi.string().trim().max(100).optional().allow("", null).label("State"),
+        addressLine: joi.string().trim().min(10).optional().max(500).allow("", null).label("Address line"), 
+        zipCode: joi.string().trim().min(5).max(50).optional().allow("", null).label("Zip code"), 
+    })).optional().label("International Offices"),
 
     /* BUSINESS INTELLIGENCE & LEADERSHIP */
     primaryContactPerson: joi.object({
-        name: joi.string().trim().min(2).max(50).optional().allow("", null).label("Name"),
-        title: joi.string().trim().min(2).max(50).optional().allow("", null).label("Title"),
+        name: joi.string().trim().min(2).max(50).required().label("Name"),
+        title: joi.string().trim().min(2).max(50).required().label("Title"),
         phone: joi.string().trim().max(15).pattern(/^\+?[1-9]\d{9,14}$/).required().messages({
             "string.pattern.base": "Phone number must be a valid international format (e.g., +923001234567)."
-        }).label("Phone"),
+        }).required().label("Phone"),
         supportEmail: joi.string().trim().email().lowercase().required().label("Support Email")
-    }).label("Primary Contact Person"),
+    }).required().label("Primary Contact Person"),
 
     /* EXECUTIVE LEADERSHIP & STAKEHOLDER */
     executiveAndLeadership: joi.array().min(1).items(joi.object({
@@ -140,8 +140,8 @@ const createBusinessProfileSchema = joi.object({
     /* AML & TRANSACTION PROFILE */
     amlAndTransactionProfile: joi.object({
         purpose: joi.string().trim().min(10).max(5000).required().label("Purpose"),
-        revenueRange: joi.string().trim().required().label("Revenue range"),
-        mainCounterParties: joi.array().min(1).items(joi.string().trim()).label("Main counter parties"),
+        revenueRange: joi.string().trim().optional().allow("", null).label("Revenue range"),
+        mainCounterParties: joi.array().items(joi.string().trim()).label("Main counter parties"),
         tradeCorridors: joi.array().min(1).items(joi.string().trim()).label("Trade corridors"),
         pep: joi.boolean().default(false).label("Is politically expose person")
     }).required().label("AML & transaction profile"),
@@ -149,7 +149,7 @@ const createBusinessProfileSchema = joi.object({
     /* REQUIRED DOCUMENTS (MEDIA FILES) */
     certificateOfIncorporation: joi.string().trim().uri().required().label("Certificate of incorporation"),
     taxRegistrationCertificate: joi.string().trim().uri().required().label("Certificate of tax registration"),
-    shareHolderRegister: joi.string().trim().uri().required().label("Share holder register"),
+    shareHolderRegister: joi.string().trim().uri().optional().allow("", null).label("Share holder register"),
     operatingLicense: joi.string().trim().uri().required().label("Operating license"),
     evidenceOfFunds: joi.string().trim().uri().required().label("Evidence of funds"),
 });

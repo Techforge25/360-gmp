@@ -12,26 +12,26 @@ const BusinessProfileSchema = new Schema({
     ownerName: { type:String, trim:true, required:true }, 
     companyName: { type: String, required: true, trim: true, unique:[true, "This Company name has already been registered"] },
     tradeName: { type: String, trim: true },
-    businessRegistrationNumber: { type: String, trim: true, unique: [true, "This business registration number has already taken"] },
-    taxIdentificationNumber: { type: String, trim: true, unique:[true, "This tax identification number has already been taken"] }, // TIN / VAT / EIN
-    dunsNumber: { type: String, trim: true }, // New (Data Universal Numbering System for international trade credibility)
-    countryOfRegistration: { type: String, trim: true },
-    businessType: { type: String, trim: true },
-    primaryIndustry: { type: String, trim: true },
-    foundedDate: { type:Date },
-    companySize: { type: String, trim: true },
-    operationHour: { type: String, trim: true },
+    businessRegistrationNumber: { type: String, trim: true, unique: [true, "This business registration number has already taken"], required: true },
+    taxIdentificationNumber: { type: String, trim: true, unique:[true, "This tax identification number has already been taken"], required: true }, // TIN / VAT / EIN
+    dunsNumber: { type: Number, trim: true }, // New (Data Universal Numbering System for international trade credibility)
+    countryOfRegistration: { type: String, trim: true, required: true },
+    businessType: { type: String, trim: true, required: true },
+    primaryIndustry: { type: String, trim: true, required: true },
+    foundedDate: { type:Date, required: true },
+    companySize: { type: String, trim: true, required: true },
+    operationHour: { type: String, trim: true, required: true },
     website: { type: String, trim: true },
-    description: { type:String },
+    description: { type: String, trim: true, required: true },
     logo: { type:String },
     banner: { type:String },     
 
     /* BUSINESS OPERATION */  
     // Head office address
     headOffice:{
-      country: { type: String, trim: true },
-      city: { type: String, trim: true },
-      addressLine: { type: String, trim: true },      
+      country: { type: String, trim: true, required: true },
+      city: { type: String, trim: true, required: true },
+      addressLine: { type: String, trim: true, required: true },      
     },
 
     // Warehouse address
@@ -64,10 +64,10 @@ const BusinessProfileSchema = new Schema({
 
     /* BUSINESS INTELLIGENCE & LEADERSHIP */
     primaryContactPerson: {
-      name: { type: String, trim: true },
-      title: { type: String, trim: true },
-      phone: { type: String, trim: true, unique:[true, "This contact number has already been taken"] },
-      supportEmail: { type: String, trim: true, lowercase: true }      
+      name: { type: String, trim: true, required: true },
+      title: { type: String, trim: true, required: true },
+      phone: { type: String, trim: true, unique:[true, "This contact number has already been taken"], required: true },
+      supportEmail: { type: String, trim: true, lowercase: true, required: true }      
     },
 
     /* EXECUTIVE LEADERSHIP & STAKEHOLDER */
@@ -113,7 +113,7 @@ const BusinessProfileSchema = new Schema({
 
     /* AML & TRANSACTION PROFILE */
     amlAndTransactionProfile: {
-      purpose: { type: String, trim: true },
+      purpose: { type: String, trim: true, required: true },
       revenueRange: { type: String, trim: true },
       mainCounterParties: { type: [String] },
       tradeCorridors: { type: [String] },
@@ -123,7 +123,7 @@ const BusinessProfileSchema = new Schema({
     /* REQUIRED DOCUMENTS (MEDIA FILES) */
     certificateOfIncorporation: { type: String, trim: true, required: true },
     taxRegistrationCertificate: { type: String, trim: true, required: true },
-    shareHolderRegister: { type: String, trim: true, required: true },
+    shareHolderRegister: { type: String, trim: true }, // Optional as per client document
     operatingLicense: { type: String, trim: true, required: true },
     evidenceOfFunds: { type: String, trim: true, required: true },
 

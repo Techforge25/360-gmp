@@ -16,7 +16,10 @@ const BusinessProfileSchema = new Schema({
     taxIdentificationNumber: { type: String, trim: true, unique:[true, "This tax identification number has already been taken"], required: true }, // TIN / VAT / EIN
     dunsNumber: { type: String, trim: true }, // New (Data Universal Numbering System for international trade credibility)
     countryOfRegistration: { type: String, trim: true, required: true },
-    businessType: { type: String, trim: true, required: true },
+    businessType: { 
+      type: String, trim: true, required: true, 
+      enum:["Manufacturer", "Distributor", "Wholesaler", "Retailer", "Service Provider", "Consultant", "Franchise", "Others"] 
+    },
     primaryIndustry: { type: String, trim: true, required: true },
     foundedDate: { type:Date, required: true },
     companySize: { type: String, trim: true, required: true },

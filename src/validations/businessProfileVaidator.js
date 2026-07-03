@@ -149,7 +149,7 @@ const createBusinessProfileSchema = joi.object({
     /* REQUIRED DOCUMENTS (MEDIA FILES) */
     certificateOfIncorporation: joi.string().trim().uri().required().label("Certificate of incorporation"),
     taxRegistrationCertificate: joi.string().trim().uri().required().label("Certificate of tax registration"),
-    shareHolderRegister: joi.string().trim().uri().optional().allow("", null).label("Share holder register"),
+    shareHolderRegister: joi.string().trim().uri().optional().allow("", null).label("Share holder register"), // Optional as per client's requirement
     operatingLicense: joi.string().trim().uri().required().label("Operating license"),
     evidenceOfFunds: joi.string().trim().uri().required().label("Evidence of funds"),
 });

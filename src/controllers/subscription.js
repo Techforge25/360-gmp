@@ -598,7 +598,7 @@ const getAllMySubscriptions = asyncHandler(async (request, response) => {
     const baseFilter = { userId };
     if(status)
     {
-        if(!["paid", "failed"].includes(status)) throw new ApiError(400, "Invalid status filter! Allowed values are paid, failed");
+        if(!["paid", "failed", "deleted"].includes(status)) throw new ApiError(400, "Invalid status filter! Allowed values are paid, failed and deleted");
         baseFilter.status = status;
     }
 

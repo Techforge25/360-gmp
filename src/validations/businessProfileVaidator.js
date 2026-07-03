@@ -68,7 +68,7 @@ const createBusinessProfileSchema = joi.object({
         city: joi.string().trim().max(100).allow("", null).label("City"),
         state: joi.string().trim().max(100).allow("", null).label("State"),
         addressLine: joi.string().trim().min(10).max(500).allow("", null).label("Address line"), 
-        zipCode: joi.string().trim().min(10).max(500).allow("", null).label("Zip code"), 
+        zipCode: joi.string().trim().min(5).max(50).allow("", null).label("Zip code"), 
     })).label("International Offices"),
 
     /* BUSINESS INTELLIGENCE & LEADERSHIP */

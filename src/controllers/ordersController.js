@@ -1501,8 +1501,78 @@ const fetchUnreviewedOrders = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, unreviewedOrders, "Unreviewed orders fetched"));
 });
 
+// Fetch disputed order
+const fetchDisputedOrders = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10 } = request.query;
+    const { role } = request.user;
+    const { userProfileId, businessProfileId } = request.user.profiles || {};
+
+    // Base filter
+    const filter = { status: "disputed" };
+    if(role === "user") filter.buyerUserProfileId = convertToMongoId(userProfileId);
+    if(role === "business") filter.sellerBusinessId = convertToMongoId(businessProfileId);
+
+    // Fetch
+    const disputedOrders = await Order.aggregatePaginate([
+        // Match
+        { $match: filter },
+
+        // Lookup inside business
+        {
+            $lookup:{
+                from: "businessprofiles",
+                localField: "sellerBusinessId",
+                foreignField: "_id",
+                as: "seller",
+                pipeline:[{ $project:{ _id:0, ownerName:1 } }]
+            }
+        },
+
+        // Lookup inside user
+        {
+            $lookup:{
+                from: "userprofiles",
+                localField: "buyerUserProfileId",
+                foreignField: "_id",
+                as: "buyer",
+                pipeline:[{ $project:{ _id:0, fullName: 1 } }]
+            }
+        },        
+
+        // Unwind
+        { $unwind: "$seller" },
+        { $unwind: "$buyer" },
+
+        // Projection
+        {
+            $project: { 
+                _id: 0,
+                orderId: "$_id",
+                seller: "$seller.ownerName", 
+                buyer: "$buyer.fullName", 
+                orderDate: "$createdAt", 
+                total: "$totalAmount", 
+                status: 1 
+            }
+        },
+
+        // Sort
+        { $sort:{ createdAt: -1 } }
+    ], { page, limit });
+    if(!disputedOrders.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No disputed orders found"));
+
+    // Add orderType flag
+    disputedOrders.docs = disputedOrders.docs.map(({ items, id, ...order }) => ({
+        ...order,
+        orderType: items?.length > 1 ? "bulk" : "single"
+    }));    
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, disputedOrders, "Disputed orders have been fetched"));
+});
+
 module.exports = { createOrder, verifyStripePaymentForOrders, createOrderWithWallet, completeOrder, updateOrderStatusBySeller, 
 fetchAllUserOrders, fetchAllBusinessOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, fetchCancelledOrders,
 fetchBusinessProcessingOrders, fetchBsuinessInTransitOrders, fetchBusinessCompletedOrders, fetchBusinessCancelledOrders,
 viewOrder, cancelOrder, updateOrderTrackingInfo, fetchNewOrders, fetchBusinessNewOrders, fetchDeliveredOrders, 
-fetchBusinessDeliveredOrders, fetchUnreviewedOrders };
+fetchBusinessDeliveredOrders, fetchUnreviewedOrders, fetchDisputedOrders };

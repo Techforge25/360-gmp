@@ -2,7 +2,7 @@ const { Router } = require("express");
 const { authentication } = require("../middlewares/auth");
 const { createSubscriptionStripe, verifyStripePayment, stripeWebhook, getMySubscription, 
 totalSpent, checkSubscriptionStatus, getAllMySubscriptions, checkSubscriptionExistense, 
-cancelStripeSubscription } = require("../controllers/subscription");
+cancelStripeSubscription, verifyCancelSubscriptionOTP } = require("../controllers/subscription");
 const { checkSubscription } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -16,12 +16,12 @@ subscriptionRouter.route("/stripe/cancel").get((request, response) => {
 });
 
 // Cancel subscription request
-subscriptionRouter.route("/stripe/cancel-subscription-request")
+subscriptionRouter.route("/stripe/cancel-subscription")
 .get(authentication, checkSubscription, cancelStripeSubscription);
 
 // Verify cancel subscription OTP (Cancel via app)
 subscriptionRouter.route("/stripe/cancel-subscription")
-.post(authentication, checkSubscription, cancelStripeSubscription);
+.post(authentication, checkSubscription, verifyCancelSubscriptionOTP);
 
 // Stripe webhook for subscription
 subscriptionRouter.route("/webhook").post(stripeWebhook);

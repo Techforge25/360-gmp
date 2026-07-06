@@ -1548,7 +1548,7 @@ const fetchDisputedOrders = asyncHandler(async (request, response) => {
             $project: { 
                 _id: 0,
                 orderId: "$_id",
-                seller: "$seller.ownerName", 
+                seller: "$seller.companyName", 
                 buyer: "$buyer.fullName", 
                 orderDate: "$createdAt", 
                 total: "$totalAmount", 

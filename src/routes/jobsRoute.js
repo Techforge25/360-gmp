@@ -22,7 +22,7 @@ jobsRouter.route("/:id")
 .delete(authentication, authorization(["business"]), deleteJob);
 
 // Update job status
-jobsRouter.route("/:id")
+jobsRouter.route("/:id/status")
 .patch(authentication, authorization(["business"]), updateJobStatus);
 
 // Fetch applied jobs

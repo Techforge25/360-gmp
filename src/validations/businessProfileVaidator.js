@@ -15,15 +15,15 @@ const alphaNumericPattern = /^[a-zA-Z0-9 -]*$/;
 // Critical
 // const identificationPattern = /^[A-Za-z0-9Ññ\- .\/&]+$/;
 
-// Incoterms enum
+// Allowed incoterms enum
 const allowedIncoterms = ["EXW - Ex Works", "FCA - Free Carrier", "FAS - Free Alongside Ship", "FOB - Free On Board",
 "CFR - Cost and Freight", "CIF - Cost, Insurance, Freight", "CPT - Carriage Paid To", "CIP - Carriage and Insurance Paid To",
 "DAP - Delivered At Place","DPU - Delivered At Place Unloaded", "DDP - Delivered Duty Paid"];
 
-// Terms and capability enum
+// Allowed terms and capability enum
 const allowedTermsAndCapability = ['Air Freight', 'Sea Freight', 'Express Courier', 'Rail Freight', 'Road Transport'];
 
-// Allowed Executive leadership roles enum
+// Allowed executive leadership roles enum
 const allowedExecutiveRoles = [
 // Ownership & Governance
 "Owner",
@@ -127,6 +127,9 @@ const allowedExecutiveRoles = [
 "Head of Quality Assurance"
 ];
 
+// Allowed government ID types
+const allowedGovernmentIDTypes = ["National Identity Card", "Passport", "Driver's License", "Residence Permit", "Other"];
+
 // Create Business Profile schema
 const createBusinessProfileSchema = joi.object({
     /* BASIC IDENTITY & LEGAL */ 
@@ -212,7 +215,7 @@ const createBusinessProfileSchema = joi.object({
                 "string.pattern.base": "Phone number must be a valid international format (e.g., +923001234567)."
             }).label("Stake holder phone"),
             residentialAddress: joi.string().trim().required().label("Stake holder residential address"),
-            governmentIdType: joi.string().trim().required().label("Stake holder Government ID Type"),
+            governmentIdType: joi.string().trim().required().valid(...allowedGovernmentIDTypes).label("Stake holder Government ID Type"),
             idNumber: joi.string().trim().required().label("Stake holder ID Number"),
 
             // Media files (Documents)

@@ -15,6 +15,9 @@ const alphaNumericPattern = /^[a-zA-Z0-9 -]*$/;
 // Critical
 // const identificationPattern = /^[A-Za-z0-9Ññ\- .\/&]+$/;
 
+// Allowed business types
+const allowedBusinessTypes = ["Manufacturer", "Distributor", "Wholesaler", "Retailer", "Service Provider", "Consultant", "Franchise", "Others"];
+
 // Allowed incoterms enum
 const allowedIncoterms = ["EXW - Ex Works", "FCA - Free Carrier", "FAS - Free Alongside Ship", "FOB - Free On Board",
 "CFR - Cost and Freight", "CIF - Cost, Insurance, Freight", "CPT - Carriage Paid To", "CIP - Carriage and Insurance Paid To",
@@ -22,6 +25,9 @@ const allowedIncoterms = ["EXW - Ex Works", "FCA - Free Carrier", "FAS - Free Al
 
 // Allowed terms and capability enum
 const allowedTermsAndCapability = ['Air Freight', 'Sea Freight', 'Express Courier', 'Rail Freight', 'Road Transport'];
+
+// Allowed government ID types
+const allowedGovernmentIDTypes = ["National Identity Card", "Passport", "Driver's License", "Residence Permit", "Other"];
 
 // Allowed executive leadership roles enum
 const allowedExecutiveRoles = [
@@ -127,9 +133,6 @@ const allowedExecutiveRoles = [
 "Head of Quality Assurance"
 ];
 
-// Allowed government ID types
-const allowedGovernmentIDTypes = ["National Identity Card", "Passport", "Driver's License", "Residence Permit", "Other"];
-
 // Create Business Profile schema
 const createBusinessProfileSchema = joi.object({
     /* BASIC IDENTITY & LEGAL */ 
@@ -140,8 +143,7 @@ const createBusinessProfileSchema = joi.object({
     taxIdentificationNumber: joi.string().min(5).max(20).trim().required().label("Tax identification number"),
     dunsNumber: joi.string().length(9).optional().allow("", null).label("Data Universal Numbering System"),
     countryOfRegistration: joi.string().max(50).trim().required().label("Country of registration"),
-    businessType: joi.string().max(50).trim().required()
-    .valid("Manufacturer", "Distributor", "Wholesaler", "Retailer", "Service Provider", "Consultant", "Franchise", "Others").label("Business type"),
+    businessType: joi.string().max(50).trim().required().valid(...allowedBusinessTypes).label("Business type"),
     primaryIndustry: joi.string().max(500).trim().required().label("Primary industry"),
     foundedDate: joi.date().max("now").required().label("Founded date"),
     companySize: joi.string().trim().required().label("Company size"),

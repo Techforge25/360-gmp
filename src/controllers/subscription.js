@@ -10,6 +10,9 @@ const SubscriptionHistory = require("../models/subscriptionHistoryModel");
 const { emptyList, cookieOptions, frontendURL } = require("../constants");
 const mongoose = require("mongoose");
 const User = require("../models/users");
+const { setCache, getCache, deleteCache } = require("../redis/redisHelpers");
+const { getCancelSubscriptionOTPKey } = require("../utils/redisKeys");
+const emailQueue = require("../queues/emailQueue");
 
 // Helper function to get 
 const getSubscriptionDates = (startingDate) => {
@@ -105,40 +108,95 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
 });
 
 // Delete subscription (Cancel via app)
+// const cancelStripeSubscription = asyncHandler(async (request, response) => {
+//     const { _id:userId, subscription } = request.user;
+//     const { password } = request.body || {};
+//     console.log("Password: ", password);
+//     if(!password) throw new ApiError(400, "Password is required to cancel subscription");
+
+//     // Find user
+//     const user = await User.findById(userId).select("passwordHash");
+//     if(!user) throw new ApiError(404, "User not found");
+
+//     // Match password
+//     const isMatched = await user.matchPassword(password);
+//     if(!isMatched) throw new ApiError(400, "Incorrect password!");
+
+//     // Initialized stripe
+//     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);
+
+//     // Cancel subscription
+//     const deleteSubscription = await stripe.subscriptions.cancel(subscription.stripeSubscriptionId); 
+//     if(!deleteSubscription) throw new ApiError(500, "Failed to cancel subscription");
+
+//     /* Subscription status will be marked as canceled in db (via webhook) */
+
+//     // Prepare payload
+//     const payload = { 
+//         subscriptionId: subscription.stripeSubscriptionId, 
+//         subscriptionStatus: "canceled"
+//     };
+
+//     // Response
+//     return response.status(200)
+//     .clearCookie("accessToken", cookieOptions)
+//     .clearCookie("refreshToken", cookieOptions)
+//     .json(new ApiResponse(200, payload, "Subscription has been cancelled"));
+// });
+
+// Delete subscription (Cancel via app)
 const cancelStripeSubscription = asyncHandler(async (request, response) => {
-    const { _id:userId, subscription } = request.user;
-    const { password } = request.body || {};
-    console.log("Password: ", password);
-    if(!password) throw new ApiError(400, "Password is required to cancel subscription");
+    const userId = request.user._id;
+    const subscription = request.user.subscription;
 
     // Find user
-    const user = await User.findById(userId).select("passwordHash");
+    const user = await User.findById(userId).select("email").lean();
     if(!user) throw new ApiError(404, "User not found");
 
-    // Match password
-    const isMatched = await user.matchPassword(password);
-    if(!isMatched) throw new ApiError(400, "Incorrect password!");
+    // Generate OTP
+    const { code:otp } = generateCode(6);
+    if(!otp) throw new ApiError(500, "Failed to generate OTP");  
+    
+    // Store in redis
+    await setCache(getCancelSubscriptionOTPKey(userId), otp, 5);
+
+    // Send email in background
+    await emailQueue.add("sendCancelSubscriptionOTPEmail", { email: user.email, otp });
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "We have sent you an OTP to your email"));    
+});
+
+// Verify cancel subscription OTP
+const verifyCancelSubscriptionOTP = asyncHandler(async (request, response) => {
+    const userId = request.user._id; 
+    const { otp } = request.body;
+    if(!otp) throw new ApiError(400, "OTP is required");
+
+    // Get OTP from redis
+    const savedOTP = await getCache(getCancelSubscriptionOTPKey(userId));
+
+    // Validate
+    if(!savedOTP) throw new ApiError(400, "Invalid OTP");
+    if(savedOTP !== otp) throw new ApiError(400, "Invalid OTP");
 
     // Initialized stripe
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);
 
     // Cancel subscription
-    const deleteSubscription = await stripe.subscriptions.cancel(subscription.stripeSubscriptionId); 
+    const deleteSubscription = await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
     if(!deleteSubscription) throw new ApiError(500, "Failed to cancel subscription");
 
     /* Subscription status will be marked as canceled in db (via webhook) */
 
-    // Prepare payload
-    const payload = { 
-        subscriptionId: subscription.stripeSubscriptionId, 
-        subscriptionStatus: "canceled"
-    };
+    // Delete key in redis
+    await deleteCache(getCancelSubscriptionOTPKey(userId));    
 
     // Response
     return response.status(200)
     .clearCookie("accessToken", cookieOptions)
     .clearCookie("refreshToken", cookieOptions)
-    .json(new ApiResponse(200, payload, "Subscription has been cancelled"));
+    .json(new ApiResponse(200, null, "Subscription has been cancelled"));
 });
 
 // Stripe webhook (Handle recurring subscription lifecycle)
@@ -636,4 +694,5 @@ const getAllMySubscriptions = asyncHandler(async (request, response) => {
 });
 
 module.exports = { createSubscriptionStripe, verifyStripePayment, stripeWebhook, checkSubscriptionExistense,
-getMySubscription, totalSpent, checkSubscriptionStatus, getAllMySubscriptions, cancelStripeSubscription };
+getMySubscription, totalSpent, checkSubscriptionStatus, getAllMySubscriptions, cancelStripeSubscription, 
+verifyCancelSubscriptionOTP };

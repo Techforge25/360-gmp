@@ -15,7 +15,11 @@ subscriptionRouter.route("/stripe/cancel").get((request, response) => {
     return response.status(303).redirect(`${process.env.FRONTEND_URL}/onboarding/plans`);
 });
 
-// Delete subscription (Cancel via app)
+// Cancel subscription request
+subscriptionRouter.route("/stripe/cancel-subscription-request")
+.post(authentication, checkSubscription, cancelStripeSubscription);
+
+// Verify cancel subscription OTP (Cancel via app)
 subscriptionRouter.route("/stripe/cancel-subscription")
 .post(authentication, checkSubscription, cancelStripeSubscription);
 

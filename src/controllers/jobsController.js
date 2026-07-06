@@ -208,6 +208,41 @@ const updateJob = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, updateJob, "Job has been updated successfully"));
 });
 
+// Update job status
+const updateJobStatus = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+    const { businessProfileId } = request.user.profiles || {};
+    const { id } = request.params;    
+
+    // Validate ID
+    if(!isValidObjectId(id)) throw new ApiError(400, "Invalid Job ID");
+
+    // Find job
+    const job = await Job.findById(id).select("businessId status");
+    if(!job) throw new ApiError(404, "Job not found");
+
+    // Check authorization
+    if(String(businessProfileId) !== String(job.businessId)) throw new ApiError(403, "You are not authorized to update this job");    
+
+    // Get status
+    const { status } = request.body;
+    if(!status) throw new ApiError(400, "Status is required");
+
+    // Allowed statuses
+    const allowedStatuses = ["open", "paused", "closed"];
+
+    // Validate status
+    if(!allowedStatuses.includes(status)) throw new ApiError(400, "Invalid status. Allowed statuses are: 'open', 'paused', 'closed'");
+    if(status === job.status) throw new ApiError(400, `The job is already in ${status} state`);
+
+    // Update
+    job.status = status;
+    await job.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Job status has been updated"));
+});
+
 // Delete job
 const deleteJob = asyncHandler(async (request, response) => {
     const userId = request.user._id;
@@ -307,4 +342,4 @@ const fetchHiredJobs = asyncHandler(async (request, response) => {
 });
 
 module.exports = { createJob, getAllJobs, getJobById, updateJob, deleteJob, 
-fetchLatestJobs, fetchMyAppliedJobs, fetchHiredJobs };
+fetchLatestJobs, fetchMyAppliedJobs, fetchHiredJobs, updateJobStatus };

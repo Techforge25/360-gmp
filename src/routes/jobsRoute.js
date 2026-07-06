@@ -1,6 +1,6 @@
 const {Router} = require("express");
 const { createJob, getAllJobs, getJobById, updateJob, deleteJob, fetchLatestJobs, 
-fetchMyAppliedJobs, fetchHiredJobs } = require("../controllers/jobsController");
+fetchMyAppliedJobs, fetchHiredJobs, updateJobStatus } = require("../controllers/jobsController");
 const { authentication, authorization } = require("../middlewares/auth");
 
 // Router instance
@@ -20,6 +20,10 @@ jobsRouter.route("/:id")
 .get(authentication, getJobById)
 .patch(authentication, authorization(["business"]), updateJob)
 .delete(authentication, authorization(["business"]), deleteJob);
+
+// Update job status
+jobsRouter.route("/:id")
+.patch(authentication, authorization(["business"]), updateJobStatus);
 
 // Fetch applied jobs
 jobsRouter.route("/user/applied")

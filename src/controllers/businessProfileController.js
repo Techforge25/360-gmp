@@ -12,25 +12,25 @@ const Product = require("../models/products");
 const Community = require("../models/communityModel");
 const sendNotification = require("../utils/sendNotification");
 const convertToMongoId = require("../utils/convertToMongoId");
+const validate = require("../utils/validate");
 
 // Create business
 const createBusinessProfile = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
-    // Validate
-    const { error, value } = createBusinessProfileSchema.validate(request.body, { abortEarly: false });
-    if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
+    // Get validated payload Validate
+    const data = validate(createBusinessProfileSchema, request.body);
 
     // Check if user has already created BusinessProfile
     const [existingProfile, existingName] = await Promise.all([
         BusinessProfile.findOne({ ownerUserId:userId }).select("_id").lean(),
-        BusinessProfile.findOne({ companyName:value.companyName }).select("companyName").lean(),
+        BusinessProfile.findOne({ companyName: data.companyName }).select("companyName").lean(),
     ]);
     if(existingProfile) throw new ApiError(400, "You have already created a business profile");
     if(existingName) throw new ApiError(400, "This Company name has already been taken");
 
     // Prepare profile payload
-    const profileData = { ...value, ownerUserId:userId };
+    const profileData = { ...data, ownerUserId:userId };
 
     // Create profile
     const profile = await BusinessProfile.create(profileData);

@@ -23,6 +23,110 @@ const allowedIncoterms = ["EXW - Ex Works", "FCA - Free Carrier", "FAS - Free Al
 // Terms and capability enum
 const allowedTermsAndCapability = ['Air Freight', 'Sea Freight', 'Express Courier', 'Rail Freight', 'Road Transport'];
 
+// Allowed Executive leadership roles enum
+const allowedExecutiveRoles = [
+// Ownership & Governance
+"Owner",
+"Co-Owner",
+"Founder",
+"Co-Founder",
+"Partner",
+"Managing Partner",
+"Limited Partner",
+"General Partner",
+"Principal",
+"Chairperson",
+"Chairman",
+"Chairwoman",
+"Board Member",
+"Independent Director",
+"Executive Director",
+"Non-Executive Director",
+
+  // Executive Leadership (C-Level)
+"Chief Executive Officer (CEO)",
+"Chief Operating Officer (COO)",
+"Chief Financial Officer (CFO)",
+"Chief Technology Officer (CTO)",
+"Chief Information Officer (CIO)",
+"Chief Product Officer (CPO)",
+"Chief Marketing Officer (CMO)",
+"Chief Sales Officer (CSO)",
+"Chief Revenue Officer (CRO)",
+"Chief Human Resources Officer (CHRO)",
+"Chief People Officer (CPO)",
+"Chief Legal Officer (CLO)",
+"Chief Compliance Officer (CCO)",
+"Chief Customer Officer (CCO)",
+"Chief Security Officer (CSO)",
+"Chief Information Security Officer (CISO)",
+"Chief Risk Officer (CRO)",
+"Chief Data Officer (CDO)",
+"Chief Analytics Officer (CAO)",
+"Chief Procurement Officer (CPO)",
+"Chief Communications Officer (CCO)",
+"Chief Strategy Officer (CSO)",
+"Chief Innovation Officer",
+"Chief Digital Officer",
+"Chief Administrative Officer (CAO)",
+"Chief Experience Officer (CXO)",
+"Chief Sustainability Officer",
+"Chief Investment Officer",
+"Chief Medical Officer",
+"Chief Scientific Officer",
+
+  // Presidents & Managing Roles
+"President",
+"Vice President",
+"Senior Vice President",
+"Executive Vice President",
+"Assistant Vice President",
+"Managing Director",
+"Deputy Managing Director",
+"Executive Chairman",
+"General Manager",
+"Regional Manager",
+"Country Manager",
+
+  // Directors
+"Director",
+"Finance Director",
+"Operations Director",
+"Marketing Director",
+"Sales Director",
+"Technology Director",
+"Engineering Director",
+"HR Director",
+"Legal Director",
+"IT Director",
+"Product Director",
+"Creative Director",
+"Customer Success Director",
+"Compliance Director",
+
+  // Heads of Departments
+"Head of Operations",
+"Head of Finance",
+"Head of Marketing",
+"Head of Sales",
+"Head of Human Resources",
+"Head of Engineering",
+"Head of Technology",
+"Head of Product",
+"Head of IT",
+"Head of Procurement",
+"Head of Legal",
+"Head of Compliance",
+"Head of Risk",
+"Head of Customer Success",
+"Head of Business Development",
+"Head of Research & Development",
+"Head of Manufacturing",
+"Head of Logistics",
+"Head of Supply Chain",
+"Head of Quality Assurance"
+];
+
 // Create Business Profile schema
 const createBusinessProfileSchema = joi.object({
     /* BASIC IDENTITY & LEGAL */ 
@@ -92,9 +196,9 @@ const createBusinessProfileSchema = joi.object({
 
     /* EXECUTIVE LEADERSHIP & STAKEHOLDER */
     executiveAndLeadership: joi.array().min(1).items(joi.object({
-        name: joi.string().trim().min(2).max(100).label("Stake holder name"),
-        ownershipPercentage: joi.number().min(1).max(100).precision(2).label("Stake holder percentage"),
-        role: joi.string().trim().min(2).max(100).label("Stake holder role"),
+        name: joi.string().trim().min(2).max(100).required().label("Stake holder name"),
+        ownershipPercentage: joi.number().min(1).max(100).precision(2).required().label("Stake holder percentage"),
+        role: joi.string().trim().min(2).max(100).required().valid(...allowedExecutiveRoles).label("Stake holder role"),
 
         // If ownership percentage is less than 25%
         votingRights: joi.array().items(joi.string())

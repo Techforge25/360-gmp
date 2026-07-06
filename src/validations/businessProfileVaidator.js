@@ -15,6 +15,14 @@ const alphaNumericPattern = /^[a-zA-Z0-9 -]*$/;
 // Critical
 // const identificationPattern = /^[A-Za-z0-9Ññ\- .\/&]+$/;
 
+// Incoterms enum
+const allowedIncoterms = ["EXW - Ex Works", "FCA - Free Carrier", "FAS - Free Alongside Ship", "FOB - Free On Board",
+"CFR - Cost and Freight", "CIF - Cost, Insurance, Freight", "CPT - Carriage Paid To", "CIP - Carriage and Insurance Paid To",
+"DAP - Delivered At Place","DPU - Delivered At Place Unloaded", "DDP - Delivered Duty Paid"];
+
+// Terms and capability enum
+const allowedTermsAndCapability = ['Air Freight', 'Sea Freight', 'Express Courier', 'Rail Freight', 'Road Transport'];
+
 // Create Business Profile schema
 const createBusinessProfileSchema = joi.object({
     /* BASIC IDENTITY & LEGAL */ 
@@ -46,21 +54,21 @@ const createBusinessProfileSchema = joi.object({
 
     // Warehouse address
     warehouseAddress: joi.object({
-        country: joi.string().max(100).trim().allow("", null).label("Warehouse country"),
-        city: joi.string().max(100).trim().allow("", null).label("Warehouse city"),
-        addressLine: joi.string().min(10).max(500).trim().allow("", null).label("Warehouse address line"),
+        country: joi.string().max(100).trim().required().label("Warehouse country"),
+        city: joi.string().max(100).trim().required().label("Warehouse city"),
+        addressLine: joi.string().min(10).max(500).trim().required().label("Warehouse address line"),
     }).optional().label("Warehouse Address"),
 
     // Additional warehouse address
-    additionalWarehouseAddress: joi.array().max(5).items(joi.object({
+    additionalWarehouseAddress: joi.array().items(joi.object({
         country: joi.string().trim().max(100).allow("", null).label("Additional warehouse country"),
         city: joi.string().trim().max(100).allow("", null).label("Additional warehouse city"),
         addressLine: joi.string().trim().min(10).max(500).allow("", null).label("Additional warehouse address line"),        
     })).optional().label("Additional Warehouse Address"),
 
     // International Commercial Terms
-    incoterms: joi.string().max(500).trim().allow("", null).label("International Commercial Terms"),
-    termsAndCapability: joi.string().max(500).trim().allow("", null).label("International Commercial Terms"),
+    incoterms: joi.string().max(500).trim().valid(...allowedIncoterms).label("International Commercial Terms"),
+    termsAndCapability: joi.string().max(500).valid(...allowedTermsAndCapability).label("Terms and capability"),
 
     /* INTERNATIONAL OFFICES */
     internationalOffices: joi.array().max(5).items(joi.object({

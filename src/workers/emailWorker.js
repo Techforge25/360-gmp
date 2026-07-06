@@ -48,23 +48,15 @@ const worker = new Worker("emailQueue", async (job) => {
     {
         const { email, otp } = job.data;
 
+        // Get HTML template
+        const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/cancelSubscriptionOTPEmail.html"), "utf-8");
+
+        // Replace placeholder
+        const filledHtml = html.replaceAll('{{otp}}', otp); 
+
         // Execute
-        const result = await sendEmail(email, "Cancel Subscription Verification Code", `
-            <p>Hello,</p>
-
-            <p>We received a request to cancel your subscription.</p>
-
-            <p>Please use the verification code below to continue:</p>
-
-            <h2 style="letter-spacing:2px;">${otp}</h2>
-
-            <p>This code will expire in 5 minutes.</p>
-
-            <p>If you did not request to cancel your subscription, you can safely ignore this email.</p>
-
-            <p>Regards,<br> 360-GMP </p>
-        `);    
-        if(!result) throw new ApiError(500, "Failed to send password reset email");
+        const result = await sendEmail(email, "Cancel Subscription Request", filledHtml);        
+        if(!result) throw new ApiError(500, "Failed to send cancel subscription OTP");
     }      
 }, { connection: redisConfigOptions, concurrency: 5 });
 

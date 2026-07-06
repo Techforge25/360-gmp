@@ -17,7 +17,7 @@ subscriptionRouter.route("/stripe/cancel").get((request, response) => {
 
 // Cancel subscription request
 subscriptionRouter.route("/stripe/cancel-subscription-request")
-.post(authentication, checkSubscription, cancelStripeSubscription);
+.get(authentication, checkSubscription, cancelStripeSubscription);
 
 // Verify cancel subscription OTP (Cancel via app)
 subscriptionRouter.route("/stripe/cancel-subscription")

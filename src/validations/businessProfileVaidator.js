@@ -181,7 +181,7 @@ const createBusinessProfileSchema = joi.object({
 
     /* INTERNATIONAL OFFICES */
     internationalOffices: joi.array().max(5).items(joi.object({
-        officeName: joi.string().trim().min(2).max(5).optional().allow("", null).label("Office name"),
+        officeName: joi.string().trim().min(2).max(50).optional().allow("", null).label("Office name"),
         country: joi.string().trim().max(100).optional().allow("", null).label("Country"),
         city: joi.string().trim().max(100).optional().allow("", null).label("City"),
         state: joi.string().trim().max(100).optional().allow("", null).label("State"),

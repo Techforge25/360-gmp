@@ -141,7 +141,7 @@ const verifyAddFundsUser = asyncHandler(async (request, response) => {
             });            
 
             // Response
-            return response.status(303).redirect(`${process.env.FRONTEND_URL}/wallet/user`);
+            return response.status(303).redirect(`${process.env.FRONTEND_URL}/dashboard/user/wallet`);
         }
         catch (error) 
         {

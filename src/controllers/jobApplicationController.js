@@ -9,6 +9,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
 const { createJobApplicationSchema } = require("../validations/jobApplication");
 const sendNotification = require("../utils/sendNotification");
+const convertToMongoId = require("../utils/convertToMongoId");
 
 // Create job application
 const createJobApplicatiion = asyncHandler(async (request, response) => {
@@ -66,6 +67,81 @@ const fetchjobApplications = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, jobApplications, "Job applications have been fetched"));
 });
 
+// Fetch my job applications
+const fetchMyJobApplications = asyncHandler(async (request, response) => {
+    const { userProfileId } = request.user.profiles || {};
+    const { page = 1, limit = 10, status = null } = request.query;
+
+    // Base filter
+    const filter = { userProfileId: convertToMongoId(userProfileId) };
+    if(status)
+    {
+        if(!["viewed", "interview", "hired", "rejected"].includes(status))
+        {
+            throw new ApiError(400, `Invalid status! Allowed statuses are: "viewed", "interview", "hired", "rejected"`);
+        }
+        filter.status = status;
+    }
+
+    // Fetch
+    const jobApplications = await JobApplication.aggregatePaginate([
+        // Match
+        { $match: filter },
+
+        // Lookup jobs
+        {
+            $lookup: {
+                from: "jobs",
+                localField: "jobId",
+                foreignField: "_id",
+                as: "job",
+                pipeline:[
+                    {
+                        $lookup: {
+                            from: "businessprofiles",
+                            localField: "businessId",
+                            foreignField: "_id",
+                            as: "businessprofile"
+                        }
+                    },
+                    { $unwind: "$businessprofile" },
+                    { 
+                        $project: { 
+                            jobTitle: 1, 
+                            employmentType: 1, 
+                            location: 1, 
+                            createdAt: 1, 
+                            salaryMin: 1, 
+                            salaryMax: 1, 
+                            companyName: "$businessprofile.companyName" 
+                        } 
+                    }
+                ]
+            }
+        },
+
+        // Unwind
+        { $unwind: "$job" },
+
+        // Sort
+        { $sort: { createdAt: -1 } },
+
+        // Projection
+        {
+            $project: {
+                job: 1,
+                status: 1,
+            }
+        }
+
+    ], { page, limit });
+    if(!jobApplications.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No job application found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, jobApplications, "Job applications have been fetched"));
+
+});
+
 // view Job application
 const viewJobapplication = asyncHandler(async (request, response) => {
     const { businessProfileId } = request.user.profiles || {};
@@ -113,4 +189,5 @@ const updateJobApplicationStatus = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, jobApplication, "Job application status has been updated successfully"));
 });
 
-module.exports = { createJobApplicatiion, fetchjobApplications, viewJobapplication, updateJobApplicationStatus };
+module.exports = { createJobApplicatiion, fetchjobApplications, viewJobapplication, 
+updateJobApplicationStatus, fetchMyJobApplications };

@@ -134,7 +134,7 @@ const cancelStripeSubscription = asyncHandler(async (request, response) => {
 // Verify cancel subscription OTP (Cancel via app)
 const verifyCancelSubscriptionOTP = asyncHandler(async (request, response) => {
     const userId = request.user._id; 
-    const { otp } = request.body;
+    const { otp } = request.body; 
     if(!otp) throw new ApiError(400, "OTP is required");
 
     // Get OTP from redis
@@ -148,7 +148,7 @@ const verifyCancelSubscriptionOTP = asyncHandler(async (request, response) => {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);
 
     // Cancel subscription
-    const deleteSubscription = await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
+    const deleteSubscription = await stripe.subscriptions.cancel(request.user.subscription.stripeSubscriptionId);
     if(!deleteSubscription) throw new ApiError(500, "Failed to cancel subscription");
 
     /* Subscription status will be marked as canceled in db (via webhook) */

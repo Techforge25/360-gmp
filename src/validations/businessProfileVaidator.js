@@ -217,7 +217,7 @@ const createBusinessProfileSchema = joi.object({
                 "string.pattern.base": "Phone number must be a valid international format (e.g., +923001234567)."
             }).label("Stake holder phone"),
             residentialAddress: joi.string().trim().required().label("Stake holder residential address"),
-            governmentIdType: joi.string().trim().required().valid(...allowedGovernmentIDTypes).label("Stake holder Government ID Type"),
+            governmentIdType: joi.string().trim().required().label("Stake holder Government ID Type"),
             idNumber: joi.string().trim().required().label("Stake holder ID Number"),
 
             // Media files (Documents)

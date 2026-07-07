@@ -16,10 +16,7 @@ const BusinessProfileSchema = new Schema({
     taxIdentificationNumber: { type: String, trim: true, unique:[true, "This tax identification number has already been taken"], required: true }, // TIN / VAT / EIN
     dunsNumber: { type: String, trim: true }, // New (Data Universal Numbering System for international trade credibility)
     countryOfRegistration: { type: String, trim: true, required: true },
-    businessType: { 
-      type: String, trim: true, required: true, 
-      enum:["Manufacturer", "Distributor", "Wholesaler", "Retailer", "Service Provider", "Consultant", "Franchise", "Others"] 
-    },
+    businessType: { type: String, trim: true, required: true },
     primaryIndustry: { type: String, trim: true, required: true },
     foundedDate: { type:Date, required: true },
     companySize: { type: String, trim: true, required: true },
@@ -88,7 +85,7 @@ const BusinessProfileSchema = new Schema({
         nationality: { type: String, trim: true },
         phone: { type: String, trim: true },
         residentialAddress: { type: String, trim: true },
-        governmentIdType: { type: String, trim: true, enum:["National ID", "Passport", "Driving License"] },
+        governmentIdType: { type: String, trim: true },
         idNumber: { type: String, trim: true },
 
         // Media files (Documents)

@@ -771,7 +771,7 @@ const cancelOrder = asyncHandler(async (request, response) => {
     // Check if account is frozen
     if(buyerProfile.accountFrozenUntil && buyerProfile.accountFrozenUntil > new Date())
     {
-        throw new ApiError(403, "Your account is temporarily frozen due to repeated cancellations. Please try again later.");
+        throw new ApiError(403, "Daily order cancellation limit reached. Please try again tomorrow.");
     }    
 
     // Get validated payload
@@ -858,7 +858,7 @@ const cancelOrder = asyncHandler(async (request, response) => {
             await sendNotification({ 
                 userId,
                 title: "Account Freeze", 
-                content: `Your account is temporarily frozen due to repeated cancellations. Please try again after 24 hours.`, 
+                content: `Daily order cancellation limit reached. Please try again tomorrow.`, 
                 type: "UserProfile",
                 io: request.app.get("io") 
             });  

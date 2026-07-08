@@ -163,9 +163,9 @@ const createBusinessProfileSchema = joi.object({
 
     // Warehouse address
     warehouseAddress: joi.object({
-        country: joi.string().max(100).trim().required().label("Warehouse country"),
-        city: joi.string().max(100).trim().required().label("Warehouse city"),
-        addressLine: joi.string().min(10).max(500).trim().required().label("Warehouse address line"),
+        country: joi.string().max(100).trim().optional().allow(null, "").label("Warehouse country"),
+        city: joi.string().max(100).trim().optional().allow(null, "").label("Warehouse city"),
+        addressLine: joi.string().min(10).max(500).trim().optional().allow(null, "").label("Warehouse address line"),
     }).optional().label("Warehouse Address"),
 
     // Additional warehouse address
@@ -245,14 +245,14 @@ const createBusinessProfileSchema = joi.object({
     parentCompany: joi.object({
         companyName: joi.string().trim().min(2).max(100).required().label("Parent company name"),
         ownershipPercentage: joi.number().min(1).max(100).precision(2).required().label("Parent company percentage"),
-        countryOfIncorporation: joi.string().trim().optional().allow("", null).label("Country of incorporation")
+        countryOfIncorporation: joi.string().trim().required().label("Country of incorporation")
     }).when("ownedByAnotherCompany", { is: true, then: joi.required(), otherwise:joi.forbidden() }).label("Parent company details"),
 
     /* OPERATIONAL & TRADE PROFILE */
     operationalAndTradeProfile: joi.object({
         auditingAgency: joi.string().trim().optional().label("Auditing agency"),
         regionOfOperations: joi.array().min(1).items(joi.string().trim()).label("Region of operations"),  
-        tradeAffiliations: joi.array().min(1).items(joi.string()).label("Trade Affiliations"),
+        tradeAffiliations: joi.array().min(1).max(5).items(joi.string()).label("Trade Affiliations"),
     }).required().label("Operational and trade profile"),
 
     /* AML & TRANSACTION PROFILE */
@@ -266,10 +266,10 @@ const createBusinessProfileSchema = joi.object({
 
     /* REQUIRED DOCUMENTS (MEDIA FILES) */
     certificateOfIncorporation: joi.string().trim().uri().required().label("Certificate of incorporation"),
-    taxRegistrationCertificate: joi.string().trim().uri().required().label("Certificate of tax registration"),
+    taxRegistrationCertificate: joi.string().trim().uri().optional().allow().label("Certificate of tax registration"), // Optional as per client's requirement
     shareHolderRegister: joi.string().trim().uri().optional().allow("", null).label("Share holder register"), // Optional as per client's requirement
     operatingLicense: joi.string().trim().uri().required().label("Operating license"),
-    evidenceOfFunds: joi.string().trim().uri().required().label("Evidence of funds"),
+    evidenceOfFunds: joi.string().trim().uri().required().label("Evidence of funds")
 });
 
 // Gallery validation schema

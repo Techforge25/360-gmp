@@ -252,7 +252,7 @@ const createBusinessProfileSchema = joi.object({
     operationalAndTradeProfile: joi.object({
         auditingAgency: joi.string().trim().optional().label("Auditing agency"),
         regionOfOperations: joi.array().min(1).items(joi.string().trim()).label("Region of operations"),  
-        tradeAffiliations: joi.array().min(1).max(5).items(joi.string()).label("Trade Affiliations"),
+        tradeAffiliations: joi.array().max(5).items(joi.string()).label("Trade Affiliations"),
     }).required().label("Operational and trade profile"),
 
     /* AML & TRANSACTION PROFILE */

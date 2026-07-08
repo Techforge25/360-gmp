@@ -1512,63 +1512,24 @@ const fetchDisputedOrders = asyncHandler(async (request, response) => {
     if(role === "user") filter.buyerUserProfileId = convertToMongoId(userProfileId);
     if(role === "business") filter.sellerBusinessId = convertToMongoId(businessProfileId);
 
-    // Fetch
-    const disputedOrders = await Order.aggregatePaginate([
-        // Match
-        { $match: filter },
-
-        // Lookup inside business
-        {
-            $lookup:{
-                from: "businessprofiles",
-                localField: "sellerBusinessId",
-                foreignField: "_id",
-                as: "seller",
-                pipeline:[{ $project:{ _id:0, companyName:1 } }]
-            }
-        },
-
-        // Lookup inside user
-        {
-            $lookup:{
-                from: "userprofiles",
-                localField: "buyerUserProfileId",
-                foreignField: "_id",
-                as: "buyer",
-                pipeline:[{ $project:{ _id:0, fullName: 1 } }]
-            }
-        },        
-
-        // Unwind
-        { $unwind: "$seller" },
-        { $unwind: "$buyer" },
-
-        // Projection
-        {
-            $project: { 
-                _id: 0,
-                orderId: "$_id",
-                seller: "$seller.companyName", 
-                buyer: "$buyer.fullName", 
-                orderDate: "$createdAt", 
-                total: "$totalAmount", 
-                status: 1 
-            }
-        },
-
-        // Sort
-        { $sort:{ createdAt: -1 } }
-    ], { page, limit });
-    if(!disputedOrders.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No disputed orders found"));
+    // Find orders
+    const orders = await Order.paginate(filter,
+        { page, limit, lean:true, select:"sellerBusinessId createdAt totalAmount status", sort:{ createdAt:-1 },
+        populate:[
+            { path:"sellerBusinessId", select:"companyName" },
+            { path:"buyerUserProfileId", select:"fullName" },
+        ]
+    });
+    if(!orders.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No disputed orders found"));
 
     // Add orderType flag
-    disputedOrders.docs = disputedOrders.docs.map(({ items, id, ...order }) => ({
+    orders.docs = orders.docs.map(({ items, id, ...order }) => ({
         ...order,
         orderType: items?.length > 1 ? "bulk" : "single"
     }));    
 
     // Response
-    return response.status(200).json(new ApiResponse(200, disputedOrders, "Disputed orders have been fetched"));
+    return response.status(200).json(new ApiResponse(200, orders, "Disputed orders have been fetched"));     
 });
 
 module.exports = { createOrder, verifyStripePaymentForOrders, createOrderWithWallet, completeOrder, updateOrderStatusBySeller, 

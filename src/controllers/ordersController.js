@@ -1524,7 +1524,7 @@ const fetchDisputedOrders = asyncHandler(async (request, response) => {
                 localField: "sellerBusinessId",
                 foreignField: "_id",
                 as: "seller",
-                pipeline:[{ $project:{ _id:0, ownerName:1 } }]
+                pipeline:[{ $project:{ _id:0, companyName:1 } }]
             }
         },
 

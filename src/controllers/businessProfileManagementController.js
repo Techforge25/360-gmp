@@ -305,22 +305,22 @@ const updateContactInfo = asyncHandler(async (request, response) => {
     if(!businessProfileId) throw new ApiError(400, "Business profile ID is missing");
 
     // Validate input
-    const { b2bContact, website, location } = validate(updateBusinessContactValidator, request.body) || {};
+    const { primaryContactPerson, website, headOffice } = validate(updateBusinessContactValidator, request.body) || {}; 
 
     // Destructure
-    const { phone, supportEmail } = b2bContact;
-    const { country, city, addressLine } = location;
+    const { phone, supportEmail } = primaryContactPerson;
+    const { country, city, addressLine } = headOffice;
 
     // Update
     const businessProfile = await BusinessProfile.findByIdAndUpdate(
         businessProfileId,
         { 
-            $set:{ "b2bContact.phone": phone, 
-                "b2bContact.supportEmail": supportEmail, 
+            $set: { "primaryContactPerson.phone": phone, 
+                "primaryContactPerson.supportEmail": supportEmail, 
                 website, 
-                "location.country": country,
-                "location.city": city,
-                "location.addressLine": addressLine,
+                "headOffice.country": country,
+                "headOffice.city": city,
+                "headOffice.addressLine": addressLine,
             } 
         },
         { new:true, runValidators:true }
@@ -328,7 +328,7 @@ const updateContactInfo = asyncHandler(async (request, response) => {
     if(!businessProfile) throw new ApiError(404, "Business profile not found");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { b2bContact, website, location }, "Contact information updated successfully"));
+    return response.status(200).json(new ApiResponse(200, { primaryContactPerson, website, headOffice }, "Contact information updated successfully"));
 });
 
 // Fetch recent job applicants

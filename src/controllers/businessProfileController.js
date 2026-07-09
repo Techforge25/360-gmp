@@ -222,7 +222,7 @@ const fetchLatestBusiness = asyncHandler(async (request, response) => {
 // Fetch country of registered business
 const fetchBusinessCountries = asyncHandler(async (request, response) => {
     // Get unique countries
-    const countries = await BusinessProfile.distinct("primaryContactPerson.country", {});
+    const countries = await BusinessProfile.distinct("headOffice.country", {});
 
     // Response
     return response.status(200).json(new ApiResponse(200, countries, "Business countries have been fetched successfully"));

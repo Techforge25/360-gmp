@@ -113,7 +113,8 @@ const fetchLowStockProducts = asyncHandler(async (request, response) => {
     const searchFilter = {
         businessId: business._id,
         status: "approved",
-        $expr: { $lte: ["$stockQty", "$lowStockThreshold"] }
+        $expr: { $lte: ["$stockQty", "$lowStockThreshold"] },
+        stockQty: { $gt: 0 } // 0 stock will be considered as out of stock
     };
 
     // Pagination options

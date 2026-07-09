@@ -66,7 +66,7 @@ const fetchAllProducts = asyncHandler(async (request, response) => {
         const businessFilter = {};
 
         if(certification) businessFilter.certifications = { $regex:certification, $options:"i" };
-        if(country) businessFilter["location.country"] = { $regex:country, $options:"i" };
+        if(country) businessFilter["headOffice.country"] = { $regex:country, $options:"i" };
 
         // Fetch business
         const businesses = await BusinessProfile.find(businessFilter).select("_id");

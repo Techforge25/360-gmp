@@ -73,8 +73,8 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
     const filter = {};
     if(search) filter.companyName = { $regex:search, $options:"i" };
     if(industry) filter.primaryIndustry = { $regex:industry, $options:"i" };
-    if(country) filter["location.country"] = { $regex: country, $options: "i" };
-    if(city) filter["location.city"] = { $regex: city, $options: "i" };
+    if(country) filter["headOffice.country"] = { $regex: country, $options: "i" };
+    if(city) filter["headOffice.city"] = { $regex: city, $options: "i" };
     if(businessType) filter.businessType = { $regex: businessType, $options: "i" };    
 
     // Fetch business profiles

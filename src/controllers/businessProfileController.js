@@ -155,7 +155,7 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
                 averageRating: 1, 
                 businessType: 1, 
                 foundedDate: 1,
-                location: { country:"$location.country", city:"$location.city" }, 
+                headOffice: 1,  
                 operationHour: 1, 
                 companySize: 1, 
                 totalProducts: 1, 
@@ -163,7 +163,7 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
                 mapURL: 1, 
                 latitude:1, 
                 longitude: 1, 
-                phone: "$b2bContact.phone",
+                phone: "$primaryContactPerson.phone",
                 description: 1
             } 
         },

@@ -100,7 +100,10 @@ const createOrder = asyncHandler(async (request, response) => {
 
         // Compute item total (SERVER TRUSTED)
         const itemTotal = Number(product.pricePerUnit) * Number(quantity) + Number(product.shippingCost);
-        serverComputedTotal += itemTotal;
+        serverComputedTotal += itemTotal;     
+
+        // Keep only 2 decimal places
+        serverComputedTotal = Math.round(Number(serverComputedTotal) * 100);
     }
 
     // Stripe instance

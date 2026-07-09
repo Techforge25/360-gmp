@@ -1291,7 +1291,7 @@ const viewOrder = asyncHandler(async (request, response) => {
                     foreignField: "_id",
                     as: "businessProfile",
                     pipeline: [
-                        { $project: { companyName: 1, sellerEmail: "$b2bContact.supportEmail" } }
+                        { $project: { companyName: 1, sellerEmail: "$primaryContactPerson.supportEmail", logo: 1 } }
                     ]
                 }
             },

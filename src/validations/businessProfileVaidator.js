@@ -260,7 +260,7 @@ const createBusinessProfileSchema = joi.object({
         purpose: joi.string().trim().min(10).max(5000).required().label("Purpose"),
         revenueRange: joi.string().trim().optional().allow("", null).label("Revenue range"),
         mainCounterParties: joi.array().items(joi.string().trim()).label("Main counter parties"),
-        tradeCorridors: joi.array().min(1).items(joi.string().trim()).label("Trade corridors"),
+        tradeCorridors: joi.array().items(joi.string().optional().allow(null, "")).label("Trade corridors"),
         pep: joi.boolean().default(false).label("Is politically expose person")
     }).required().label("AML & transaction profile"),
 

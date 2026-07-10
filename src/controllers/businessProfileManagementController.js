@@ -25,7 +25,7 @@ const fetchMyProducts = asyncHandler(async (request, response) => {
     const searchFilter = { businessId:businessProfile._id };
 
     // Get filter from frontend
-    const { page = 1, limit = 10, filter, category } = request.query;
+    const { page = 1, limit = 10, filter, category, search } = request.query;
     if(filter) 
     {
         const allowedFilters = ["pending", "approved", "rejected", "draft"];
@@ -34,6 +34,7 @@ const fetchMyProducts = asyncHandler(async (request, response) => {
     }
 
     if(category) searchFilter.category = category;
+    if(search) searchFilter.title = { $regex: search, $options:"i" };
 
     // Aggregation
     const aggregate = Product.aggregate([

@@ -1,6 +1,7 @@
 const { frontendURL } = require("../constants");
 const { getAdminAccessToken, verifyAdminAccessToken } = require("../utils/adminAccessToken");
 const ApiError = require("../utils/ApiError");
+const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 
 // Admin Authentication

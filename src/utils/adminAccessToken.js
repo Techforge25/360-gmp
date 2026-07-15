@@ -7,8 +7,9 @@ const generateAdminAccessToken = (payload) => {
     try 
     {
         return jwt.sign({
-            _id:payload._id,
-            role:payload.role,
+            _id: payload._id,
+            role: payload.role,
+            allowedModules: payload.allowedModules
         }, ADMIN_ACCESS_TOKEN_SECRET, { expiresIn:ADMIN_ACCESS_TOKEN_EXPIRY });
     } 
     catch(error) 

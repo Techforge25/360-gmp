@@ -1,63 +1,33 @@
 const { frontendURL } = require("../constants");
-const { getAdminAccessToken, verifyAdminAccessToken } = require("../utils/adminAccessToken");
+const { getAccessToken, verifyAccessToken } = require("../utils/accessToken");
 const ApiError = require("../utils/ApiError");
+const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 
-// Admin Authentication
-const adminAuthentication = asyncHandler((request, response, next) => {
-    const accessToken = getAdminAccessToken(request);
-    if(!accessToken)
-    {
-        return response.status(401)
-        .json(new ApiResponse(401, { redirectURL: `${frontendURL}/login` }, "Unauthorized! Access token is missing"));
-    }
+// Redirect url
+const redirectURL = `${frontendURL}`;
+
+// Authentication
+const authentication = asyncHandler((request, response, next) => {
+    const accessToken = getAccessToken(request);
+    if(!accessToken) return response.status(401).json(new ApiResponse(401, { redirectURL }, "Unauthorized!"));
 
     // Verify
-    const admin = verifyAdminAccessToken(accessToken);
-    if(!admin)
-    {
-        return response.status(401)
-        .json(new ApiResponse(401, { redirectURL: `${frontendURL}/login` }, "Unauthorized! Invalid access token"));
-    }
+    const user = verifyAccessToken(accessToken);
+    if(!user) return response.status(401).json(new ApiResponse(401, { redirectURL }, "Unauthorized"));
 
     // Pass through
-    request.admin = admin;
+    request.user = user;
     return next();
 });
 
-// Admin Authorization based on role
-const adminAauthorization = (roles = []) => {
+// Authorization based on role
+const authorization = (roles = []) => {
     return (request, response, next) => {
-        if(!request.admin)
-        {
-            return response.status(401)
-            .json(new ApiResponse(401, { redirectURL: `${frontendURL}/login` }, "Unauthorized!"));
-        }
-
-        if(!roles.includes(request.admin.role))
-        {
-            return response.status(403)
-            .json(new ApiResponse(403, { redirectURL: `${frontendURL}/forbidden` }, "Access denied!"));
-        }
+        if(!request.user) throw new ApiError(401, "Login required!");
+        if(!roles.includes(request.user?.role)) throw new ApiError(403, "Access denied");
         return next();
     }
 };
 
-// Grant module access to admin
-const grantModuleAccessToAdmin = (moduleName) => {
-    return (request, response, next) => {
-        // Bypass for super admin
-        if(request.admin.role === "superAdmin") return next();
-
-        // Validate
-        if(!Array.isArray(request.admin.allowedModules)) throw new ApiError(400, "Invalid module structure");
-        if(request.admin.allowedModules.length < 1 || !request.admin.allowedModules.includes(moduleName))
-        {
-            return response.status(403)
-            .json(new ApiResponse(403, { redirectURL: `${frontendURL}/forbidden` }, "Access denied!"));            
-        }
-        return next();
-    }
-};
-
-module.exports = { adminAuthentication, adminAauthorization, grantModuleAccessToAdmin };
+module.exports = { authentication, authorization };

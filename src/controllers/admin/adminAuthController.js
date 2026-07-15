@@ -1,5 +1,7 @@
 const { cookieOptions } = require("../../constants");
 const Admin = require("../../models/adminModel");
+const { redis } = require("../../redis/connection");
+const { getCache, deleteCache } = require("../../redis/redisHelpers");
 const { generateAdminAccessToken, generateAdminRefreshToken, 
 getAdminRefreshToken, verifyAdminRefreshToken } = require("../../utils/adminAccessToken");
 const ApiError = require("../../utils/ApiError");
@@ -18,7 +20,7 @@ const adminLogin = asyncHandler(async (request, response) => {
     const key = `invalidCredetialsAttempts:${ip}`;
 
     // Check total attempts
-    const totalAttempts = await getCache(key);
+    const totalAttempts = await getCache(key); 
     if(totalAttempts >= 5) throw new ApiError(429, "Too many failed login attempts. Please try again after 5 minutes");    
 
     // Find admin

@@ -26,7 +26,7 @@ const adminAuthentication = asyncHandler((request, response, next) => {
 });
 
 // Admin Authorization based on role
-const adminAauthorization = (roles = []) => {
+const adminAuthorization = (roles = []) => {
     return (request, response, next) => {
         if(!request.admin)
         {
@@ -60,4 +60,4 @@ const grantModuleAccessToAdmin = (moduleName) => {
     }
 };
 
-module.exports = { adminAuthentication, adminAauthorization, grantModuleAccessToAdmin };
+module.exports = { adminAuthentication, adminAuthorization, grantModuleAccessToAdmin };

@@ -802,12 +802,19 @@ const cancelOrder = asyncHandler(async (request, response) => {
         order.status = "cancelled";
         await order.save({ session:dbSession });
 
+        // Update transaction type
+        const transaction = await Transaction.findOneAndUpdate(
+            { orderId },
+            { $set:{ type: "refund" } },
+            { new:true, session: dbSession }
+        );          
+
         // Update escrow status
         const escrow = await EscrowTransaction.findOneAndUpdate(
             { orderId },
             { $set:{ status:"refunded" } },
             { new:true, session:dbSession }
-        );
+        );      
 
         if(!escrow) throw new ApiError(404, "Escrow record not found");
 

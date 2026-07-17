@@ -49,7 +49,8 @@ const cancelOrderValidationSchema = joi.object({
         .required().label("Cancellation reason"),
 
         other: joi.string().pattern(customPattern).trim()
-        .when("reason", { is:"Other", then:joi.required(), otherwise:joi.forbidden() }).label("Other details")
+        .when("reason", { is:"Other", then:joi.required(), otherwise:joi.forbidden() }).label("Other details"),
+        cancelledAt: joi.date().default(() => new Date(), "current timestamp").label("Cancellation timestamp")
     }).label("Cancellation")
 });
 

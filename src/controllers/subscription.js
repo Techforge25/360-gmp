@@ -102,10 +102,12 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
 
     // Extract role
     const { role } = session.metadata;
-    if(!role) return response.status(301).redirect(`${frontendURL}/onboarding/user-profile`);
+    // if(!role) return response.status(301).redirect(`${frontendURL}/onboarding/user-profile`);
+    if(!role) return response.status(301).redirect(`http://localhost:3000/onboarding/user-profile`);
 
     // Redirect to frontend
-    return response.status(301).redirect(`${frontendURL}/dashboard/${role}/subscriptions`);
+    // return response.status(301).redirect(`${frontendURL}/dashboard/${role}/subscriptions`);
+    return response.status(301).redirect(`http://localhost:3000/dashboard/${role}/subscriptions`);
 });
 
 // Cancel subscription request 

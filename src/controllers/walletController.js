@@ -244,11 +244,22 @@ const viewTransactionTimeline = asyncHandler(async (request, response) => {
                 foreignField: "_id",
                 as: "userProfile"
             }
-        },        
+        },    
+        
+        // Lookup inside business profile
+        {
+            $lookup:{
+                from: "businessprofiles",
+                localField: "sellerBusinessId",
+                foreignField: "_id",
+                as: "businessProfile"
+            }
+        },          
 
         // Unwind
         { $unwind:{ path:"$escrow", preserveNullAndEmptyArrays:true } },
         { $unwind:{ path:"$userProfile", preserveNullAndEmptyArrays:true } },
+        { $unwind:{ path:"$businessProfile", preserveNullAndEmptyArrays:true } },
 
         // Projection
         {
@@ -258,11 +269,13 @@ const viewTransactionTimeline = asyncHandler(async (request, response) => {
                 shippedAt: "$tracking.shippedAt", 
                 deliveredAt: "$tracking.deliveredAt",
                 completedAt: "$completedAt",
+                cancelledAt: "$cancellation.cancelledAt",
                 grossSaleAmount: "$escrow.totalAmount",
                 platformFee: "$escrow.platformFee",
                 netAmount: "$escrow.netAmount",
                 shippingAddress:{ lineAddresses:"$shippingAddress.lineAddress" },
-                buyerDetails:{ name: "$userProfile.fullName", email: "$userProfile.email" },
+                buyerDetails: { name: "$userProfile.fullName", email: "$userProfile.email" },
+                sellerDetails: { name: "$businessProfile.companyName", supportEmail: "$businessProfile.primaryContactPerson.supportEmail" },
                 paymentMethod: "$escrow.paymentMethod",
             }
         }

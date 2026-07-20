@@ -601,7 +601,8 @@ const userAuthCheck = asyncHandler(async (request, response) => {
     // If no profile created
     if(!role)
     {
-        const redirectURL = `${frontendURL}/onboarding/user-profile`;
+        // const redirectURL = `${frontendURL}/onboarding/user-profile`;
+        const redirectURL = `http://localhost:3000/onboarding/user-profile`;
         return response.status(200).json(new ApiResponse(200, { userId, role, redirectURL }, "Please create atleast one profile"));
     }     
 

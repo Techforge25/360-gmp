@@ -201,16 +201,10 @@ const fetchUserPurchases = asyncHandler(async (request, response) => {
     const { userProfileId } = request.user.profiles;
 
     // Query options
-    const { page = 1, limit = 10, type } = request.query;
-
-    // Validate type
-    if(type && type !== "refund") throw new ApiError(400, "Invalid type! Type key must be of 'refund'");
-
-    // Set valid type
-    const validType = type === "refund" ? "refund" : "buy";
+    const { page = 1, limit = 10 } = request.query;
 
     // Base filter
-    const baseFilter = { ownerId:userProfileId, ownerModel:"UserProfile", type:validType };
+    const baseFilter = { ownerId:userProfileId, ownerModel:"UserProfile" };
 
     // Pagination options
     const options = {
@@ -225,12 +219,8 @@ const fetchUserPurchases = asyncHandler(async (request, response) => {
     const transactions = await Transaction.paginate(baseFilter, options);
     if(!transactions.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No purchases found for users profile"));
 
-    // Response message
-    let responseMessage = "Purchases for users have been fetched";
-    if(type === "refund") responseMessage = "Refunds for users have been fetched";
-
     // Response
-    return response.status(200).json(new ApiResponse(200, transactions, responseMessage));
+    return response.status(200).json(new ApiResponse(200, transactions, "Purchases for users have been fetched"));
 });
 
 // Fetch spending activity

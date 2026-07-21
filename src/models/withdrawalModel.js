@@ -1,5 +1,6 @@
 const { Schema, model } = require("mongoose");
 const paginate = require("mongoose-paginate-v2");
+const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
 // Schema
 const withdrawalSchema = new Schema({
@@ -13,6 +14,7 @@ const withdrawalSchema = new Schema({
 
 // Paginate
 withdrawalSchema.plugin(paginate);
+withdrawalSchema.plugin(aggregatePaginate);
 
 // Model
 const Withdrawal = model("Withdrawal", withdrawalSchema);

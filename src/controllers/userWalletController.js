@@ -12,6 +12,7 @@ const { emptyList } = require("../constants");
 const sendNotification = require("../utils/sendNotification");
 const { addFundsUserValidator } = require("../validations/walletValidator");
 const validate = require("../utils/validate");
+const Withdrawal = require("../models/withdrawalModel");
 
 // Add funds
 const addFundsUser = asyncHandler(async (request, response) => {
@@ -323,5 +324,43 @@ const fetchUserSpendingActivity = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "User spending activity has been fetched"));
 });
 
+// Fetch withdrawal logs
+const fetchWithdrawalLogs = asyncHandler(async (request, response) => {
+    const { userProfileId } = request.user.profiles || {};
+    const { page = 1, limit = 10 } = request.query;
+
+    // Fetch
+    const withdrawal = await Withdrawal.aggregatePaginate([
+        // Match
+        { $match:{ ownerId: convertToMongoId(userProfileId), ownerModel: "UserProfile" } },
+
+        // Projection
+        { $project:{ amount: 1, currency: 1, stripeTransferId: 1, status: 1, createdAt: 1 } }
+    ], { page: Number(page), limit: Number(limit) });
+    if(!withdrawal.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No withdrawal logs found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, withdrawal, "Withdrawal logs have been fetched"));
+});
+
+// Fetch fund deposit logs
+const fetchfundDepositLogs = asyncHandler(async (request, response) => {
+    const { userProfileId } = request.user.profiles || {};
+    const { page = 1, limit = 10 } = request.query;
+
+    // Fetch
+    const withdrawal = await Transaction.aggregatePaginate([
+        // Match
+        { $match:{ ownerId: convertToMongoId(userProfileId), ownerModel: "UserProfile", type: "deposit" } },
+
+        // Projection
+        { $project:{ amount: 1, stripeSessionId: 1, status: 1, createdAt: 1 } }
+    ], { page: Number(page), limit: Number(limit) });
+    if(!withdrawal.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No deposit logs found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, withdrawal, "Deposit logs have been fetched"));
+});
+
 module.exports = { addFundsUser, verifyAddFundsUser, fetchUserWalletAnalytics, 
-fetchUserPurchases, fetchUserSpendingActivity };
+fetchUserPurchases, fetchUserSpendingActivity, fetchWithdrawalLogs, fetchfundDepositLogs };

@@ -4,17 +4,10 @@ const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 // Schema
 const reportSchema = new Schema({
     // Reference
-    reporterId: { type: Schema.Types.ObjectId, ref: "User", required: true, index:true },
-    reportedModel: { type: String, required:true, enum: ["Job", "Community", "CommunityPost"] },
-    reportedContentId: { type: Schema.Types.ObjectId, required:true, refPath:"reportedModel" },
-    reportedCommentId: { type: Schema.Types.ObjectId, default: null },
-
-    // Details
-    subject: { type: String, required: true, trim: true },
-    category: { type: String, required: true, trim: true },
-    description: { type: String, trim: true },
-    evidences: [{ type: String }],
-    status: { type: String, enum: ["pending", "reviewed", "resolved", "rejected"], default: "pending" }
+    userProfileId: { type: Schema.Types.ObjectId, ref: "UserProfile", required: true },
+    type: { type: String, enum: ["BusinessProfile", "Product", "Job", "Community"], required: true },
+    reason: { type: String, trim: true, required: true },
+    description: { type: String, trim: true, required: true }
 }, { timestamps: true });
 
 // Inject plugin

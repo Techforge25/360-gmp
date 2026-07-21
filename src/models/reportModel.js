@@ -5,7 +5,10 @@ const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 const reportSchema = new Schema({
     // Reference
     userProfileId: { type: Schema.Types.ObjectId, ref: "UserProfile", required: true },
-    type: { type: String, enum: ["BusinessProfile", "Product", "Job", "Community"], required: true },
+    reportedContentId: { type: Schema.Types.ObjectId, refPath: "reportedModel", required: true },
+    reportedModel: { type: String, enum: ["BusinessProfile", "Product", "Job", "Community"], required: true },
+
+    // Content
     reason: { type: String, trim: true, required: true },
     description: { type: String, trim: true, required: true }
 }, { timestamps: true });

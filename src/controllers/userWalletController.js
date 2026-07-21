@@ -205,7 +205,7 @@ const fetchUserPurchases = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
 
     // Base filter
-    const baseFilter = { ownerId:userProfileId, ownerModel:"UserProfile", type: "buy" };
+    const baseFilter = { ownerId:userProfileId, ownerModel:"UserProfile", type: { $in:["buy", "refund"] } };
 
     // Pagination options
     const options = {

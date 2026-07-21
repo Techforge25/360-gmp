@@ -1,4 +1,5 @@
 const joi = require("joi");
+const { allowedIncoterms, allowedTermsAndCapability } = require("../constants");
 
 // Patterns
 const alphaNumericPattern = /^[a-zA-Z0-9 -]*$/;
@@ -17,14 +18,6 @@ const alphaNumericPattern = /^[a-zA-Z0-9 -]*$/;
 
 // Allowed business types
 const allowedBusinessTypes = ["Manufacturer", "Distributor", "Wholesaler", "Retailer", "Service Provider", "Consultant", "Franchise", "Others"];
-
-// Allowed incoterms enum
-const allowedIncoterms = ["EXW - Ex Works", "FCA - Free Carrier", "FAS - Free Alongside Ship", "FOB - Free On Board",
-"CFR - Cost and Freight", "CIF - Cost, Insurance, Freight", "CPT - Carriage Paid To", "CIP - Carriage and Insurance Paid To",
-"DAP - Delivered At Place","DPU - Delivered At Place Unloaded", "DDP - Delivered Duty Paid"];
-
-// Allowed terms and capability enum
-const allowedTermsAndCapability = ['Air Freight', 'Sea Freight', 'Express Courier', 'Rail Freight', 'Road Transport'];
 
 // Allowed government ID types
 const allowedGovernmentIDTypes = ["National Identity Card", "Passport", "Driver's License", "Residence Permit", "Other"];

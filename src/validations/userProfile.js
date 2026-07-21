@@ -37,7 +37,7 @@ const createUserProfileSchema = joi.object({
     bio: joi.string().trim().max(3000).allow("", null).label("Bio"),
     resumeUrl: joi.string().uri().allow("", null).label("Resume"),
     logo: joi.string().uri().optional().allow("", null).label("Profile image"),
-    banner: joi.string().uri().optional().label("Banner"),
+    banner: joi.string().uri().optional().allow("", null).label("Banner"),
 
     skills: joi.array().items(joi.string()).default([]).label("Skills"),
     employmentType:joi.array().items(joi.string().pattern(alphaNumericPattern)).allow("", null).label("Employment type"),

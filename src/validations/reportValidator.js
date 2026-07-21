@@ -1,7 +1,7 @@
 const joi = require("joi");
 
 // Report job validation schema
-const reportValidationSchema = joi.object({
+const createReportValidator = joi.object({
     // References
     reportedContentId: joi.string().trim().length(24).required().label("Reported Content ID"),
     reportedModel: joi.string().trim().required().valid("BusinessProfile", "Product", "Job", "Community").label("Reported Model"),
@@ -11,4 +11,4 @@ const reportValidationSchema = joi.object({
     description: joi.string().trim().required().label("Description")
 });
 
-module.exports = reportValidationSchema;
+module.exports = { createReportValidator };

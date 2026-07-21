@@ -9,8 +9,8 @@ const checkSubscription = asyncHandler(async (request, response, next) => {
     const { _id:userId, role } = request.user;
 
     // Redirect url key
-    // const redirectURL = `${frontendURL}/onboarding/plans`;
-    const redirectURL = `http://localhost:3000/onboarding/plans`;
+    const redirectURL = `${frontendURL}/onboarding/plans`;
+    // const redirectURL = `http://localhost:3000/onboarding/plans`;
 
     // Find subscription with populated plan details
     const subscription = await Subscription.findOne({ userId, status: "active" }).populate("planId");

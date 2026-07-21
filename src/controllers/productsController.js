@@ -336,6 +336,7 @@ const fetchBusinessFeaturedProducts = asyncHandler(async (request, response) => 
             $project: { 
                 image: 1, 
                 title: 1, 
+                detail: 1,
                 minOrderQty: 1, 
                 pricePerUnit: 1, 
                 sold: 1, 

@@ -46,6 +46,14 @@ const emptyList = {
 // Notification types
 const allowedNotificationTypes = ["System", "UserProfile", "BusinessProfile"];
 
+// Allowed incoterms enum
+const allowedIncoterms = ["EXW - Ex Works", "FCA - Free Carrier", "FAS - Free Alongside Ship", "FOB - Free On Board",
+"CFR - Cost and Freight", "CIF - Cost, Insurance, Freight", "CPT - Carriage Paid To", "CIP - Carriage and Insurance Paid To",
+"DAP - Delivered At Place","DPU - Delivered At Place Unloaded", "DDP - Delivered Duty Paid"];
+
+// Allowed terms and capability enum
+const allowedTermsAndCapability = ['Air Freight', 'Sea Freight', 'Express Courier', 'Rail Freight', 'Road Transport'];
+
 module.exports = {
     port,
     isProduction,
@@ -55,5 +63,7 @@ module.exports = {
     corsOptions,
     cookieOptions,
     emptyList,
-    allowedNotificationTypes
+    allowedNotificationTypes,
+    allowedIncoterms,
+    allowedTermsAndCapability
 };

@@ -4,6 +4,7 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const mongoose = require("mongoose");
+const { isValidObjectId } = require("mongoose");
 const Stripe = require("stripe");
 const validate = require("../utils/validate");
 const withdrawFundsValidationSchema = require("../validations/withdrawFundValidator");
@@ -220,9 +221,10 @@ const WithdrawFunds = asyncHandler(async (request, response) => {
 // View transaction detials
 const viewTransactionTimeline = asyncHandler(async (request, response) => {
     const { orderId } = request.params;
+    if(!isValidObjectId(orderId)) throw new ApiError(400, "Invalid Order ID");
     
     // Fetch transaction timeline
-    const timeline = await Order.aggregate([
+    const [timeline] = await Order.aggregate([
         // Match order
         { $match: { _id: convertToMongoId(orderId) } },
 
@@ -282,10 +284,10 @@ const viewTransactionTimeline = asyncHandler(async (request, response) => {
     ]);
 
     // Validate
-    if(!timeline.length) throw new ApiError(404, "Order not found");
+    if(!timeline) throw new ApiError(404, "Order not found");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, timeline[0], "Transaction timeline has been fetched"));
+    return response.status(200).json(new ApiResponse(200, timeline, "Transaction timeline has been fetched"));
 });
 
 module.exports = { connectStripeAccount, connectStripeAccountSuccess, WithdrawFunds, viewTransactionTimeline };

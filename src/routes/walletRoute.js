@@ -2,7 +2,7 @@ const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { connectStripeAccount, WithdrawFunds, viewTransactionTimeline, connectStripeAccountSuccess } = require("../controllers/walletController");
 const { addFundsUser, verifyAddFundsUser, fetchUserWalletAnalytics, 
-fetchUserPurchases, fetchUserSpendingActivity, fetchWithdrawalLogs,fetchfundDepositLogs } = require("../controllers/userWalletController");
+fetchUserPurchases, fetchUserSpendingActivity, fetchUserWithdrawals, fetchfundDepositLogs } = require("../controllers/userWalletController");
 const { fetchBusinessWalletAnalytics, fetchBusinessRecentTransactions, fetchBusinessEarnings, 
 fetchBusinessFinancialPerformance, fetchBusinessWithdrawal, transferFunds } = require("../controllers/businessWalletController");
 
@@ -54,8 +54,8 @@ walletRouter.route("/user/spending-activity")
 .get(authentication, authorization(["user"]), fetchUserSpendingActivity);
 
 // Fetch user withdrawal logs
-walletRouter.route("/user/withdrawal-logs")
-.get(authentication, authorization(["user"]), fetchWithdrawalLogs);
+walletRouter.route("/user/withdrawals")
+.get(authentication, authorization(["user"]), fetchUserWithdrawals);
 
 // Fetch user deposit logs
 walletRouter.route("/user/deposit-logs")

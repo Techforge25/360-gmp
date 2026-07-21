@@ -325,7 +325,7 @@ const fetchUserSpendingActivity = asyncHandler(async (request, response) => {
 });
 
 // Fetch withdrawal logs
-const fetchWithdrawalLogs = asyncHandler(async (request, response) => {
+const fetchUserWithdrawals = asyncHandler(async (request, response) => {
     const { userProfileId } = request.user.profiles || {};
     const { page = 1, limit = 10 } = request.query;
 
@@ -363,4 +363,4 @@ const fetchfundDepositLogs = asyncHandler(async (request, response) => {
 });
 
 module.exports = { addFundsUser, verifyAddFundsUser, fetchUserWalletAnalytics, 
-fetchUserPurchases, fetchUserSpendingActivity, fetchWithdrawalLogs, fetchfundDepositLogs };
+fetchUserPurchases, fetchUserSpendingActivity, fetchUserWithdrawals, fetchfundDepositLogs };

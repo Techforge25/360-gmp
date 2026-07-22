@@ -356,7 +356,7 @@ const switchRole = asyncHandler(async (request, response) => {
         const businessProfile = await getBusinessProfile(userId);
         if(!businessProfile)
         {
-            const redirectURL = `${frontendURL}/onboarding/business-profile`;
+            const redirectURL = `http://localhost:3000/onboarding/business-profile`;
             return response.status(200).json(new ApiResponse(200, { redirectURL }, "Onboarding required for business profile"));            
         }
         if(request.user.planName === "TRIAL") throw new ApiError(403, "Switching to a business profile is not allowed while you are on a trial plan");

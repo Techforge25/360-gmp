@@ -24,8 +24,8 @@ const updateBusinessInfoValidator = joi.object({
     })).optional().label("Additional Warehouse Address"),    
 
     // International Commercial Terms
-    incoterms: joi.string().max(500).trim().optional().label("International Commercial Terms"),
-    termsAndCapability: joi.string().max(500).optional().label("Terms and capability"), 
+    incoterms: joi.string().max(500).trim().allow("").optional().label("International Commercial Terms"),
+    termsAndCapability: joi.string().max(500).allow("").optional().label("Terms and capability"), 
     
     /* INTERNATIONAL OFFICES */
     internationalOffices: joi.array().max(5).items(joi.object({
@@ -49,7 +49,7 @@ const updateBusinessInfoValidator = joi.object({
     
     /* OPERATIONAL & TRADE PROFILE */
     operationalAndTradeProfile: joi.object({
-        auditingAgency: joi.string().trim().optional().label("Auditing agency"),
+        auditingAgency: joi.string().trim().allow("").optional().label("Auditing agency"),
         regionOfOperations: joi.array().min(1).items(joi.string().trim()).label("Region of operations"),  
         tradeAffiliations: joi.array().max(5).items(joi.string().optional().allow(null, "")).label("Trade Affiliations"),
     }).optional().label("Operational and trade profile")    

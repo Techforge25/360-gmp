@@ -24,8 +24,8 @@ const updateBusinessInfoValidator = joi.object({
     })).optional().label("Additional Warehouse Address"),    
 
     // International Commercial Terms
-    incoterms: joi.string().max(500).trim().label("International Commercial Terms"),
-    termsAndCapability: joi.string().max(500).label("Terms and capability"), 
+    incoterms: joi.string().max(500).trim().optional().label("International Commercial Terms"),
+    termsAndCapability: joi.string().max(500).optional().label("Terms and capability"), 
     
     /* INTERNATIONAL OFFICES */
     internationalOffices: joi.array().max(5).items(joi.object({

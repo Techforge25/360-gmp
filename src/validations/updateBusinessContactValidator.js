@@ -13,9 +13,11 @@ const updateBusinessContactValidator = joi.object({
             "string.empty": "Support Email is required",
             "string.email": "Please enter a valid Support Email address",
             "any.required": "Support Email is required",
-        })
+        })    
     }),
-    website: joi.string().trim().uri().allow("", null).label("Website"),
+    website: joi.string().trim().uri().allow("", null).label("Website").messages({
+        "string.uri": "Please enter a valid Website URL",
+    }),
 
     // Head office
     headOffice: joi.object({

@@ -1,3 +1,4 @@
+const { isLocal } = require("../constants");
 const ApiError = require("../utils/ApiError");
 
 const errorHandler = (error, request, response, next) => {
@@ -6,7 +7,7 @@ const errorHandler = (error, request, response, next) => {
         const statusCode = error.statusCode || 500;
         const message = error.message || "Internal Server Error";
         const success = error.success || false;
-        const stack = process.env.NODE_ENV === "production" ? undefined : error.stack || "No stack trace found"
+        const stack = isLocal ? error.stack || "No stack trace found" : undefined 
 
         return response.status(statusCode)
         .json({ statusCode, message, success, stack });
@@ -19,7 +20,7 @@ const errorHandler = (error, request, response, next) => {
             statusCode: 500, 
             message: error.message || "Something went wrong!", 
             success: false,
-            stack: process.env.NODE_ENV === "production" ? undefined : error.stack || "No stack trace found" 
+            stack: isLocal ? error.stack || "No stack trace found" : undefined
         });        
     }
 };

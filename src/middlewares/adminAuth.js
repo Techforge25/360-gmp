@@ -1,3 +1,4 @@
+const { frontendURL } = require("../constants");
 const { getAdminAccessToken, verifyAdminAccessToken } = require("../utils/adminAccessToken");
 const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
@@ -5,11 +6,19 @@ const asyncHandler = require("../utils/asyncHandler");
 // Admin Authentication
 const adminAuthentication = asyncHandler((request, response, next) => {
     const accessToken = getAdminAccessToken(request);
-    if(!accessToken) throw new ApiError(401, "Unauthorized!");
+    if(!accessToken)
+    {
+        return response.status(401)
+        .json(new ApiResponse(401, { redirectURL: `${frontendURL}/login` }, "Unauthorized! Access token is missing"));
+    }
 
     // Verify
     const admin = verifyAdminAccessToken(accessToken);
-    if(!admin) throw new ApiError(401, "Invalid access token");
+    if(!admin)
+    {
+        return response.status(401)
+        .json(new ApiResponse(401, { redirectURL: `${frontendURL}/login` }, "Unauthorized! Invalid access token"));
+    }
 
     // Pass through
     request.admin = admin;
@@ -19,10 +28,35 @@ const adminAuthentication = asyncHandler((request, response, next) => {
 // Admin Authorization based on role
 const adminAuthorization = (roles = []) => {
     return (request, response, next) => {
-        if(!request.admin) throw new ApiError(401, "Unauthorized!");
-        if(!roles.includes(request.admin?.role)) throw new ApiError(403, "Access denied");
+        if(!request.admin)
+        {
+            return response.status(401)
+            .json(new ApiResponse(401, { redirectURL: `${frontendURL}/login` }, "Unauthorized!"));
+        }
+
+        if(!roles.includes(request.admin.role))
+        {
+            return response.status(403)
+            .json(new ApiResponse(403, { redirectURL: `${frontendURL}/forbidden` }, "Access denied!"));
+        }
         return next();
     }
 };
 
-module.exports = { adminAuthentication, adminAuthorization };
+// Grant access to module
+const grantAccessTo = (moduleName) => {
+    return (request, response, next) => {
+        // Bypass for super admin
+        if(request.admin.role === "superAdmin") return next();
+
+        // Allow module
+        if(!request.admin.allowedModules.includes(moduleName))
+        {
+            return response.status(403)
+            .json(new ApiResponse(403, { redirectURL: `${frontendURL}/forbidden` }, "Access denied!"));
+        }
+        return next();
+    }
+};
+
+module.exports = { adminAuthentication, adminAuthorization, grantAccessTo };

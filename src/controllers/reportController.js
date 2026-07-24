@@ -15,7 +15,7 @@ const createReport = asyncHandler(async (request, response) => {
     const { userProfileId } = request.user.profiles || {};
 
     // Get validated payload
-    const { reportedContentId, reportedModel, reason, description } = validate(createReportValidator, request.body);
+    const { reportedContentId, reportedModel, reason, media, description } = validate(createReportValidator, request.body);
 
     // Validate ID
     if(!isValidObjectId(reportedContentId)) throw new ApiError(400, "Invalid Mongodb ID");
@@ -53,7 +53,7 @@ const createReport = asyncHandler(async (request, response) => {
     if(exist) throw new ApiError(409, `You have already submitted a report for this ${reportedModel}`);   
     
     // Save to db
-    const report = await Report.create({ userProfileId, reportedContentId, reportedModel, reason, description });
+    const report = await Report.create({ userProfileId, reportedContentId, reportedModel, reason, media, description });
 
     // Response
     return response.status(201).json(new ApiResponse(201, null, "Your report has been submitted"));

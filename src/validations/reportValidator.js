@@ -7,8 +7,9 @@ const createReportValidator = joi.object({
     reportedModel: joi.string().trim().required().valid("BusinessProfile", "Product", "Job", "Community").label("Reported Model"),
 
     // Details
-    reason: joi.string().trim().required().label("Reason"),
-    description: joi.string().trim().required().label("Description")
+    reason: joi.string().trim().min(5).max(100).required().label("Reason"),
+    media: joi.array().max(3).items(joi.string().trim()),
+    description: joi.string().trim().min(5).max(2000).required().label("Description")
 });
 
 module.exports = { createReportValidator };

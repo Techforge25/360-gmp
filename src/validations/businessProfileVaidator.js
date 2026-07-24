@@ -151,21 +151,21 @@ const createBusinessProfileSchema = joi.object({
     headOffice: joi.object({
         country: joi.string().max(100).trim().required().label("Head office country"),
         city: joi.string().max(100).trim().required().label("Head office city"),
-        addressLine: joi.string().min(10).max(500).trim().required().label("Head office address line"),
+        addressLine: joi.string().min(10).max(200).trim().required().label("Head office address line"),
     }).required().label("Head Office"),
 
     // Warehouse address
     warehouseAddress: joi.object({
         country: joi.string().max(100).trim().optional().allow(null, "").label("Warehouse country"),
         city: joi.string().max(100).trim().optional().allow(null, "").label("Warehouse city"),
-        addressLine: joi.string().min(10).max(500).trim().optional().allow(null, "").label("Warehouse address line"),
+        addressLine: joi.string().min(10).max(200).trim().optional().allow(null, "").label("Warehouse address line"),
     }).optional().label("Warehouse Address"),
 
     // Additional warehouse address
     additionalWarehouseAddress: joi.array().items(joi.object({
         country: joi.string().trim().max(100).allow("", null).label("Additional warehouse country"),
         city: joi.string().trim().max(100).allow("", null).label("Additional warehouse city"),
-        addressLine: joi.string().trim().min(10).max(500).allow("", null).label("Additional warehouse address line"),        
+        addressLine: joi.string().trim().min(10).max(200).allow("", null).label("Additional warehouse address line"),        
     })).optional().label("Additional Warehouse Address"),
 
     // International Commercial Terms
@@ -178,7 +178,7 @@ const createBusinessProfileSchema = joi.object({
         country: joi.string().trim().max(100).optional().allow("", null).label("Country"),
         city: joi.string().trim().max(100).optional().allow("", null).label("City"),
         state: joi.string().trim().max(100).optional().allow("", null).label("State"),
-        addressLine: joi.string().trim().min(10).optional().max(500).allow("", null).label("Address line"), 
+        addressLine: joi.string().trim().min(10).optional().max(200).allow("", null).label("Address line"), 
         zipCode: joi.string().trim().min(5).max(50).optional().allow("", null).label("Zip code"), 
     })).optional().label("International Offices"),
 

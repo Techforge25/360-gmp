@@ -10,6 +10,7 @@ const reportSchema = new Schema({
 
     // Content
     reason: { type: String, trim: true, required: true },
+    media: { type:[String] },
     description: { type: String, trim: true, required: true }
 }, { timestamps: true });
 

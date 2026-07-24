@@ -9,7 +9,11 @@ const updateBusinessContactValidator = joi.object({
         phone: joi.string().trim().max(15).pattern(/^\+?[1-9]\d{9,14}$/).required().messages({
             "string.pattern.base": "Phone number must be a valid international format (e.g., +923001234567)."
         }).label("Phone"),
-        supportEmail: joi.string().trim().email().lowercase().allow("", null).label("Email")        
+        supportEmail: joi.string().trim().email().lowercase().required().label("Support Email").messages({
+            "string.empty": "Support Email is required",
+            "string.email": "Please enter a valid Support Email address",
+            "any.required": "Support Email is required",
+        })
     }),
     website: joi.string().trim().uri().allow("", null).label("Website"),
 

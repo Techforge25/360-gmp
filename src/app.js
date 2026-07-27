@@ -98,10 +98,12 @@ const subscriptionAccessRouter = require("./routes/admin/subscriptionAccessRoute
 const marketPlaceRouter = require("./routes/admin/marketplaceRoute");
 const financialHubRouter = require("./routes/admin/financialHubRoute");
 const comAndNetRouter = require("./routes/admin/com&netRoute");
+const reportManagementRouter = require("./routes/admin/reportManagementRoute");
 
 // Registered Admin Routes
 app.use("/api/v1/admin/auth", adminAuthRouter);
 app.use("/api/v1/admin/dashboard", dashboardRouter);
+app.use("/api/v1/admin/reportManagement", reportManagementRouter);
 app.use("/api/v1/admin/userManagement", userManagementRouter);
 app.use("/api/v1/admin/subscriptionAccess", subscriptionAccessRouter);
 app.use("/api/v1/admin/marketplace", marketPlaceRouter);

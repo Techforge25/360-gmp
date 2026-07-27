@@ -135,4 +135,133 @@ const fetchBusinessProfileReports = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, reports, "Reports have been fetched"));
 });
 
-module.exports = { fetchReportStats, fetchJobReports, fetchBusinessProfileReports };
+// Fetch product reports
+const fetchProductReports = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10 } = request.query;
+
+    // Fetch
+    const reports = await Report.aggregatePaginate([
+        // Match
+        { $match: { reportedModel: "Product" } },
+
+        // Lookup user profile
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "userProfileId",
+                foreignField: "_id",
+                as: "reportedBy",
+                pipeline: [{ $project: { _id: 0, fullName: 1, email: 1, logo: 1 } }]
+            }
+        },
+
+        // Lookup business profile
+        {
+            $lookup: {
+                from: "products",
+                localField: "reportedContentId",
+                foreignField: "_id",
+                as: "product",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "businessprofiles",
+                            localField: "businessId",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline:[{ $project:{ _id:0, companyName: 1, email: "$primaryContactPerson.supportEmail", logo: 1 } }]
+                        }
+                    },
+
+                    { $unwind: { path: "$owner", preserveNullAndEmptyArrays: false } },
+                    { $project: { _id: 0, title: 1, owner: 1 } }
+                ]
+            }
+        },
+
+        // Unwind
+        { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: false } }, 
+        { $unwind: { path: "$product", preserveNullAndEmptyArrays: false } },        
+
+        // Projection
+        { 
+            $project: { 
+                reportedBy: 1, 
+                reportedProduct: "$product",
+                reason: 1,  
+                createdAt: 1 
+            } 
+        }
+    ], { page, limit });
+    if(!reports.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No reports found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, reports, "Reports have been fetched"));
+});
+
+// Fetch community reports
+const fetchCommunityReports = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10 } = request.query;
+
+    // Fetch
+    const reports = await Report.aggregatePaginate([
+        // Match
+        { $match: { reportedModel: "Community" } },
+
+        // Lookup user profile
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "userProfileId",
+                foreignField: "_id",
+                as: "reportedBy",
+                pipeline: [{ $project: { _id: 0, fullName: 1, email: 1, logo: 1 } }]
+            }
+        },
+
+        // Lookup business profile
+        {
+            $lookup: {
+                from: "communities",
+                localField: "reportedContentId",
+                foreignField: "_id",
+                as: "community",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "businessprofiles",
+                            localField: "businessId",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline:[{ $project:{ _id:0, companyName: 1, email: "$primaryContactPerson.supportEmail", logo: 1 } }]
+                        }
+                    },
+
+                    { $unwind: { path: "$owner", preserveNullAndEmptyArrays: false } },
+                    { $project: { _id: 0, name: 1, owner: 1 } }
+                ]
+            }
+        },
+
+        // Unwind
+        { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: false } }, 
+        { $unwind: { path: "$community", preserveNullAndEmptyArrays: false } },        
+
+        // Projection
+        { 
+            $project: { 
+                reportedBy: 1, 
+                reportedCommunity: "$community",
+                reason: 1,  
+                createdAt: 1 
+            } 
+        }
+    ], { page, limit });
+    if(!reports.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No reports found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, reports, "Reports have been fetched"));
+});
+
+module.exports = { fetchReportStats, fetchJobReports, fetchBusinessProfileReports, 
+fetchProductReports, fetchCommunityReports };

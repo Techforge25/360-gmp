@@ -424,8 +424,7 @@ const viewProductReport = asyncHandler(async (request, response) => {
                             localField: "businessId",
                             foreignField: "_id",
                             as: "owner",
-                            pipeline:[{ $project:{ _id:0, companyName: 1,
-                                email: "$primaryContactPerson.supportEmail" } }]
+                            pipeline:[{ $project:{ _id: 0, companyName: 1, email: "$primaryContactPerson.supportEmail" } }]
                         }
                     },
 

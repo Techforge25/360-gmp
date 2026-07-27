@@ -68,7 +68,10 @@ const fetchJobReports = asyncHandler(async (request, response) => {
 
         // Unwind
         { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: false } }, 
-        { $unwind: { path: "$job", preserveNullAndEmptyArrays: false } },        
+        { $unwind: { path: "$job", preserveNullAndEmptyArrays: false } },  
+        
+        // Sort
+        { $sort: { createdAt: -1 } },
 
         // Projection
         { 
@@ -119,7 +122,10 @@ const fetchBusinessProfileReports = asyncHandler(async (request, response) => {
 
         // Unwind
         { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: false } }, 
-        { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: false } },        
+        { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: false } },  
+        
+        // Sort
+        { $sort: { createdAt: -1 } },        
 
         // Projection
         { 
@@ -183,7 +189,10 @@ const fetchProductReports = asyncHandler(async (request, response) => {
 
         // Unwind
         { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: false } }, 
-        { $unwind: { path: "$product", preserveNullAndEmptyArrays: false } },        
+        { $unwind: { path: "$product", preserveNullAndEmptyArrays: false } },   
+        
+        // Sort
+        { $sort: { createdAt: -1 } },        
 
         // Projection
         { 
@@ -247,7 +256,10 @@ const fetchCommunityReports = asyncHandler(async (request, response) => {
 
         // Unwind
         { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: false } }, 
-        { $unwind: { path: "$community", preserveNullAndEmptyArrays: false } },        
+        { $unwind: { path: "$community", preserveNullAndEmptyArrays: false } },  
+        
+        // Sort
+        { $sort: { createdAt: -1 } },        
 
         // Projection
         { 

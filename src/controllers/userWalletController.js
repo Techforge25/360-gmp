@@ -334,6 +334,9 @@ const fetchUserWithdrawals = asyncHandler(async (request, response) => {
         // Match
         { $match:{ ownerId: convertToMongoId(userProfileId), ownerModel: "UserProfile" } },
 
+        // Sort
+        { $sort: { createdAt: -1 } },
+
         // Projection
         { $project:{ amount: 1, currency: 1, stripeTransferId: 1, status: 1, createdAt: 1 } }
     ], { page: Number(page), limit: Number(limit) });
@@ -353,6 +356,9 @@ const fetchfundDepositLogs = asyncHandler(async (request, response) => {
         // Match
         { $match:{ ownerId: convertToMongoId(userProfileId), ownerModel: "UserProfile", type: "deposit" } },
 
+       // Sort
+        { $sort: { createdAt: -1 } },
+        
         // Projection
         { $project:{ amount: 1, stripeSessionId: 1, status: 1, createdAt: 1 } }
     ], { page: Number(page), limit: Number(limit) });

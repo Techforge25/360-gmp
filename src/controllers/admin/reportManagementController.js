@@ -388,5 +388,75 @@ const viewBusinessReport = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, report, "Business report has been viewed"));
 });
 
+// View product report
+const viewProductReport = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { reportId } = request.params;
+    if(!isValidObjectId(reportId)) throw new ApiError(400, "Invalid Report ID");
+
+    // Fetch
+    const [report] = await Report.aggregate([
+        // Match
+        { $match: { _id: convertToMongoId(reportId), reportedModel: "Product" } },
+
+        // Lookup user profile
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "userProfileId",
+                foreignField: "_id",
+                as: "reportedBy",
+                pipeline: [{ $project: { _id: 0, fullName: 1, email: 1, logo: 1 } }]
+            }
+        },
+
+        // Lookup business profile
+        {
+            $lookup: {
+                from: "products",
+                localField: "reportedContentId",
+                foreignField: "_id",
+                as: "product",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "businessprofiles",
+                            localField: "businessId",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline:[{ $project:{ _id:0, companyName: 1,
+                                email: "$primaryContactPerson.supportEmail" } }]
+                        }
+                    },
+
+                    { $unwind: { path: "$owner", preserveNullAndEmptyArrays: false } },
+                    { $project: { _id: 0, title: 1, category: 1, pricePerUnit: 1, owner: 1 } }
+                ]
+            }
+        },
+
+        // Unwind
+        { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: false } }, 
+        { $unwind: { path: "$product", preserveNullAndEmptyArrays: false } },        
+
+        // Projection
+        { 
+            $project: { 
+                reportedBy: 1, 
+                reportedProduct: "$product",
+                reason: 1,  
+                description: 1,
+                media: 1,
+                createdAt: 1 
+            } 
+        }     
+    ]);
+    if(!report) throw new ApiError(404, "Report not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, report, "Business report has been viewed"));
+});
+
 module.exports = { fetchReportStats, fetchJobReports, fetchBusinessProfileReports, 
-fetchProductReports, fetchCommunityReports, viewJobReport, viewBusinessReport };
+fetchProductReports, fetchCommunityReports, viewJobReport, viewBusinessReport, 
+viewProductReport };

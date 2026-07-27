@@ -20,6 +20,71 @@ const fetchReportStats = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Report stats have been fetched"));
 });
 
+// Fetch job reports
+const fetchJobReports = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10 } = request.query;
+
+    // Fetch
+    const reports = await Report.aggregatePaginate([
+        // Match
+        { $match: { reportedModel: "Job" } },
+
+        // Lookup user profile
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "userProfileId",
+                foreignField: "_id",
+                as: "reportedBy",
+                pipeline: [{ $project: { _id: 0, fullName: 1, email: 1, logo: 1 } }]
+            }
+        },
+
+        // Lookup business profile
+        {
+            $lookup: {
+                from: "jobs",
+                localField: "reportedContentId",
+                foreignField: "_id",
+                as: "job",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "businessprofiles",
+                            localField: "businessId",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline:[{ $project:{ _id:0, companyName: 1, email: "$primaryContactPerson.supportEmail", logo: 1 } }]
+                        }
+                    },
+
+                    { $unwind: { path: "$owner", preserveNullAndEmptyArrays: false } },
+                    { $project: { _id: 0, jobTitle: 1, owner: 1 } }
+                ]
+            }
+        },
+
+        // Unwind
+        { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: false } }, 
+        { $unwind: { path: "$job", preserveNullAndEmptyArrays: false } },        
+
+        // Projection
+        { 
+            $project: { 
+                reportedBy: 1, 
+                reportedJob: "$job",
+                reason: 1, 
+                description: 1, 
+                createdAt: 1 
+            } 
+        }
+    ], { page, limit });
+    if(!reports.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No reports found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, reports, "Reports have been fetched"));
+});
+
 // Fetch business profile reports
 const fetchBusinessProfileReports = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
@@ -35,8 +100,8 @@ const fetchBusinessProfileReports = asyncHandler(async (request, response) => {
                 from: "userprofiles",
                 localField: "userProfileId",
                 foreignField: "_id",
-                as: "userProfile",
-                pipeline: [{ $project: { _id: 0, fullName: 1, email: 1 } }]
+                as: "reportedBy",
+                pipeline: [{ $project: { _id: 0, fullName: 1, email: 1, logo: 1 } }]
             }
         },
 
@@ -47,22 +112,21 @@ const fetchBusinessProfileReports = asyncHandler(async (request, response) => {
                 localField: "reportedContentId",
                 foreignField: "_id",
                 as: "businessProfile",
-                pipeline: [{ $project: { _id: 0, ownerName: 1, companyName: 1, email: "$primaryContactPerson.supportEmail" } }]
+                pipeline: [{ $project: { _id: 0, companyName: 1, email: "$primaryContactPerson.supportEmail", logo: 1 } }]
             }
         },
 
         // Unwind
-        { $unwind: { path: "$userProfile", preserveNullAndEmptyArrays: false } }, 
+        { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: false } }, 
         { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: false } },        
 
         // Projection
         { 
             $project: { 
-                reporter: "$userProfile", 
+                reportedBy: 1, 
                 reportedBusiness: "$businessProfile",
                 reason: 1, 
-                description: 1, 
-                media: 1, 
+                description: 1,  
                 createdAt: 1 
             } 
         }
@@ -73,4 +137,4 @@ const fetchBusinessProfileReports = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, reports, "Reports have been fetched"));
 });
 
-module.exports = { fetchReportStats, fetchBusinessProfileReports };
+module.exports = { fetchReportStats, fetchJobReports, fetchBusinessProfileReports };

@@ -333,5 +333,60 @@ const viewJobReport = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, report, "Job report has been viewed"));
 });
 
+// View business report
+const viewBusinessReport = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { reportId } = request.params;
+    if(!isValidObjectId(reportId)) throw new ApiError(400, "Invalid Report ID");
+
+    // Fetch
+    const [report] = await Report.aggregate([
+        // Match
+        { $match: { _id: convertToMongoId(reportId), reportedModel: "BusinessProfile" } },
+
+        // Lookup user profile
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "userProfileId",
+                foreignField: "_id",
+                as: "reportedBy",
+                pipeline: [{ $project: { _id: 0, fullName: 1, email: 1, logo: 1 } }]
+            }
+        },
+
+        // Lookup business profile
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "reportedContentId",
+                foreignField: "_id",
+                as: "businessProfile",
+                pipeline: [{ $project: { _id: 0, companyName: 1, ownerName: 1, primaryIndustry:1, email: "$primaryContactPerson.supportEmail" } }]
+            }
+        },
+
+        // Unwind
+        { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: false } }, 
+        { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: false } },        
+
+        // Projection
+        { 
+            $project: { 
+                reportedBy: 1, 
+                reportedBusiness: "$businessProfile",
+                reason: 1,  
+                description: 1,
+                media: 1,
+                createdAt: 1 
+            } 
+        }      
+    ]);
+    if(!report) throw new ApiError(404, "Report not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, report, "Business report has been viewed"));
+});
+
 module.exports = { fetchReportStats, fetchJobReports, fetchBusinessProfileReports, 
-fetchProductReports, fetchCommunityReports, viewJobReport };
+fetchProductReports, fetchCommunityReports, viewJobReport, viewBusinessReport };

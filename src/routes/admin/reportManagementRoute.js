@@ -1,12 +1,12 @@
 const { Router } = require("express");
 const { adminAuthentication, adminAuthorization } = require("../../middlewares/adminAuth");
-const { fetchReports } = require("../../controllers/admin/reportManagementController");
+const { fetchBusinessProfileReports } = require("../../controllers/admin/reportManagementController");
 
 // Router instance
 const reportManagementRouter = Router();
 
-// Fetch reports
-reportManagementRouter.route("/")
-.get(adminAuthentication, adminAuthorization(["superAdmin"]), fetchReports);
+// Fetch Business profile reports
+reportManagementRouter.route("/businessProfile")
+.get(adminAuthentication, adminAuthorization(["superAdmin"]), fetchBusinessProfileReports);
 
 module.exports = reportManagementRouter;

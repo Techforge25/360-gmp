@@ -92,6 +92,7 @@ app.use("/api/v1/explore", exploreRouter);
 
 // Import Admin Routes
 const adminAuthRouter = require("./routes/admin/adminAuthRoute");
+const adminManagementRouter = require("./routes/admin/adminManagementRoute");
 const dashboardRouter = require("./routes/admin/dashboardRoute");
 const userManagementRouter = require("./routes/admin/userManagementRoute");
 const subscriptionAccessRouter = require("./routes/admin/subscriptionAccessRoute");
@@ -102,6 +103,7 @@ const reportManagementRouter = require("./routes/admin/reportManagementRoute");
 
 // Registered Admin Routes
 app.use("/api/v1/admin/auth", adminAuthRouter);
+app.use("/api/v1/admin/adminManagement", adminManagementRouter);
 app.use("/api/v1/admin/dashboard", dashboardRouter);
 app.use("/api/v1/admin/reportManagement", reportManagementRouter);
 app.use("/api/v1/admin/userManagement", userManagementRouter);

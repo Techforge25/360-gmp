@@ -73,8 +73,7 @@ const fetchJobReports = asyncHandler(async (request, response) => {
             $project: { 
                 reportedBy: 1, 
                 reportedJob: "$job",
-                reason: 1, 
-                description: 1, 
+                reason: 1,  
                 createdAt: 1 
             } 
         }
@@ -125,8 +124,7 @@ const fetchBusinessProfileReports = asyncHandler(async (request, response) => {
             $project: { 
                 reportedBy: 1, 
                 reportedBusiness: "$businessProfile",
-                reason: 1, 
-                description: 1,  
+                reason: 1,  
                 createdAt: 1 
             } 
         }

@@ -1,7 +1,8 @@
 const { Router } = require("express");
 const { adminAuthentication, adminAuthorization } = require("../../middlewares/adminAuth");
 const { fetchReportStats, fetchJobReports, fetchBusinessProfileReports, fetchProductReports, 
-fetchCommunityReports, viewJobReport, viewBusinessReport, viewProductReport } = require("../../controllers/admin/reportManagementController");
+fetchCommunityReports, viewJobReport, viewBusinessReport, viewProductReport, 
+viewCommunityReport } = require("../../controllers/admin/reportManagementController");
 
 // Router instance
 const reportManagementRouter = Router();
@@ -37,5 +38,9 @@ reportManagementRouter.route("/business/:reportId")
 // View product report
 reportManagementRouter.route("/product/:reportId")
 .get(adminAuthentication, adminAuthorization(["superAdmin"]), viewProductReport);
+
+// View community report
+reportManagementRouter.route("/community/:reportId")
+.get(adminAuthentication, adminAuthorization(["superAdmin"]), viewCommunityReport);
 
 module.exports = reportManagementRouter;

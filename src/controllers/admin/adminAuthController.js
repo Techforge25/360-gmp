@@ -59,15 +59,15 @@ const adminRefreshToken = asyncHandler(async (request, response) => {
     if(!payload) throw new ApiError(401, "Unauthorized! Invalid refresh token");
 
     // Find admin
-    const admin = await Admin.findById(payload._id).select("_id role refreshToken");
+    const admin = await Admin.findById(payload._id);
     if(!admin) throw new ApiError(404, "Admin not found associated with the provided refresh token");
 
     // Compare tokens
     if(admin.refreshToken !== token) throw new ApiError(400, "Refresh token mismatch");
 
     // Generate tokens
-    const accessToken = generateAdminAccessToken({ _id: admin._id, role: admin.role });
-    const refreshToken = generateAdminRefreshToken({ _id: admin._id });
+    const accessToken = generateAdminAccessToken(admin);
+    const refreshToken = generateAdminRefreshToken(admin);
 
     // Validate
     if(!accessToken) throw new ApiError(400, "Failed to re-generate admin access token");

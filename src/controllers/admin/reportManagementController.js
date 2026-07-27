@@ -1,8 +1,10 @@
+const { isValidObjectId } = require("mongoose");
 const { emptyList } = require("../../constants");
 const Report = require("../../models/reportModel");
 const ApiError = require("../../utils/ApiError");
 const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
+const convertToMongoId = require("../../utils/convertToMongoId");
 
 // Fetch reports stats
 const fetchReportStats = asyncHandler(async (request, response) => {
@@ -263,5 +265,73 @@ const fetchCommunityReports = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, reports, "Reports have been fetched"));
 });
 
+// View job report
+const viewJobReport = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { reportId } = request.params;
+    if(!isValidObjectId(reportId)) throw new ApiError(400, "Invalid Report ID");
+
+    // Fetch
+    const [report] = await Report.aggregate([
+        // Match
+        { $match: { _id: convertToMongoId(reportId), reportedModel: "Job" } },
+
+        // Lookup user profile
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "userProfileId",
+                foreignField: "_id",
+                as: "reportedBy",
+                pipeline: [{ $project: { _id: 0, fullName: 1, email: 1, logo: 1 } }]
+            }
+        },
+
+        // Lookup business profile
+        {
+            $lookup: {
+                from: "jobs",
+                localField: "reportedContentId",
+                foreignField: "_id",
+                as: "job",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "businessprofiles",
+                            localField: "businessId",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline:[{ $project:{ _id: 0, companyName: 1 } }]
+                        }
+                    },
+
+                    { $unwind: { path: "$owner", preserveNullAndEmptyArrays: false } },
+                    { $project: { _id: 0, jobTitle: 1, employmentType:1,  owner: 1 } }
+                ]
+            }
+        },
+
+        // Unwind
+        { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: false } }, 
+        { $unwind: { path: "$job", preserveNullAndEmptyArrays: false } },        
+
+        // Projection
+        { 
+            $project: { 
+                reportedBy: 1, 
+                reportedJob: "$job",
+                reason: 1,  
+                description: 1,
+                media: 1,
+                createdAt: 1 
+            } 
+        }        
+    ]);
+    if(!report) throw new ApiError(404, "Report not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, report, "Job report has been viewed"));
+});
+
 module.exports = { fetchReportStats, fetchJobReports, fetchBusinessProfileReports, 
-fetchProductReports, fetchCommunityReports };
+fetchProductReports, fetchCommunityReports, viewJobReport };

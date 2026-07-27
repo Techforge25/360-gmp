@@ -22,8 +22,8 @@ const adminLogin = asyncHandler(async (request, response) => {
     if(!isMatched) throw new ApiError(400, "Invalid username or password");
 
     // Generate access & refresh tokens
-    const accessToken = generateAdminAccessToken({ _id: admin._id, role: admin.role });
-    const refreshToken = generateAdminRefreshToken({ _id: admin._id });
+    const accessToken = generateAdminAccessToken(admin);
+    const refreshToken = generateAdminRefreshToken(admin);
 
     // Validate tokens
     if(!accessToken) throw new ApiError(500, "Failed to generate admin access token");
@@ -40,19 +40,12 @@ const adminLogin = asyncHandler(async (request, response) => {
     .json(new ApiResponse(200, { username: admin.username }, "Admin login successful"));
 });
 
-// Admin logout
-const adminLogout = asyncHandler(async (request, response) => {
+// Auth me (Auth check)
+const authMe = asyncHandler(async (request, response) => {
     const adminId = request.admin._id;
-
-    // Clear refresh token in db
-    const admin = await Admin.findByIdAndUpdate(adminId, { refreshToken:null }, { new:true, lean:true }).select("_id");
-    if(!admin) throw new ApiError(500, "Failed to clear refresh token from db");
-
+    
     // Response
-    return response.status(200)
-    .clearCookie("adminAccessToken", cookieOptions)
-    .clearCookie("adminRefreshToken", cookieOptions)
-    .json(new ApiResponse(200, null, "Logout successful"));
+    return response.status(200).json(new ApiResponse(200, { adminId }, "Authenticated"));
 });
 
 // Refresh token
@@ -91,4 +84,19 @@ const adminRefreshToken = asyncHandler(async (request, response) => {
     .json(new ApiResponse(200, null, "Refresh token for admin has been issued"));
 });
 
-module.exports = { adminLogin, adminLogout, adminRefreshToken };
+// Admin logout
+const adminLogout = asyncHandler(async (request, response) => {
+    const adminId = request.admin._id;
+
+    // Clear refresh token in db
+    const admin = await Admin.findByIdAndUpdate(adminId, { refreshToken:null }, { new:true, lean:true }).select("_id");
+    if(!admin) throw new ApiError(500, "Failed to clear refresh token from db");
+
+    // Response
+    return response.status(200)
+    .clearCookie("adminAccessToken", cookieOptions)
+    .clearCookie("adminRefreshToken", cookieOptions)
+    .json(new ApiResponse(200, null, "Logout successful"));
+});
+
+module.exports = { adminLogin, authMe, adminRefreshToken, adminLogout };

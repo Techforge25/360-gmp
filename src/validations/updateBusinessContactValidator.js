@@ -23,7 +23,7 @@ const updateBusinessContactValidator = joi.object({
     headOffice: joi.object({
         country: joi.string().max(100).trim().required().pattern(alphaNumericPattern).label("Country"),
         city: joi.string().max(100).trim().required().pattern(alphaNumericPattern).label("City"),
-        addressLine: joi.string().max(1000).trim().required().label("Address line")   
+        addressLine: joi.string().min(10).max(200).trim().required().label("Address line")   
     })
 });
 

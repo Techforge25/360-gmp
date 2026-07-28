@@ -12,6 +12,7 @@ const Community = require("../models/communityModel");
 
 // Create report
 const createReport = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
     const { userProfileId } = request.user.profiles || {};
 
     // Get validated payload
@@ -23,29 +24,33 @@ const createReport = asyncHandler(async (request, response) => {
     // If business
     if(reportedModel === "BusinessProfile")
     {
-        const business = await BusinessProfile.findById(reportedContentId).select("_id").lean();
+        const business = await BusinessProfile.findById(reportedContentId).select("_id ownerUserId").lean();
         if(!business) throw new ApiError(404, `${reportedModel} not found! Invalid ${reportedModel} ID`);
+        if(String(business.ownerUserId) === String(userId)) throw new ApiError(403, "You cannot report your own business");
     }
 
     // If product
     if(reportedModel === "Product")
     {
-        const product = await Product.findById(reportedContentId).select("_id").lean();
+        const product = await Product.findById(reportedContentId).select("_id businessId").lean();
         if(!product) throw new ApiError(404, `${reportedModel} not found! Invalid ${reportedModel} ID`);
+        if(String(product.businessId) === String(userId)) throw new ApiError(403, "You cannot report your own product");
     } 
     
     // If job
     if(reportedModel === "Job")
     {
-        const job = await Job.findById(reportedContentId).select("_id").lean();
+        const job = await Job.findById(reportedContentId).select("_id businessId").lean();
         if(!job) throw new ApiError(404, `${reportedModel} not found! Invalid ${reportedModel} ID`);
+        if(String(job.businessId) === String(userId)) throw new ApiError(403, "You cannot report your own job");
     }     
     
     // If community
     if(reportedModel === "Community")
     {
-        const community = await Community.findById(reportedContentId).select("_id").lean();
+        const community = await Community.findById(reportedContentId).select("_id businessId").lean();
         if(!community) throw new ApiError(404, `${reportedModel} not found! Invalid ${reportedModel} ID`);
+        if(String(community.businessId) === String(userId)) throw new ApiError(403, "You cannot report your own community");
     }      
 
     // Prevent duplication

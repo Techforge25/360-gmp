@@ -6,13 +6,47 @@ const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
 const convertToMongoId = require("../../utils/convertToMongoId");
 
+// Allowed date filters
+const allowedDateFilters = ["all", "7d", "1m", "6m", "1y"];
+
+// Helper function to implement date range
+const getDateFilter = (request) => {
+    // Date filter
+    const { dateRange = "all" } = request.query;
+    if(!allowedDateFilters.includes(dateRange)) throw new ApiError(400, "Invalid date filter");
+
+    // Search filter
+    const dateFilter = {};
+
+    if(dateRange !== "all")
+    {
+        // Calculate date
+        const now = new Date();
+        let startDate = new Date();
+
+        if(dateRange === "7d") startDate.setDate(now.getDate() - 7);
+        if(dateRange === "1m") startDate.setMonth(now.getMonth() - 1);
+        if(dateRange === "6m") startDate.setMonth(now.getMonth() - 6);
+        if(dateRange === "1y") startDate.setMonth(now.getMonth() - 12);
+
+        // Inject date range
+        dateFilter.createdAt = { $gte: startDate };
+    }
+
+    return { dateFilter };
+};
+
 // Fetch reports stats
 const fetchReportStats = asyncHandler(async (request, response) => {
+    // Get date filter
+    const { dateFilter } = getDateFilter(request);
+
+    // Fetch
     const [jobReports, businessReports, productReports, communityReports] = await Promise.all([
-        Report.countDocuments({ reportedModel: "Job" }),
-        Report.countDocuments({ reportedModel: "BusinessProfile" }),
-        Report.countDocuments({ reportedModel: "Product" }),
-        Report.countDocuments({ reportedModel: "Community" })
+        Report.countDocuments({ ...dateFilter, reportedModel: "Job" }),
+        Report.countDocuments({ ...dateFilter, reportedModel: "BusinessProfile" }),
+        Report.countDocuments({ ...dateFilter, reportedModel: "Product" }),
+        Report.countDocuments({ ...dateFilter, reportedModel: "Community" })
     ]);
 
     // Payload
@@ -24,12 +58,19 @@ const fetchReportStats = asyncHandler(async (request, response) => {
 
 // Fetch job reports
 const fetchJobReports = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10 } = request.query;
+    const { page = 1, limit = 10, search } = request.query;
+
+    // Get date filter
+    const { dateFilter } = getDateFilter(request);    
+
+    // Search by job title
+    const jobSearchFilter = {};
+    if(search) jobSearchFilter.jobTitle = { $regex: search, $options: "i" };
 
     // Fetch
     const reports = await Report.aggregatePaginate([
         // Match
-        { $match: { reportedModel: "Job" } },
+        { $match: { ...dateFilter, reportedModel: "Job" } },
 
         // Lookup user profile
         {
@@ -50,6 +91,8 @@ const fetchJobReports = asyncHandler(async (request, response) => {
                 foreignField: "_id",
                 as: "job",
                 pipeline: [
+                    { $match: jobSearchFilter },
+
                     {
                         $lookup: {
                             from: "businessprofiles",

@@ -1,3 +1,4 @@
+const { isValidObjectId } = require("mongoose");
 const { emptyList } = require("../../constants");
 const BusinessProfile = require("../../models/businessProfileSchema");
 const UserProfile = require("../../models/userProfile");
@@ -194,4 +195,47 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, businessProfiles, "Business profiles have been fetched"));
 });
 
-module.exports = { fetchAccountStats, fetchUserProfiles, fetchBusinessProfiles };
+// View user profile
+const viewUserProfile = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { userProfileId } = request.params;
+    if(!isValidObjectId(userProfileId)) throw new ApiError(400, "Invalid User Profile ID");
+
+    // Fetch
+    const [userProfile] = await UserProfile.aggregate([
+        // Lookup work experience
+        {
+            $lookup: {
+                from: "workexperiences",
+                localField: "_id",
+                foreignField: "userProfileId",
+                as: "workExperience",
+            }
+        },
+
+        // Sort
+        { $sort: { createdAt: -1 } },
+
+        // Projection
+        {
+            $project: {
+                fullName: 1,
+                email: 1,
+                logo: 1,
+                bio: 1,
+                createdAt: 1,
+                location: 1,
+                title: 1,
+                employmentType: 1,
+                education: 1,
+                workExperience: 1
+            }
+        }
+    ]);
+    if(!userProfile) throw new ApiError(404, "User profile not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, userProfile, "User profile has been fetched"));
+});
+
+module.exports = { fetchAccountStats, fetchUserProfiles, fetchBusinessProfiles, viewUserProfile };

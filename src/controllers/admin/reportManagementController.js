@@ -13,7 +13,7 @@ const allowedDateFilters = ["all", "7d", "1m", "6m", "1y"];
 const getDateFilter = (request) => {
     // Date filter
     const { dateRange = "all" } = request.query;
-    if(!allowedDateFilters.includes(dateRange)) throw new ApiError(400, "Invalid date filter");
+    if(!allowedDateFilters.includes(dateRange)) throw new ApiError(400, "Invalid date range");
 
     // Search filter
     const dateFilter = {};

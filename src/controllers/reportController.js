@@ -32,26 +32,29 @@ const createReport = asyncHandler(async (request, response) => {
     // If product
     if(reportedModel === "Product")
     {
-        const product = await Product.findById(reportedContentId).select("_id businessId").lean();
+        const product = await Product.findById(reportedContentId)
+        .populate({ path: "businessId", select: "ownerUserId" }).select("_id businessId").lean();
         if(!product) throw new ApiError(404, `${reportedModel} not found! Invalid ${reportedModel} ID`);
-        if(String(product.businessId) === String(userId)) throw new ApiError(403, "You cannot report your own product");
+        if(String(product.businessId.ownerUserId) === String(userId)) throw new ApiError(403, "You cannot report your own product");
     } 
     
     // If job
     if(reportedModel === "Job")
     {
-        const job = await Job.findById(reportedContentId).select("_id businessId").lean();
+        const job = await Job.findById(reportedContentId)
+        .populate({ path: "businessId", select: "ownerUserId" }).select("_id businessId").lean();
         if(!job) throw new ApiError(404, `${reportedModel} not found! Invalid ${reportedModel} ID`);
-        if(String(job.businessId) === String(userId)) throw new ApiError(403, "You cannot report your own job");
+        if(String(job.businessId.ownerUserId) === String(userId)) throw new ApiError(403, "You cannot report your own job");
     }     
     
     // If community
     if(reportedModel === "Community")
     {
-        const community = await Community.findById(reportedContentId).select("_id businessId").lean();
+        const community = await Community.findById(reportedContentId)
+        .populate({ path: "businessId", select: "ownerUserId" }).select("_id businessId").lean();
         if(!community) throw new ApiError(404, `${reportedModel} not found! Invalid ${reportedModel} ID`);
-        if(String(community.businessId) === String(userId)) throw new ApiError(403, "You cannot report your own community");
-    }      
+        if(String(community.businessId.ownerUserId) === String(userId)) throw new ApiError(403, "You cannot report your own community");
+    }
 
     // Prevent duplication
     const exist = await Report.exists({ userProfileId, reportedContentId });

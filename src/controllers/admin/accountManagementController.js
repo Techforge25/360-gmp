@@ -125,4 +125,73 @@ const fetchUserProfiles = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, userProfiles, "User profiles have been fetched"));
 });
 
-module.exports = { fetchAccountStats, fetchUserProfiles };
+// Fetch business profiles
+const fetchBusinessProfiles = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10, search, type } = request.query;
+
+    // Get date filter
+    const { dateFilter } = getDateFilter(request);    
+
+    // Filters
+    const baseFilter = {};
+    const planFilter = {};
+
+    if(search) baseFilter.companyName = { $regex: search, $options: "i" }; // Filter by company name
+    if(type) planFilter.name = { $regex: type, $options: "i" }; // Filter by plan type
+
+    // Fetch
+    const businessProfiles = await BusinessProfile.aggregatePaginate([
+        // Match
+        { $match: { ...dateFilter, ...baseFilter } },
+
+        // Sort
+        { $sort: { createdAt: -1 } },
+
+        // Lookup subscription
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "ownerUserId",
+                foreignField: "userId",
+                as: "subscription",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "plans",
+                            localField: "planId",
+                            foreignField: "_id",
+                            as: "plan",
+                            pipeline:[{ $match: planFilter }]
+                        }
+                    },
+
+                    // Unwind
+                    { $unwind: "$plan" },   
+                    
+                    // Project 
+                    { $project: { _id:0, subscriptionType: "$plan.name" } }
+                ]
+            }
+        },
+
+        // Unwind
+        { $unwind: "$subscription" },
+
+        // Projection
+        {
+            $project: {
+                companyName: 1,
+                email: "$primaryContactPerson.supportEmail", 
+                logo: 1,
+                createdAt: 1,
+                subscription: 1
+            }
+        }
+    ], { page, limit });
+    if(!businessProfiles.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No business profiles found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, businessProfiles, "Business profiles have been fetched"));
+});
+
+module.exports = { fetchAccountStats, fetchUserProfiles, fetchBusinessProfiles };

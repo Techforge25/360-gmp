@@ -33,89 +33,80 @@ const getDateFilter = (request) => {
     return searchFilter;
 };
 
-// Fetch total platform revenue
-const fetchTotalPlatformRevenue = asyncHandler(async (request, response) => {
-    const dateFilter = getDateFilter(request);
-
-    // Aggregate
-    const [result] = await EscrowTransaction.aggregate([
-        { $match:{ ...dateFilter } },
-        {
-            $group:{
-                _id:null,
-                totalPlatformRevenue:{ $sum:"$platformFee" }
-            }
-        }
-    ]);
-
-    // Extract result
-    const totalPlatformRevenue = Number(result?.totalPlatformRevenue?.toFixed(2)) || 0;
-
-    // Response
-    return response.status(200).json(new ApiResponse(200, totalPlatformRevenue, "Total platform revenue has been fetched"));
-
+// Fetch dashboard stats
+const fetchDashboardStats = asyncHandler(async (request, response) => {
+    
 });
+
+// Fetch total platform revenue
+// const fetchTotalPlatformRevenue = asyncHandler(async (request, response) => {
+//     const dateFilter = getDateFilter(request);
+
+//     // Aggregate
+//     const [result] = await EscrowTransaction.aggregate([
+//         { $match:{ ...dateFilter } },
+//         {
+//             $group:{
+//                 _id:null,
+//                 totalPlatformRevenue:{ $sum:"$platformFee" }
+//             }
+//         }
+//     ]);
+
+//     // Extract result
+//     const totalPlatformRevenue = Number(result?.totalPlatformRevenue?.toFixed(2)) || 0;
+
+//     // Response
+//     return response.status(200).json(new ApiResponse(200, totalPlatformRevenue, "Total platform revenue has been fetched"));
+
+// });
 
 
 // Fetch total held amount
-const fetchTotalHeldAmount = asyncHandler(async (request, response) => {
-    const dateFilter = getDateFilter(request);
+// const fetchTotalHeldAmount = asyncHandler(async (request, response) => {
+//     const dateFilter = getDateFilter(request);
 
-    // Search filter
-    const searchFilter = { status:"held", ...dateFilter };
+//     // Search filter
+//     const searchFilter = { status:"held", ...dateFilter };
 
-    // Aggregate
-    const [result] = await EscrowTransaction.aggregate([
-        { $match:searchFilter },
-        {
-            $group:{
-                _id:null,
-                heldAmount:{ $sum:"$totalAmount" }
-            }
-        }
-    ]);
+//     // Aggregate
+//     const [result] = await EscrowTransaction.aggregate([
+//         { $match:searchFilter },
+//         {
+//             $group:{
+//                 _id:null,
+//                 heldAmount:{ $sum:"$totalAmount" }
+//             }
+//         }
+//     ]);
 
-    // Extract result
-    const heldAmount = Number(result?.heldAmount?.toFixed(2)) || 0;
+//     // Extract result
+//     const heldAmount = Number(result?.heldAmount?.toFixed(2)) || 0;
 
-    // Response
-    return response.status(200).json(new ApiResponse(200, heldAmount, "Total held amount has been fetched"));
+//     // Response
+//     return response.status(200).json(new ApiResponse(200, heldAmount, "Total held amount has been fetched"));
 
-});
+// });
 
 
 // Fetch total trial users
-const fetchTotalTrialUsers = asyncHandler(async (request, response) => {
-    const dateFilter = getDateFilter(request);
+// const fetchTotalTrialUsers = asyncHandler(async (request, response) => {
+//     const dateFilter = getDateFilter(request);
 
-    // Find trial plan
-    const plan = await Plan.findOne({ name:"TRIAL" }).select("_id name").lean();
-    if(!plan) throw new ApiError(404, "No trial plan found");
+//     // Find trial plan
+//     const plan = await Plan.findOne({ name:"TRIAL" }).select("_id name").lean();
+//     if(!plan) throw new ApiError(404, "No trial plan found");
 
-    // Search filter
-    const searchFilter = { planId:plan._id, ...dateFilter };
+//     // Search filter
+//     const searchFilter = { planId:plan._id, ...dateFilter };
 
-    // Count trial users
-    const totalTrialUsers = await Subscription.countDocuments(searchFilter);
+//     // Count trial users
+//     const totalTrialUsers = await Subscription.countDocuments(searchFilter);
 
-    // Response
-    return response.status(200).json(new ApiResponse(200, totalTrialUsers || 0, "Total trial users have been fetched"));
+//     // Response
+//     return response.status(200).json(new ApiResponse(200, totalTrialUsers || 0, "Total trial users have been fetched"));
 
-});
+// });
 
 
-// Fetch total reported jobs
-const fetchTotalReportedJobs = asyncHandler(async (request, response) => {
-    const dateFilter = getDateFilter(request);
-
-    // Search filter
-    const searchFilter = { reportedModel:"Job", ...dateFilter };
-
-    // Count reported jobs
-    const reportedJobs = await Report.countDocuments(searchFilter);
-
-    // Response
-    return response.status(200).json(new ApiResponse(200, reportedJobs || 0, "Total reported jobs have been fetched"));
-});
-
-module.exports = { fetchTotalPlatformRevenue, fetchTotalHeldAmount, fetchTotalTrialUsers, fetchTotalReportedJobs };
+module.exports = { fetchDashboardStats };

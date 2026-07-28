@@ -20,6 +20,7 @@ const { createUserProfileSchema } = require("../validations/userProfile");
 const fs = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
+const {  } = require("html-to-text");
 
 // Create user profile
 const createUserProfile = asyncHandler(async (request, response) => {
@@ -558,7 +559,16 @@ const generateMyResume = asyncHandler(async (request, response) => {
 
     // ===== PROFILE SUMMARY =====
     sectionTitle("Profile Summary");
-    doc.fontSize(12).text(userProfile.bio || "No bio provided", { align:"justify" });
+    const bioText = userProfile.bio ? convert(userProfile.bio, {
+            wordwrap: false,
+            selectors: [
+                { selector: "a", options: { ignoreHref: true } },
+                { selector: "img", format: "skip" },
+            ]
+        }) : "No bio provided";
+
+    doc.fontSize(12).text(bioText, { align: "justify" });    
+    // doc.fontSize(12).text(userProfile.bio || "No bio provided", { align:"justify" });
 
     // ===== SKILLS =====
     if(userProfile.skills?.length) 

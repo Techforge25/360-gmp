@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const { adminAuthentication, adminAuthorization } = require("../../middlewares/adminAuth");
 const { fetchAccountStats, fetchUserProfiles, fetchBusinessProfiles, 
-viewUserProfile } = require("../../controllers/admin/accountManagementController");
+viewUserProfile, viewBusinessProfile } = require("../../controllers/admin/accountManagementController");
 
 // Router instance
 const accountManagementRouter = Router();
@@ -21,5 +21,9 @@ accountManagementRouter.route("/businessProfiles")
 // View user profile
 accountManagementRouter.route("/userProfile/:userProfileId")
 .get(adminAuthentication, adminAuthorization(["superAdmin", "admin"]), viewUserProfile);
+
+// View business profile
+accountManagementRouter.route("/businessProfile/:businessProfileId")
+.get(adminAuthentication, adminAuthorization(["superAdmin", "admin"]), viewBusinessProfile);
 
 module.exports = accountManagementRouter;

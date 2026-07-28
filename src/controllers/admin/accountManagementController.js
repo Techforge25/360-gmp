@@ -1,3 +1,4 @@
+const { emptyList } = require("../../constants");
 const BusinessProfile = require("../../models/businessProfileSchema");
 const UserProfile = require("../../models/userProfile");
 const User = require("../../models/users");
@@ -22,7 +23,7 @@ const getDateFilter = (request) => {
         // Calculate date
         const now = new Date();
         let startDate = new Date();
-        
+
         if(dateFilter === "7d") startDate.setDate(now.getDate() - 7);
         if(dateFilter === "1m") startDate.setMonth(now.getMonth() - 1);
         if(dateFilter === "6m") startDate.setMonth(now.getMonth() - 6);
@@ -55,4 +56,70 @@ const fetchAccountStats = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Account stats have been fetched"));
 });
 
-module.exports = { fetchAccountStats };
+// Fetch user profiles
+const fetchUserProfiles = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10, search, type } = request.query;
+
+    // Filters
+    const baseFilter = {};
+    const planFilter = {};
+
+    if(search) baseFilter.fullName = { $regex: search, $options: "i" }; // Filter by user profile name
+    if(type) planFilter.name = { $regex: type, $options: "i" }; // Filter by plan type
+
+    // Fetch
+    const userProfiles = await UserProfile.aggregatePaginate([
+        // Match
+        { $match: baseFilter },
+
+        // Sort
+        { $sort: { createdAt: -1 } },
+
+        // Lookup subscription
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "userId",
+                foreignField: "userId",
+                as: "subscription",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "plans",
+                            localField: "planId",
+                            foreignField: "_id",
+                            as: "plan",
+                            pipeline:[{ $match: planFilter }]
+                        }
+                    },
+
+                    // Unwind
+                    { $unwind: "$plan" },   
+                    
+                    // Project 
+                    { $project: { _id:0, subscriptionType: "$plan.name" } }
+                ]
+            }
+        },
+
+        // Unwind
+        { $unwind: "$subscription" },
+
+        // Projection
+        {
+            $project: {
+                fullName: 1,
+                email: 1, 
+                logo: 1,
+                createdAt: 1,
+                subscription: 1
+            }
+        }
+    ], { page, limit });
+    if(!userProfiles.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No user profiles found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, userProfiles, "User profiles have been fetched"));
+});
+
+module.exports = { fetchAccountStats, fetchUserProfiles };

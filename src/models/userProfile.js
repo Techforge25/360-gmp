@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
 // Schema
 const userProfileSchema = new Schema({
@@ -47,6 +48,9 @@ const userProfileSchema = new Schema({
     lastCancellationAt: { type:Date, default:null }, // Last cancel time
     accountFrozenUntil: { type:Date, default:null } // Freeze expiry    
 }, { timestamps: true });
+
+// Add pagination plugin
+userProfileSchema.plugin(aggregatePaginate);
 
 // Model
 const UserProfile = model("UserProfile", userProfileSchema);

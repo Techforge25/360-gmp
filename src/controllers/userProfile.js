@@ -20,7 +20,7 @@ const { createUserProfileSchema } = require("../validations/userProfile");
 const fs = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
-const {  } = require("html-to-text");
+const { convert } = require("html-to-text");
 
 // Create user profile
 const createUserProfile = asyncHandler(async (request, response) => {

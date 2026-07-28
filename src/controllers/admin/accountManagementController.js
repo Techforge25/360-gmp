@@ -12,41 +12,41 @@ const allowedDateFilters = ["all", "7d", "1m", "6m", "1y"];
 // Helper function to implement date range
 const getDateFilter = (request) => {
     // Date filter
-    const { dateFilter = "all" } = request.query;
-    if(!allowedDateFilters.includes(dateFilter)) throw new ApiError(400, "Invalid date filter");
+    const { dateRange = "all" } = request.query;
+    if(!allowedDateFilters.includes(dateRange)) throw new ApiError(400, "Invalid date filter");
 
-    // Search filter
-    const searchFilter = {};
+    // Date filter
+    const dateFilter = {};
 
-    if(dateFilter !== "all")
+    if(dateRange !== "all")
     {
         // Calculate date
         const now = new Date();
         let startDate = new Date();
 
-        if(dateFilter === "7d") startDate.setDate(now.getDate() - 7);
-        if(dateFilter === "1m") startDate.setMonth(now.getMonth() - 1);
-        if(dateFilter === "6m") startDate.setMonth(now.getMonth() - 6);
-        if(dateFilter === "1y") startDate.setMonth(now.getMonth() - 12);
+        if(dateRange === "7d") startDate.setDate(now.getDate() - 7);
+        if(dateRange === "1m") startDate.setMonth(now.getMonth() - 1);
+        if(dateRange === "6m") startDate.setMonth(now.getMonth() - 6);
+        if(dateRange === "1y") startDate.setMonth(now.getMonth() - 12);
 
         // Inject date range
-        searchFilter.createdAt = { $gte: startDate };
+        dateFilter.createdAt = { $gte: startDate };
     }
 
-    return { searchFilter };
+    return { dateFilter };
 };
 
 // Fetch account stats
 const fetchAccountStats = asyncHandler(async (request, response) => {
     // Get date filter
-    const { searchFilter } = getDateFilter(request);
+    const { dateFilter } = getDateFilter(request);
 
     // Fetch
     const [totalParentUsers, totalUserProfiles, totalBusinessProfiles, pendingBusinessProfiles] = await Promise.all([
-        User.countDocuments({ ...searchFilter, status: "active" }),
-        UserProfile.countDocuments({ ...searchFilter }),
-        BusinessProfile.countDocuments({ ...searchFilter, status: "active" }),
-        BusinessProfile.countDocuments({ ...searchFilter, status: "pending" })
+        User.countDocuments({ ...dateFilter, status: "active" }),
+        UserProfile.countDocuments({ ...dateFilter }),
+        BusinessProfile.countDocuments({ ...dateFilter, status: "active" }),
+        BusinessProfile.countDocuments({ ...dateFilter, status: "pending" })
     ]);
 
     // Payload
@@ -60,6 +60,9 @@ const fetchAccountStats = asyncHandler(async (request, response) => {
 const fetchUserProfiles = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10, search, type } = request.query;
 
+    // Get date filter
+    const { dateFilter } = getDateFilter(request);    
+
     // Filters
     const baseFilter = {};
     const planFilter = {};
@@ -70,7 +73,7 @@ const fetchUserProfiles = asyncHandler(async (request, response) => {
     // Fetch
     const userProfiles = await UserProfile.aggregatePaginate([
         // Match
-        { $match: baseFilter },
+        { $match: { ...dateFilter, ...baseFilter } },
 
         // Sort
         { $sort: { createdAt: -1 } },

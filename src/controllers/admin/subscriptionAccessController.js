@@ -141,7 +141,7 @@ const fetchSubscriptionStats = asyncHandler(async (request, response) => {
 
 // Fetch trial users
 const fetchTrialUsers = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search = "" } = request.query;
+    const { page = 1, limit = 10, search, subscriptionStatus = "all" } = request.query;
 
     // Pagination options
     const options = {
@@ -149,9 +149,24 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
         limit: Number(limit),
     };
 
-    // Base filter
-    const baseFilter = {};
-    if(search) baseFilter.email = { $regex:search, $options:"i" };
+    // Get date filter
+    const { dateFilter } = getDateFilter(request);
+
+    // Search filter (Search by user profile full name)
+    const searchFilter = {};
+    if(search) searchFilter.fullName = { $regex: search, $options: "i" };
+
+    // Subscription type filter
+    const subscriptionStatusFilter = {};
+    if(subscriptionStatus && !["all", "active", "expired"].includes(subscriptionStatus))
+    {
+        throw new ApiError(400, "Invalid subscription status filter");
+    }
+
+    if(subscriptionStatus && subscriptionStatus !== "all")
+    {
+        subscriptionStatusFilter.status = subscriptionStatus;
+    }
 
     // Calculate days
     const today = new Date();
@@ -159,7 +174,7 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
     // Fetch
     const trialUsers = await User.aggregatePaginate([
         // Match
-        { $match: baseFilter },
+        { $match: { ...dateFilter } },
 
         // Sort
         { $sort: { createdAt:-1 } },
@@ -171,7 +186,10 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
                 localField: "_id",
                 foreignField: "userId",
                 as: "userProfile",
-                pipeline: [{ $project: { _id: 0, fullName: 1, email: 1, logo: 1 } }]
+                pipeline: [
+                    { $match: searchFilter },
+                    { $project: { _id: 0, fullName: 1, email: 1, logo: 1 } }
+                ]
             }
         },
         { $unwind: "$userProfile" },        
@@ -182,7 +200,10 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
                 from: "subscriptions",
                 localField: "_id",
                 foreignField: "userId",
-                as: "subscription"
+                as: "subscription",
+                pipeline: [
+                    { $match: subscriptionStatusFilter }
+                ]
             }
         },
         { $unwind: "$subscription" },
@@ -253,18 +274,30 @@ const fetchPremiumUsers = asyncHandler(async (request, response) => {
 
     // Base filter
     const baseFilter = {};
-    if(search) baseFilter.email = { $regex:search, $options:"i" };
+    if(search) baseFilter.email = { $regex: search, $options:"i" };
 
     // Fetch
     const aggregate = User.aggregate([
         // Match
-        { $match:baseFilter },
+        { $match: baseFilter },
 
         // Sort
-        { $sort:{ createdAt:-1 } },
+        { $sort:{ createdAt: -1 } },
 
         // Projection
         { $project: { email:1, createdAt:1 } },
+
+        // Lookup user profile
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "_id",
+                foreignField: "userId",
+                as: "userProfile",
+                pipeline: [{ $project: { _id: 0, fullName: 1, email: 1, logo: 1 } }]
+            }
+        },
+
 
         // Lookup inside subscription
         {
@@ -284,7 +317,7 @@ const fetchPremiumUsers = asyncHandler(async (request, response) => {
                             foreignField: "_id",
                             as: "plan",
                             pipeline:[
-                                { $project:{ _id:0, name:1 } }
+                                { $project:{ _id: 0, name: 1, price: 1 } }
                             ]
                         }
                     }
@@ -293,15 +326,21 @@ const fetchPremiumUsers = asyncHandler(async (request, response) => {
         },
 
         // Unwind
+        { $unwind: "$userProfile" },
         { $unwind: "$subscription" },
         { $unwind: "$subscription.plan" },
 
         // Match
-        { $match:{ "subscription.plan.name": "PREMIUM" } },
+        { $match:{ "subscription.plan.price": { $gt: 0 } } },
 
         // Final projection
         {
-            $project: { email:1, subscriptionTier: "$subscription.plan.name", joinDate:"$createdAt", status:"$subscription.status" }
+            $project: { 
+                userProfile: 1,
+                subscriptionTier: "$subscription.plan.name", 
+                joinDate: "$createdAt", 
+                status: "$subscription.status" 
+            }
         }
     ]);
 

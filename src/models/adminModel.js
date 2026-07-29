@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 // Schema
 const adminSchema = new Schema({
     username: { type: String, trim: true, lowercase: true, required: true, unique:[true, "This username has already been taken by another admin"] },
+    email: { type: String, trim: true, lowercase: true, required: true, unique:[true, "This email has already been taken by another admin"] },
     password: { type: String, trim: true, required: true },
     role: { type: String, default: "admin" },
     allowedModules: { type: [String], default: [] },

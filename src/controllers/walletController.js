@@ -230,7 +230,7 @@ const viewTransactionTimeline = asyncHandler(async (request, response) => {
 
         // Lookup inside escrow transaction
         {
-            $lookup:{
+            $lookup: {
                 from: "escrowtransactions",
                 localField: "_id",
                 foreignField: "orderId",
@@ -238,9 +238,19 @@ const viewTransactionTimeline = asyncHandler(async (request, response) => {
             }
         },
 
+        // Lookup inside escrow transaction (For extracting transaction status)
+        {
+            $lookup: {
+                from: "transactions",
+                localField: "_id",
+                foreignField: "orderId",
+                as: "transaction"
+            }
+        },        
+
         // Lookup inside user profile
         {
-            $lookup:{
+            $lookup: {
                 from: "userprofiles",
                 localField: "buyerUserProfileId",
                 foreignField: "_id",
@@ -260,13 +270,14 @@ const viewTransactionTimeline = asyncHandler(async (request, response) => {
 
         // Unwind
         { $unwind:{ path:"$escrow", preserveNullAndEmptyArrays:true } },
+        { $unwind:{ path:"$transaction", preserveNullAndEmptyArrays:true } },
         { $unwind:{ path:"$userProfile", preserveNullAndEmptyArrays:true } },
         { $unwind:{ path:"$businessProfile", preserveNullAndEmptyArrays:true } },
 
         // Projection
         {
             $project:{ 
-                status:1,
+                status: "$transaction.status",
                 orderPlacedAt: "$createdAt", 
                 shippedAt: "$tracking.shippedAt", 
                 deliveredAt: "$tracking.deliveredAt",

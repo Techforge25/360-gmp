@@ -58,6 +58,19 @@ const worker = new Worker("emailQueue", async (job) => {
         const result = await sendEmail(email, "Cancel Subscription Request", filledHtml);        
         if(!result) throw new ApiError(500, "Failed to send cancel subscription OTP");
     }      
+
+    // Send invitation to admin
+    if(job.name === "sendInvitationToAdmin")
+    {
+        const { username, email, password } = job.data;
+
+        // Execute
+        const result = await sendEmail(email, "Admin Invitation", `Here is your admin credentials!
+            <b> Username: ${username} </b> <br /> <br />
+            <b> Password: ${password} </b>
+        `);        
+        if(!result) throw new ApiError(500, "Failed to send invitation email to admin");
+    }      
 }, { connection: redisConfigOptions, concurrency: 5 });
 
 // Attach events

@@ -6,6 +6,7 @@ const asyncHandler = require("../../utils/asyncHandler");
 const validate = require("../../utils/validate");
 const { createAdminValidator, updateAdminValidator } = require("../../validations/adminValidator");
 const emailQueue = require("../../queues/emailQueue");
+const { emptyList } = require("../../constants");
 
 // Create admin
 const createAdmin = asyncHandler(async (request, response) => {
@@ -29,6 +30,25 @@ const createAdmin = asyncHandler(async (request, response) => {
     
     // Response
     return response.status(201).json(new ApiResponse(201, null, "Admin has been created"));
+});
+
+// Fetch admins
+const fetchAdmins = asyncHandler(async (request, response) => {
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Fetch
+    const admins = await Admin.aggregatePaginate([
+        // Sort
+        { $sort: { createdAt: -1 } },
+
+        // Projection
+        { $project: { username: 1, email: 1, allowedModules: 1, createdAt: 1 } }
+    ], { page: Number(page), limit: Number(limit) });
+    if(!admins.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No admin found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, admins, "Admins have been fetched"));
 });
 
 // View admin
@@ -66,4 +86,4 @@ const updateAdmin = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Admin details have been updated"));
 });
 
-module.exports = { createAdmin, viewAdmin, updateAdmin };
+module.exports = { createAdmin, fetchAdmins, viewAdmin, updateAdmin };

@@ -2,13 +2,14 @@ const { emptyList } = require("../../constants");
 const Subscription = require("../../models/subscription");
 const User = require("../../models/users");
 const ApiResponse = require("../../utils/ApiResponse");
+const ApiError = require("../../utils/ApiError");
 const asyncHandler = require("../../utils/asyncHandler");
 
 // Allowed date filters
 const allowedDateFilters = ["all", "7d", "1m", "6m", "1y"];
 
 // Helper function to implement date range
-const getDateFilter = (request) => {
+const getDateFilter = (request, fieldName = "createdAt") => {
     // Date filter
     const { dateRange = "all" } = request.query;
     if(!allowedDateFilters.includes(dateRange)) throw new ApiError(400, "Invalid date range");
@@ -28,42 +29,114 @@ const getDateFilter = (request) => {
         if(dateRange === "1y") startDate.setMonth(now.getMonth() - 12);
 
         // Inject date range
-        dateFilter.createdAt = { $gte: startDate };
+        dateFilter[fieldName] = { $gte: startDate };
     }
 
     return { dateFilter };
 };
 
 // Fetch subscription stats
+// const fetchSubscriptionStats = asyncHandler(async (request, response) => {
+//     const subscriptions = await Subscription.aggregate([
+//         // Lookup
+//         {
+//             $lookup:{
+//                 from:"plans",
+//                 localField:"planId",
+//                 foreignField:"_id",
+//                 as:"plan",
+//                 pipeline:[
+//                     { $project:{ _id:0, name:1 } },
+//                 ]
+//             }
+//         },
+
+//         // Unwind
+//         { $unwind: { path:"$plan", preserveNullAndEmptyArrays:true } },
+
+//         // Group
+//         {
+//             $group:{
+//                 _id:"$plan.name",
+//                 count:{ $sum:1 }
+//             }
+//         },
+//     ]);
+
+//     // Response
+//     return response.status(200).json(new ApiResponse(200, subscriptions, "Subscription stats have been fetched"));
+// });
+
+// Fetch subscription stats (V2)
 const fetchSubscriptionStats = asyncHandler(async (request, response) => {
-    const subscriptions = await Subscription.aggregate([
-        // Lookup
-        {
-            $lookup:{
-                from:"plans",
-                localField:"planId",
-                foreignField:"_id",
-                as:"plan",
-                pipeline:[
-                    { $project:{ _id:0, name:1 } },
-                ]
-            }
-        },
+    const { dateFilter } = getDateFilter(request, "startDate");
 
-        // Unwind
-        { $unwind: { path:"$plan", preserveNullAndEmptyArrays:true } },
+    const [[paidMembers], [trialMembers]] = await Promise.all([
+        // Paid members
+        Subscription.aggregate([
+            // Match
+            { $match: { ...dateFilter, status: "active" } },
 
-        // Group
-        {
-            $group:{
-                _id:"$plan.name",
-                count:{ $sum:1 }
+            // Lookup plan
+            {
+                $lookup: {
+                    from: "plans",
+                    localField: "planId",
+                    foreignField: "_id",
+                    as: "plan"
+                }
+            },
+
+            // Unwind
+            { $unwind: "$plan" },
+            { $match: { "plan.name": { $ne: "Sneak Peek Free – 14 Days" } } },
+
+            // Count
+            {
+                $group: {
+                    _id: null,
+                    totalPaidMembers: { $sum: 1 }
+                }
             }
-        },
+        ]),
+
+        // Trial members
+        Subscription.aggregate([
+            // Match
+            { $match: { ...dateFilter, status: "active" } },
+
+            // Lookup plan
+            {
+                $lookup: {
+                    from: "plans",
+                    localField: "planId",
+                    foreignField: "_id",
+                    as: "plan"
+                }
+            },
+
+            // Unwind
+            { $unwind: "$plan" },
+            { $match: { "plan.name": { $eq: "Sneak Peek Free – 14 Days" } } },
+
+            // Count
+            {
+                $group: {
+                    _id: null,
+                    totalTrialMembers: { $sum: 1 }
+                }
+            }
+        ]),        
     ]);
 
+    // Payload
+    const payload = {
+        totalPaidMembers: Number(paidMembers?.totalPaidMembers) || 0,
+        totalTrialMembers: Number(trialMembers?.totalTrialMembers) || 0,
+    };
+
     // Response
-    return response.status(200).json(new ApiResponse(200, subscriptions, "Subscription stats have been fetched"));
+    return response.status(200).json(new ApiResponse(200, payload, "Subscription stats have been fetched"));
 });
 
 // Fetch trial users

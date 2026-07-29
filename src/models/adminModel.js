@@ -1,5 +1,6 @@
 const { Schema, model } = require("mongoose");
 const bcrypt = require("bcrypt");
+const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
 // Schema
 const adminSchema = new Schema({
@@ -37,6 +38,9 @@ adminSchema.methods.matchPassword = async function(password) {
         return false;
     }
 }
+
+// Add pagination plugin
+adminSchema.plugin(aggregatePaginate);
 
 // Model
 const Admin = model("Admin", adminSchema);

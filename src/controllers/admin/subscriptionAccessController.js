@@ -153,17 +153,28 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
     const baseFilter = {};
     if(search) baseFilter.email = { $regex:search, $options:"i" };
 
-    // Calculate days and message
+    // Calculate days
     const today = new Date();
-    const messageLimit = 4;
 
     // Fetch
-    const aggregate = User.aggregate([
+    const trialUsers = await User.aggregatePaginate([
         // Match
-        { $match:baseFilter },
+        { $match: baseFilter },
 
         // Sort
-        { $sort:{ createdAt:-1 } },       
+        { $sort: { createdAt:-1 } },
+        
+        // Lookup on user profile
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "_id",
+                foreignField: "userId",
+                as: "userProfile",
+                pipeline: [{ $project: { _id: 0, fullName: 1, email: 1, logo: 1 } }]
+            }
+        },
+        { $unwind: "$userProfile" },        
 
         // Lookup on subscription
         {
@@ -190,6 +201,7 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
         // Trial plan filter
         { $match: { "plan.price": 0 } },
 
+        // Lookup trial usage
         {
             $lookup: {
                 from: "trialusages",
@@ -198,13 +210,9 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
                 as: "trialUsage"
             }
         },
-        {
-            $unwind: {
-                path: "$trialUsage",
-                preserveNullAndEmptyArrays: true
-            }
-        },
+        { $unwind: { path: "$trialUsage", preserveNullAndEmptyArrays: true } },
 
+        // Count days remaining
         {
             $addFields: {
                 daysRemaining: {
@@ -221,18 +229,13 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
         // Projection
         {
             $project: {
-                email: 1,
+                userProfile: 1,
                 daysRemaining: 1,
-                messageLimit: { $literal: messageLimit },
-                status: "$subscription.status",
-                messagesUsed: { $ifNull: ["$trialUsage.messagesUsed", 0] }
+                status: "$subscription.status"
             }
         }
-    ]);
-
-    // Execute query
-    const trialUsers = await User.aggregatePaginate(aggregate, options);
-    if(!trialUsers.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No trial users found"));
+    ], options);
+    if(!trialUsers.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No trial users found"));
 
     // Response
     return response.status(200).json(new ApiResponse(200, trialUsers, "Trial users have been fetched"));    

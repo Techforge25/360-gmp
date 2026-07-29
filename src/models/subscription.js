@@ -9,7 +9,7 @@ const subscriptionSchema = new Schema({
     stripeCustomerId: { type:String, default:null },
     startDate: { type:Date, required:true },
     endDate: { type:Date, required:true }
-});
+}, { timestamps: true });
 
 // Model
 const Subscription = model("Subscription", subscriptionSchema);

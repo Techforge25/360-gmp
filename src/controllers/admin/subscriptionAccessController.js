@@ -150,7 +150,7 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
     };
 
     // Get date filter
-    const { dateFilter } = getDateFilter(request);
+    const { dateFilter } = getDateFilter(request, "startDate");
 
     // Search filter (Search by user profile full name)
     const searchFilter = {};
@@ -173,9 +173,6 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
 
     // Fetch
     const trialUsers = await User.aggregatePaginate([
-        // Match
-        { $match: { ...dateFilter } },
-
         // Sort
         { $sort: { createdAt:-1 } },
         
@@ -202,7 +199,7 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
                 foreignField: "userId",
                 as: "subscription",
                 pipeline: [
-                    { $match: subscriptionStatusFilter }
+                    { $match: { ...dateFilter, ...subscriptionStatusFilter } }
                 ]
             }
         },
@@ -272,6 +269,9 @@ const fetchPremiumUsers = asyncHandler(async (request, response) => {
         limit: Number(limit),
     };
 
+    // Get date filter
+    const { dateFilter } = getDateFilter(request);    
+
     // Base filter
     const baseFilter = {};
     if(search) baseFilter.email = { $regex: search, $options:"i" };
@@ -285,7 +285,7 @@ const fetchPremiumUsers = asyncHandler(async (request, response) => {
         { $sort:{ createdAt: -1 } },
 
         // Projection
-        { $project: { email:1, createdAt:1 } },
+        { $project: { email: 1, createdAt: 1 } },
 
         // Lookup user profile
         {
@@ -294,10 +294,20 @@ const fetchPremiumUsers = asyncHandler(async (request, response) => {
                 localField: "_id",
                 foreignField: "userId",
                 as: "userProfile",
-                pipeline: [{ $project: { _id: 0, fullName: 1, email: 1, logo: 1 } }]
+                pipeline: [{ $project: { _id: 0, fullName: 1, logo: 1 } }]
             }
         },
 
+        // Lookup business profile
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "_id",
+                foreignField: "ownerUserId",
+                as: "businessProfile",
+                pipeline: [{ $project: { _id: 0, companyName: 1 } }]
+            }
+        },        
 
         // Lookup inside subscription
         {
@@ -327,16 +337,19 @@ const fetchPremiumUsers = asyncHandler(async (request, response) => {
 
         // Unwind
         { $unwind: "$userProfile" },
+        { $unwind: "$businessProfile" },
         { $unwind: "$subscription" },
         { $unwind: "$subscription.plan" },
 
         // Match
-        { $match:{ "subscription.plan.price": { $gt: 0 } } },
+        { $match: { "subscription.plan.price": { $gt: 0 } } },
 
         // Final projection
         {
             $project: { 
-                userProfile: 1,
+                fullName: "$userProfile.fullName",
+                logo: "$userProfile.logo",
+                companyName: "$businessProfile.companyName",
                 subscriptionTier: "$subscription.plan.name", 
                 joinDate: "$createdAt", 
                 status: "$subscription.status" 

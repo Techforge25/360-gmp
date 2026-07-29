@@ -9,7 +9,7 @@ const adminSchema = new Schema({
     role: { type: String, default: "admin" },
     allowedModules: { type: [String], default: [] },
     refreshToken: { type: String, default: null }
-});
+}, { timestamps: true });
 
 // Hash password
 adminSchema.pre("save", async function() {

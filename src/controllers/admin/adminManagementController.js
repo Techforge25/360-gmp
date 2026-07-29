@@ -4,40 +4,66 @@ const ApiError = require("../../utils/ApiError");
 const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
 const validate = require("../../utils/validate");
-const { createAdminValidator, assignModuleValidator } = require("../../validations/adminValidator");
+const { createAdminValidator, updateAdminValidator } = require("../../validations/adminValidator");
+const emailQueue = require("../../queues/emailQueue");
 
 // Create admin
 const createAdmin = asyncHandler(async (request, response) => {
     // Get validated payload
-    const { username, password, allowedModules } = validate(createAdminValidator, request.body) || {};
+    const { username, email, password, allowedModules } = validate(createAdminValidator, request.body) || {};
 
     // Prevent username duplication
-    const exists = await Admin.exists({ username });
-    if(exists) throw new ApiError(409, "This username is already taken");
+    const usernameExist = await Admin.exists({ username });
+    if(usernameExist) throw new ApiError(409, "This username is already taken");
+
+    // Prevent email duplication
+    const emailExist = await Admin.exists({ email });
+    if(emailExist) throw new ApiError(409, "This email is already taken");    
 
     // Save
-    const admin = await Admin.create({ username, password, allowedModules });
+    const admin = await Admin.create({ username, email, password, allowedModules });
     if(!admin) throw new ApiError(500, "Failed to create admin");
+
+    // Send invitation email to admin
+    await emailQueue.add("sendInvitationToAdmin", { username, email, password });
     
     // Response
     return response.status(201).json(new ApiResponse(201, null, "Admin has been created"));
 });
 
-// Assign module to admin
-const assignModuleToAdmin = asyncHandler(async (request, response) => {
-    // Sanitize ID
+// View admin
+const viewAdmin = asyncHandler(async (request, response) => {
+    // Sanitize admin
+    const { adminId } = request.params;
+    if(!isValidObjectId(adminId)) throw new ApiError(400, "Invalid Admin ID");
+    
+    // Fetch
+    const admin = await Admin.findById(adminId).select("-_id username email allowedModules").lean();
+    if(!admin) throw new ApiError(404, "Admin not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, admin, "Admin details have been fetched"));
+});
+
+// Update admin
+const updateAdmin = asyncHandler(async (request, response) => {
+    // Sanitize admin
     const { adminId } = request.params;
     if(!isValidObjectId(adminId)) throw new ApiError(400, "Invalid Admin ID");
 
     // Get validated payload
-    const { allowedModules } = validate(assignModuleValidator, request.body) || {};
+    const { username, password, allowedModules } = validate(updateAdminValidator, request.body) || {};
 
-    // Update
-    const admin = await Admin.findByIdAndUpdate(adminId, { $set: { allowedModules } }, { returnDocument: 'after' });
+    // Find admin
+    const admin = await Admin.findById(adminId);
     if(!admin) throw new ApiError(404, "Admin not found");
 
+    // Update
+    Object.assign(admin, { username, password, allowedModules });
+    await admin.save();
+
     // Response
-    return response.status(200).json(new ApiResponse(200, admin.allowedModules, "Module has been assigned"));
+    return response.status(200).json(new ApiResponse(200, null, "Admin details have been updated"));
 });
 
-module.exports = { createAdmin, assignModuleToAdmin };
+module.exports = { createAdmin, viewAdmin, updateAdmin };

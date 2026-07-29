@@ -259,8 +259,8 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, trialUsers, "Trial users have been fetched"));    
 });
 
-// Fetch premium users
-const fetchPremiumUsers = asyncHandler(async (request, response) => {
+// Fetch paid users
+const fetchPaidUsers = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10, search = "" } = request.query;
 
     // Pagination options
@@ -270,7 +270,7 @@ const fetchPremiumUsers = asyncHandler(async (request, response) => {
     };
 
     // Get date filter
-    const { dateFilter } = getDateFilter(request);    
+    const { dateFilter } = getDateFilter(request, "startDate");   
 
     // Base filter
     const baseFilter = {};
@@ -341,8 +341,8 @@ const fetchPremiumUsers = asyncHandler(async (request, response) => {
         { $unwind: "$subscription" },
         { $unwind: "$subscription.plan" },
 
-        // Match
-        { $match: { "subscription.plan.price": { $gt: 0 } } },
+        // Match paid plan with date filter
+        { $match: { ...dateFilter, "subscription.plan.price": { $gt: 0 } } },
 
         // Final projection
         {
@@ -453,4 +453,4 @@ const fetchExpiringSubscriptions = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, expiringSubscriptions, "Expiring subscriptions have been fetched"));
 });
 
-module.exports = { fetchSubscriptionStats, fetchTrialUsers, fetchPremiumUsers, fetchExpiringSubscriptions };
+module.exports = { fetchSubscriptionStats, fetchTrialUsers, fetchPaidUsers, fetchExpiringSubscriptions };

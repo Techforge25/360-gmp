@@ -1,3 +1,5 @@
+const ApiError = require("./ApiError");
+
 // Allowed date filters
 const allowedDateFilters = ["all", "7d", "1m", "6m", "1y"];
 

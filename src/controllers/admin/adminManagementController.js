@@ -81,14 +81,14 @@ const updateAdmin = asyncHandler(async (request, response) => {
     if(!isValidObjectId(adminId)) throw new ApiError(400, "Invalid Admin ID");
 
     // Get validated payload
-    const { username, password, allowedModules } = validate(updateAdminValidator, request.body) || {};
+    const { username, allowedModules } = validate(updateAdminValidator, request.body) || {};
 
     // Find admin
     const admin = await Admin.findById(adminId);
     if(!admin) throw new ApiError(404, "Admin not found");
 
     // Update
-    Object.assign(admin, { username, password, allowedModules });
+    Object.assign(admin, { username, allowedModules });
     await admin.save();
 
     // Response

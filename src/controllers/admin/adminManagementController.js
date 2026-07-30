@@ -4,7 +4,7 @@ const ApiError = require("../../utils/ApiError");
 const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
 const validate = require("../../utils/validate");
-const { createAdminValidator, updateAdminValidator } = require("../../validations/adminValidator");
+const { createAdminValidator, updateAdminValidator, updateAdminPasswordValidator } = require("../../validations/adminValidator");
 const emailQueue = require("../../queues/emailQueue");
 const { emptyList } = require("../../constants");
 
@@ -95,6 +95,31 @@ const updateAdmin = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Admin details have been updated"));
 });
 
+// Update admin password
+const updateAdminPassword = asyncHandler(async (request, response) => {
+    // Sanitize admin
+    const { adminId } = request.params;
+    if(!isValidObjectId(adminId)) throw new ApiError(400, "Invalid Admin ID");
+
+    // Get validated payload
+    const { password } = validate(updateAdminPasswordValidator, request.body) || {};
+
+    // Find admin
+    const admin = await Admin.findById(adminId);
+    if(!admin) throw new ApiError(404, "Admin not found");
+
+    // Match password
+    const matchPassword = await admin.matchPassword(password);
+    if(matchPassword) throw new ApiError(400, "New password cannot be the same as previous password");
+
+    // Update
+    Object.assign(admin, { password });
+    await admin.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Admin password has been updated"));
+});
+
 // Delete admin
 const deleteAdmin = asyncHandler(async (request, response) => {
     // Sanitize admin
@@ -109,4 +134,4 @@ const deleteAdmin = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Admin has been deleted"));
 });
 
-module.exports = { createAdmin, fetchAdmins, viewAdmin, updateAdmin, deleteAdmin };
+module.exports = { createAdmin, fetchAdmins, viewAdmin, updateAdmin, updateAdminPassword, deleteAdmin };

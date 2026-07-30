@@ -458,10 +458,10 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
             }
         }
     ], { page, limit });
-    if(!paidUsers.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No premium users found"));
+    if(!paidUsers.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No paid users found"));
 
     // Response
-    return response.status(200).json(new ApiResponse(200, paidUsers, "Premium users have been fetched"));
+    return response.status(200).json(new ApiResponse(200, paidUsers, "Paid users have been fetched"));
 });
 
 // Fetch subscriptions expiring soon users

@@ -2,7 +2,7 @@ const { cookieOptions } = require("../../constants");
 const Admin = require("../../models/adminModel");
 const { redis } = require("../../redis/connection");
 const { generateAdminAccessToken, generateAdminRefreshToken, 
-getAdminRefreshToken, verifyAdminRefreshToken } = require("../../utils/adminAccessToken");
+getAdminRefreshToken, verifyAdminRefreshToken, getAdminAccessToken, verifyAdminAccessToken } = require("../../utils/adminAccessToken");
 const ApiError = require("../../utils/ApiError");
 const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
@@ -120,4 +120,18 @@ const adminLogout = asyncHandler(async (request, response) => {
     .json(new ApiResponse(200, null, "Logout successful"));
 });
 
-module.exports = { adminLogin, authMe, adminRefreshToken, adminLogout };
+// Auth status
+const authStatus = asyncHandler(async (request, response) => {
+    // Get token
+    const adminAccessToken = getAdminAccessToken(request);
+    if(!adminAccessToken) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));
+    
+    // Verify
+    const admin = verifyAdminAccessToken(adminAccessToken);
+    if(!admin) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));
+    
+    // Response
+    return response.status(200).json(new ApiResponse(200, { isLoggedIn: true }, "Login session found"));    
+});
+
+module.exports = { adminLogin, authMe, adminRefreshToken, adminLogout, authStatus };

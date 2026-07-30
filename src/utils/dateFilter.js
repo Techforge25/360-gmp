@@ -27,3 +27,5 @@ const getDateFilter = (request, fieldName = "createdAt") => {
 
     return { dateFilter };
 };
+
+module.exports = getDateFilter;

@@ -9,7 +9,8 @@ const adminSchema = new Schema({
     password: { type: String, trim: true, required: true },
     role: { type: String, default: "admin" },
     allowedModules: { type: [String], default: [] },
-    refreshToken: { type: String, default: null }
+    refreshToken: { type: String, default: null },
+    status: { type: String, enum: ["active", "inactive"], default: "active" }
 }, { timestamps: true });
 
 // Hash password

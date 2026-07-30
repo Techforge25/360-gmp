@@ -35,12 +35,15 @@ const createAdmin = asyncHandler(async (request, response) => {
 // Fetch admins
 const fetchAdmins = asyncHandler(async (request, response) => {
     // Pagination options
-    const { page = 1, limit = 10 } = request.query;
+    const { page = 1, limit = 10, status = "active" } = request.query;
+
+    // Validate status key
+    if(!["active", "inactive"].includes(status)) throw new ApiError(400, "Invalid status key. Allowed keys are: 'active', 'inactive'");
 
     // Fetch
     const admins = await Admin.aggregatePaginate([
         // Match
-        { $match: { status: "active" } },
+        { $match: { status } },
 
         // Sort
         { $sort: { createdAt: -1 } },
@@ -48,10 +51,13 @@ const fetchAdmins = asyncHandler(async (request, response) => {
         // Projection
         { $project: { username: 1, email: 1, allowedModules: 1, createdAt: 1 } }
     ], { page: Number(page), limit: Number(limit) });
-    if(!admins.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No admin found"));
+    if(!admins.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, `No ${status} admin found`));
+
+    // Response message
+    const message = status === "active" ? "Active admins have been fetched" : "Inactive admins have been fetched";
 
     // Response
-    return response.status(200).json(new ApiResponse(200, admins, "Admins have been fetched"));
+    return response.status(200).json(new ApiResponse(200, admins, message));
 });
 
 // View admin

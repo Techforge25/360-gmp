@@ -39,6 +39,9 @@ const fetchAdmins = asyncHandler(async (request, response) => {
 
     // Fetch
     const admins = await Admin.aggregatePaginate([
+        // Match
+        { $match: { status: "active" } },
+
         // Sort
         { $sort: { createdAt: -1 } },
 

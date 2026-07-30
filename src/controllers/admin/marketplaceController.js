@@ -1,3 +1,4 @@
+const { isValidObjectId } = require("mongoose");
 const { emptyList } = require("../../constants");
 const Dispute = require("../../models/disputeModel");
 const EscrowTransaction = require("../../models/escrowTrasanction");
@@ -6,6 +7,8 @@ const Product = require("../../models/products");
 const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
 const getDateFilter = require("../../utils/dateFilter");
+const ApiError = require("../../utils/ApiError");
+const convertToMongoId = require("../../utils/convertToMongoId");
 
 // Fetch market place stats
 const fetchMarketplaceStats = asyncHandler(async (request, response) => {
@@ -59,30 +62,45 @@ const fetchMarketplaceStats = asyncHandler(async (request, response) => {
 const fetchOrderLogs = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
 
-    // Pagination options
-    const options = {
-        page: Number(page),
-        limit: Number(limit),
-    };
+    // Get date filter
+    const { dateFilter } = getDateFilter(request);    
 
     // Aggregate
-    const aggregate = Order.aggregate([
-        { $sort: { createdAt: -1 } },
-        // Projection
-        { $project:{ createdAt:1, buyerUserProfileId:1, items:1, totalAmount:1 } },
+    const orders = await Order.aggregatePaginate([
+        // Match
+        { $match: dateFilter },
 
-        // Lookup inside user profile
+        // Sort
+        { $sort: { createdAt: -1 } },
+
+        // Projection
+        { $project:{ createdAt: 1, buyerUserProfileId: 1, sellerBusinessId: 1, items: 1, totalAmount: 1, orderStatus: "$status" } },
+
+        // Lookup user profile
         {
             $lookup: {
                 from: "userprofiles",
                 localField: "buyerUserProfileId",
                 foreignField: "_id",
                 as: "userProfile",
-                pipeline:[
-                    { $project:{ _id:0, fullName:1, logo:1 } }
+                pipeline: [
+                    { $project:{ _id: 0, fullName: 1, email: 1, logo: 1 } }
                 ]
             }
         },
+
+        // Lookup business profile
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "sellerBusinessId",
+                foreignField: "_id",
+                as: "businessProfile",
+                pipeline: [
+                    { $project:{ _id: 0, companyName: 1, logo: 1, email: "$primaryContactPerson.supportEmail" } }
+                ]
+            }
+        },        
 
         // Lookup inside escrow transaction to get payment status
         {
@@ -96,64 +114,119 @@ const fetchOrderLogs = asyncHandler(async (request, response) => {
 
         // Unwind
         { $unwind: "$userProfile" },
+        { $unwind: "$businessProfile" },
         { $unwind: "$escrowTransaction" },
 
         // Final projection
         {
             $project:{
-                createdAt:1,
-                buyerInfo:"$userProfile",
-                orderType:{
-                    $cond:[
-                        {
-                            $gt:[
-                                {
-                                    $size:{
-                                        $filter:{
-                                            input:"$items",
-                                            as:"item",
-                                            cond:{ $gt:["$$item.quantity", 1] }
-                                        }
-                                    }
-                                },
-                                0
-                            ]
-                        },
-                        "bulk",
-                        "single"
-                    ]
-                },
-                paymentType:"$escrowTransaction.status",
-                totalAmount:1
+                createdAt: 1,
+                buyerInfo: "$userProfile",
+                sellerInfo: "$businessProfile",
+                totalAmount: 1,
+                orderStatus: 1
             }
         }
-    ]);
-
-    // Execute query
-    const orders = await Order.aggregatePaginate(aggregate, options);
-    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No order logs found"));
+    ], { page, limit });
+    if(!orders.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No order logs found"));
 
     // Response
     return response.status(200).json(new ApiResponse(200, orders, "Order logs have been fetched"));
+});
+
+// View order log
+const viewOrderLog = asyncHandler(async (request, response) => {
+    const { orderId } = request.params;
+    if(!isValidObjectId(orderId)) throw new ApiError(400, "Invalid Order ID");
+
+    // Aggregate
+    const [order] = await Order.aggregate([
+        // Match
+        { $match: { _id: convertToMongoId(orderId) } },
+
+        // Lookup user profile (buyer)
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "buyerUserProfileId",
+                foreignField: "_id",
+                as: "buyer",
+                pipeline: [{ $project: { _id: 0, fullName: 1, email: 1, logo: 1 } }]
+            }
+        },
+
+        // Lookup business profile (seller)
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "sellerBusinessId",
+                foreignField: "_id",
+                as: "seller",
+                pipeline: [{ $project: { _id: 0, companyName: 1, email: "$primaryContactPerson.supportEmail", logo: 1 } }]
+            }
+        },        
+
+        // Lookup products
+        {
+            $lookup: {
+                from: "products",
+                localField: "items.productId",
+                foreignField: "_id",
+                as: "orderItems",
+                pipeline: [{ $project: { _id: 0, title: 1, image: 1, pricePerUnit: 1 } }]
+            }
+        },     
+        
+        // Lookup products
+        {
+            $lookup: {
+                from: "escrowtransactions",
+                localField: "_id",
+                foreignField: "orderId",
+                as: "escrowTransaction",
+                pipeline: [{ $project: { _id: 0, platformFee: 1 } }]
+            }
+        },          
+
+        // Unwind
+        { $unwind: "$buyer" },
+        { $unwind: "$seller" },
+        { $unwind: "$escrowTransaction" },
+
+        // Projection
+        {
+            $project: {
+                buyer: 1,
+                seller: 1,
+                orderItems: 1,
+                tracking: 1,
+                createdAt: 1,
+                completedAt: 1,
+                totalAmount: 1,
+                platformFee: "$escrowTransaction.platformFee"
+            }
+        },
+    ]);
+    if(!order) throw new ApiError(404, "Order not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, order, "Order details have been fetched"));
 });
 
 // Fetch product audits
 const fetchProductAudits = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
 
-    // Pagination options
-    const options = {
-        page: Number(page),
-        limit: Number(limit),
-    };
+    // Get date filter
+    const { dateFilter } = getDateFilter(request);      
 
     // Aggregate
-    const aggregate = Product.aggregate([
+    const products = await Product.aggregatePaginate([
         // Pending
-        { $match:{ status: "pending" } },
+        { $match: { ...dateFilter, status: "pending" } },
 
         // Sort
-        { $sort:{ createdAt: -1 } },
+        { $sort: { createdAt: -1 } },
 
         // Lookup inside business profile
         {
@@ -162,8 +235,8 @@ const fetchProductAudits = asyncHandler(async (request, response) => {
                 localField: "businessId",
                 foreignField: "_id",
                 as: "businessProfile",
-                pipeline:[
-                    { $project:{ _id:0, companyName:1, logo:1 } }
+                pipeline: [
+                    { $project: { _id: 0, companyName: 1, ownerName: 1, logo: 1 } }
                 ]
             }
         },
@@ -172,12 +245,9 @@ const fetchProductAudits = asyncHandler(async (request, response) => {
         { $unwind: "$businessProfile" },
 
         // Projection
-        { $project:{ title:1, createdAt:1, sellerInfo:"$businessProfile", category:1, status:1 } }
-    ]);
-
-    // Execute query
-    const products = await Product.aggregatePaginate(aggregate, options);
-    if(!products.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No product audits found"));
+        { $project:{ title: 1, createdAt: 1, sellerInfo: "$businessProfile", category: 1 } }
+    ], { page, limit });
+    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No product audits found"));
 
     // Response
     return response.status(200).json(new ApiResponse(200, products, "Product audits have been fetched"));    
@@ -252,4 +322,5 @@ const fetchDisputedOrders = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, orders, "Disputed order logs have been fetched"));    
 });
 
-module.exports = { fetchMarketplaceStats, fetchOrderLogs, fetchProductAudits, fetchDisputedOrders };
+module.exports = { fetchMarketplaceStats, fetchOrderLogs, viewOrderLog, 
+fetchProductAudits, fetchDisputedOrders };

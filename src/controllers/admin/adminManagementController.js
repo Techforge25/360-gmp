@@ -86,4 +86,18 @@ const updateAdmin = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Admin details have been updated"));
 });
 
-module.exports = { createAdmin, fetchAdmins, viewAdmin, updateAdmin };
+// Delete admin
+const deleteAdmin = asyncHandler(async (request, response) => {
+    // Sanitize admin
+    const { adminId } = request.params;
+    if(!isValidObjectId(adminId)) throw new ApiError(400, "Invalid Admin ID");
+
+    // Update
+    const admin = await Admin.findByIdAndUpdate(adminId, { $set: { status: "inactive" } });
+    if(!admin) throw new ApiError(404, "Admin not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Admin has been deleted"));
+});
+
+module.exports = { createAdmin, fetchAdmins, viewAdmin, updateAdmin, deleteAdmin };

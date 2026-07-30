@@ -61,7 +61,7 @@ const viewAdmin = asyncHandler(async (request, response) => {
     if(!isValidObjectId(adminId)) throw new ApiError(400, "Invalid Admin ID");
     
     // Fetch
-    const admin = await Admin.findById(adminId).select("-_id username email allowedModules").lean();
+    const admin = await Admin.findById(adminId).select("-_id username email allowedModules status").lean();
     if(!admin) throw new ApiError(404, "Admin not found");
 
     // Response

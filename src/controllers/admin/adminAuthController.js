@@ -42,6 +42,19 @@ const adminLogin = asyncHandler(async (request, response) => {
         throw new ApiError(400, "Invalid username or password");
     }
 
+    // Check activeness
+    if(admin.status !== "active") 
+    {
+        // Rate limit
+        const ip = request.headers["x-real-ip"];
+        const key = `failedAdminLoginAttempts:${ip}`;
+
+        const attempts = await redis.incr(key);
+        if(attempts === 1) await redis.expire(key, 60 * 5);
+        if(attempts > 5) throw new ApiError(429, "Too many failed login attempts! Please try again after 5 minutes");        
+        throw new ApiError(400, "Your account has been disabled. Please contact support for assistance.");        
+    }
+
     // Generate access & refresh tokens
     const accessToken = generateAdminAccessToken(admin);
     const refreshToken = generateAdminRefreshToken(admin);

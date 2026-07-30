@@ -1,4 +1,4 @@
-const { frontendURL } = require("../constants");
+const { frontendURL, cookieOptions } = require("../constants");
 const { getAdminAccessToken, verifyAdminAccessToken } = require("../utils/adminAccessToken");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
@@ -18,6 +18,15 @@ const adminAuthentication = asyncHandler((request, response, next) => {
     {
         return response.status(401)
         .json(new ApiResponse(401, { redirectURL: `${frontendURL}/login` }, "Unauthorized! Invalid access token"));
+    }
+
+    // Strict check for admin status
+    if(admin.status !== "active")
+    {
+        return response.status(401)
+        .clearCookie("adminAccessToken", cookieOptions)
+        .clearCookie("adminRefreshToken", cookieOptions)
+        .json(new ApiResponse(401, { redirectURL: `${frontendURL}/login` }, "Unauthorized! Your account has been disabled"));        
     }
 
     // Pass through

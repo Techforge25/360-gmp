@@ -260,33 +260,142 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
 });
 
 // Fetch paid users
-const fetchPaidUsers = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search = "" } = request.query;
+// const fetchPaidUsers = asyncHandler(async (request, response) => {
+//     const { page = 1, limit = 10, search = "" } = request.query;
 
-    // Pagination options
-    const options = {
-        page: Number(page),
-        limit: Number(limit),
-    };
+//     // Pagination options
+//     const options = {
+//         page: Number(page),
+//         limit: Number(limit),
+//     };
+
+//     // Get date filter
+//     const { dateFilter } = getDateFilter(request, "startDate");   
+
+//     // Base filter
+//     const userSearchFilter = {};
+//     const businessSearchFilter = {};
+//     const baseFilter = {};
+//     if(search)
+//     {
+//         userSearchFilter.fullName = { $regex: search, $options: "i" };
+//         businessSearchFilter.companyName = { $regex: search, $options: "i" };
+//     }
+
+//     // Fetch
+//     const aggregate = User.aggregate([
+//         // Match
+//         { $match: baseFilter },
+
+//         // Sort
+//         { $sort:{ createdAt: -1 } },
+
+//         // Projection
+//         { $project: { email: 1, createdAt: 1 } },
+
+//         // Lookup user profile
+//         {
+//             $lookup: {
+//                 from: "userprofiles",
+//                 localField: "_id",
+//                 foreignField: "userId",
+//                 as: "userProfile",
+//                 pipeline: [
+//                     { $match: userSearchFilter },
+//                     { $project: { _id: 0, fullName: 1, logo: 1 } }
+//                 ]
+//             }
+//         },
+
+//         // Lookup business profile
+//         {
+//             $lookup: {
+//                 from: "businessprofiles",
+//                 localField: "_id",
+//                 foreignField: "ownerUserId",
+//                 as: "businessProfile",
+//                 pipeline: [
+//                     { $match: businessSearchFilter },
+//                     { $project: { _id: 0, companyName: 1 } }
+//                 ]
+//             }
+//         },        
+
+//         // Lookup inside subscription
+//         {
+//             $lookup: {
+//                 from: "subscriptions",
+//                 localField: "_id",
+//                 foreignField: "userId",
+//                 as:"subscription",
+//                 pipeline: [
+//                     { $project:{ _id:0, planId:1, status:1 } },
+
+//                     // Lookup inside plans
+//                     {
+//                         $lookup:{
+//                             from: "plans",
+//                             localField: "planId",
+//                             foreignField: "_id",
+//                             as: "plan",
+//                             pipeline:[
+//                                 { $project:{ _id: 0, name: 1, price: 1 } }
+//                             ]
+//                         }
+//                     }
+//                 ]
+//             },
+//         },
+
+//         // Unwind
+//         { $unwind: "$userProfile" },
+//         { $unwind: "$businessProfile" },
+//         { $unwind: "$subscription" },
+//         { $unwind: "$subscription.plan" },
+
+//         // Match paid plan with date filter
+//         { $match: { ...dateFilter, "subscription.plan.price": { $gt: 0 } } },
+
+//         // Final projection
+//         {
+//             $project: { 
+//                 fullName: "$userProfile.fullName",
+//                 logo: "$userProfile.logo",
+//                 companyName: "$businessProfile.companyName",
+//                 subscriptionTier: "$subscription.plan.name", 
+//                 joinDate: "$createdAt", 
+//                 status: "$subscription.status" 
+//             }
+//         }
+//     ]);
+
+//     // Execute query
+//     const premiumUsers = await User.aggregatePaginate(aggregate, options);
+//     if(!premiumUsers.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No premium users found"));
+
+//     // Response
+//     return response.status(200).json(new ApiResponse(200, premiumUsers, "Premium users have been fetched"));
+// });
+
+// Fetch paid users
+const fetchPaidUsers = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10, search, tierType, subscriptionStatus } = request.query;
 
     // Get date filter
-    const { dateFilter } = getDateFilter(request, "startDate");   
+    const { dateFilter } = getDateFilter(request, "startDate");
 
-    // Base filter
-    const baseFilter = {};
-    if(search) baseFilter.email = { $regex: search, $options:"i" };
+    // Validate query strings
+    const allowedTierTypes = ["Consumer / Individual", "Bronze", "Silver", "Gold", "Premium"];
+    const allowedSubscriptionStatus = ["active", "expired"];
+
+    if(tierType && !allowedTierTypes.includes(tierType)) throw new ApiError(400, "Invalid tier type");
+    if(subscriptionStatus && !allowedSubscriptionStatus.includes(subscriptionStatus))
+    {
+        throw new ApiError(400, "Invalid subscription status");
+    }
 
     // Fetch
-    const aggregate = User.aggregate([
-        // Match
-        { $match: baseFilter },
-
-        // Sort
-        { $sort:{ createdAt: -1 } },
-
-        // Projection
-        { $project: { email: 1, createdAt: 1 } },
-
+    const paidUsers = await User.aggregatePaginate([
         // Lookup user profile
         {
             $lookup: {
@@ -294,7 +403,9 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
                 localField: "_id",
                 foreignField: "userId",
                 as: "userProfile",
-                pipeline: [{ $project: { _id: 0, fullName: 1, logo: 1 } }]
+                pipeline: [
+                    { $project: { _id: 0, fullName: 1, logo: 1 } }
+                ]
             }
         },
 
@@ -305,9 +416,11 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
                 localField: "_id",
                 foreignField: "ownerUserId",
                 as: "businessProfile",
-                pipeline: [{ $project: { _id: 0, companyName: 1 } }]
+                pipeline: [
+                    { $project: { _id: 0, companyName: 1 } }
+                ]
             }
-        },        
+        },
 
         // Lookup inside subscription
         {
@@ -317,7 +430,8 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
                 foreignField: "userId",
                 as:"subscription",
                 pipeline: [
-                    { $project:{ _id:0, planId:1, status:1 } },
+                    { $match: dateFilter },
+                    { $project:{ _id: 0, planId: 1, status: 1, startDate: 1 } },
 
                     // Lookup inside plans
                     {
@@ -341,28 +455,44 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
         { $unwind: "$subscription" },
         { $unwind: "$subscription.plan" },
 
-        // Match paid plan with date filter
-        { $match: { ...dateFilter, "subscription.plan.price": { $gt: 0 } } },
+        // Search
+        ...(search ? [{
+            $match: {
+                $or: [
+                    { "userProfile.fullName": { $regex: search, $options: "i" } },
+                    { "businessProfile.companyName": { $regex: search, $options: "i" } }
+                ]
+            }
+        }] : []),
+
+        // Filter by tier type
+        ...(tierType ? [{ $match: { "subscription.plan.name": tierType } }] : []),
+
+        // Filter by subscription status (active | expired)
+        ...(subscriptionStatus ? [{ $match: { "subscription.status": subscriptionStatus } }] : []),
+
+        // Match paid plan
+        { $match: { "subscription.plan.price": { $gt: 0 } } },
+
+        // Sort
+        { $sort:{ createdAt: -1 } },
 
         // Final projection
         {
-            $project: { 
+            $project: {
                 fullName: "$userProfile.fullName",
                 logo: "$userProfile.logo",
                 companyName: "$businessProfile.companyName",
-                subscriptionTier: "$subscription.plan.name", 
-                joinDate: "$createdAt", 
-                status: "$subscription.status" 
+                subscriptionTier: "$subscription.plan.name",
+                joinDate: "$createdAt",
+                status: "$subscription.status"
             }
         }
-    ]);
-
-    // Execute query
-    const premiumUsers = await User.aggregatePaginate(aggregate, options);
-    if(!premiumUsers.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No premium users found"));
+    ], { page, limit });
+    if(!paidUsers.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No premium users found"));
 
     // Response
-    return response.status(200).json(new ApiResponse(200, premiumUsers, "Premium users have been fetched"));
+    return response.status(200).json(new ApiResponse(200, paidUsers, "Premium users have been fetched"));
 });
 
 // Fetch subscriptions expiring soon users

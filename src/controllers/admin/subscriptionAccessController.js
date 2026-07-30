@@ -69,9 +69,10 @@ const getDateFilter = (request, fieldName = "createdAt") => {
 
 // Fetch subscription stats (V2)
 const fetchSubscriptionStats = asyncHandler(async (request, response) => {
+    // Get date filter
     const { dateFilter } = getDateFilter(request, "startDate");
 
-    const [[paidMembers], [trialMembers]] = await Promise.all([
+    const [[paidMembers], [trialMembers], [trialConversion]] = await Promise.all([
         // Paid members
         Subscription.aggregate([
             // Match
@@ -126,13 +127,99 @@ const fetchSubscriptionStats = asyncHandler(async (request, response) => {
                     totalTrialMembers: { $sum: 1 }
                 }
             }
-        ]),        
+        ]),   
+        
+        // Trial conversion
+        Subscription.aggregate([
+            // Sort subscriptions chronologically
+            { $sort: { startDate: 1 } },
+
+            // Lookup plan
+            {
+                $lookup: {
+                    from: "plans",
+                    localField: "planId",
+                    foreignField: "_id",
+                    as: "plan"
+                }
+            },
+
+            // Unwind
+            { $unwind: "$plan" },
+
+            // Apply date filter
+            { $match: dateFilter },
+
+            // Group subscriptions by user
+            {
+                $group: {
+                    _id: "$userId",
+                    subscriptions: {
+                        $push: {
+                            planName: "$plan.name",
+                            price: "$plan.price",
+                            startDate: "$startDate"
+                        }
+                    }
+                }
+            },
+
+            // Determine if user converted
+            {
+                $project: {
+                    hadTrial: {
+                        $eq: [{ $arrayElemAt: ["$subscriptions.planName", 0] }, "Sneak Peek Free – 14 Days"]
+                    },
+
+                    converted: {
+                        $and: [
+                            {
+                                $eq: [{ $arrayElemAt: ["$subscriptions.planName", 0] }, "Sneak Peek Free – 14 Days"]
+                            },
+                            {
+                                $gt: [
+                                    {
+                                        $size: {
+                                            $filter: {
+                                                input: "$subscriptions",
+                                                as: "subscription",
+                                                cond: { $gt: ["$$subscription.price", 0] }
+                                            }
+                                        }
+                                    },
+                                    0
+                                ]
+                            }
+                        ]
+                    }
+                }
+            },
+
+            // Final counts
+            {
+                $group: {
+                    _id: null,
+                    totalTrials: {
+                        $sum: { $cond: ["$hadTrial", 1, 0] }
+                    },
+                    totalConverted: {
+                        $sum: { $cond: ["$converted", 1, 0] }
+                    }
+                }
+            }
+        ])        
     ]);
+
+    // Calculate total trial conversion
+    const totalTrials = trialConversion?.totalTrials || 0;
+    const totalConverted = trialConversion?.totalConverted || 0;
+    const trialConversionPercentage = totalTrials === 0 ? 0 : Number(((totalConverted / totalTrials) * 100).toFixed(2));
 
     // Payload
     const payload = {
         totalPaidMembers: Number(paidMembers?.totalPaidMembers) || 0,
         totalTrialMembers: Number(trialMembers?.totalTrialMembers) || 0,
+        trialConversionPercentage
     };
 
     // Response

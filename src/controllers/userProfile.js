@@ -84,10 +84,8 @@ const createUserProfile = asyncHandler(async (request, response) => {
 
     // Response
     return response.status(201)
-    .clearCookie("accessToken", cookieOptions)
-    .clearCookie("refreshToken", cookieOptions)
-    .clear("accessToken", accessToken, cookieOptions)
-    .clear("refreshToken", refreshToken, cookieOptions)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", refreshToken, cookieOptions)
     .json(new ApiResponse(201, { profile, isNewToPlatform:user.isNewToPlatform }, "User profile has been created"));
 }); 
 

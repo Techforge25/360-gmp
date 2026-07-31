@@ -98,7 +98,7 @@ const fetchUserProfiles = asyncHandler(async (request, response) => {
                             localField: "planId",
                             foreignField: "_id",
                             as: "plan",
-                            pipeline:[{ $match: {planFilter} }]
+                            pipeline:[{ $match: planFilter }]
                         }
                     },
 

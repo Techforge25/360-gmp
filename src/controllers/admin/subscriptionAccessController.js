@@ -6,6 +6,7 @@ const ApiError = require("../../utils/ApiError");
 const asyncHandler = require("../../utils/asyncHandler");
 const { isValidObjectId } = require("mongoose");
 const convertToMongoId = require("../../utils/convertToMongoId");
+const SubscriptionHistory = require("../../models/subscriptionHistoryModel");
 
 // Allowed date filters
 const allowedDateFilters = ["all", "7d", "1m", "6m", "1y"];
@@ -512,8 +513,85 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, paidUsers, "Paid users have been fetched"));
 });
 
-// View
+// View paid user
+const viewPaidUser = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { userId } = request.params;
+    if(!isValidObjectId(userId)) throw new ApiError(400, "Invalid User ID");
 
+    // Aggregate
+    const [user] = await User.aggregate([
+        // Match
+        { $match: { _id: convertToMongoId(userId) } },
+
+        // Lookup subscription
+        {
+            $lookup: {
+               from: "subscriptions",
+               localField: "_id",
+               foreignField: "userId",
+               as: "subscription",
+               pipeline: [
+                    {
+                        $lookup: {
+                            from: "plans",
+                            localField: "planId",
+                            foreignField: "_id",
+                            as: "plan",
+                            pipeline: [{ $project: { _id: 0, name: 1, price: 1 } }]
+                        }
+                    },
+                    { $unwind: "$plan" },
+                    { $project: { _id: 0, startDate: 1, endDate: 1, planName: "$plan.name", planPrice: "$plan.price" } }
+               ] 
+            }
+        },        
+
+        // Unwind
+        { $unwind: "$subscription" },
+
+        // Projection
+        { $project: { email: 1, subscription: 1 } }
+    ]);
+    if(!user) throw new ApiError(404, "User not found");
+
+    // Count lifetime subscription purchases
+    const [lifetimeSubscriptionPurchases] = await SubscriptionHistory.aggregate([
+        // Match
+        { $match: { userId: convertToMongoId(userId) } },
+
+        // Lookup plan
+        {
+            $lookup: {
+                from: "plans",
+                localField: "planId",
+                foreignField: "_id",
+                as: "plan",
+                pipeline: [{ $project: { _id: 0, price: 1 } }]
+            }
+        },
+
+        // Unwind
+        { $unwind: "$plan" },
+
+        // Group
+        {
+            $group: {
+                _id: null,
+                totalAmount: { $sum: "$plan.price" }
+            }
+        },
+
+        // Projection
+        { $project: { _id: 0, totalAmount: 1 } }
+    ]);
+
+    // Final computation
+    const lifetimeValue = lifetimeSubscriptionPurchases?.totalAmount || 0;
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, { ...user, lifetimeValue }, "Paid user details have been fetched"));
+});
 
 // Fetch subscriptions expiring soon users
 const fetchExpiringSubscriptions = asyncHandler(async (request, response) => {
@@ -604,4 +682,4 @@ const fetchExpiringSubscriptions = asyncHandler(async (request, response) => {
 });
 
 module.exports = { fetchSubscriptionStats, fetchTrialUsers, fetchPaidUsers, viewTrialUser, 
-fetchExpiringSubscriptions };
+viewPaidUser, fetchExpiringSubscriptions };

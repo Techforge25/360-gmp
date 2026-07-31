@@ -191,7 +191,8 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
                 email: "$primaryContactPerson.supportEmail", 
                 logo: 1,
                 createdAt: 1,
-                subscription: 1
+                subscription: 1,
+                status: 1
             }
         }
     ], { page, limit });

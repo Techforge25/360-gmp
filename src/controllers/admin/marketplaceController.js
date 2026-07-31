@@ -253,6 +253,49 @@ const fetchProductAudits = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, products, "Product audits have been fetched"));    
 });
 
+// View product audit details
+const viewProductAuditDetails = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { productId } = request.params;
+    if(!isValidObjectId(productId)) throw new ApiError(400, "Invalid product ID");
+
+    const [product] = await Product.aggregate([
+        // Match
+        { $match: { _id: convertToMongoId(productId) } },
+
+        // Lookup business profile
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "businessId",
+                foreignField: "_id",
+                as: "businessProfile",
+                pipeline: [{ $project: { _id: 0, companyName: 1, logo: 1 } }]
+            }
+        },
+        { $unwind: "$businessProfile" },
+
+        // Project
+        {
+            $project: {
+                businessProfile: 1,
+                title: 1,
+                detail: 1,
+                image: 1,
+                groupImages: 1,
+                category: 1,
+                pricePerUnit: 1,
+                tieredPricing: 1,
+                minOrderQty: 1,
+            }
+        }
+    ]);
+    if(!product) throw new ApiError(404, "Product not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, product, "Product has been fetched"));
+});
+
 // Fetch disputed order logs
 const fetchDisputedOrders = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
@@ -323,4 +366,4 @@ const fetchDisputedOrders = asyncHandler(async (request, response) => {
 });
 
 module.exports = { fetchMarketplaceStats, fetchOrderLogs, viewOrderLog, 
-fetchProductAudits, fetchDisputedOrders };
+fetchProductAudits, viewProductAuditDetails, fetchDisputedOrders };

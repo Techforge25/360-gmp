@@ -1,4 +1,4 @@
-const { emptyList } = require("../constants");
+const { emptyList, cookieOptions } = require("../constants");
 const JobApplication = require("../models/jobApplication");
 const Job = require("../models/jobsSchema");
 const Order = require("../models/orders");
@@ -21,6 +21,7 @@ const fs = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
 const { convert } = require("html-to-text");
+const { generateAccessToken, generateRefreshToken } = require("../utils/accessToken");
 
 // Create user profile
 const createUserProfile = asyncHandler(async (request, response) => {
@@ -47,12 +48,30 @@ const createUserProfile = asyncHandler(async (request, response) => {
             ownerId:profile._id, ownerModel:"UserProfile",
             pendingBalance:0, availableBalance:0, totalEarned:0, currency:'USD'
         }),
-        User.findByIdAndUpdate(userId, { role:"user", isNewToPlatform:false }, { new:true, lean:true })
+        User.findByIdAndUpdate(userId, { role: "user", isNewToPlatform:false }, { new: true })
     ]);
 
     // Validate
     if(!wallet) throw new ApiError(500, "Failed to setup wallet account for user");
     if(!user) throw new ApiError(500, "Failed to update user status upon user profile creation");
+
+    // Generate access token & refresh tokens
+    const accessToken = generateAccessToken({ 
+        _id: userId, 
+        role: "user", 
+        profiles: {
+            userProfileId: profile._id || null,
+            businessProfileId: null,
+        }
+    });
+    const refreshToken = generateRefreshToken({ _id: userId });
+
+    // Validate
+    if(!accessToken) throw new ApiError(500, "Failed to generate access token");
+    if(!refreshToken) throw new ApiError(500, "Failed to generate refresh token");
+
+    // Save refresh token to db
+    await User.findByIdAndUpdate(userId, { $set: { refreshToken } });    
 
     // Send notification to user
     await sendNotification({ 
@@ -64,7 +83,12 @@ const createUserProfile = asyncHandler(async (request, response) => {
     });     
 
     // Response
-    return response.status(201).json(new ApiResponse(201, { profile, isNewToPlatform:user.isNewToPlatform }, "User profile has been created"));
+    return response.status(201)
+    .clearCookie("accessToken", cookieOptions)
+    .clearCookie("refreshToken", cookieOptions)
+    .clear("accessToken", accessToken, cookieOptions)
+    .clear("refreshToken", refreshToken, cookieOptions)
+    .json(new ApiResponse(201, { profile, isNewToPlatform:user.isNewToPlatform }, "User profile has been created"));
 }); 
 
 // View user profile

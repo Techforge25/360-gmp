@@ -6,6 +6,7 @@ const ApiError = require("../../utils/ApiError");
 const asyncHandler = require("../../utils/asyncHandler");
 const { isValidObjectId } = require("mongoose");
 const convertToMongoId = require("../../utils/convertToMongoId");
+const SubscriptionHistory = require("../../models/subscriptionHistoryModel");
 
 // Allowed date filters
 const allowedDateFilters = ["all", "7d", "1m", "6m", "1y"];

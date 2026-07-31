@@ -4,7 +4,7 @@ const joi = require("joi");
 const createAdminValidator = joi.object({
     username: joi.string().trim().lowercase().min(3).max(20).required().label("Username"),
     email: joi.string().trim().lowercase().email().required().label("Email"),
-    password: joi.string().trim().min(3).max(50).required()
+    password: joi.string().trim().min(8).max(50).required()
     .pattern(new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&^#()[\\]{}|\\\\<>+=._-])[A-Za-z\\d@$!%*?&^#()[\\]{}|\\\\<>+=._-]+$"))
     .required().messages({
         "string.pattern.base": "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.",
@@ -21,7 +21,7 @@ const updateAdminValidator = joi.object({
 
 // Update admin password validator
 const updateAdminPasswordValidator = joi.object({
-    password: joi.string().trim().min(3).max(50).required()
+    password: joi.string().trim().min(8).max(50).required()
     .pattern(new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&^#()[\\]{}|\\\\<>+=._-])[A-Za-z\\d@$!%*?&^#()[\\]{}|\\\\<>+=._-]+$"))
     .required().messages({
         "string.pattern.base": "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.",

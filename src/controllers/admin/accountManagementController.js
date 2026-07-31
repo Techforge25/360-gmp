@@ -1,5 +1,5 @@
 const { isValidObjectId } = require("mongoose");
-const { emptyList } = require("../../constants");
+const { emptyList, allowedPlanNames } = require("../../constants");
 const BusinessProfile = require("../../models/businessProfileSchema");
 const UserProfile = require("../../models/userProfile");
 const User = require("../../models/users");
@@ -63,7 +63,10 @@ const fetchUserProfiles = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10, search, type } = request.query;
 
     // Get date filter
-    const { dateFilter } = getDateFilter(request);    
+    const { dateFilter } = getDateFilter(request);  
+    
+    // Validate plan name
+    if(type && !allowedPlanNames.includes(type)) throw new ApiError(400, "Invalid subscription name");    
 
     // Filters
     const baseFilter = {};

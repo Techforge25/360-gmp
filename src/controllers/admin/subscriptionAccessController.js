@@ -348,6 +348,52 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, trialUsers, "Trial users have been fetched"));    
 });
 
+// View trial user
+const viewTrialUser = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { userId } = request.params;
+    if(!isValidObjectId(userId)) throw new ApiError(400, "Invalid User ID");
+
+    // Aggregate
+    const [user] = await User.aggregate([
+        // Match
+        { $match: { _id: convertToMongoId(userId) } },
+
+        // Lookup subscription
+        {
+            $lookup: {
+               from: "subscriptions",
+               localField: "_id",
+               foreignField: "userId",
+               as: "subscription",
+               pipeline: [
+                    {
+                        $lookup: {
+                            from: "plans",
+                            localField: "planId",
+                            foreignField: "_id",
+                            as: "plan",
+                            pipeline: [{ $project: { _id: 0, name: 1 } }]
+                        }
+                    },
+                    { $unwind: "$plan" },
+                    { $project: { _id: 0, startDate: 1, endDate: 1, planName: "$plan.name"  } }
+               ] 
+            }
+        },        
+
+        // Unwind
+        { $unwind: "$subscription" },
+
+        // Projection
+        { $project: { email: 1, subscription: 1 } }
+    ]);
+    if(!user) throw new ApiError(404, "User not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, user, "Trial user details have been fetched"));
+});
+
 // Fetch paid users
 const fetchPaidUsers = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10, search, tierType, subscriptionStatus } = request.query;
@@ -466,69 +512,8 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, paidUsers, "Paid users have been fetched"));
 });
 
-// View trial user
-const viewTrialUser = asyncHandler(async (request, response) => {
-    // Sanitize ID
-    const { userId } = request.params;
-    if(!isValidObjectId(userId)) throw new ApiError(400, "Invalid User ID");
+// View
 
-    // Aggregate
-    const [user] = await User.aggregate([
-        // Match
-        { $match: { _id: convertToMongoId(userId) } },
-
-        // Lookup user profile
-        {
-            $lookup: {
-               from: "userprofiles",
-               localField: "_id",
-               foreignField: "userId",
-               as: "userProfile",
-               pipeline: [{ $project: { fullName: 1, email: 1, logo: 1, location: 1 } }] 
-            }
-        },
-
-        // Lookup subscription
-        {
-            $lookup: {
-               from: "subscriptions",
-               localField: "_id",
-               foreignField: "userId",
-               as: "subscription",
-               pipeline: [
-                    {
-                        $lookup: {
-                            from: "plans",
-                            localField: "planId",
-                            foreignField: "_id",
-                            as: "plan",
-                            pipeline: [{ $project: { _id:0, name: 1 } }]
-                        },
-                        
-                    },
-                    { $unwind: "$plan" },
-                    { $project: { startDate: 1, endDate: 1, planName: "$plan.name"  } }
-               ] 
-            }
-        },        
-
-        // Unwind
-        { $unwind: "$userProfile" },
-        { $unwind: "$subscription" },
-
-        // Projection
-        {
-            $project: { 
-                userProfile: 1,
-                subscription: 1,
-            }
-        }
-    ]);
-    if(!user) throw new ApiError(404, "User not found");
-
-    // Response
-    return response.status(200).json(new ApiResponse(200, user, "Trial user details have been fetched"));
-});
 
 // Fetch subscriptions expiring soon users
 const fetchExpiringSubscriptions = asyncHandler(async (request, response) => {

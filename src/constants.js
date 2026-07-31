@@ -54,6 +54,9 @@ const allowedIncoterms = ["EXW - Ex Works", "FCA - Free Carrier", "FAS - Free Al
 // Allowed terms and capability enum
 const allowedTermsAndCapability = ['Air Freight', 'Sea Freight', 'Express Courier', 'Rail Freight', 'Road Transport'];
 
+// Allowed plan names
+const allowedPlanNames = ["Consumer / Individual", "Sneak Peek Free – 14 Days", "Silver", "Bronze", "Premium", "Gold"];
+
 module.exports = {
     port,
     isProduction,
@@ -65,5 +68,6 @@ module.exports = {
     emptyList,
     allowedNotificationTypes,
     allowedIncoterms,
-    allowedTermsAndCapability
+    allowedTermsAndCapability,
+    allowedPlanNames
 };

@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { createAdmin, fetchAdmins, viewAdmin, updateAdmin, deleteAdmin, 
-updateAdminPassword } = require("../../controllers/admin/adminManagementController");
+updateAdminPassword, restoreAdmin } = require("../../controllers/admin/adminManagementController");
 const { adminAuthentication, adminAuthorization } = require("../../middlewares/adminAuth");
 
 // Router instance
@@ -20,5 +20,9 @@ adminManagementRouter.route("/:adminId")
 // Update admin password
 adminManagementRouter.route("/:adminId/password")
 .patch(adminAuthentication, adminAuthorization(["superAdmin"]), updateAdminPassword);
+
+// Restore admin
+adminManagementRouter.route("/:adminId/restore")
+.patch(adminAuthentication, adminAuthorization(["superAdmin"]), restoreAdmin);
 
 module.exports = adminManagementRouter;

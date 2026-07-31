@@ -129,7 +129,10 @@ const fetchUserProfiles = asyncHandler(async (request, response) => {
 
 // Fetch business profiles
 const fetchBusinessProfiles = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search, type } = request.query;
+    const { page = 1, limit = 10, search, type, status } = request.query;
+
+    // Validate status type
+    if(status && !["pending", "approved", "rejected"].includes(status)) throw new ApiError(400, "Invalid status type");
 
     // Get date filter
     const { dateFilter } = getDateFilter(request);    
@@ -137,14 +140,16 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
     // Filters
     const baseFilter = {};
     const planFilter = {};
+    const statusFilter = {};
 
     if(search) baseFilter.companyName = { $regex: search, $options: "i" }; // Filter by company name
     if(type) planFilter.name = { $regex: type, $options: "i" }; // Filter by plan type
+    if(status) statusFilter.status = status; // Filter by profile status
 
     // Fetch
     const businessProfiles = await BusinessProfile.aggregatePaginate([
         // Match
-        { $match: { ...dateFilter, ...baseFilter } },
+        { $match: { ...dateFilter, ...baseFilter, ...statusFilter } },
 
         // Sort
         { $sort: { createdAt: -1 } },

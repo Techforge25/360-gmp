@@ -551,7 +551,7 @@ const viewPaidUser = asyncHandler(async (request, response) => {
         { $unwind: "$subscription" },
 
         // Projection
-        { $project: { email: 1, subscription: 1 } }
+        { $project: { email: 1, joinDate: "$createdAt", subscription: 1 } }
     ]);
     if(!user) throw new ApiError(404, "User not found");
 

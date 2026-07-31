@@ -296,6 +296,32 @@ const viewProductAuditDetails = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, product, "Product has been fetched"));
 });
 
+// Update product status
+const updateProductStatus = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { productId } = request.params;
+    if(!isValidObjectId(productId)) throw new ApiError(400, "Invalid product ID");
+
+    // Get status
+    const { status } = request.body || {};
+    if(!status) throw new ApiError(400, "Product status is required");
+    if(!["approved", "rejected"].includes(status)) throw new ApiError(400, "Invalid status type");
+
+    // Find product
+    const product = await Product.findById(productId);
+    if(!product) throw new ApiError(404, "Product not found");
+
+    // Validate
+    if(product.status !== "pending") throw new ApiError(400, "You can only approve or reject a product that is in the pending state");
+
+    // Update
+    product.status = status;
+    await product.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, status, `Product has been ${status}`));
+});
+
 // Fetch disputed order logs
 const fetchDisputedOrders = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
@@ -366,4 +392,4 @@ const fetchDisputedOrders = asyncHandler(async (request, response) => {
 });
 
 module.exports = { fetchMarketplaceStats, fetchOrderLogs, viewOrderLog, 
-fetchProductAudits, viewProductAuditDetails, fetchDisputedOrders };
+fetchProductAudits, viewProductAuditDetails, fetchDisputedOrders, updateProductStatus };

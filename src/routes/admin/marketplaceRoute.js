@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const { adminAuthentication } = require("../../middlewares/adminAuth");
-const { fetchMarketplaceStats, fetchOrderLogs, fetchProductAudits, 
-fetchDisputedOrders, viewOrderLog, viewProductAuditDetails } = require("../../controllers/admin/marketplaceController");
+const { fetchMarketplaceStats, fetchOrderLogs, fetchProductAudits, fetchDisputedOrders, 
+viewOrderLog, viewProductAuditDetails, updateProductStatus } = require("../../controllers/admin/marketplaceController");
 
 // Router instance
 const marketPlaceRouter = Router();
@@ -25,6 +25,10 @@ marketPlaceRouter.route("/productAudits")
 // View product audit
 marketPlaceRouter.route("/productAudits/:productId")
 .get(adminAuthentication, viewProductAuditDetails);
+
+// Update product status
+marketPlaceRouter.route("/productStatus/:productId")
+.patch(adminAuthentication, updateProductStatus);
 
 // Fetch disputed order logs
 marketPlaceRouter.route("/disputedOrderLogs")

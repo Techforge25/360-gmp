@@ -503,9 +503,11 @@ const viewTrialUser = asyncHandler(async (request, response) => {
                             foreignField: "_id",
                             as: "plan",
                             pipeline: [{ $project: { _id:0, name: 1 } }]
-                        }
+                        },
+                        
                     },
                     { $unwind: "$plan" },
+                    { $project: { startDate: 1, endDate: 1, planName: "$plan.name"  } }
                ] 
             }
         },        
@@ -518,7 +520,7 @@ const viewTrialUser = asyncHandler(async (request, response) => {
         {
             $project: { 
                 userProfile: 1,
-                subscription: 1
+                subscription: 1,
             }
         }
     ]);

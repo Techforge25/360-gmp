@@ -47,7 +47,7 @@ const fetchAccountStats = asyncHandler(async (request, response) => {
     const [totalParentUsers, totalUserProfiles, totalBusinessProfiles, pendingBusinessProfiles] = await Promise.all([
         User.countDocuments({ ...dateFilter, status: "active" }),
         UserProfile.countDocuments({ ...dateFilter }),
-        BusinessProfile.countDocuments({ ...dateFilter, status: "active" }),
+        BusinessProfile.countDocuments({ ...dateFilter, status: "approved" }),
         BusinessProfile.countDocuments({ ...dateFilter, status: "pending" })
     ]);
 

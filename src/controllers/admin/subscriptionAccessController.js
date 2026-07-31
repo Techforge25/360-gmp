@@ -4,6 +4,8 @@ const User = require("../../models/users");
 const ApiResponse = require("../../utils/ApiResponse");
 const ApiError = require("../../utils/ApiError");
 const asyncHandler = require("../../utils/asyncHandler");
+const { isValidObjectId } = require("mongoose");
+const convertToMongoId = require("../../utils/convertToMongoId");
 
 // Allowed date filters
 const allowedDateFilters = ["all", "7d", "1m", "6m", "1y"];
@@ -464,6 +466,68 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, paidUsers, "Paid users have been fetched"));
 });
 
+// View trial user
+const viewTrialUser = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { userId } = request.params;
+    if(!isValidObjectId(userId)) throw new ApiError(400, "Invalid User ID");
+
+    // Aggregate
+    const [user] = await User.aggregate([
+        // Match
+        { $match: { _id: convertToMongoId(userId) } },
+
+        // Lookup user profile
+        {
+            $lookup: {
+               from: "userprofiles",
+               localField: "_id",
+               foreignField: "userId",
+               as: "userProfile",
+               pipeline: [{ $project: { fullName: 1, email: 1, logo: 1, location: 1 } }] 
+            }
+        },
+
+        // Lookup subscription
+        {
+            $lookup: {
+               from: "subscriptions",
+               localField: "_id",
+               foreignField: "userId",
+               as: "subscription",
+               pipeline: [
+                    {
+                        $lookup: {
+                            from: "plans",
+                            localField: "planId",
+                            foreignField: "_id",
+                            as: "plan",
+                            pipeline: [{ $project: { _id:0, name: 1 } }]
+                        }
+                    },
+                    { $unwind: "$plan" },
+               ] 
+            }
+        },        
+
+        // Unwind
+        { $unwind: "$userProfile" },
+        { $unwind: "$subscription" },
+
+        // Projection
+        {
+            $project: { 
+                userProfile: 1,
+                subscription: 1
+            }
+        }
+    ]);
+    if(!user) throw new ApiError(404, "User not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, user, "Trial user details have been fetched"));
+});
+
 // Fetch subscriptions expiring soon users
 const fetchExpiringSubscriptions = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10, search = "", days = 7 } = request.query;
@@ -552,4 +616,5 @@ const fetchExpiringSubscriptions = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, expiringSubscriptions, "Expiring subscriptions have been fetched"));
 });
 
-module.exports = { fetchSubscriptionStats, fetchTrialUsers, fetchPaidUsers, fetchExpiringSubscriptions };
+module.exports = { fetchSubscriptionStats, fetchTrialUsers, fetchPaidUsers, viewTrialUser, 
+fetchExpiringSubscriptions };

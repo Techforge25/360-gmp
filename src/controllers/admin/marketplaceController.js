@@ -347,7 +347,7 @@ const approveProduct = asyncHandler(async (request, response) => {
         userId: product.businessId.ownerUserId,
         type: "BusinessProfile",
         title: "Product Approval",
-        content: `Your product ${product.title} has been approved by admin`,
+        content: `Your product "${product.title}" has been approved by admin`,
         io: request.app.get("io")
     }); 
 
@@ -380,7 +380,7 @@ const rejectProduct = asyncHandler(async (request, response) => {
         userId: product.businessId.ownerUserId,
         type: "BusinessProfile",
         title: "Product Rejection",
-        content: `Your product ${product.title} has been rejected by admin. Reason: ${note}`,
+        content: `Your product "${product.title}" has been rejected by admin. Reason: ${note}`,
         io: request.app.get("io")
     });     
 

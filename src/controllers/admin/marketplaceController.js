@@ -392,14 +392,8 @@ const rejectProduct = asyncHandler(async (request, response) => {
 const fetchDisputedOrders = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
 
-    // Pagination options
-    const options = {
-        page: Number(page),
-        limit: Number(limit),
-    };
-
     // Aggregate
-    const aggregate = Order.aggregate([
+    const orders = await Order.aggregatePaginate([
         // Sort
         { $sort:{ createdAt: -1 } },
 
@@ -443,15 +437,16 @@ const fetchDisputedOrders = asyncHandler(async (request, response) => {
 
         // Final projection
         {
-            $project:{ createdAt:1, totalAmount:1, escrowId:"$escrow._id", status:"$escrow.status",
-                buyer:"$buyer.fullName", seller:"$seller.companyName"
+            $project: { 
+                createdAt: 1, 
+                totalAmount: 1, 
+                status: "$escrow.status",
+                buyer: "$buyer.fullName", 
+                seller: "$seller.companyName"
             }
         }
-    ]);
-
-    // // Execute query
-    const orders = await Order.aggregatePaginate(aggregate, options);
-    if(!orders.docs?.length) return response.status(200).json(new ApiResponse(200, emptyList, "No disputed order logs found"));
+    ], { page, limit });
+    if(!orders.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No disputed orders found"));
 
     // Response
     return response.status(200).json(new ApiResponse(200, orders, "Disputed order logs have been fetched"));    

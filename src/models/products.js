@@ -43,7 +43,6 @@ const productSchema = new Schema({
       rejectedAt: { type: Date },
 
       // Details
-      reason: { type: String, trim: true },
       note: { type: String, trim: true }
     }    
 }, { timestamps: true });

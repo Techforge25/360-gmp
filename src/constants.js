@@ -13,7 +13,7 @@ if(isLocal) frontendURL = "http://localhost:3000";
 
 // Cors options
 const corsOptions = {
-    origin:[frontendURL, process.env.FRONTEND_URL, "http://localhost:3000"],
+    origin:[frontendURL, process.env.FRONTEND_URL, "http://localhost:3000", "https://360-gmp-frontend-superadmin-64bl3oj4h-aftabs-projects-80f407ba.vercel.app"],
     credentials:true,
     methods:["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders:["Content-Type", "Authorization"]

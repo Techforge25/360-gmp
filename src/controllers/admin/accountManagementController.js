@@ -292,6 +292,8 @@ const viewBusinessProfile = asyncHandler(async (request, response) => {
                 incoterms: 1,
                 termsAndCapability: 1,
                 executiveAndLeadership: 1,
+                ownedByAnotherCompany: 1,
+                parentCompany: 1,
                 primaryContactPerson: 1,
                 operationalAndTradeProfile: 1,
                 amlAndTransactionProfile: 1,

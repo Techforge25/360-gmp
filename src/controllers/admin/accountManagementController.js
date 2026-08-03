@@ -7,6 +7,8 @@ const ApiError = require("../../utils/ApiError");
 const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
 const convertToMongoId = require("../../utils/convertToMongoId");
+const { rejectBusinessProfileValidator } = require("../../validations/businessProfileVaidator");
+const validate = require("../../utils/validate");
 
 // Allowed date filters
 const allowedDateFilters = ["all", "7d", "1m", "6m", "1y"];
@@ -334,5 +336,31 @@ const approveBusinessProfile = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Business profile has been approved"));
 });
 
+// Reject business profile
+const rejectBusinessProfile = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { businessProfileId } = request.params;
+    if(!isValidObjectId(businessProfileId)) throw new ApiError(400, "Invalid Business Profile ID");
+
+    // Get Admin ID from token
+    const adminId = request.admin._id;
+
+    // Get validated payload
+    const { reason, note } = validate(rejectBusinessProfileValidator, request.body) || {};
+
+    // Find and business profile
+    const businessProfile = await BusinessProfile.findById(businessProfileId).select("status rejection");
+    if(!businessProfile) throw new ApiError(404, "Business profile not found");
+    if(businessProfile.status !== "pending") throw new ApiError(400, "You can only reject business profiles that are in pending state");
+
+    // Update
+    businessProfile.status = "rejected";
+    businessProfile.rejection = { rejectedBy: adminId, rejectedAt: new Date(), reason, note };
+    await businessProfile.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Business profile has been rejected"));
+});
+
 module.exports = { fetchAccountStats, fetchUserProfiles, fetchBusinessProfiles, 
-viewUserProfile, viewBusinessProfile, approveBusinessProfile };
+viewUserProfile, viewBusinessProfile, approveBusinessProfile, rejectBusinessProfile };

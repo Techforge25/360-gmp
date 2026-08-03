@@ -28,7 +28,18 @@ const productSchema = new Schema({
 
     // Views
     viewedBy: [{ type:Schema.Types.ObjectId, ref:"User" }],
-    viewsCount: { type:Number, default:0 }
+    viewsCount: { type:Number, default:0 },
+
+    // Rejection
+    rejection: {
+      // Reference
+      rejectedBy: { type: Schema.Types.ObjectId, ref: "Admin" },
+      rejectedAt: { type: Date },
+
+      // Details
+      reason: { type: String, trim: true },
+      note: { type: String, trim: true }
+    }    
 }, { timestamps: true });
 
 // Inject plugin

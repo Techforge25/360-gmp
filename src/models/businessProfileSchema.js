@@ -134,6 +134,17 @@ const BusinessProfileSchema = new Schema({
     latitude: { type:Number, default:0 },
     longitude: { type:Number, default:0 },
 
+    // Rejection
+    rejection: {
+      // Reference
+      rejectedBy: { type: Schema.Types.ObjectId, ref: "Admin" },
+      rejectedAt: { type: Date },
+
+      // Details
+      reason: { type: String, trim: true },
+      note: { type: String, trim: true }
+    },
+
     // Views
     viewedBy: [{
         userId: { type: Schema.Types.ObjectId, ref:"User" },

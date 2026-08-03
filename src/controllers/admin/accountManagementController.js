@@ -311,5 +311,28 @@ const viewBusinessProfile = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, businessProfile, "Business profile has been fetched"));
 });
 
+// Approve business profile
+const approveBusinessProfile = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { businessProfileId } = request.params;
+    if(!isValidObjectId(businessProfileId)) throw new ApiError(400, "Invalid Business Profile ID");    
+
+    // Get Admin ID from token
+    const adminId = request.admin._id;
+
+    // Find and business profile
+    const businessProfile = await BusinessProfile.findById(businessProfileId).select("status apporval");
+    if(!businessProfile) throw new ApiError(404, "Business profile not found");
+    if(businessProfile.status !== "pending") throw new ApiError(400, "You can only approve business profiles that are in pending state");
+
+    // Update
+    businessProfile.status = "approved";
+    businessProfile.approval = { approvedBy: adminId, approvedAt: new Date() };
+    await businessProfile.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Business profile has been approved"));
+});
+
 module.exports = { fetchAccountStats, fetchUserProfiles, fetchBusinessProfiles, 
-viewUserProfile, viewBusinessProfile };
+viewUserProfile, viewBusinessProfile, approveBusinessProfile };

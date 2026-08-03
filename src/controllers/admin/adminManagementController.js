@@ -133,7 +133,7 @@ const deleteAdmin = asyncHandler(async (request, response) => {
     if(!isValidObjectId(adminId)) throw new ApiError(400, "Invalid Admin ID");
 
     // Find and validate
-    const admin = await Admin.findBy(adminId);
+    const admin = await Admin.findById(adminId);
     if(!admin) throw new ApiError(404, "Admin not found");
     if(admin.role === "superAdmin") throw new ApiError(403, "Super admin cannot be deleted");
     if(admin.status === "inactive") throw new ApiError(400, "This admin has already been deleted");

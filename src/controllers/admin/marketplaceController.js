@@ -9,6 +9,8 @@ const asyncHandler = require("../../utils/asyncHandler");
 const getDateFilter = require("../../utils/dateFilter");
 const ApiError = require("../../utils/ApiError");
 const convertToMongoId = require("../../utils/convertToMongoId");
+const validate = require("../../utils/validate");
+const { rejectProductValidator } = require("../../validations/productsValidator");
 
 // Fetch market place stats
 const fetchMarketplaceStats = asyncHandler(async (request, response) => {
@@ -322,6 +324,49 @@ const updateProductStatus = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, status, `Product has been ${status}`));
 });
 
+// Approve product
+const approveProduct = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { productId } = request.params;
+    if(!isValidObjectId(productId)) throw new ApiError(400, "Invalid product ID");
+
+    // Find and validate
+    const product = await Product.findById(productId);
+    if(!product) throw new ApiError(404, "Product not found");
+    if(product.status !== "pending") throw new ApiError(400, "You can only approve product when it is in pending state");
+
+    // Update
+    product.status = "approved";
+    product.approval = { approvedBy: request.admin._id, approvedAt: new Date() };
+    await product.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, `Product has been approved`));
+});
+
+// Reject product
+const rejectProduct = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { productId } = request.params;
+    if(!isValidObjectId(productId)) throw new ApiError(400, "Invalid product ID");
+
+    // Get validated payload
+    const { note } = validate(rejectProductValidator, request.body);
+
+    // Find and validate
+    const product = await Product.findById(productId);
+    if(!product) throw new ApiError(404, "Product not found");
+    if(product.status !== "pending") throw new ApiError(400, "You can only reject product when it is in pending state");
+
+    // Update
+    product.status = "rejected";
+    product.rejection = { rejectedBy: request.admin._id, rejectedAt: new Date(), note };
+    await product.save();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, `Product has been rejected`));
+});
+
 // Fetch disputed order logs
 const fetchDisputedOrders = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
@@ -392,4 +437,5 @@ const fetchDisputedOrders = asyncHandler(async (request, response) => {
 });
 
 module.exports = { fetchMarketplaceStats, fetchOrderLogs, viewOrderLog, 
-fetchProductAudits, viewProductAuditDetails, fetchDisputedOrders, updateProductStatus };
+fetchProductAudits, viewProductAuditDetails, fetchDisputedOrders, updateProductStatus,
+approveProduct, rejectProduct };

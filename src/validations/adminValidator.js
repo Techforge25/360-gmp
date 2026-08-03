@@ -16,7 +16,7 @@ const createAdminValidator = joi.object({
 // Update admin validator
 const updateAdminValidator = joi.object({
     username: joi.string().trim().min(3).max(20).required().label("Username"),
-    allowedModules: joi.array().max(5).items(joi.string().trim()).default([]).label("Allowed modules")
+    allowedModules: joi.array().min(1).items(joi.string().trim()).default([]).label("Allowed modules")
 });
 
 // Update admin password validator

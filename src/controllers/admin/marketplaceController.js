@@ -457,22 +457,46 @@ const fetchGeneralProducts = asyncHandler(async (request, response) => {
     // Pagination options
     const { page = 1, limit = 10 } = request.query;
 
+    // Get date filter
+    const { dateFilter } = getDateFilter(request);     
+
     // Aggregate
     const products = await Product.aggregatePaginate([
+        // Match 
+        { $match: { ...dateFilter, status: { $ne: "pending" } } },
+
         // Sort
         { $sort: { createdAt: -1 } },
+
+        // Lookup business profile
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "businessId",
+                foreignField: "_id",
+                as: "seller",
+                pipeline: [{ $project: { _id: 0, ownerName: 1, companyName: 1, logo: 1 } }]
+            }
+        },
+
+        // Unwind
+        { $unwind: { path: "$seller", preserveNullAndEmptyArrays: true } },
 
         // Projection
         {
             $project: {
-                
+                title: 1,
+                createdAt: 1,
+                category: 1,
+                status: 1,
+                seller: 1
             }
         }
     ], { page, limit });
     if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No general products found"));
 
     // Response
-    return response.status(200).json(new ApiResponse(200, null, "General products have been fetched"));
+    return response.status(200).json(new ApiResponse(200, products, "General products have been fetched"));
 });
 
 module.exports = { fetchMarketplaceStats, fetchOrderLogs, viewOrderLog, 

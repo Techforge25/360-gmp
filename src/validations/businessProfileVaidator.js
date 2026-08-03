@@ -278,4 +278,12 @@ const updateGalleryValidationSchema = joi.object({
     description: joi.string().trim().max(1000).allow("", null).label("Album Description")
 });
 
-module.exports = { createBusinessProfileSchema, galleryValidationSchema, updateGalleryValidationSchema };
+// Reject business profile validator
+const rejectBusinessProfileValidator = joi.object({
+    reason: joi.string().trim().max(200).required().label("Reason"),
+    note: joi.string().trim().max(5000).required().label("Note")
+});
+
+module.exports = { createBusinessProfileSchema, galleryValidationSchema,
+    updateGalleryValidationSchema, rejectBusinessProfileValidator
+};

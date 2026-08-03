@@ -9,6 +9,7 @@ const asyncHandler = require("../../utils/asyncHandler");
 const convertToMongoId = require("../../utils/convertToMongoId");
 const { rejectBusinessProfileValidator } = require("../../validations/businessProfileVaidator");
 const validate = require("../../utils/validate");
+const sendNotification = require("../../utils/sendNotification");
 
 // Allowed date filters
 const allowedDateFilters = ["all", "7d", "1m", "6m", "1y"];
@@ -319,18 +320,24 @@ const approveBusinessProfile = asyncHandler(async (request, response) => {
     const { businessProfileId } = request.params;
     if(!isValidObjectId(businessProfileId)) throw new ApiError(400, "Invalid Business Profile ID");    
 
-    // Get Admin ID from token
-    const adminId = request.admin._id;
-
     // Find and business profile
-    const businessProfile = await BusinessProfile.findById(businessProfileId).select("status apporval");
+    const businessProfile = await BusinessProfile.findById(businessProfileId).select("ownerUserId companyName status apporval");
     if(!businessProfile) throw new ApiError(404, "Business profile not found");
     if(businessProfile.status !== "pending") throw new ApiError(400, "You can only approve business profiles that are in pending state");
 
     // Update
     businessProfile.status = "approved";
-    businessProfile.approval = { approvedBy: adminId, approvedAt: new Date() };
+    businessProfile.approval = { approvedBy: request.admin._id, approvedAt: new Date() };
     await businessProfile.save();
+    
+    // Send notification to business owner
+    await sendNotification({
+        userId: businessProfile.ownerUserId,
+        type: "BusinessProfile",
+        title: "Business Profile Approval",
+        content: `Your Business Profile "${businessProfile.companyName}" has been approved by admin.`,
+        io: request.app.get("io")
+    });
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Business profile has been approved"));
@@ -342,21 +349,27 @@ const rejectBusinessProfile = asyncHandler(async (request, response) => {
     const { businessProfileId } = request.params;
     if(!isValidObjectId(businessProfileId)) throw new ApiError(400, "Invalid Business Profile ID");
 
-    // Get Admin ID from token
-    const adminId = request.admin._id;
-
     // Get validated payload
     const { note } = validate(rejectBusinessProfileValidator, request.body) || {};
 
     // Find and business profile
-    const businessProfile = await BusinessProfile.findById(businessProfileId).select("status rejection");
+    const businessProfile = await BusinessProfile.findById(businessProfileId).select("ownerUserId companyName status rejection");
     if(!businessProfile) throw new ApiError(404, "Business profile not found");
     if(businessProfile.status !== "pending") throw new ApiError(400, "You can only reject business profiles that are in pending state");
 
     // Update
     businessProfile.status = "rejected";
-    businessProfile.rejection = { rejectedBy: adminId, rejectedAt: new Date(), note };
+    businessProfile.rejection = { rejectedBy: request.admin._id, rejectedAt: new Date(), note };
     await businessProfile.save();
+
+    // Send notification to business owner
+    await sendNotification({
+        userId: businessProfile.ownerUserId,
+        type: "BusinessProfile",
+        title: "Business Profile Rejection",
+        content: `Your Business Profile "${businessProfile.companyName}" has been rejected by admin. Reason: ${note}`,
+        io: request.app.get("io")
+    });
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Business profile has been rejected"));

@@ -91,6 +91,9 @@ const updateAdmin = asyncHandler(async (request, response) => {
     Object.assign(admin, { username, allowedModules });
     await admin.save();
 
+    // Send email
+    await emailQueue.add("sendEmailOnAdminDetailsUpdation", { email: admin.email, username, allowedModules });
+
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Admin details have been updated"));
 });

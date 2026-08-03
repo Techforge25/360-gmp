@@ -79,8 +79,29 @@ const worker = new Worker("emailQueue", async (job) => {
 
         // Execute
         const result = await sendEmail(email, "360-GMP Admin Account Credentials", filledHtml);        
-        if(!result) throw new ApiError(500, "Failed to send cancel subscription OTP");        
-    }      
+        if(!result) throw new ApiError(500, "Failed to send invitation email");        
+    }     
+    
+    // Send email to admin upon details updation
+    if(job.name === "sendEmailOnAdminDetailsUpdation")
+    {
+        const { email, username, allowedModules } = job.data;
+
+        // Get HTML template
+        const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/updateAdminDetails.html"), "utf-8");
+
+        // Map modules
+        const modulesList = allowedModules.map(module => `<li> ${module} </li>`).join("");
+
+        // Replace placeholders
+        const filledHtml = html
+        .replaceAll("{{username}}", username)
+        .replaceAll("{{allowedModules}}", `<ul style="margin:8px 0 0 20px; padding:0;">${modulesList}</ul>`);        
+
+        // Execute
+        const result = await sendEmail(email, "360-GMP Update Admin Details", filledHtml);        
+        if(!result) throw new ApiError(500, "Failed to send email for admin details updation");        
+    }        
 }, { connection: redisConfigOptions, concurrency: 5 });
 
 // Attach events

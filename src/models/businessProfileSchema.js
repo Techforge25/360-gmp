@@ -135,7 +135,7 @@ const BusinessProfileSchema = new Schema({
     longitude: { type:Number, default:0 },
 
     // Approval
-    apporval: {
+    approval: {
       approvedBy: { type: Schema.Types.ObjectId, ref: "Admin" },
       approvedAt: { type: Date },
     },    

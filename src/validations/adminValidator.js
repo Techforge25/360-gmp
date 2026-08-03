@@ -10,7 +10,7 @@ const createAdminValidator = joi.object({
         "string.pattern.base": "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.",
         "string.min": "Password must be at least 8 characters long."
     }).label("Password"),
-    allowedModules: joi.array().max(5).items(joi.string().trim()).default([]).label("Allowed modules")
+    allowedModules: joi.array().min(1).items(joi.string().trim()).default([]).label("Allowed modules")
 });
 
 // Update admin validator

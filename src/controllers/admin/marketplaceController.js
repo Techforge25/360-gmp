@@ -452,6 +452,29 @@ const fetchDisputedOrders = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, orders, "Disputed order logs have been fetched"));    
 });
 
+// Fetch approve/reject products
+const fetchGeneralProducts = asyncHandler(async (request, response) => {
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Aggregate
+    const products = await Product.aggregatePaginate([
+        // Sort
+        { $sort: { createdAt: -1 } },
+
+        // Projection
+        {
+            $project: {
+                
+            }
+        }
+    ], { page, limit });
+    if(!products.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No general products found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "General products have been fetched"));
+});
+
 module.exports = { fetchMarketplaceStats, fetchOrderLogs, viewOrderLog, 
 fetchProductAudits, viewProductAuditDetails, fetchDisputedOrders, updateProductStatus,
-approveProduct, rejectProduct };
+approveProduct, rejectProduct, fetchGeneralProducts };

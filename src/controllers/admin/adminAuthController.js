@@ -1,4 +1,4 @@
-const { cookieOptions } = require("../../constants");
+const { cookieOptions, adminFrontendURL: redirectURL } = require("../../constants");
 const Admin = require("../../models/adminModel");
 const { redis } = require("../../redis/connection");
 const { generateAdminAccessToken, generateAdminRefreshToken, 
@@ -86,18 +86,42 @@ const authMe = asyncHandler(async (request, response) => {
 const adminRefreshToken = asyncHandler(async (request, response) => {
     // Get token
     const token = getAdminRefreshToken(request);
-    if(!token) throw new ApiError(401, "Unauthorized! Refresh token is missing");
+    if(!token)
+    {
+        return response.status(401)
+        .clearCookie("adminAccessToken", cookieOptions)
+        .clearCookie("adminRefreshToken", cookieOptions)
+        .json(new ApiResponse(401, { redirectURL }, "Unauthorized! Refresh token is missing"));         
+    }
 
     // Verify refresh token
     const payload = verifyAdminRefreshToken(token);
-    if(!payload) throw new ApiError(401, "Unauthorized! Invalid refresh token");
+    if(!payload)
+    {
+        return response.status(401)
+        .clearCookie("adminAccessToken", cookieOptions)
+        .clearCookie("adminRefreshToken", cookieOptions)
+        .json(new ApiResponse(401, { redirectURL }, "Unauthorized! Invalid refresh token"));         
+    }
 
     // Find admin
     const admin = await Admin.findById(payload._id);
-    if(!admin) throw new ApiError(404, "Admin not found associated with the provided refresh token");
+    if(!admin)
+    {
+        return response.status(401)
+        .clearCookie("adminAccessToken", cookieOptions)
+        .clearCookie("adminRefreshToken", cookieOptions)
+        .json(new ApiResponse(401, { redirectURL }, "Admin not found associated with the provided refresh token"));       
+    }
 
     // Compare tokens
-    if(admin.refreshToken !== token) throw new ApiError(400, "Refresh token mismatch");
+    if(admin.refreshToken !== token)
+    {
+        return response.status(401)
+        .clearCookie("adminAccessToken", cookieOptions)
+        .clearCookie("adminRefreshToken", cookieOptions)
+        .json(new ApiResponse(401, { redirectURL }, "Refresh token mismatch"));         
+    }
 
     // Generate tokens
     const accessToken = generateAdminAccessToken(admin);

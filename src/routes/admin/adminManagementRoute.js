@@ -6,23 +6,26 @@ const { adminAuthentication, adminAuthorization } = require("../../middlewares/a
 // Router instance
 const adminManagementRouter = Router();
 
+// Inject router level middleware
+adminManagementRouter.use(adminAuthentication, adminAuthorization(["superAdmin"]));
+
 // Create admin
 adminManagementRouter.route("/")
-.post(adminAuthentication, adminAuthorization(["superAdmin"]), createAdmin)
-.get(adminAuthentication, adminAuthorization(["superAdmin"]), fetchAdmins);
+.post(createAdmin)
+.get(fetchAdmins);
 
 // View admin / Update admin / Delete admin
 adminManagementRouter.route("/:adminId")
-.get(adminAuthentication, adminAuthorization(["superAdmin"]), viewAdmin)
-.patch(adminAuthentication, adminAuthorization(["superAdmin"]), updateAdmin)
-.delete(adminAuthentication, adminAuthorization(["superAdmin"]), deleteAdmin);
+.get(viewAdmin)
+.patch(updateAdmin)
+.delete(deleteAdmin);
 
 // Update admin password
 adminManagementRouter.route("/:adminId/password")
-.patch(adminAuthentication, adminAuthorization(["superAdmin"]), updateAdminPassword);
+.patch(updateAdminPassword);
 
 // Restore admin
 adminManagementRouter.route("/:adminId/restore")
-.patch(adminAuthentication, adminAuthorization(["superAdmin"]), restoreAdmin);
+.patch(restoreAdmin);
 
 module.exports = adminManagementRouter;

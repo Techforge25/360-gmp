@@ -390,7 +390,7 @@ const rejectProduct = asyncHandler(async (request, response) => {
 
 // Fetch disputed order logs
 const fetchDisputedOrders = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10 } = request.query;
+    const { page = 1, limit = 10 } = request.query; 
 
     // Aggregate
     const orders = await Order.aggregatePaginate([

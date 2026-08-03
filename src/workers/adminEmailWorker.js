@@ -27,7 +27,7 @@ const worker = new Worker("adminEmailQueue", async (job) => {
 
         // Execute
         const result = await sendEmail(email, "360-GMP Admin Account Credentials", filledHtml);        
-        if(!result) throw new ApiError(500, "Failed to send invitation email");        
+        if(!result) throw new ApiError(500, "Failed to send admin invitation email");        
     }     
     
     // Send email to admin upon details updation
@@ -49,7 +49,24 @@ const worker = new Worker("adminEmailQueue", async (job) => {
         // Execute
         const result = await sendEmail(email, "360-GMP Update Admin Details", filledHtml);        
         if(!result) throw new ApiError(500, "Failed to send email for admin details updation");        
-    }        
+    }  
+    
+    // Send email to admin on password updation
+    if(job.name === "sendEmailOnPasswordChange")
+    {
+        const { email, password } = job.data;
+
+        // Get HTML template
+        const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/updatePasswordEmailTemplate.html"), "utf-8");
+
+
+        // Replace placeholders
+        const filledHtml = html.replaceAll("{{password}}", password);        
+
+        // Execute
+        const result = await sendEmail(email, "360-GMP Admin Security Alert", filledHtml);        
+        if(!result) throw new ApiError(500, "Failed to send email on admin password updation");        
+    }     
 }, { connection: redisConfigOptions, concurrency: 5 });
 
 // Attach events

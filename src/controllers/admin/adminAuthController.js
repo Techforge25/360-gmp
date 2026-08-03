@@ -77,9 +77,10 @@ const adminLogin = asyncHandler(async (request, response) => {
 // Auth me (Auth check)
 const authMe = asyncHandler(async (request, response) => {
     const adminId = request.admin._id;
+    const allowedModules = request.admin.allowedModules;
     
     // Response
-    return response.status(200).json(new ApiResponse(200, { adminId }, "Authenticated"));
+    return response.status(200).json(new ApiResponse(200, { adminId, allowedModules }, "Authenticated"));
 });
 
 // Refresh token

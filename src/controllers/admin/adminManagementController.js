@@ -5,8 +5,8 @@ const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
 const validate = require("../../utils/validate");
 const { createAdminValidator, updateAdminValidator, updateAdminPasswordValidator } = require("../../validations/adminValidator");
-const emailQueue = require("../../queues/emailQueue");
 const { emptyList } = require("../../constants");
+const adminEmailQueue = require("../../queues/adminEmailQueue");
 
 // Create admin
 const createAdmin = asyncHandler(async (request, response) => {
@@ -26,7 +26,7 @@ const createAdmin = asyncHandler(async (request, response) => {
     if(!admin) throw new ApiError(500, "Failed to create admin");
 
     // Send invitation email to admin
-    await emailQueue.add("sendInvitationToAdmin", { username, email, password, allowedModules });
+    await adminEmailQueue.add("sendInvitationToAdmin", { username, email, password, allowedModules });
     
     // Response
     return response.status(201).json(new ApiResponse(201, null, "Admin has been created"));
@@ -92,7 +92,7 @@ const updateAdmin = asyncHandler(async (request, response) => {
     await admin.save();
 
     // Send email
-    await emailQueue.add("sendEmailOnAdminDetailsUpdation", { email: admin.email, username, allowedModules });
+    await adminEmailQueue.add("sendEmailOnAdminDetailsUpdation", { email: admin.email, username, allowedModules });
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Admin details have been updated"));
@@ -118,6 +118,9 @@ const updateAdminPassword = asyncHandler(async (request, response) => {
     // Update
     Object.assign(admin, { password });
     await admin.save();
+
+    // Send email to admin on password updation
+    await adminEmailQueue.add("sendEmailOnPasswordChange", { email, password });    
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Admin password has been updated"));

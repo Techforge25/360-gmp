@@ -7,9 +7,28 @@ const isLocal = process.env.NODE_ENV === "local";
 
 // Dynamic frontend url based on node environemnt
 let frontendURL = null;
-if(isProduction) frontendURL = "https://360-gmp-front-end.vercel.app";
-if(isStaging) frontendURL = "https://360-gmp-front-end-git-staging-aftabs-projects-80f407ba.vercel.app";
-if(isLocal) frontendURL = "http://localhost:3000";
+let adminFrontendURL = null;
+
+// Production
+if(isProduction)
+{
+    frontendURL = "https://360-gmp-front-end.vercel.app";
+    adminFrontendURL = null;
+}
+
+// Staging
+if(isStaging)
+{
+    frontendURL = "https://360-gmp-front-end-git-staging-aftabs-projects-80f407ba.vercel.app";
+    adminFrontendURL = "https://360-gmp-frontend-superadmin-64bl3oj4h-aftabs-projects-80f407ba.vercel.app";
+}
+
+// Local
+if(isLocal)
+{
+    frontendURL = "http://localhost:3000";
+    adminFrontendURL = "http://localhost:3000";
+}
 
 // Cors options
 const corsOptions = {
@@ -63,6 +82,7 @@ module.exports = {
     isStaging,
     isLocal,
     frontendURL,
+    adminFrontendURL,
     corsOptions,
     cookieOptions,
     emptyList,

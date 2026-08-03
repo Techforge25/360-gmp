@@ -43,7 +43,7 @@ const fetchAdmins = asyncHandler(async (request, response) => {
     // Fetch
     const admins = await Admin.aggregatePaginate([
         // Match
-        { $match: { status } },
+        { $match: { status, role: { $ne: "superAdmin" } } },
 
         // Sort
         { $sort: { createdAt: -1 } },
@@ -126,9 +126,15 @@ const deleteAdmin = asyncHandler(async (request, response) => {
     const { adminId } = request.params;
     if(!isValidObjectId(adminId)) throw new ApiError(400, "Invalid Admin ID");
 
-    // Update
-    const admin = await Admin.findByIdAndUpdate(adminId, { $set: { status: "inactive" } });
+    // Find and validate
+    const admin = await Admin.findBy(adminId);
     if(!admin) throw new ApiError(404, "Admin not found");
+    if(admin.role === "superAdmin") throw new ApiError(403, "Super admin cannot be deleted");
+    if(admin.status === "inactive") throw new ApiError(400, "This admin has already been deleted");
+
+    // Update
+    admin.status = "inactive";
+    await admin.save();
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Admin has been deleted"));

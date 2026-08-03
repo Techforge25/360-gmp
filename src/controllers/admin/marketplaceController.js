@@ -11,6 +11,7 @@ const ApiError = require("../../utils/ApiError");
 const convertToMongoId = require("../../utils/convertToMongoId");
 const validate = require("../../utils/validate");
 const { rejectProductValidator } = require("../../validations/productsValidator");
+const sendNotification = require("../../utils/sendNotification");
 
 // Fetch market place stats
 const fetchMarketplaceStats = asyncHandler(async (request, response) => {
@@ -331,7 +332,8 @@ const approveProduct = asyncHandler(async (request, response) => {
     if(!isValidObjectId(productId)) throw new ApiError(400, "Invalid product ID");
 
     // Find and validate
-    const product = await Product.findById(productId);
+    const product = await Product.findById(productId)
+    .populate({ path: "businessId", select: "ownerUserId" });
     if(!product) throw new ApiError(404, "Product not found");
     if(product.status !== "pending") throw new ApiError(400, "You can only approve product when it is in pending state");
 
@@ -339,6 +341,15 @@ const approveProduct = asyncHandler(async (request, response) => {
     product.status = "approved";
     product.approval = { approvedBy: request.admin._id, approvedAt: new Date() };
     await product.save();
+
+    // Send notification to product owner
+    await sendNotification({
+        userId: product.businessId.ownerUserId,
+        type: "BusinessProfile",
+        title: "Product Approval",
+        content: `Your product ${product.title} has been approved by admin`,
+        io: request.app.get("io")
+    }); 
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, `Product has been approved`));
@@ -354,7 +365,8 @@ const rejectProduct = asyncHandler(async (request, response) => {
     const { note } = validate(rejectProductValidator, request.body);
 
     // Find and validate
-    const product = await Product.findById(productId);
+    const product = await Product.findById(productId)
+    .populate({ path: "businessId", select: "ownerUserId" });
     if(!product) throw new ApiError(404, "Product not found");
     if(product.status !== "pending") throw new ApiError(400, "You can only reject product when it is in pending state");
 
@@ -362,6 +374,15 @@ const rejectProduct = asyncHandler(async (request, response) => {
     product.status = "rejected";
     product.rejection = { rejectedBy: request.admin._id, rejectedAt: new Date(), note };
     await product.save();
+
+    // Send notification to product owner
+    await sendNotification({
+        userId: product.businessId.ownerUserId,
+        type: "BusinessProfile",
+        title: "Product Rejection",
+        content: `Your product ${product.title} has been rejected by admin. Reason: ${note}`,
+        io: request.app.get("io")
+    });     
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, `Product has been rejected`));

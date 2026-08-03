@@ -34,4 +34,9 @@ const createProductSchema = Joi.object({
     shippingTerms: Joi.string().pattern(customPattern).allow("", null)
 });
 
-module.exports = { createProductSchema };
+// Reject product validator
+const rejectProductValidator = Joi.object({
+    note: Joi.string().trim().max(5000).required().label("Note")
+});
+
+module.exports = { createProductSchema, rejectProductValidator };

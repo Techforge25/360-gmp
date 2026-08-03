@@ -62,14 +62,24 @@ const worker = new Worker("emailQueue", async (job) => {
     // Send invitation to admin
     if(job.name === "sendInvitationToAdmin")
     {
-        const { username, email, password } = job.data;
+        const { username, email, password, allowedModules } = job.data;
+
+        // Get HTML template
+        const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/sendInvitationEmail.html"), "utf-8");
+
+        // Map modules
+        const modulesList = allowedModules.map(module => `<li> ${module} </li>`).join("");
+
+        // Replace placeholders
+        const filledHtml = html
+        .replaceAll("{{username}}", username)
+        .replaceAll("{{email}}", email)
+        .replaceAll("{{password}}", password)
+        .replaceAll("{{allowedModules}}", `<ul style="margin:8px 0 0 20px; padding:0;">${modulesList}</ul>`);        
 
         // Execute
-        const result = await sendEmail(email, "Admin Invitation", `Here is your admin credentials!
-            <b> Username: ${username} </b> <br /> <br />
-            <b> Password: ${password} </b>
-        `);        
-        if(!result) throw new ApiError(500, "Failed to send invitation email to admin");
+        const result = await sendEmail(email, "360-GMP Admin Account Credentials", filledHtml);        
+        if(!result) throw new ApiError(500, "Failed to send cancel subscription OTP");        
     }      
 }, { connection: redisConfigOptions, concurrency: 5 });
 

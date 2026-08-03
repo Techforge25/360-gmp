@@ -35,7 +35,7 @@ marketPlaceRouter.route("/product/:productId/reject")
 .patch(adminAuthentication, rejectProduct);
 
 // Fetch disputed order logs
-marketPlaceRouter.route("/disputedOrderLogs")
+marketPlaceRouter.route("/disputedOrders")
 .get(adminAuthentication, fetchDisputedOrders);
 
 module.exports = marketPlaceRouter;

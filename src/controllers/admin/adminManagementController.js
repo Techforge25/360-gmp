@@ -140,9 +140,14 @@ const restoreAdmin = asyncHandler(async (request, response) => {
     const { adminId } = request.params;
     if(!isValidObjectId(adminId)) throw new ApiError(400, "Invalid Admin ID");
 
-    // Update
-    const admin = await Admin.findByIdAndUpdate(adminId, { $set: { status: "active" } });
+    // Find and validate
+    const admin = await Admin.findById(adminId);
     if(!admin) throw new ApiError(404, "Admin not found");
+    if(admin.status === "active") throw new ApiError(400, "This admin is already in active mode");
+
+    // Update
+    admin.status = "active";
+    await admin.save();
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Admin has been restored"));

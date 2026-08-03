@@ -134,6 +134,12 @@ const BusinessProfileSchema = new Schema({
     latitude: { type:Number, default:0 },
     longitude: { type:Number, default:0 },
 
+    // Approval
+    apporval: {
+      approvedBy: { type: Schema.Types.ObjectId, ref: "Admin" },
+      approvedAt: { type: Date },
+    },    
+
     // Rejection
     rejection: {
       // Reference

@@ -30,6 +30,12 @@ const productSchema = new Schema({
     viewedBy: [{ type:Schema.Types.ObjectId, ref:"User" }],
     viewsCount: { type:Number, default:0 },
 
+    // Approval
+    apporval: {
+      approvedBy: { type: Schema.Types.ObjectId, ref: "Admin" },
+      approvedAt: { type: Date },
+    },       
+
     // Rejection
     rejection: {
       // Reference

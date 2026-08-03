@@ -272,6 +272,8 @@ const viewBusinessProfile = asyncHandler(async (request, response) => {
                 companyName: 1,
                 businessType: 1,
                 companySize: 1,
+                primaryIndustry: 1,
+                countryOfRegistration: 1,
                 foundedDate: 1,
                 createdAt: 1,
                 ownerName: 1,

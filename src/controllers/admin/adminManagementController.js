@@ -26,7 +26,7 @@ const createAdmin = asyncHandler(async (request, response) => {
     if(!admin) throw new ApiError(500, "Failed to create admin");
 
     // Send invitation email to admin
-    await emailQueue.add("sendInvitationToAdmin", { username, email, password });
+    await emailQueue.add("sendInvitationToAdmin", { username, email, password, allowedModules });
     
     // Response
     return response.status(201).json(new ApiResponse(201, null, "Admin has been created"));

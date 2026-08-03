@@ -346,7 +346,7 @@ const rejectBusinessProfile = asyncHandler(async (request, response) => {
     const adminId = request.admin._id;
 
     // Get validated payload
-    const { reason, note } = validate(rejectBusinessProfileValidator, request.body) || {};
+    const { note } = validate(rejectBusinessProfileValidator, request.body) || {};
 
     // Find and business profile
     const businessProfile = await BusinessProfile.findById(businessProfileId).select("status rejection");
@@ -355,7 +355,7 @@ const rejectBusinessProfile = asyncHandler(async (request, response) => {
 
     // Update
     businessProfile.status = "rejected";
-    businessProfile.rejection = { rejectedBy: adminId, rejectedAt: new Date(), reason, note };
+    businessProfile.rejection = { rejectedBy: adminId, rejectedAt: new Date(), note };
     await businessProfile.save();
 
     // Response

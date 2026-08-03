@@ -120,7 +120,7 @@ const updateAdminPassword = asyncHandler(async (request, response) => {
     await admin.save();
 
     // Send email to admin on password updation
-    await adminEmailQueue.add("sendEmailOnPasswordChange", { email, password });    
+    await adminEmailQueue.add("sendEmailOnPasswordChange", { email: admin.email, password });    
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Admin password has been updated"));

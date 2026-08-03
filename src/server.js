@@ -10,6 +10,7 @@ const ApiError = require("./utils/ApiError");
 const generateConversationId = require("./utils/generateConversationId");
 require("./cron/autoReleaseEscrow");
 require("./workers/emailWorker");
+require("./workers/adminEmailWorker");
 
 // Create Http server 
 const server = http.createServer(app);

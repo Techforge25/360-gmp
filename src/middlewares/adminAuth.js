@@ -1,4 +1,4 @@
-const { adminFrontendURL, cookieOptions } = require("../constants");
+const { adminFrontendURL, cookieOptions, superAdminId } = require("../constants");
 const { getAdminAccessToken, verifyAdminAccessToken } = require("../utils/adminAccessToken");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
@@ -52,6 +52,17 @@ const adminAuthorization = (roles = []) => {
     }
 };
 
+// Strict authorization for super admin
+const authorizeSuperAdmin = asyncHandler((request, response, next) => {
+    const adminId = request.admin._id;
+    if(adminId !== superAdminId)
+    {
+        return response.status(403)
+        .json(new ApiResponse(403, { redirectURL: `${adminFrontendURL}/forbidden` }, "Access denied!"));        
+    }
+    return next();
+});
+
 // Grant access to module
 const grantAccessTo = (moduleName) => {
     return (request, response, next) => {
@@ -68,4 +79,4 @@ const grantAccessTo = (moduleName) => {
     }
 };
 
-module.exports = { adminAuthentication, adminAuthorization, grantAccessTo };
+module.exports = { adminAuthentication, adminAuthorization, authorizeSuperAdmin, grantAccessTo };

@@ -30,6 +30,9 @@ if(isLocal)
     adminFrontendURL = "http://localhost:3000";
 }
 
+// Super admin unique ID
+const superAdminId = String(process.env.SUPER_ADMIN_ID);
+
 // Cors options
 const corsOptions = {
     origin:[frontendURL, process.env.FRONTEND_URL, "http://localhost:3000", "https://360-gmp-frontend-superadmin-64bl3oj4h-aftabs-projects-80f407ba.vercel.app"],
@@ -83,6 +86,7 @@ module.exports = {
     isLocal,
     frontendURL,
     adminFrontendURL,
+    superAdminId,
     corsOptions,
     cookieOptions,
     emptyList,

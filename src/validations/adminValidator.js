@@ -4,6 +4,18 @@ const joi = require("joi");
 const usernamePattern = "^(?=[a-z0-9._-]*[a-z0-9])[a-z0-9]+(?:[._-]?[a-z0-9]+)*$";
 const passwordPattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&^#()[\\]{}|\\\\<>+=._-])[A-Za-z\\d@$!%*?&^#()[\\]{}|\\\\<>+=._-]+$";
 
+// Valid module names
+const validModuleNames = [
+    "Dashboard", 
+    "Account Management", 
+    "Subscription & Access", 
+    "Marketplace & Order Logs",
+    "Financial Hub",
+    "Communities & Networking",
+    "Recruitment (Job Board)",
+    "Report"
+];
+
 // Create admin validator
 const createAdminValidator = joi.object({
     username: joi.string().trim().lowercase().min(3).max(20)
@@ -16,7 +28,7 @@ const createAdminValidator = joi.object({
         "string.pattern.base": "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.",
         "string.min": "Password must be at least 8 characters long."
     }).label("Password"),
-    allowedModules: joi.array().min(1).items(joi.string().trim()).default([]).label("Allowed modules")
+    allowedModules: joi.array().min(1).items(joi.string().trim().valid(...validModuleNames)).default([]).label("Allowed modules")
 });
 
 // Update admin validator
@@ -25,7 +37,7 @@ const updateAdminValidator = joi.object({
     .pattern(new RegExp(usernamePattern)).required().messages({
         "string.pattern.base": "Username can only contain letters, numbers, and at most one special character (., _, or -). Spaces are not allowed."
     }).label("Username"),
-    allowedModules: joi.array().min(1).items(joi.string().trim()).default([]).label("Allowed modules")
+    allowedModules: joi.array().min(1).items(joi.string().trim().valid(...validModuleNames)).default([]).label("Allowed modules")
 });
 
 // Update admin password validator

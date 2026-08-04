@@ -158,11 +158,14 @@ const restoreAdmin = asyncHandler(async (request, response) => {
     // Find and validate
     const admin = await Admin.findById(adminId);
     if(!admin) throw new ApiError(404, "Admin not found");
-    if(admin.status === "active") throw new ApiError(400, "This admin is already in active mode");
+    // if(admin.status === "active") throw new ApiError(400, "This admin is already in active mode");
 
     // Update
     admin.status = "active";
     await admin.save();
+
+    // Send email to admin on account restoration
+    await adminEmailQueue.add("sendEmailOnAccountRestoration", { email: admin.email, timestamp: admin.updatedAt });
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Admin has been restored"));

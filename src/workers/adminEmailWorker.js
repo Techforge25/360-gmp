@@ -4,6 +4,7 @@ const sendEmail = require("../service/email");
 const ApiError = require("../utils/ApiError");
 const fs = require("fs");
 const path = require("path");
+const getFormattedTimestamp = require("../utils/getFormattedTimestamp");
 
 // Admin Email Worker
 const worker = new Worker("adminEmailQueue", async (job) => {   
@@ -66,7 +67,26 @@ const worker = new Worker("adminEmailQueue", async (job) => {
         // Execute
         const result = await sendEmail(email, "360-GMP Admin Security Alert", filledHtml);        
         if(!result) throw new ApiError(500, "Failed to send email on admin password updation");        
-    }     
+    }   
+    
+    // Send email to admin on account restoration
+    if(job.name === "sendEmailOnAccountRestoration")
+    {
+        const { email, timestamp } = job.data;
+
+        // Get HTML template
+        const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/accountRestorationEmail.html"), "utf-8");
+
+        // Format timestamp
+        const formattedTimestamp = getFormattedTimestamp(timestamp);
+
+        // Replace placeholders
+        const filledHtml = html.replaceAll("{{timestamp}}", formattedTimestamp);      
+
+        // Execute
+        const result = await sendEmail(email, "360-GMP Account Restoration", filledHtml);        
+        if(!result) throw new ApiError(500, "Failed to send email on account restoration");        
+    }      
 }, { connection: redisConfigOptions, concurrency: 5 });
 
 // Attach events

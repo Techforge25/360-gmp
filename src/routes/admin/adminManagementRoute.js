@@ -1,13 +1,13 @@
 const { Router } = require("express");
 const { createAdmin, fetchAdmins, viewAdmin, updateAdmin, deleteAdmin, 
 updateAdminPassword, restoreAdmin } = require("../../controllers/admin/adminManagementController");
-const { adminAuthentication, adminAuthorization } = require("../../middlewares/adminAuth");
+const { adminAuthentication, adminAuthorization, authorizeSuperAdmin } = require("../../middlewares/adminAuth");
 
 // Router instance
 const adminManagementRouter = Router();
 
 // Inject router level middleware
-adminManagementRouter.use(adminAuthentication, adminAuthorization(["superAdmin"]));
+adminManagementRouter.use(adminAuthentication, authorizeSuperAdmin);
 
 // Create admin
 adminManagementRouter.route("/")

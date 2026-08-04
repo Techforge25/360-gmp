@@ -51,10 +51,10 @@ const fetchMarketplaceStats = asyncHandler(async (request, response) => {
 
     // Payload
     const payload = {
-        totalSales: Number(totalSales?.totalAmount.toFixed(2)) || 0,
+        totalSales: Number(totalSales?.totalAmount) || 0,
         totalPendingProducts: Number(totalPendingProducts.toFixed(2)) || 0,
         totalDisputedOrders: Number(totalDisputedOrders.toFixed(2)) || 0,
-        totalFundsHeldInEscrow: Number(totalFundsHeldInEscrow.totalAmount.toFixed(2)) || 0
+        totalFundsHeldInEscrow: Number(totalFundsHeldInEscrow?.totalAmount) || 0
     };
 
     // Response

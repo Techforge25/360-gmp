@@ -42,6 +42,7 @@ const getDateFilter = (request, fieldName = "createdAt") => {
 const fetchSubscriptionStats = asyncHandler(async (request, response) => {
     // Get date filter
     const { dateFilter } = getDateFilter(request, "startDate");
+    const { dateFilter: trialConversionDateFilter } = getDateFilter(request);
 
     const [[paidMembers], [trialMembers], [trialConversion]] = await Promise.all([
         // Paid members
@@ -103,7 +104,7 @@ const fetchSubscriptionStats = asyncHandler(async (request, response) => {
         // Trial conversion
         SubscriptionHistory.aggregate([
             // Match
-            { $match: { ...dateFilter, status: "paid" } },
+            { $match: { ...trialConversionDateFilter, status: "paid" } },
 
             // Lookup plan
             {

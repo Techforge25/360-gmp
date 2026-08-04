@@ -176,9 +176,9 @@ const viewOrderLog = asyncHandler(async (request, response) => {
                 localField: "items.productId",
                 foreignField: "_id",
                 as: "orderItems",
-                pipeline: [{ $project: { _id: 0, title: 1, image: 1, pricePerUnit: 1 } }]
+                pipeline: [{ $project: { title: 1, image: 1, pricePerUnit: 1 } }]
             }
-        },     
+        },           
         
         // Lookup products
         {
@@ -201,12 +201,44 @@ const viewOrderLog = asyncHandler(async (request, response) => {
             $project: {
                 buyer: 1,
                 seller: 1,
-                orderItems: 1,
                 tracking: 1,
                 createdAt: 1,
                 completedAt: 1,
                 totalAmount: 1,
-                platformFee: "$escrowTransaction.platformFee"
+                platformFee: "$escrowTransaction.platformFee",
+
+                // Merge order items with purchased quantity
+                orderItems: {
+                    $map: {
+                        input: "$items",
+                        as: "item",
+                        in: {
+                            $let: {
+                                vars: {
+                                    product: {
+                                        $arrayElemAt: [
+                                            {
+                                                $filter: {
+                                                    input: "$orderItems",
+                                                    as: "product",
+                                                    cond: { $eq: ["$$product._id", "$$item.productId"] }
+                                                }
+                                            },
+                                            0
+                                        ]
+                                    }
+                                },
+                                in: {
+                                    title: "$$product.title",
+                                    image: "$$product.image",
+                                    pricePerUnit: "$$product.pricePerUnit",
+                                    quantity: "$$item.quantity",
+                                    priceAtPurchase: "$$item.priceAtPurchase"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
     ]);

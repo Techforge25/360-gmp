@@ -5,8 +5,9 @@ const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
 const validate = require("../../utils/validate");
 const { createAdminValidator, updateAdminValidator, updateAdminPasswordValidator } = require("../../validations/adminValidator");
-const { emptyList } = require("../../constants");
+const { emptyList, superAdminId } = require("../../constants");
 const adminEmailQueue = require("../../queues/adminEmailQueue");
+const convertToMongoId = require("../../utils/convertToMongoId");
 
 // Create admin
 const createAdmin = asyncHandler(async (request, response) => {
@@ -43,7 +44,7 @@ const fetchAdmins = asyncHandler(async (request, response) => {
     // Fetch
     const admins = await Admin.aggregatePaginate([
         // Match
-        { $match: { status, role: { $ne: "superAdmin" } } },
+        { $match: { _id: { $ne: convertToMongoId(superAdminId) }, status } },
 
         // Sort
         { $sort: { createdAt: -1 } },
@@ -132,10 +133,12 @@ const deleteAdmin = asyncHandler(async (request, response) => {
     const { adminId } = request.params;
     if(!isValidObjectId(adminId)) throw new ApiError(400, "Invalid Admin ID");
 
+    // Prevent super admin deletion
+    if(adminId !== superAdminId) throw new ApiError(400, "Super admin cannot be deleted");
+
     // Find and validate
     const admin = await Admin.findById(adminId);
     if(!admin) throw new ApiError(404, "Admin not found");
-    if(admin.role === "superAdmin") throw new ApiError(403, "Super admin cannot be deleted");
     if(admin.status === "inactive") throw new ApiError(400, "This admin has already been deleted");
 
     // Update

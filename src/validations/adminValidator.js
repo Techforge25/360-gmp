@@ -1,12 +1,11 @@
 const joi = require("joi");
 
 // Patterns
-const usernamePattern = "^(?=[a-z0-9._-]*[a-z0-9])[a-z0-9]+(?:[._-]?[a-z0-9]+)*$";
+const usernamePattern = "^(?=[a-z0-9._@-]*[a-z0-9])[a-z0-9]+(?:[._@-]?[a-z0-9]+)*$";
 const passwordPattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&^#()[\\]{}|\\\\<>+=._-])[A-Za-z\\d@$!%*?&^#()[\\]{}|\\\\<>+=._-]+$";
 
 // Valid module names
 const validModuleNames = [
-    "Dashboard", 
     "Account Management", 
     "Subscription & Access", 
     "Marketplace & Order Logs",

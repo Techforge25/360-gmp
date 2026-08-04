@@ -1,12 +1,18 @@
 const joi = require("joi");
 
+// Patterns
+const usernamePattern = "^(?=[a-z0-9._-]*[a-z0-9])[a-z0-9]+(?:[._-]?[a-z0-9]+)*$";
+const passwordPattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&^#()[\\]{}|\\\\<>+=._-])[A-Za-z\\d@$!%*?&^#()[\\]{}|\\\\<>+=._-]+$";
+
 // Create admin validator
 const createAdminValidator = joi.object({
-    username: joi.string().trim().lowercase().min(3).max(20).required().label("Username"),
+    username: joi.string().trim().lowercase().min(3).max(20)
+    .pattern(new RegExp(usernamePattern)).required().messages({
+        "string.pattern.base": "Username can only contain letters, numbers, and at most one special character (., _, or -). Spaces are not allowed."
+    }).label("Username"),
     email: joi.string().trim().lowercase().email().required().label("Email"),
     password: joi.string().trim().min(8).max(50).required()
-    .pattern(new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&^#()[\\]{}|\\\\<>+=._-])[A-Za-z\\d@$!%*?&^#()[\\]{}|\\\\<>+=._-]+$"))
-    .required().messages({
+    .pattern(new RegExp(passwordPattern)).required().messages({
         "string.pattern.base": "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.",
         "string.min": "Password must be at least 8 characters long."
     }).label("Password"),
@@ -15,15 +21,17 @@ const createAdminValidator = joi.object({
 
 // Update admin validator
 const updateAdminValidator = joi.object({
-    username: joi.string().trim().min(3).max(20).required().label("Username"),
+    username: joi.string().trim().lowercase().min(3).max(20)
+    .pattern(new RegExp(usernamePattern)).required().messages({
+        "string.pattern.base": "Username can only contain letters, numbers, and at most one special character (., _, or -). Spaces are not allowed."
+    }).label("Username"),
     allowedModules: joi.array().min(1).items(joi.string().trim()).default([]).label("Allowed modules")
 });
 
 // Update admin password validator
 const updateAdminPasswordValidator = joi.object({
     password: joi.string().trim().min(8).max(50).required()
-    .pattern(new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&^#()[\\]{}|\\\\<>+=._-])[A-Za-z\\d@$!%*?&^#()[\\]{}|\\\\<>+=._-]+$"))
-    .required().messages({
+    .pattern(new RegExp(passwordPattern)).required().messages({
         "string.pattern.base": "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.",
         "string.min": "Password must be at least 8 characters long."
     }).label("Password")

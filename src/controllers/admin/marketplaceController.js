@@ -233,7 +233,7 @@ const viewOrderLog = asyncHandler(async (request, response) => {
                                     image: "$$product.image",
                                     pricePerUnit: "$$product.pricePerUnit",
                                     quantity: "$$item.quantity",
-                                    priceAtPurchase: "$$item.priceAtPurchase"
+                                    // priceAtPurchase: "$$item.priceAtPurchase"
                                 }
                             }
                         }

@@ -375,7 +375,7 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
 
     // Validate query strings
     const allowedTierTypes = ["Consumer / Individual", "Bronze", "Silver", "Gold", "Premium"];
-    const allowedSubscriptionStatus = ["active", "expired"];
+    const allowedSubscriptionStatus = ["active", "expired", "canceled"];
 
     if(tierType && !allowedTierTypes.includes(tierType)) throw new ApiError(400, "Invalid tier type");
     if(subscriptionStatus && !allowedSubscriptionStatus.includes(subscriptionStatus))
@@ -419,7 +419,7 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
                 foreignField: "userId",
                 as:"subscription",
                 pipeline: [
-                    { $match: { ...dateFilter, status: "active" } },
+                    { $match: { ...dateFilter } },
                     { $project:{ _id: 0, planId: 1, status: 1, startDate: 1 } },
 
                     // Lookup inside plans

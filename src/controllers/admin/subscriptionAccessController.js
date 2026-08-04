@@ -439,8 +439,7 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
         },
 
         // Unwind
-        { $unwind: "$userProfile" },
-        // { $unwind: "$businessProfile" },
+        { $unwind: { path: "$userProfile", preserveNullAndEmptyArrays: true } },
         { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
         { $unwind: "$subscription" },
         { $unwind: "$subscription.plan" },

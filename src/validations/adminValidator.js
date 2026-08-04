@@ -12,7 +12,7 @@ const validModuleNames = [
     "Financial Hub",
     "Communities & Networking",
     "Recruitment (Job Board)",
-    "Report"
+    "Reports"
 ];
 
 // Create admin validator

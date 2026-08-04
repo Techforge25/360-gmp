@@ -134,7 +134,7 @@ const deleteAdmin = asyncHandler(async (request, response) => {
     if(!isValidObjectId(adminId)) throw new ApiError(400, "Invalid Admin ID");
 
     // Prevent super admin deletion
-    if(adminId !== superAdminId) throw new ApiError(400, "Super admin cannot be deleted");
+    if(adminId === superAdminId) throw new ApiError(400, "Super admin cannot be deleted");
 
     // Find and validate
     const admin = await Admin.findById(adminId);

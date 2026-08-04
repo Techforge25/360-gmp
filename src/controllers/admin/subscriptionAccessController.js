@@ -204,7 +204,7 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
 
     // Subscription type filter
     const subscriptionStatusFilter = {};
-    if(subscriptionStatus && !["all", "active", "expired"].includes(subscriptionStatus))
+    if(subscriptionStatus && !["all", "active", "expired", "canceled"].includes(subscriptionStatus))
     {
         throw new ApiError(400, "Invalid subscription status filter");
     }

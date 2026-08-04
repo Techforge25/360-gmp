@@ -66,11 +66,13 @@ const authorizeSuperAdmin = asyncHandler((request, response, next) => {
 // Grant access to module
 const grantAccessTo = (moduleName) => {
     return (request, response, next) => {
+        const { _id: adminId, allowedModules } = request.admin;
+
         // Bypass for super admin
-        if(request.admin.role === "superAdmin") return next();
+        if(adminId === superAdminId) return next();
 
         // Allow module
-        if(!request.admin.allowedModules.includes(moduleName))
+        if(!allowedModules.includes(moduleName))
         {
             return response.status(403)
             .json(new ApiResponse(403, { redirectURL: `${adminFrontendURL}/forbidden` }, "Access denied!"));

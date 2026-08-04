@@ -374,7 +374,7 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
     const { dateFilter } = getDateFilter(request, "startDate");
 
     // Validate query strings
-    const allowedTierTypes = ["Consumer / Individual", "Bronze", "Silver", "Gold", "Premium"];
+    const allowedTierTypes = ["Consumer / Individual", "Bronze", "Silver", "Gold", "Enterprise"];
     const allowedSubscriptionStatus = ["active", "expired", "canceled"];
 
     if(tierType && !allowedTierTypes.includes(tierType)) throw new ApiError(400, "Invalid tier type");

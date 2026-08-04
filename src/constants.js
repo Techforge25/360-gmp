@@ -83,7 +83,7 @@ const allowedIncoterms = ["EXW - Ex Works", "FCA - Free Carrier", "FAS - Free Al
 const allowedTermsAndCapability = ['Air Freight', 'Sea Freight', 'Express Courier', 'Rail Freight', 'Road Transport'];
 
 // Allowed plan names
-const allowedPlanNames = ["Consumer / Individual", "Sneak Peek Free – 14 Days", "Silver", "Bronze", "Premium", "Gold"];
+const allowedPlanNames = ["Consumer / Individual", "Sneak Peek Free – 14 Days", "Silver", "Bronze", "Enterprise", "Gold"];
 
 module.exports = {
     port,

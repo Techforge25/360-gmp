@@ -62,7 +62,7 @@ const fetchSubscriptionStats = asyncHandler(async (request, response) => {
 
             // Unwind
             { $unwind: "$plan" },
-            { $match: { "plan.name": { $ne: "Sneak Peek Free – 14 Days" } } },
+            { $match: { "plan.price": { $gt: 0 } } },
 
             // Count
             {
@@ -419,7 +419,7 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
                 foreignField: "userId",
                 as:"subscription",
                 pipeline: [
-                    { $match: dateFilter },
+                    { $match: { ...dateFilter, status: "active" } },
                     { $project:{ _id: 0, planId: 1, status: 1, startDate: 1 } },
 
                     // Lookup inside plans

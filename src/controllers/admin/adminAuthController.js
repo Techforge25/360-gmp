@@ -1,4 +1,4 @@
-const { cookieOptions, adminFrontendURL: redirectURL } = require("../../constants");
+const { cookieOptions, adminFrontendURL: redirectURL, superAdminId } = require("../../constants");
 const Admin = require("../../models/adminModel");
 const { redis } = require("../../redis/connection");
 const { generateAdminAccessToken, generateAdminRefreshToken, 
@@ -76,11 +76,13 @@ const adminLogin = asyncHandler(async (request, response) => {
 
 // Auth me (Auth check)
 const authMe = asyncHandler(async (request, response) => {
-    const adminId = request.admin._id;
-    const allowedModules = request.admin.allowedModules;
-    
+    const { _id: adminId, allowedModules } = request.admin;
+
+    // Dynamic role
+    const role = adminId === superAdminId ? "superAdmin" : request.admin.role;
+
     // Response
-    return response.status(200).json(new ApiResponse(200, { adminId, allowedModules }, "Authenticated"));
+    return response.status(200).json(new ApiResponse(200, { role, allowedModules }, "Authenticated"));
 });
 
 // Refresh token

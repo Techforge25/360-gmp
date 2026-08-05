@@ -30,7 +30,6 @@ const createProductSchema = Joi.object({
     estimatedDeliveryDays: Joi.string().pattern(qtyPattern).required().label("Estimated Delivery Days"),    
     isFeatured: Joi.boolean(),
     isSingleProductAvailable: Joi.boolean(),
-    status: Joi.string().valid("pending", "approved", "rejected", "draft"),
     shippingTerms: Joi.string().pattern(customPattern).allow("", null)
 });
 

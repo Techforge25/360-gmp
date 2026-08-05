@@ -352,6 +352,10 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
     // Get date filter
     const { dateFilter } = getDateFilter(request, "startDate");
 
+    // Search filter (Search by parent user's email)
+    const searchFilter = {};  
+    if(search) searchFilter.email = { $regex: search, $options: "i" };  
+
     // Validate query strings
     const allowedTierTypes = ["Consumer / Individual", "Bronze", "Silver", "Gold", "Enterprise"];
     const allowedSubscriptionStatus = ["active", "expired", "canceled"];
@@ -364,6 +368,9 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
 
     // Fetch
     const paidUsers = await User.aggregatePaginate([
+        // Match
+        { $match: searchFilter },      
+
         // Lookup user profile
         {
             $lookup: {
@@ -424,14 +431,14 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
         { $unwind: "$subscription.plan" },
 
         // Search
-        ...(search ? [{
-            $match: {
-                $or: [
-                    { "userProfile.fullName": { $regex: search, $options: "i" } },
-                    { "businessProfile.companyName": { $regex: search, $options: "i" } }
-                ]
-            }
-        }] : []),
+        // ...(search ? [{
+        //     $match: {
+        //         $or: [
+        //             { "userProfile.fullName": { $regex: search, $options: "i" } },
+        //             { "businessProfile.companyName": { $regex: search, $options: "i" } }
+        //         ]
+        //     }
+        // }] : []),
 
         // Filter by tier type
         ...(tierType ? [{ $match: { "subscription.plan.name": tierType } }] : []),
@@ -448,8 +455,8 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
         // Final projection
         {
             $project: {
+                email: 1,
                 fullName: "$userProfile.fullName",
-                logo: "$userProfile.logo",
                 companyName: "$businessProfile.companyName",
                 subscriptionTier: "$subscription.plan.name",
                 joinDate: "$createdAt",

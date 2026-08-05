@@ -199,9 +199,9 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
     // Get date filter
     const { dateFilter } = getDateFilter(request, "startDate");
 
-    // Search filter (Search by user profile full name)
+    // Search filter (Search by parent user's email)
     const searchFilter = {};
-    if(search) searchFilter.fullName = { $regex: search, $options: "i" };
+    if(search) searchFilter.email = { $regex: search, $options: "i" };
 
     // Subscription type filter
     const subscriptionStatusFilter = {};
@@ -220,23 +220,11 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
 
     // Fetch
     const trialUsers = await User.aggregatePaginate([
+        // Match
+        { $match: searchFilter },
+
         // Sort
         { $sort: { createdAt:-1 } },
-        
-        // Lookup on user profile
-        {
-            $lookup: {
-                from: "userprofiles",
-                localField: "_id",
-                foreignField: "userId",
-                as: "userProfile",
-                pipeline: [
-                    { $match: searchFilter },
-                    { $project: { _id: 0, fullName: 1, email: 1, logo: 1 } }
-                ]
-            }
-        },
-        { $unwind: "$userProfile" },        
 
         // Lookup on subscription
         {
@@ -266,17 +254,6 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
         // Trial plan filter
         { $match: { "plan.price": 0 } },
 
-        // Lookup trial usage
-        {
-            $lookup: {
-                from: "trialusages",
-                localField: "_id",
-                foreignField: "userId",
-                as: "trialUsage"
-            }
-        },
-        { $unwind: { path: "$trialUsage", preserveNullAndEmptyArrays: true } },
-
         // Count days remaining
         {
             $addFields: {
@@ -294,7 +271,7 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
         // Projection
         {
             $project: {
-                userProfile: 1,
+                email: 1,
                 daysRemaining: 1,
                 status: "$subscription.status"
             }

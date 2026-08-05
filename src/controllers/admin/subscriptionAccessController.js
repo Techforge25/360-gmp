@@ -188,20 +188,10 @@ const fetchSubscriptionStats = asyncHandler(async (request, response) => {
 
 // Fetch trial users
 const fetchTrialUsers = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search, subscriptionStatus = "all" } = request.query;
-
-    // Pagination options
-    const options = {
-        page: Number(page),
-        limit: Number(limit),
-    };
+    const { page = 1, limit = 10, search = "", subscriptionStatus = "all" } = request.query;
 
     // Get date filter
     const { dateFilter } = getDateFilter(request, "startDate");
-
-    // Search filter (Search by parent user's email)
-    const searchFilter = {};
-    if(search) searchFilter.email = { $regex: search, $options: "i" };
 
     // Subscription type filter
     const subscriptionStatusFilter = {};
@@ -220,9 +210,6 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
 
     // Fetch
     const trialUsers = await User.aggregatePaginate([
-        // Match
-        { $match: searchFilter },
-
         // Sort
         { $sort: { createdAt: -1 } },
         
@@ -234,7 +221,6 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
                 foreignField: "userId",
                 as: "userProfile",
                 pipeline: [
-                    { $match: searchFilter },
                     { $project: { _id: 0, fullName: 1 } }
                 ]
             }
@@ -269,6 +255,11 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
         // Trial plan filter
         { $match: { "plan.price": 0 } },
 
+        // Search
+        ...(search ? [{
+            $match: { "userProfile.fullName": { $regex: search, $options: "i" } }
+        }] : []),        
+
         // Count days remaining
         {
             $addFields: {
@@ -292,7 +283,7 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
                 status: "$subscription.status"
             }
         }
-    ], options);
+    ], { page, limit });
     if(!trialUsers.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No trial users found"));
 
     // Response

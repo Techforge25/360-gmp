@@ -461,6 +461,86 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
 });
 
 // View paid user
+// const viewPaidUser = asyncHandler(async (request, response) => {
+//     // Sanitize ID
+//     const { userId } = request.params;
+//     if(!isValidObjectId(userId)) throw new ApiError(400, "Invalid User ID");
+
+//     // Aggregate
+//     const [user] = await User.aggregate([
+//         // Match
+//         { $match: { _id: convertToMongoId(userId) } },
+
+//         // Lookup subscription
+//         {
+//             $lookup: {
+//                from: "subscriptions",
+//                localField: "_id",
+//                foreignField: "userId",
+//                as: "subscription",
+//                pipeline: [
+//                     {
+//                         $lookup: {
+//                             from: "plans",
+//                             localField: "planId",
+//                             foreignField: "_id",
+//                             as: "plan",
+//                             pipeline: [{ $project: { _id: 0, name: 1, price: 1 } }]
+//                         }
+//                     },
+//                     { $unwind: "$plan" },
+//                     { $project: { _id: 0, startDate: 1, endDate: 1, planName: "$plan.name", planPrice: "$plan.price" } }
+//                ] 
+//             }
+//         },        
+
+//         // Unwind
+//         { $unwind: "$subscription" },
+
+//         // Projection
+//         { $project: { email: 1, joinDate: "$createdAt", subscription: 1 } }
+//     ]);
+//     if(!user) throw new ApiError(404, "User not found");
+
+//     // Count lifetime subscription purchases
+//     const [lifetimeSubscriptionPurchases] = await SubscriptionHistory.aggregate([
+//         // Match
+//         { $match: { userId: convertToMongoId(userId) } },
+
+//         // Lookup plan
+//         {
+//             $lookup: {
+//                 from: "plans",
+//                 localField: "planId",
+//                 foreignField: "_id",
+//                 as: "plan",
+//                 pipeline: [{ $project: { _id: 0, price: 1 } }]
+//             }
+//         },
+
+//         // Unwind
+//         { $unwind: "$plan" },
+
+//         // Group
+//         {
+//             $group: {
+//                 _id: null,
+//                 totalAmount: { $sum: "$plan.price" }
+//             }
+//         },
+
+//         // Projection
+//         { $project: { _id: 0, totalAmount: 1 } }
+//     ]);
+
+//     // Final computation
+//     const lifetimeValue = lifetimeSubscriptionPurchases?.totalAmount || 0;
+
+//     // Response
+//     return response.status(200).json(new ApiResponse(200, { ...user, lifetimeValue }, "Paid user details have been fetched"));
+// });
+
+// View paid user
 const viewPaidUser = asyncHandler(async (request, response) => {
     // Sanitize ID
     const { userId } = request.params;
@@ -492,7 +572,7 @@ const viewPaidUser = asyncHandler(async (request, response) => {
                     { $project: { _id: 0, startDate: 1, endDate: 1, planName: "$plan.name", planPrice: "$plan.price" } }
                ] 
             }
-        },        
+        },
 
         // Unwind
         { $unwind: "$subscription" },
@@ -533,11 +613,64 @@ const viewPaidUser = asyncHandler(async (request, response) => {
         { $project: { _id: 0, totalAmount: 1 } }
     ]);
 
+    // Get previous subscription
+    const [lastSubscription] = await SubscriptionHistory.aggregate([
+        // Match
+        { $match: { userId: convertToMongoId(userId) } },
+
+        // Sort
+        { $sort: { createdAt: -1 } },
+
+        // Skip current subscription
+        { $skip: 1 },
+
+        // Limit
+        { $limit: 1 },
+
+        // Lookup plan
+        {
+            $lookup: {
+                from: "plans",
+                localField: "planId",
+                foreignField: "_id",
+                as: "plan",
+                pipeline: [{ $project: { _id: 0, name: 1, price: 1, durationDays: 1 } }]
+            }
+        },
+
+        // Unwind
+        { $unwind: "$plan" },
+
+        // Projection
+        {
+            $project: {
+                _id: 0,
+                planName: "$plan.name",
+                planPrice: "$plan.price",
+                startDate: "$createdAt",
+                endDate: {
+                    $dateAdd: {
+                        startDate: "$createdAt",
+                        unit: "day",
+                        amount: "$plan.durationDays"
+                    }
+                }
+            }
+        }
+    ]);
+
     // Final computation
     const lifetimeValue = lifetimeSubscriptionPurchases?.totalAmount || 0;
 
+    // Payload
+    const payload = {
+        ...user, 
+        lifetimeValue, 
+        lastSubscription: lastSubscription || null
+    };
+
     // Response
-    return response.status(200).json(new ApiResponse(200, { ...user, lifetimeValue }, "Paid user details have been fetched"));
+    return response.status(200).json(new ApiResponse(200, payload, "Paid user details have been fetched"));
 });
 
 module.exports = { fetchSubscriptionStats, fetchTrialUsers, fetchPaidUsers, viewTrialUser, 

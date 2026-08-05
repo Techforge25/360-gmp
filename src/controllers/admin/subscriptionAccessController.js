@@ -345,7 +345,7 @@ const viewTrialUser = asyncHandler(async (request, response) => {
 
 // Fetch paid users
 const fetchPaidUsers = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search, tierType, subscriptionStatus } = request.query;
+    const { page = 1, limit = 10, search = "", tierType, subscriptionStatus } = request.query;
 
     // Get date filter
     const { dateFilter } = getDateFilter(request, "startDate");
@@ -362,31 +362,8 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
 
     // Fetch
     const paidUsers = await User.aggregatePaginate([
-        // Lookup user profile
-        {
-            $lookup: {
-                from: "userprofiles",
-                localField: "_id",
-                foreignField: "userId",
-                as: "userProfile",
-                pipeline: [
-                    { $project: { _id: 0, fullName: 1, logo: 1 } }
-                ]
-            }
-        },
-
-        // Lookup business profile
-        {
-            $lookup: {
-                from: "businessprofiles",
-                localField: "_id",
-                foreignField: "ownerUserId",
-                as: "businessProfile",
-                pipeline: [
-                    { $project: { _id: 0, companyName: 1 } }
-                ]
-            }
-        },
+        // Match
+        { $match: { email: { $regex: search, $options: "i" } } },
 
         // Lookup inside subscription
         {
@@ -407,7 +384,7 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
                             foreignField: "_id",
                             as: "plan",
                             pipeline:[
-                                { $project:{ _id: 0, name: 1, price: 1 } }
+                                { $project: { _id: 0, name: 1, price: 1 } }
                             ]
                         }
                     }
@@ -416,20 +393,8 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
         },
 
         // Unwind
-        { $unwind: { path: "$userProfile", preserveNullAndEmptyArrays: true } },
-        { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
         { $unwind: "$subscription" },
         { $unwind: "$subscription.plan" },
-
-        // Search
-        ...(search ? [{
-            $match: {
-                $or: [
-                    { "userProfile.fullName": { $regex: search, $options: "i" } },
-                    { "businessProfile.companyName": { $regex: search, $options: "i" } }
-                ]
-            }
-        }] : []),
 
         // Filter by tier type
         ...(tierType ? [{ $match: { "subscription.plan.name": tierType } }] : []),
@@ -446,9 +411,7 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
         // Final projection
         {
             $project: {
-                fullName: "$userProfile.fullName",
-                logo: "$userProfile.logo",
-                companyName: "$businessProfile.companyName",
+                email: 1,
                 subscriptionTier: "$subscription.plan.name",
                 joinDate: "$createdAt",
                 status: "$subscription.status"

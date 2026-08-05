@@ -338,14 +338,10 @@ const viewTrialUser = asyncHandler(async (request, response) => {
 
 // Fetch paid users
 const fetchPaidUsers = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search, tierType, subscriptionStatus } = request.query;
+    const { page = 1, limit = 10, search = "", tierType, subscriptionStatus } = request.query;
 
     // Get date filter
-    const { dateFilter } = getDateFilter(request, "startDate");
-
-    // Search filter (Search by parent user's email)
-    const searchFilter = {};  
-    if(search) searchFilter.email = { $regex: search, $options: "i" };  
+    const { dateFilter } = getDateFilter(request, "startDate"); 
 
     // Validate query strings
     const allowedTierTypes = ["Consumer / Individual", "Bronze", "Silver", "Gold", "Enterprise"];
@@ -358,10 +354,7 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
     }
 
     // Fetch
-    const paidUsers = await User.aggregatePaginate([
-        // Match
-        { $match: searchFilter },      
-
+    const paidUsers = await User.aggregatePaginate([      
         // Lookup user profile
         {
             $lookup: {
@@ -422,14 +415,14 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
         { $unwind: "$subscription.plan" },
 
         // Search
-        // ...(search ? [{
-        //     $match: {
-        //         $or: [
-        //             { "userProfile.fullName": { $regex: search, $options: "i" } },
-        //             { "businessProfile.companyName": { $regex: search, $options: "i" } }
-        //         ]
-        //     }
-        // }] : []),
+        ...(search ? [{
+            $match: {
+                $or: [
+                    { "userProfile.fullName": { $regex: search, $options: "i" } },
+                    { "businessProfile.companyName": { $regex: search, $options: "i" } }
+                ]
+            }
+        }] : []),
 
         // Filter by tier type
         ...(tierType ? [{ $match: { "subscription.plan.name": tierType } }] : []),

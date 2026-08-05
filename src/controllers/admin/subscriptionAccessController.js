@@ -294,20 +294,6 @@ const viewTrialUser = asyncHandler(async (request, response) => {
         // Match
         { $match: { _id: convertToMongoId(userId) } },
 
-        // Lookup user profile
-        {
-            $lookup: {
-                from: "userprofiles",
-                localField: "_id",
-                foreignField: "userId",
-                as: "userProfile",
-                pipeline: [{ $project: { _id: 0, fullName: 1, email: 1, logo: 1 } }]
-            },
-        },
-
-        // Unwind
-        { $unwind: "$userProfile" },
-
         // Lookup subscription
         {
             $lookup: {
@@ -322,7 +308,10 @@ const viewTrialUser = asyncHandler(async (request, response) => {
                             localField: "planId",
                             foreignField: "_id",
                             as: "plan",
-                            pipeline: [{ $project: { _id: 0, name: 1 } }]
+                            pipeline: [
+                                { $match: { price: 0 } },
+                                { $project: { _id: 0, name: 1 } }
+                            ]
                         }
                     },
                     { $unwind: "$plan" },
@@ -335,7 +324,7 @@ const viewTrialUser = asyncHandler(async (request, response) => {
         { $unwind: "$subscription" },
 
         // Projection
-        { $project: { userProfile: 1, subscription: 1 } }
+        { $project: { subscription: 1 } }
     ]);
     if(!user) throw new ApiError(404, "User not found");
 

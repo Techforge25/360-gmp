@@ -418,6 +418,7 @@ const fetchPaidUsers = asyncHandler(async (request, response) => {
         ...(search ? [{
             $match: {
                 $or: [
+                    { "email": { $regex: search, $options: "i" } },
                     { "userProfile.fullName": { $regex: search, $options: "i" } },
                     { "businessProfile.companyName": { $regex: search, $options: "i" } }
                 ]

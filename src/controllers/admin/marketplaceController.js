@@ -288,8 +288,8 @@ const fetchProductAudits = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, products, "Product audits have been fetched"));    
 });
 
-// View product audit details
-const viewProductAuditDetails = asyncHandler(async (request, response) => {
+// View product details
+const viewProductDetails = asyncHandler(async (request, response) => {
     // Sanitize ID
     const { productId } = request.params;
     if(!isValidObjectId(productId)) throw new ApiError(400, "Invalid product ID");
@@ -322,6 +322,8 @@ const viewProductAuditDetails = asyncHandler(async (request, response) => {
                 pricePerUnit: 1,
                 tieredPricing: 1,
                 minOrderQty: 1,
+                estimatedDeliveryDays: 1,
+                status: 1
             }
         }
     ]);
@@ -532,5 +534,5 @@ const fetchGeneralProducts = asyncHandler(async (request, response) => {
 });
 
 module.exports = { fetchMarketplaceStats, fetchOrderLogs, viewOrderLog, 
-fetchProductAudits, viewProductAuditDetails, fetchDisputedOrders, updateProductStatus,
+fetchProductAudits, viewProductDetails, fetchDisputedOrders, updateProductStatus,
 approveProduct, rejectProduct, fetchGeneralProducts };

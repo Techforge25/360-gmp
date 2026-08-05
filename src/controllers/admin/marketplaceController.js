@@ -294,6 +294,7 @@ const viewProductDetails = asyncHandler(async (request, response) => {
     const { productId } = request.params;
     if(!isValidObjectId(productId)) throw new ApiError(400, "Invalid product ID");
 
+    // Fetch
     const [product] = await Product.aggregate([
         // Match
         { $match: { _id: convertToMongoId(productId) } },
@@ -310,6 +311,28 @@ const viewProductDetails = asyncHandler(async (request, response) => {
         },
         { $unwind: "$businessProfile" },
 
+        // Lookup approved by admin
+        {
+            $lookup: {
+                from: "admins",
+                localField: "approval.approvedBy",
+                foreignField: "_id",
+                as: "approvedBy",
+                pipeline: [{ $project: { _id: 0, email: 1 }}]
+            }
+        },
+
+        // Lookup rejected by admin
+        {
+            $lookup: {
+                from: "admins",
+                localField: "rejection.rejectedBy",
+                foreignField: "_id",
+                as: "rejectedBy",
+                pipeline: [{ $project: { _id: 0, email: 1 }}]
+            }
+        },
+
         // Project
         {
             $project: {
@@ -323,7 +346,30 @@ const viewProductDetails = asyncHandler(async (request, response) => {
                 tieredPricing: 1,
                 minOrderQty: 1,
                 estimatedDeliveryDays: 1,
-                status: 1
+                status: 1,
+
+                approval: {
+                    $cond: [
+                        { $eq: ["$status", "approved"] },
+                        {
+                            approvedBy: { $arrayElemAt: ["$approvedBy", 0] },
+                            approvedAt: "$approval.approvedAt"
+                        },
+                        "$$REMOVE"
+                    ]
+                },
+
+                rejection: {
+                    $cond: [
+                        { $eq: ["$status", "rejected"] },
+                        {
+                            rejectedBy: { $arrayElemAt: ["$rejectedBy", 0] },
+                            rejectedAt: "$rejection.rejectedAt",
+                            note: "$rejection.note"
+                        },
+                        "$$REMOVE"
+                    ]
+                }
             }
         }
     ]);

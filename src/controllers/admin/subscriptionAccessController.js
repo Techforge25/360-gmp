@@ -257,7 +257,12 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
 
         // Search
         ...(search ? [{
-            $match: { "userProfile.fullName": { $regex: search, $options: "i" } }
+           $match: {
+                $or: [
+                    { "email": { $regex: search, $options: "i" } },
+                    { "userProfile.fullName": { $regex: search, $options: "i" } }
+                ]
+            }
         }] : []),        
 
         // Count days remaining

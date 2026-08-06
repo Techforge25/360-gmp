@@ -265,13 +265,13 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
             }
         }] : []),        
 
-        // Count days remaining
+        // Count days consumed
         {
             $addFields: {
-                daysRemaining: {
+                daysConsumed: {
                     $ceil: {
                         $divide: [
-                            { $subtract: ["$subscription.endDate", today] },
+                            { $subtract: [today, "$subscription.startDate"] },
                             1000 * 60 * 60 * 24
                         ]
                     }
@@ -284,7 +284,7 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
             $project: {
                 email: 1,
                 userProfile: 1,
-                daysRemaining: 1,
+                daysConsumed: 1,
                 status: "$subscription.status"
             }
         }

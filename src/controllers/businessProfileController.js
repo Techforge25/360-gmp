@@ -19,7 +19,7 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Get validated payload Validate
-    const data = validate(createBusinessProfileSchema, request.body);
+    const data = validate(createBusinessProfileSchema, request.body) || {};
 
     // Check if user has already created BusinessProfile
     const [existingProfile, existingName] = await Promise.all([
@@ -30,7 +30,7 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
     if(existingName) throw new ApiError(400, "This Company name has already been taken");
 
     // Prepare profile payload
-    const profileData = { ...data, ownerUserId:userId };
+    const profileData = { ...data, ownerUserId: userId };
 
     // Create profile
     const profile = await BusinessProfile.create(profileData);
@@ -39,10 +39,10 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
     // Create wallet account, set role from null to business and mark "isNewToPlatform" as false
     const [wallet, user] = await Promise.all([
         Wallet.create({ 
-            ownerId:profile._id, ownerModel:"BusinessProfile", 
-            pendingBalance:0, availableBalance:0, totalEarned:0, currency:'USD' 
+            ownerId: profile._id, ownerModel: "BusinessProfile", 
+            pendingBalance: 0, availableBalance: 0, totalEarned: 0, currency: 'USD' 
         }),
-        User.findByIdAndUpdate(userId, { role:"business", isNewToPlatform:false }, { new:true, lean:true })
+        User.findByIdAndUpdate(userId, { role: "business", isNewToPlatform: false }, { new: true, lean: true })
     ]);
 
     // Validate
@@ -59,7 +59,7 @@ const createBusinessProfile = asyncHandler(async (request, response) => {
     });
 
     // Response
-    return response.status(201).json(new ApiResponse(201, { profile, isNewToPlatform:user.isNewToPlatform }, "Business profile has been created"));
+    return response.status(201).json(new ApiResponse(201, { profile, isNewToPlatform: user.isNewToPlatform }, "Business profile has been created"));
 });
 
 // Fetch business profiles

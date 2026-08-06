@@ -269,6 +269,26 @@ const viewBusinessProfile = asyncHandler(async (request, response) => {
         // Sort
         { $sort: { createdAt: -1 } },
 
+        // Lookup approval admin
+        {
+            $lookup: {
+                from: "admins",
+                localField: "approval.approvedBy",
+                foreignField: "_id",
+                as: "approvalAdmin"
+            }
+        },
+
+        // Lookup rejection admin
+        {
+            $lookup: {
+                from: "admins",
+                localField: "rejection.rejectedBy",
+                foreignField: "_id",
+                as: "rejectionAdmin"
+            }
+        },
+
         // Projection
         {
             $project: {
@@ -304,7 +324,35 @@ const viewBusinessProfile = asyncHandler(async (request, response) => {
                 taxRegistrationCertificate: 1,
                 shareHolderRegister: 1,
                 operatingLicense: 1,
-                evidenceOfFunds: 1
+                evidenceOfFunds: 1,
+                status: 1,
+
+                approval: {
+                    $cond: [
+                        { $eq: ["$status", "approved"] },
+                        {
+                            approvedBy: {
+                                $arrayElemAt: ["$approvalAdmin.email", 0]
+                            },
+                            approvedAt: "$approval.approvedAt"
+                        },
+                        "$$REMOVE"
+                    ]
+                },
+
+                rejection: {
+                    $cond: [
+                        { $eq: ["$status", "rejected"] },
+                        {
+                            rejectedBy: {
+                                $arrayElemAt: ["$rejectionAdmin.email", 0]
+                            },
+                            rejectedAt: "$rejection.rejectedAt",
+                            note: "$rejection.note"
+                        },
+                        "$$REMOVE"
+                    ]
+                }
             }
         }
     ]);

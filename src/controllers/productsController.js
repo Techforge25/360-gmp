@@ -51,7 +51,7 @@ const fetchAllProducts = asyncHandler(async (request, response) => {
     if(rating && (rating > 5 || rating < 1)) throw new ApiError(400, "Invalid rating value");    
 
     // Base product filter
-    const filter = {};
+    const filter = { status: "approved" };
     if(search) filter.title = { $regex:search, $options:"i" };
 
     // Category filter
@@ -242,10 +242,9 @@ const fetchBusinessFeaturedProducts = asyncHandler(async (request, response) => 
     // Pagination options
     const { page = 1, limit = 10 } = request.query;
 
-    // const products = await Product.paginate({ businessId, isFeatured:true }, { page, limit, sort:{ createdAt:-1 } });
     // Aggregate pipeline
     const products = await Product.aggregatePaginate([
-        { $match: { businessId: convertToMongoId(businessId), isFeatured:true } },
+        { $match: { businessId: convertToMongoId(businessId), isFeatured: true, status: "approved" } },
 
         // Join reviews
         {
@@ -358,7 +357,7 @@ const viewProduct = asyncHandler(async (request, response) => {
 
     // Fetch product + business profile + rating stats
     const [product, businessProfile, ratingStats, sold] = await Promise.all([
-        Product.findById(productId)
+        Product.findOne({ _id: productId, status: "approved" })
         .populate({ path:"businessId", select:"_id companyName foundedDate logo" })
         .select("-__v -updatedAt"),
 
@@ -615,7 +614,7 @@ const fetchTopRankingProducts = asyncHandler(async (request, response) => {
 const fetchNewProducts = asyncHandler(async (request, response) => {    
 
     // Find products
-    const products = await Product.find({ status:"approved" })
+    const products = await Product.find({ status: "approved" })
     .select("title detail image minOrderQty pricePerUnit")
     .sort("-createdAt").limit(8).lean();
 
@@ -654,7 +653,7 @@ const fetchFlashDeals = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Fetch
-    const products = await Product.find({ status:"approved", isFlashDeal:true })
+    const products = await Product.find({ status: "approved", isFlashDeal: true })
     .populate("businessId", "ownerUserId")
     .select("title detail image minOrderQty pricePerUnit extras businessId")
     .sort("-createdAt")
@@ -680,12 +679,12 @@ const fetchRelatedProducts = asyncHandler(async (request, response) => {
     if(!isValidObjectId(productId)) throw new ApiError(400, "Invalid product ID");
 
     // Find product
-    const product = await Product.findById(productId).select("-_id category").lean();
+    const product = await Product.findOne({ _id: productId, status: "approved" }).select("-_id category").lean();
     if(!product) throw new ApiError(404, "Product not found");
 
     // Fetch related products
     const relatedProducts = await Product.aggregate([
-        { $match: { category: product.category, _id: { $ne: convertToMongoId(productId) } }},
+        { $match: { status: "approved", category: product.category, _id: { $ne: convertToMongoId(productId) } }},
 
         // Reviews
         {

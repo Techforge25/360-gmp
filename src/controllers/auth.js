@@ -353,13 +353,28 @@ const switchRole = asyncHandler(async (request, response) => {
     // Check if business profile actually exist before switching
     if(role.toLowerCase() === "business")
     {
-        const businessProfile = await getBusinessProfile(userId);
+        if(request.user.planName === "Sneak Peek Free – 14 Days")
+        {
+            throw new ApiError(403, "Switching to a business profile is not allowed while you are on a Sneak Peek Free plan");
+        }
+        const businessProfile = await BusinessProfile.findOne({ ownerUserId: userId }).select("status");
         if(!businessProfile)
         {
             const redirectURL = `${frontendURL}/onboarding/business-profile`;
             return response.status(200).json(new ApiResponse(200, { redirectURL }, "Onboarding required for business profile"));            
         }
-        if(request.user.planName === "TRIAL") throw new ApiError(403, "Switching to a business profile is not allowed while you are on a trial plan");
+
+        // Pending
+        if(businessProfile.status === "pending")
+        {
+            throw new ApiError(400, "You cannot switch to business profile because it is currently under review");
+        }
+
+        // Reject
+        if(businessProfile.status === "rejected")
+        {
+            throw new ApiError(400, "You cannot switch to this business profile because it has been rejected. Please review the rejection details and resubmit your profile");
+        }        
     }    
 
     // Save to db

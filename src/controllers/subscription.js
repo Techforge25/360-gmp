@@ -231,7 +231,7 @@ const cancelStripeSubscription = asyncHandler(async (request, response) => {
 
 // Verify cancel subscription OTP (Cancel via app)
 const verifyCancelSubscriptionOTP = asyncHandler(async (request, response) => {
-    const userId = request.user._id; 
+    const userId = request.user._id;
     const { otp } = request.body; 
     if(!otp) throw new ApiError(400, "OTP is required");
 
@@ -242,14 +242,28 @@ const verifyCancelSubscriptionOTP = asyncHandler(async (request, response) => {
     if(!savedOTP) throw new ApiError(400, "Invalid OTP");
     if(savedOTP !== otp) throw new ApiError(400, "Invalid OTP");
 
-    // Initialized stripe
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);
+    // Get subscription details
+    const subscription = await Subscription.findOne({ userId }).populate({ path: "planId", select: "name price" });
+    if(!subscription) throw new ApiError(404, "Subscription not found");  
 
-    // Cancel subscription
-    const deleteSubscription = await stripe.subscriptions.cancel(request.user.subscription.stripeSubscriptionId);
-    if(!deleteSubscription) throw new ApiError(500, "Failed to cancel subscription");
+    // Custom cancellation for sneak peek plan
+    if(subscription.planId?.name === "Sneak Peek Free – 14 Days" || subscription.planId?.price === 0)
+    {
+        subscription.status = "canceled";
+        await subscription.save();
+    }
+    else
+    {
+        // Cancellation for recurring subscription plans
+        // Initialized stripe
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);
 
-    /* Subscription status will be marked as canceled in db (via webhook) */
+        // Cancel subscription
+        const deleteSubscription = await stripe.subscriptions.cancel(request.user.subscription.stripeSubscriptionId);
+        if(!deleteSubscription) throw new ApiError(500, "Failed to cancel subscription");
+    }
+
+    /* Subscription status will be marked as canceled in db (via webhook) only for recurring subscriptions */
 
     // Delete key in redis
     await deleteCache(getCancelSubscriptionOTPKey(userId));    
@@ -258,7 +272,7 @@ const verifyCancelSubscriptionOTP = asyncHandler(async (request, response) => {
     return response.status(200)
     .clearCookie("accessToken", cookieOptions)
     .clearCookie("refreshToken", cookieOptions)
-    .json(new ApiResponse(200, null, "Subscription has been cancelled"));
+    .json(new ApiResponse(200, null, "Subscription has been cancelled")); 
 });
 
 // Stripe webhook (Handle recurring subscription lifecycle)

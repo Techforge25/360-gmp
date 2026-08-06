@@ -26,25 +26,20 @@ const getSubscriptionDates = (startingDate) => {
 
 // Create subscription via stripe (Recurring Monthly + Trial Support)
 const createSubscriptionStripe = asyncHandler(async (request, response) => {
-    const { _id:userId, role } = request.user;
+    const { _id: userId, role } = request.user;
     const { planId, profile } = request.query;
 
     // Validate
     if(!planId) throw new ApiError(400, "Plan ID is missing");
-    if(!profile) throw new ApiError(400, "Profile model is missing! Please specify 'business' or 'user'");
-    if(!["business", "user"].includes(profile)) throw new ApiError(400, "Invalid profile model! Please use 'business' or 'user'");
 
     // Check plan
     const plan = await Plan.findById(planId).lean();
     if(!plan) throw new ApiError(404, "Plan not found! Invalid plan ID");
 
     // Extract plan name and "Stripe Price ID"
-    const { name, stripePriceId } = plan;
-    if(!stripePriceId) throw new ApiError(400, "Stripe price ID not configured for this plan");
-    if(name === "TRIAL" && profile === "business") throw new ApiError(400, "Business cannot select Trial plan");
+    const { name, description, stripePriceId } = plan;
 
     // Prevent duplicate active subscription and downgrade subscription
-    // const existingSubscription = await Subscription.findOne({ userId, planId, status:"active", endDate:{ $gt:new Date() } });
     const existingSubscription = await Subscription.findOne({ userId });
     if(existingSubscription && name === "TRIAL" || existingSubscription && name === "Sneak Peek Free – 14 Days")
     {
@@ -59,23 +54,54 @@ const createSubscriptionStripe = asyncHandler(async (request, response) => {
     // Stripe instance
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);
 
-    // Common session config
-    let sessionConfig = {
-        payment_method_types: ["card"],
-        mode: "subscription", // For subscription based (Auto deduction)
-        line_items: [{ price: stripePriceId, quantity: 1 }],
-        metadata: { 
-            userId: String(userId), 
-            role,
-            planId: String(planId), 
-            planName: name 
-        },
-        success_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/cancel`
-    };
+    // Dynamic stripe session configuration
+    let sessionConfig = null;
+
+    // Create only one time payment for trial sneak peek 14 days
+    if(name === "Sneak Peek Free – 14 Days")
+    {
+        // Session config for one time payment. (Sneak peek 14 days plan)
+        sessionConfig = {
+            payment_method_types: ["card"],
+            mode: "payment",
+            line_items: [{
+                price_data: {
+                    currency: "usd",
+                    unit_amount: 0 * 100,
+                    product_data: { 
+                        name: name,
+                        description: description,
+                        metadata: {
+                            brand: "360-GMP",
+                            category: "Global Marketplace"
+                        }
+                    },
+                },
+                quantity: 1,
+            }],
+            metadata: { userId: String(userId), role, planId: String(planId), planName: name },
+            success_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/cancel`
+        }
+    }
+    else
+    {
+        // Stripe price ID is required for recurring plans
+        if(!stripePriceId) throw new ApiError(400, "Stripe price ID not configured for this plan"); 
+
+        // Session config for recurring payment
+        sessionConfig = {
+            payment_method_types: ["card"],
+            mode: "subscription", // For subscription based (Auto deduction)
+            line_items: [{ price: stripePriceId, quantity: 1 }],
+            metadata: { userId: String(userId), role, planId: String(planId), planName: name },
+            success_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${process.env.BACKEND_URL}/api/v1/subscription/stripe/cancel`
+        };
+    }
 
     // If trial plan selected → apply 14 days trial
-    if(name === "Sneak Peek Free – 14 Days") sessionConfig.subscription_data = { trial_period_days: 14 }; // Auto charge after 14 days
+    // if(name === "Sneak Peek Free – 14 Days") sessionConfig.subscription_data = { trial_period_days: 14 }; // Auto charge after 14 days
 
     // Create checkout session
     const session = await stripe.checkout.sessions.create(sessionConfig);
@@ -100,8 +126,80 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
     // Validate session
     if(!session || !session.id) throw new ApiError(404, "Session not found");
 
-    // Extract role
-    const { role } = session.metadata;
+    // Prevent dual payment
+    const existing = await Subscription.findOne({ stripeSubscriptionId: session.id });
+    if(existing) return response.status(200).json(new ApiResponse(200, null, "Payment already processed"));     
+
+    // Extract metadata
+    const { userId, role, planId, planName } = session.metadata;
+
+    if(planName === "Sneak Peek Free – 14 Days")
+    {
+        // Check payment status
+        if(session.payment_status === "paid") 
+        {
+            // Start mongoose transaction
+            const dbSession = await mongoose.startSession();
+            dbSession.startTransaction();   
+            
+            try
+            {
+                // Prepare 14 days date for Sneak peek
+                const startDate = new Date();
+                const endDate = new Date(startDate);
+                endDate.setDate(endDate.getDate() + 14);
+
+                // Save to subscription
+                await Subscription.create([{
+                    userId,
+                    stripeSubscriptionId: session.id,
+                    planId,
+                    startDate: startDate,
+                    endDate: endDate,
+                    status: "active"
+                }], { session: dbSession }); 
+                
+                // Save to subscription history
+                await SubscriptionHistory.create([{ 
+                    userId,
+                    planId,
+                    invoiceId: session.id,
+                    status: "paid"
+                }], { session: dbSession });                 
+
+                // Notification
+                await sendNotification({
+                    userId,
+                    title: "Subscription Activated",
+                    content: `You have successfully subscribed to ${planName}`,
+                    type: "System",
+                    io: request.app.get("io")
+                });  
+
+                // Commit transaction
+                await dbSession.commitTransaction();
+                dbSession.endSession(); 
+
+                // Role based redirection after getting subscription
+                if(!role) return response.status(301).redirect(`${frontendURL}/onboarding/user-profile`);
+
+                // Redirect to frontend
+                return response.status(301).redirect(`${frontendURL}/dashboard/${role}/subscriptions`);                
+            }   
+            catch(error)
+            {
+                await dbSession.abortTransaction();
+                dbSession.endSession();
+                throw error;
+            }         
+        } 
+        else 
+        {
+            throw new ApiError(500, "Payment not completed");
+        }          
+    }
+
+    // Role based redirection after getting subscription
     if(!role) return response.status(301).redirect(`${frontendURL}/onboarding/user-profile`);
 
     // Redirect to frontend

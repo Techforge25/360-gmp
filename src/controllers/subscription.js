@@ -243,22 +243,33 @@ const verifyCancelSubscriptionOTP = asyncHandler(async (request, response) => {
     if(savedOTP !== otp) throw new ApiError(400, "Invalid OTP");
 
     // Get subscription details
-    const subscription = await Subscription.findOne({ userId }).populate({ path: "planId", select: "name price" });
+    const subscription = await Subscription.findOne({ userId }).populate({ path: "planId" });
     if(!subscription) throw new ApiError(404, "Subscription not found");  
+
+    // Stripe instance
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);      
 
     // Custom cancellation for sneak peek plan
     if(subscription.planId?.name === "Sneak Peek Free – 14 Days" || subscription.planId?.price === 0)
-    {
+    {  
+        // Get checkout session details
+        const session = await stripe.checkout.sessions.retrieve(session_id);    
+
         subscription.status = "canceled";
         await subscription.save();
+
+        // Save to subscription history
+        await SubscriptionHistory.create({ 
+            userId, 
+            planId: planId._id, 
+            invoiceId: subscription.stripeSubscriptionId, 
+            status: "canceled",
+            cancelledAt: new Date()
+        });        
     }
     else
     {
         // Cancellation for recurring subscription plans
-        // Initialized stripe
-        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);
-
-        // Cancel subscription
         const deleteSubscription = await stripe.subscriptions.cancel(request.user.subscription.stripeSubscriptionId);
         if(!deleteSubscription) throw new ApiError(500, "Failed to cancel subscription");
     }

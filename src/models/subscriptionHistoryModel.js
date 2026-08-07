@@ -9,7 +9,8 @@ const subscriptionHistorySchema = new Schema({
 
     // Other info
     invoiceId:{ type:String, trim:true, default:null },
-    status: { type:String, enum: ["pending", "paid", "failed", "deleted"], default: "pending" }
+    status: { type:String, enum: ["pending", "paid", "failed", "canceled"], default: "pending" },
+    cancelledAt: { type: Date }
 }, { timestamps:true });
 
 // Add pagination plugin

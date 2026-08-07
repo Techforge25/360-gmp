@@ -9,6 +9,7 @@ const Chat = require("./models/chatsModel");
 const ApiError = require("./utils/ApiError");
 const generateConversationId = require("./utils/generateConversationId");
 require("./cron/autoReleaseEscrow");
+require("./cron/subscriptionAutoExpire");
 require("./workers/emailWorker");
 require("./workers/adminEmailWorker");
 

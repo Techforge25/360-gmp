@@ -110,8 +110,8 @@ const fetchJobReports = asyncHandler(async (request, response) => {
         },
 
         // Unwind
-        { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: false } }, 
-        { $unwind: { path: "$job", preserveNullAndEmptyArrays: false } },  
+        { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: true } }, 
+        { $unwind: { path: "$job", preserveNullAndEmptyArrays: true } },  
         
         // Sort
         { $sort: { createdAt: -1 } },

@@ -525,14 +525,7 @@ const viewPaidUser = asyncHandler(async (request, response) => {
                 localField: "planId",
                 foreignField: "_id",
                 as: "plan",
-                pipeline: [
-                    {
-                        $project: {
-                            _id: 0,
-                            price: 1
-                        }
-                    }
-                ]
+                pipeline: [{ $project: { _id: 0, price: 1 } }]
             }
         },
 

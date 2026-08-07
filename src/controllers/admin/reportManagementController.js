@@ -58,7 +58,7 @@ const fetchReportStats = asyncHandler(async (request, response) => {
 
 // Fetch job reports
 const fetchJobReports = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search } = request.query;
+    const { page = 1, limit = 10, search = "" } = request.query;
 
     // Get date filter
     const { dateFilter } = getDateFilter(request);    
@@ -110,8 +110,8 @@ const fetchJobReports = asyncHandler(async (request, response) => {
         },
 
         // Unwind
-        { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: true } }, 
-        { $unwind: { path: "$job", preserveNullAndEmptyArrays: true } },  
+        { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: false } }, 
+        { $unwind: { path: "$job", preserveNullAndEmptyArrays: false } },  
         
         // Sort
         { $sort: { createdAt: -1 } },
@@ -134,7 +134,7 @@ const fetchJobReports = asyncHandler(async (request, response) => {
 
 // Fetch business profile reports
 const fetchBusinessProfileReports = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search } = request.query;
+    const { page = 1, limit = 10, search = "" } = request.query;
 
     // Search by company name
     const searchFilter = {};
@@ -195,7 +195,7 @@ const fetchBusinessProfileReports = asyncHandler(async (request, response) => {
 
 // Fetch product reports
 const fetchProductReports = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search } = request.query;
+    const { page = 1, limit = 10, search = "" } = request.query;
 
     // Search by product title
     const searchFilter = {};
@@ -267,7 +267,7 @@ const fetchProductReports = asyncHandler(async (request, response) => {
 
 // Fetch community reports
 const fetchCommunityReports = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search } = request.query;
+    const { page = 1, limit = 10, search = "" } = request.query;
 
     // Search by community name
     const searchFilter = {};

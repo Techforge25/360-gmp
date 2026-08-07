@@ -559,7 +559,8 @@ const stripeWebhook = asyncHandler(async (request, response) => {
                     userId: subscription.userId, 
                     planId: subscription.planId, 
                     invoiceId: subscription.stripeSubscriptionId, 
-                    status: "deleted" 
+                    status: "canceled",
+                    cancelledAt: new Date()
                 }], { session: dbSession });
 
                 // Notification
@@ -732,7 +733,7 @@ const getAllMySubscriptions = asyncHandler(async (request, response) => {
     const baseFilter = { userId };
     if(status)
     {
-        if(!["paid", "failed", "deleted"].includes(status)) throw new ApiError(400, "Invalid status filter! Allowed values are paid, failed and deleted");
+        if(!["paid", "failed", "canceled"].includes(status)) throw new ApiError(400, "Invalid status filter! Allowed values are paid, failed and deleted");
         baseFilter.status = status;
     }
 

@@ -136,7 +136,7 @@ const fetchUserProfiles = asyncHandler(async (request, response) => {
 
 // Fetch business profiles
 const fetchBusinessProfiles = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search, type, status } = request.query;
+    const { page = 1, limit = 10, search = "", type, status } = request.query;
 
     // Validate status type
     if(status && !["pending", "approved", "rejected"].includes(status)) throw new ApiError(400, "Invalid status type");

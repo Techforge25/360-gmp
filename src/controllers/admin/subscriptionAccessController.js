@@ -504,8 +504,19 @@ const viewPaidUser = asyncHandler(async (request, response) => {
 
     // Count lifetime subscription purchases
     const [lifetimeSubscriptionPurchases] = await SubscriptionHistory.aggregate([
-        // Match
-        { $match: { userId: convertToMongoId(userId) } },
+        // Match user
+        { $match: { 
+            userId: convertToMongoId(userId), 
+            status: { $in:["paid", "canceled"] } 
+        } },
+
+        // Group by invoiceId
+        {
+            $group: {
+                _id: "$invoiceId",
+                planId: { $first: "$planId" }
+            }
+        },
 
         // Lookup plan
         {
@@ -514,14 +525,20 @@ const viewPaidUser = asyncHandler(async (request, response) => {
                 localField: "planId",
                 foreignField: "_id",
                 as: "plan",
-                pipeline: [{ $project: { _id: 0, price: 1 } }]
+                pipeline: [
+                    {
+                        $project: {
+                            _id: 0,
+                            price: 1
+                        }
+                    }
+                ]
             }
         },
 
-        // Unwind
         { $unwind: "$plan" },
 
-        // Group
+        // Sum all unique invoices
         {
             $group: {
                 _id: null,
@@ -529,9 +546,8 @@ const viewPaidUser = asyncHandler(async (request, response) => {
             }
         },
 
-        // Projection
         { $project: { _id: 0, totalAmount: 1 } }
-    ]);
+    ]);    
 
     // Get previous subscription
     const [lastSubscription] = await SubscriptionHistory.aggregate([

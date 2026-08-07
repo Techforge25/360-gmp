@@ -134,7 +134,11 @@ const fetchJobReports = asyncHandler(async (request, response) => {
 
 // Fetch business profile reports
 const fetchBusinessProfileReports = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10 } = request.query;
+    const { page = 1, limit = 10, search } = request.query;
+
+    // Search by company name
+    const searchFilter = {};
+    if(search) searchFilter.companyName = { $regex: search, $options: "i" };
 
     // Fetch
     const reports = await Report.aggregatePaginate([
@@ -159,7 +163,10 @@ const fetchBusinessProfileReports = asyncHandler(async (request, response) => {
                 localField: "reportedContentId",
                 foreignField: "_id",
                 as: "businessProfile",
-                pipeline: [{ $project: { _id: 0, companyName: 1, email: "$primaryContactPerson.supportEmail", logo: 1 } }]
+                pipeline: [
+                    { $match: searchFilter },
+                    { $project: { _id: 0, companyName: 1, email: "$primaryContactPerson.supportEmail", logo: 1 } }
+                ]
             }
         },
 
@@ -188,7 +195,11 @@ const fetchBusinessProfileReports = asyncHandler(async (request, response) => {
 
 // Fetch product reports
 const fetchProductReports = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10 } = request.query;
+    const { page = 1, limit = 10, search } = request.query;
+
+    // Search by product title
+    const searchFilter = {};
+    if(search) searchFilter.title = { $regex: search, $options: "i" };    
 
     // Fetch
     const reports = await Report.aggregatePaginate([
@@ -214,6 +225,7 @@ const fetchProductReports = asyncHandler(async (request, response) => {
                 foreignField: "_id",
                 as: "product",
                 pipeline: [
+                    { $match: searchFilter },
                     {
                         $lookup: {
                             from: "businessprofiles",
@@ -255,7 +267,11 @@ const fetchProductReports = asyncHandler(async (request, response) => {
 
 // Fetch community reports
 const fetchCommunityReports = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10 } = request.query;
+    const { page = 1, limit = 10, search } = request.query;
+
+    // Search by community name
+    const searchFilter = {};
+    if(search) searchFilter.name = { $regex: search, $options: "i" };      
 
     // Fetch
     const reports = await Report.aggregatePaginate([
@@ -281,6 +297,7 @@ const fetchCommunityReports = asyncHandler(async (request, response) => {
                 foreignField: "_id",
                 as: "community",
                 pipeline: [
+                    { $match: searchFilter },
                     {
                         $lookup: {
                             from: "businessprofiles",

@@ -209,7 +209,6 @@ const verifyStripePayment = asyncHandler(async (request, response) => {
 // Cancel subscription request 
 const cancelStripeSubscription = asyncHandler(async (request, response) => {
     const userId = request.user._id;
-    const subscription = request.user.subscription;
 
     // Find user
     const user = await User.findById(userId).select("email").lean();
@@ -231,7 +230,7 @@ const cancelStripeSubscription = asyncHandler(async (request, response) => {
 
 // Verify cancel subscription OTP (Cancel via app)
 const verifyCancelSubscriptionOTP = asyncHandler(async (request, response) => {
-    const userId = request.user._id;
+    const { _id: userId, subscription, plan } = request.user;
     const { otp } = request.body; 
     if(!otp) throw new ApiError(400, "OTP is required");
 
@@ -240,37 +239,30 @@ const verifyCancelSubscriptionOTP = asyncHandler(async (request, response) => {
 
     // Validate
     if(!savedOTP) throw new ApiError(400, "Invalid OTP");
-    if(savedOTP !== otp) throw new ApiError(400, "Invalid OTP");
-
-    // Get subscription details
-    const subscription = await Subscription.findOne({ userId }).populate({ path: "planId" });
-    if(!subscription) throw new ApiError(404, "Subscription not found");  
-
-    // Stripe instance
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION);      
+    if(savedOTP !== otp) throw new ApiError(400, "Invalid OTP");     
 
     // Custom cancellation for sneak peek plan
-    if(subscription.planId?.name === "Sneak Peek Free – 14 Days" || subscription.planId?.price === 0)
+    if(plan.name === "Sneak Peek Free – 14 Days" || plan.price === 0)
     {  
-        // Get checkout session details
-        const session = await stripe.checkout.sessions.retrieve(session_id);    
-
-        subscription.status = "canceled";
-        await subscription.save();
+        // Save subscription status
+        await Subscription.findOneAndUpdate({ userId, planId: plan._id }, { $set: { status: "canceled" } })
 
         // Save to subscription history
         await SubscriptionHistory.create({ 
             userId, 
-            planId: planId._id, 
-            invoiceId: subscription.stripeSubscriptionId, 
+            planId: plan._id, 
+            invoiceId: subscription.stripeSubscriptionId,
             status: "canceled",
             cancelledAt: new Date()
         });         
     }
     else
     {
+        // Stripe instance
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_SUBSCRIPTION); 
+
         // Cancellation for recurring subscription plans
-        const deleteSubscription = await stripe.subscriptions.cancel(request.user.subscription.stripeSubscriptionId);
+        const deleteSubscription = await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
         if(!deleteSubscription) throw new ApiError(500, "Failed to cancel subscription");
     }
 

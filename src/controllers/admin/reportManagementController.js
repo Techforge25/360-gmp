@@ -377,15 +377,15 @@ const viewJobReport = asyncHandler(async (request, response) => {
                         }
                     },
 
-                    { $unwind: { path: "$owner", preserveNullAndEmptyArrays: false } },
+                    { $unwind: { path: "$owner", preserveNullAndEmptyArrays: true } },
                     { $project: { _id: 0, jobTitle: 1, employmentType:1,  owner: 1 } }
                 ]
             }
         },
 
         // Unwind
-        { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: false } }, 
-        { $unwind: { path: "$job", preserveNullAndEmptyArrays: false } },        
+        { $unwind: { path: "$reportedBy", preserveNullAndEmptyArrays: true } }, 
+        { $unwind: { path: "$job", preserveNullAndEmptyArrays: true } },        
 
         // Projection
         { 

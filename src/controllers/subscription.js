@@ -265,7 +265,7 @@ const verifyCancelSubscriptionOTP = asyncHandler(async (request, response) => {
             invoiceId: subscription.stripeSubscriptionId, 
             status: "canceled",
             cancelledAt: new Date()
-        });        
+        });         
     }
     else
     {
@@ -277,7 +277,16 @@ const verifyCancelSubscriptionOTP = asyncHandler(async (request, response) => {
     /* Subscription status will be marked as canceled in db (via webhook) only for recurring subscriptions */
 
     // Delete key in redis
-    await deleteCache(getCancelSubscriptionOTPKey(userId));    
+    await deleteCache(getCancelSubscriptionOTPKey(userId));  
+    
+    // Notification
+    await sendNotification({
+        userId,
+        title: "Subscription Canceled",
+        content: "Your subscription has been canceled",
+        type:"System",
+        io: request.app.get("io")
+    });     
 
     // Response
     return response.status(200)

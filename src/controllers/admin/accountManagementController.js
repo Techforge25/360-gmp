@@ -63,7 +63,7 @@ const fetchAccountStats = asyncHandler(async (request, response) => {
 
 // Fetch user profiles
 const fetchUserProfiles = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search, type } = request.query;
+    const { page = 1, limit = 10, search = "", type } = request.query;
 
     // Get date filter
     const { dateFilter } = getDateFilter(request);  

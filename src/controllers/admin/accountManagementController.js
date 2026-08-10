@@ -381,7 +381,7 @@ const approveBusinessProfile = asyncHandler(async (request, response) => {
     // Send notification to business owner
     await sendNotification({
         userId: businessProfile.ownerUserId,
-        type: "BusinessProfile",
+        type: "System",
         title: "Business Profile Approval",
         content: `Your Business Profile "${businessProfile.companyName}" has been approved by admin.`,
         io: request.app.get("io")
@@ -413,7 +413,7 @@ const rejectBusinessProfile = asyncHandler(async (request, response) => {
     // Send notification to business owner
     await sendNotification({
         userId: businessProfile.ownerUserId,
-        type: "BusinessProfile",
+        type: "System",
         title: "Business Profile Rejection",
         content: `Your Business Profile "${businessProfile.companyName}" has been rejected by admin. Reason: ${note}`,
         io: request.app.get("io")

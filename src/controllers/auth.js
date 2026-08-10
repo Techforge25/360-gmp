@@ -373,7 +373,8 @@ const switchRole = asyncHandler(async (request, response) => {
         // Reject
         if(businessProfile.status === "rejected")
         {
-            throw new ApiError(400, "You cannot switch to this business profile because it has been rejected. Please review the rejection details and resubmit your profile");
+            const redirectURL = `${frontendURL}/onboarding/business-profile`;
+            return response.status(200).json(new ApiResponse(200, { redirectURL }, "Profile re-submission required for business profile")); 
         }        
     }    
 

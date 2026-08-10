@@ -20,15 +20,6 @@ const adminAuthentication = asyncHandler((request, response, next) => {
         .json(new ApiResponse(401, { redirectURL: `${adminFrontendURL}/login` }, "Unauthorized! Invalid access token"));
     }
 
-    // Strict check for admin status
-    if(admin.status !== "active")
-    {
-        return response.status(401)
-        .clearCookie("adminAccessToken", cookieOptions)
-        .clearCookie("adminRefreshToken", cookieOptions)
-        .json(new ApiResponse(401, { redirectURL: `${adminFrontendURL}/login` }, "Unauthorized! Your account has been disabled"));        
-    }
-
     // Pass through
     request.admin = admin;
     return next();

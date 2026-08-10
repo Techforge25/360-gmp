@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const { superAdminId } = require("../constants");
 const { ADMIN_ACCESS_TOKEN_SECRET, ADMIN_ACCESS_TOKEN_EXPIRY, ADMIN_REFRESH_TOKEN_SECRET, ADMIN_REFRESH_TOKEN_EXPIRY } = process.env;
 
 // Generate admin access token
@@ -6,12 +7,22 @@ const generateAdminAccessToken = (payload) => {
     if(!payload) return null;
     try 
     {
+        // For super admin
+        if(String(payload._id) === superAdminId)
+        {
+            return jwt.sign({
+                _id: payload._id,
+                role: payload.role
+            }, ADMIN_ACCESS_TOKEN_SECRET, { expiresIn: ADMIN_ACCESS_TOKEN_EXPIRY });            
+        }
+
+        // For normal admin
         return jwt.sign({
             _id: payload._id,
             role: payload.role,
             allowedModules: payload.allowedModules,
-            status: payload.status,
-        }, ADMIN_ACCESS_TOKEN_SECRET, { expiresIn:ADMIN_ACCESS_TOKEN_EXPIRY });
+            status: payload.status
+        }, ADMIN_ACCESS_TOKEN_SECRET, { expiresIn: ADMIN_ACCESS_TOKEN_EXPIRY });
     } 
     catch(error) 
     {

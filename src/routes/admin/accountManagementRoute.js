@@ -1,10 +1,13 @@
 const { Router } = require("express");
-const { adminAuthentication, adminAuthorization } = require("../../middlewares/adminAuth");
+const { adminAuthentication, adminAuthorization, grantAccessTo } = require("../../middlewares/adminAuth");
 const { fetchAccountStats, fetchUserProfiles, fetchBusinessProfiles, viewUserProfile, 
 viewBusinessProfile, approveBusinessProfile, rejectBusinessProfile } = require("../../controllers/admin/accountManagementController");
 
 // Router instance
 const accountManagementRouter = Router();
+
+// Inject router level middleware
+accountManagementRouter.use(adminAuthentication, grantAccessTo("Account Management"));
 
 // Fetch account stats
 accountManagementRouter.route("/stats")

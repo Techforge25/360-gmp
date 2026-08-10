@@ -1,10 +1,13 @@
 const { Router } = require("express");
-const { adminAuthentication } = require("../../middlewares/adminAuth");
+const { adminAuthentication, grantAccessTo } = require("../../middlewares/adminAuth");
 const { fetchSubscriptionStats, fetchTrialUsers, viewTrialUser, fetchPaidUsers, 
 viewPaidUser } = require("../../controllers/admin/subscriptionAccessController");
 
 // Router instance
 const subscriptionAccessRouter = Router();
+
+// Inject router level middleware
+subscriptionAccessRouter.use(adminAuthentication, grantAccessTo("Subscription & Access"));
 
 // Fetch subscription stats
 subscriptionAccessRouter.route("/stats")

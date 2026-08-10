@@ -128,7 +128,7 @@ const BusinessProfileSchema = new Schema({
     evidenceOfFunds: { type: String, trim: true, required: true },
 
     // Other
-    status: { type: String, enum:["pending", "approved", "rejected"], default: "approved" },
+    status: { type: String, enum:["pending", "approved", "rejected"], default: "pending" },
     isVerified: { type: Boolean, default: false },
     mapURL: { type:String },
     latitude: { type:Number, default:0 },

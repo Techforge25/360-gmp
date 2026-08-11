@@ -34,6 +34,9 @@ const adminAuthorization = (roles = []) => {
             .json(new ApiResponse(401, { redirectURL: `${adminFrontendURL}/login` }, "Unauthorized!"));
         }
 
+        // Bypass for super admin
+        if(request.admin._id === superAdminId) return next();        
+
         if(!roles.includes(request.admin.role))
         {
             return response.status(403)

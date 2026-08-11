@@ -8,7 +8,10 @@ const adminSchema = new Schema({
     email: { type: String, trim: true, lowercase: true, required: true, unique:[true, "This email has already been taken by another admin"] },
     password: { type: String, trim: true, required: true },
     role: { type: String, default: "admin" },
-    allowedModules: { type: [String], default: [] },
+    allowedModules: [{
+        module: { type: String, trim: true },
+        url: { type: String, trim: true }
+    }],
     refreshToken: { type: String, default: null },
     status: { type: String, enum: ["active", "inactive"], default: "active" }
 }, { timestamps: true });

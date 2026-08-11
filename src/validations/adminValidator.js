@@ -27,7 +27,10 @@ const createAdminValidator = joi.object({
         "string.pattern.base": "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.",
         "string.min": "Password must be at least 8 characters long."
     }).label("Password"),
-    allowedModules: joi.array().min(1).items(joi.string().trim().valid(...validModuleNames)).default([]).label("Allowed modules")
+    allowedModules: joi.array().min(1).items(joi.object({
+        module: joi.string().trim().required().valid(...validModuleNames).label("Module name"),
+        url: joi.string().trim().required().label("Module URL")
+    })).label("Allowed modules")
 });
 
 // Update admin validator
@@ -36,7 +39,10 @@ const updateAdminValidator = joi.object({
     .pattern(new RegExp(usernamePattern)).required().messages({
         "string.pattern.base": "Username can only contain letters, numbers, and at most one special character (., _, or -). Spaces are not allowed."
     }).label("Username"),
-    allowedModules: joi.array().min(1).items(joi.string().trim().valid(...validModuleNames)).default([]).label("Allowed modules")
+    allowedModules: joi.array().min(1).items(joi.object({
+        module: joi.string().trim().required().valid(...validModuleNames).label("Module name"),
+        url: joi.string().trim().required().label("Module URL")
+    })).label("Allowed modules")
 });
 
 // Update admin password validator

@@ -66,7 +66,8 @@ const grantAccessTo = (moduleName) => {
         if(adminId === superAdminId) return next();
 
         // Allow module
-        if(!allowedModules.includes(moduleName))
+        const hasAccess = allowedModules.some(m => m.module === moduleName);
+        if(!hasAccess)
         {
             return response.status(403)
             .json(new ApiResponse(403, { redirectURL: `${adminFrontendURL}/forbidden` }, "Access denied!"));

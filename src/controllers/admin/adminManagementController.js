@@ -9,6 +9,12 @@ const { emptyList, superAdminId } = require("../../constants");
 const adminEmailQueue = require("../../queues/adminEmailQueue");
 const convertToMongoId = require("../../utils/convertToMongoId");
 
+// Initiator
+const adminManagementInitiator = asyncHandler(async (request, response) => {
+    // Response
+    return response.status(200).json(new ApiResponse(200, { hasAccess: true }, "Initiate Admin Management Module"));
+});
+
 // Create admin
 const createAdmin = asyncHandler(async (request, response) => {
     // Get validated payload
@@ -171,5 +177,5 @@ const restoreAdmin = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Admin has been restored"));
 });
 
-module.exports = { createAdmin, fetchAdmins, viewAdmin, updateAdmin, 
+module.exports = { adminManagementInitiator, createAdmin, fetchAdmins, viewAdmin, updateAdmin, 
 updateAdminPassword, deleteAdmin, restoreAdmin };

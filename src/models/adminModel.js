@@ -9,6 +9,7 @@ const adminSchema = new Schema({
     password: { type: String, trim: true, required: true },
     role: { type: String, default: "admin" },
     allowedModules: [{
+        _id: false,
         module: { type: String, trim: true },
         url: { type: String, trim: true }
     }],

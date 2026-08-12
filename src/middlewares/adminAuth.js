@@ -70,7 +70,7 @@ const grantAccessTo = (moduleName) => {
         if(!hasAccess)
         {
             return response.status(403)
-            .json(new ApiResponse(403, { redirectURL: `${adminFrontendURL}/forbidden` }, "Access denied!"));
+            .json(new ApiResponse(403, { redirectURL: `${adminFrontendURL}/forbidden`, hasAccess }, "Access denied!"));
         }
         return next();
     }

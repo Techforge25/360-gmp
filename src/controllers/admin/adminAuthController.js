@@ -67,11 +67,20 @@ const adminLogin = asyncHandler(async (request, response) => {
     admin.refreshToken = refreshToken;
     await admin.save();
 
+    // Prepare payload
+    const payload = {
+        username: admin.username, 
+        role: admin.role
+    };
+
+    // Allowed modules key for normal admin
+    if(String(admin._id) !== superAdminId) payload.allowedModules = admin.allowedModules;
+
     // Response
     return response.status(200)
     .cookie("adminAccessToken", accessToken, cookieOptions)
     .cookie("adminRefreshToken", refreshToken, cookieOptions)
-    .json(new ApiResponse(200, { username: admin.username }, "Admin login successful"));
+    .json(new ApiResponse(200, payload, "Admin login successful"));
 });
 
 // Auth me (Auth check)

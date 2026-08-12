@@ -10,23 +10,18 @@ const subscriptionAccessRouter = Router();
 subscriptionAccessRouter.use(adminAuthentication, grantAccessTo("Subscription & Access"));
 
 // Fetch subscription stats
-subscriptionAccessRouter.route("/stats")
-.get(adminAuthentication, fetchSubscriptionStats);
+subscriptionAccessRouter.route("/stats").get(fetchSubscriptionStats);
 
 // Fetch trial users
-subscriptionAccessRouter.route("/trialUsers")
-.get(adminAuthentication, fetchTrialUsers);
+subscriptionAccessRouter.route("/trialUsers").get(fetchTrialUsers);
 
 // View trial user
-subscriptionAccessRouter.route("/trialUsers/:userId")
-.get(adminAuthentication, viewTrialUser);
+subscriptionAccessRouter.route("/trialUsers/:userId").get(viewTrialUser);
 
 // Fetch paid users
-subscriptionAccessRouter.route("/paidUsers")
-.get(adminAuthentication, fetchPaidUsers);
+subscriptionAccessRouter.route("/paidUsers").get(fetchPaidUsers);
 
 // View paid user
-subscriptionAccessRouter.route("/paidUsers/:userId")
-.get(adminAuthentication, viewPaidUser);
+subscriptionAccessRouter.route("/paidUsers/:userId").get(viewPaidUser);
 
 module.exports = subscriptionAccessRouter;

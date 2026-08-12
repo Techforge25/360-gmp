@@ -10,31 +10,24 @@ const accountManagementRouter = Router();
 accountManagementRouter.use(adminAuthentication, grantAccessTo("Account Management"));
 
 // Fetch account stats
-accountManagementRouter.route("/stats")
-.get(adminAuthentication, adminAuthorization(["superAdmin", "admin"]), fetchAccountStats);
+accountManagementRouter.route("/stats").get(fetchAccountStats);
 
 // Fetch user profiles
-accountManagementRouter.route("/userProfiles")
-.get(adminAuthentication, adminAuthorization(["superAdmin", "admin"]), fetchUserProfiles);
+accountManagementRouter.route("/userProfiles").get(fetchUserProfiles);
 
 // Fetch business profiles
-accountManagementRouter.route("/businessProfiles")
-.get(adminAuthentication, adminAuthorization(["superAdmin", "admin"]), fetchBusinessProfiles);
+accountManagementRouter.route("/businessProfiles").get(fetchBusinessProfiles);
 
 // View user profile
-accountManagementRouter.route("/userProfile/:userProfileId")
-.get(adminAuthentication, adminAuthorization(["superAdmin", "admin"]), viewUserProfile);
+accountManagementRouter.route("/userProfile/:userProfileId").get(viewUserProfile);
 
 // View business profile
-accountManagementRouter.route("/businessProfile/:businessProfileId")
-.get(adminAuthentication, adminAuthorization(["superAdmin", "admin"]), viewBusinessProfile);
+accountManagementRouter.route("/businessProfile/:businessProfileId").get(viewBusinessProfile);
 
 // Approve business profile
-accountManagementRouter.route("/businessProfile/:businessProfileId/approve")
-.patch(adminAuthentication, adminAuthorization(["superAdmin", "admin"]), approveBusinessProfile);
+accountManagementRouter.route("/businessProfile/:businessProfileId/approve").patch(approveBusinessProfile);
 
 // Reject business profile
-accountManagementRouter.route("/businessProfile/:businessProfileId/reject")
-.patch(adminAuthentication, adminAuthorization(["superAdmin", "admin"]), rejectBusinessProfile);
+accountManagementRouter.route("/businessProfile/:businessProfileId/reject").patch(rejectBusinessProfile);
 
 module.exports = accountManagementRouter;

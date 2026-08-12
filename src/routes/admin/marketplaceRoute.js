@@ -11,39 +11,30 @@ const marketPlaceRouter = Router();
 marketPlaceRouter.use(adminAuthentication, grantAccessTo("Marketplace & Order Logs"));
 
 // Fetch marketplace stats
-marketPlaceRouter.route("/stats")
-.get(adminAuthentication, fetchMarketplaceStats);
+marketPlaceRouter.route("/stats").get(fetchMarketplaceStats);
 
 // Fetch order logs
-marketPlaceRouter.route("/orderLogs")
-.get(adminAuthentication, fetchOrderLogs);
+marketPlaceRouter.route("/orderLogs").get(fetchOrderLogs);
 
 // View order log
-marketPlaceRouter.route("/orderLogs/:orderId")
-.get(adminAuthentication, viewOrderLog);
+marketPlaceRouter.route("/orderLogs/:orderId").get(viewOrderLog);
 
 // Fetch product audits
-marketPlaceRouter.route("/productAudits")
-.get(adminAuthentication, fetchProductAudits);
+marketPlaceRouter.route("/productAudits").get(fetchProductAudits);
 
 // View product details
-marketPlaceRouter.route("/product/:productId")
-.get(adminAuthentication, viewProductDetails);
+marketPlaceRouter.route("/product/:productId").get(viewProductDetails);
 
 // Approve product
-marketPlaceRouter.route("/product/:productId/approve")
-.patch(adminAuthentication, approveProduct);
+marketPlaceRouter.route("/product/:productId/approve").patch(approveProduct);
 
 // Reject product
-marketPlaceRouter.route("/product/:productId/reject")
-.patch(adminAuthentication, rejectProduct);
+marketPlaceRouter.route("/product/:productId/reject").patch(rejectProduct);
 
 // Fetch disputed order logs
-marketPlaceRouter.route("/disputedOrders")
-.get(adminAuthentication, fetchDisputedOrders);
+marketPlaceRouter.route("/disputedOrders").get(fetchDisputedOrders);
 
 // Fetch approve/reject products
-marketPlaceRouter.route("/generalProducts")
-.get(adminAuthentication, fetchGeneralProducts);
+marketPlaceRouter.route("/generalProducts").get(fetchGeneralProducts);
 
 module.exports = marketPlaceRouter;

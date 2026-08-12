@@ -246,6 +246,26 @@ const fetchMyRejectedBusinessProfile = asyncHandler(async (request, response) =>
     return response.status(200).json(new ApiResponse(200, business, "Rejected business profile has been fetched"));
 });
 
+// Re-submit business profile
+const resubmitBusinessProfile = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Fetch and validate
+    const business = await BusinessProfile.findOne({ ownerUserId: userId }).select("_id status").lean();
+    if(!business) throw new ApiError(404, "Business profile not found");
+    if(business.status === "rejected") throw new ApiError(403, "You cannot resubmit your business profile unless it is in a rejected state");
+
+    // Get validated payload
+    const data = validate(createBusinessProfileSchema, request.body) || {};
+
+    // Update
+    const submit = await BusinessProfile.findByIdAndUpdate(business._id, data);
+    if(!submit) throw new ApiError(400, "Failed to re-submit business profile");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Business profile has been re-submitted"));
+});
+
 // Delete my business profile
 const deleteMyBusinessProfile = asyncHandler(async (request, response) => {
     const userId = request.user._id;
@@ -457,4 +477,4 @@ const fetchBusinessCommunities = asyncHandler(async (request, response) => {
 
 module.exports = { createBusinessProfile, fetchBusinessProfiles, fetchMyBusinessProfile, 
 deleteMyBusinessProfile, getDirection, fetchLatestBusiness, fetchBusinessCountries, fetchBusinessJobs, 
-fetchBusinessProducts, fetchBusinessCommunities, fetchMyRejectedBusinessProfile };
+fetchBusinessProducts, fetchBusinessCommunities, fetchMyRejectedBusinessProfile, resubmitBusinessProfile };

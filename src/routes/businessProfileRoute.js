@@ -1,8 +1,10 @@
 const { Router } = require("express");
-const { authentication } = require("../middlewares/auth");
+const { authentication, authorization } = require("../middlewares/auth");
 const { createBusinessProfile, fetchBusinessProfiles, getDirection, 
-fetchMyBusinessProfile, deleteMyBusinessProfile, fetchLatestBusiness, fetchBusinessCountries,
-fetchBusinessJobs, fetchBusinessProducts, fetchBusinessCommunities, fetchMyRejectedBusinessProfile } = require("../controllers/businessProfileController");
+fetchMyBusinessProfile, deleteMyBusinessProfile, fetchLatestBusiness, 
+fetchBusinessCountries, fetchBusinessJobs, fetchBusinessProducts, 
+fetchBusinessCommunities, fetchMyRejectedBusinessProfile, 
+resubmitBusinessProfile } = require("../controllers/businessProfileController");
 const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
 
 // Router instance
@@ -22,7 +24,11 @@ businessProfileRouter.route("/me")
 
 // Fetch my rejected profile
 businessProfileRouter.route("/rejectedProfile")
-.get(authentication, fetchMyRejectedBusinessProfile);
+.get(authentication, authorization(["business"]), fetchMyRejectedBusinessProfile);
+
+// Business profile re-submission
+businessProfileRouter.route("/resubmit")
+.put(authentication, authorization(["business"]), resubmitBusinessProfile);
 
 // Fetch business countries
 businessProfileRouter.route("/countries")

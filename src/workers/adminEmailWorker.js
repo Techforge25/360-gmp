@@ -17,7 +17,7 @@ const worker = new Worker("adminEmailQueue", async (job) => {
         const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/sendInvitationEmail.html"), "utf-8");
 
         // Map modules
-        const modulesList = allowedModules.map(module => `<li> ${module} </li>`).join("");
+        const modulesList = allowedModules.map(m => `<li> ${m.module} </li>`).join("");
 
         // Replace placeholders
         const filledHtml = html
@@ -40,7 +40,7 @@ const worker = new Worker("adminEmailQueue", async (job) => {
         const html = fs.readFileSync(path.resolve(__dirname, "../../public/templates/updateAdminDetails.html"), "utf-8");
 
         // Map modules
-        const modulesList = allowedModules.map(module => `<li> ${module} </li>`).join("");
+        const modulesList = allowedModules.map(m => `<li> ${m.module} </li>`).join("");
 
         // Replace placeholders
         const filledHtml = html

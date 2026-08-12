@@ -49,10 +49,11 @@ const adminAuthorization = (roles = []) => {
 // Strict authorization for super admin
 const authorizeSuperAdmin = asyncHandler((request, response, next) => {
     const adminId = request.admin._id;
-    if(adminId !== superAdminId)
+    const hasAccess = adminId === superAdminId;
+    if(!hasAccess)
     {
         return response.status(403)
-        .json(new ApiResponse(403, { redirectURL: `${adminFrontendURL}/forbidden` }, "Access denied!"));        
+        .json(new ApiResponse(403, { redirectURL: `${adminFrontendURL}/forbidden`, hasAccess }, "Access denied!"));        
     }
     return next();
 });

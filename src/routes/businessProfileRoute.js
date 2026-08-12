@@ -24,11 +24,11 @@ businessProfileRouter.route("/me")
 
 // Fetch my rejected profile
 businessProfileRouter.route("/rejectedProfile")
-.get(authentication, authorization(["business"]), fetchMyRejectedBusinessProfile);
+.get(authentication, fetchMyRejectedBusinessProfile);
 
 // Business profile re-submission
 businessProfileRouter.route("/resubmit")
-.put(authentication, authorization(["business"]), resubmitBusinessProfile);
+.put(authentication, resubmitBusinessProfile);
 
 // Fetch business countries
 businessProfileRouter.route("/countries")

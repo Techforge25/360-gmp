@@ -41,6 +41,12 @@ const getDateFilter = (request) => {
     return { dateFilter };
 };
 
+// Initiator
+const accountManagementInitiator = asyncHandler(async (request, response) => {
+    // Response
+    return response.status(200).json(new ApiResponse(200, { hasAccess: true }, "Initiate Account Management Module"));
+});
+
 // Fetch account stats
 const fetchAccountStats = asyncHandler(async (request, response) => {
     // Get date filter
@@ -423,5 +429,5 @@ const rejectBusinessProfile = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Business profile has been rejected"));
 });
 
-module.exports = { fetchAccountStats, fetchUserProfiles, fetchBusinessProfiles, 
+module.exports = { accountManagementInitiator, fetchAccountStats, fetchUserProfiles, fetchBusinessProfiles, 
 viewUserProfile, viewBusinessProfile, approveBusinessProfile, rejectBusinessProfile };

@@ -15,6 +15,17 @@ const validModuleNames = [
     "Reports"
 ];
 
+// Valid module URLs
+const validModuleURLs = [
+    "/account-management",
+    "/subscription",
+    "/marketplace",
+    "/finance",
+    "/communities",
+    "/jobs",
+    "/reports"
+];
+
 // Create admin validator
 const createAdminValidator = joi.object({
     username: joi.string().trim().lowercase().min(3).max(20)
@@ -29,7 +40,7 @@ const createAdminValidator = joi.object({
     }).label("Password"),
     allowedModules: joi.array().min(1).items(joi.object({
         module: joi.string().trim().required().valid(...validModuleNames).label("Module name"),
-        url: joi.string().trim().required().label("Module URL")
+        url: joi.string().trim().required().valid(...validModuleURLs).label("Module URL")
     })).label("Allowed modules")
 });
 
@@ -41,7 +52,7 @@ const updateAdminValidator = joi.object({
     }).label("Username"),
     allowedModules: joi.array().min(1).items(joi.object({
         module: joi.string().trim().required().valid(...validModuleNames).label("Module name"),
-        url: joi.string().trim().required().label("Module URL")
+        url: joi.string().trim().required().valid(...validModuleURLs).label("Module URL")
     })).label("Allowed modules")
 });
 

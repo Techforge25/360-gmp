@@ -13,6 +13,12 @@ const validate = require("../../utils/validate");
 const { rejectProductValidator } = require("../../validations/productsValidator");
 const sendNotification = require("../../utils/sendNotification");
 
+// Initiator
+const marketplaceInitiator = asyncHandler(async (request, response) => {
+    // Response
+    return response.status(200).json(new ApiResponse(200, { hasAccess: true }, "Initiate Marketplace Module"));
+});
+
 // Fetch market place stats
 const fetchMarketplaceStats = asyncHandler(async (request, response) => {
     // Get date filter
@@ -579,6 +585,6 @@ const fetchGeneralProducts = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, products, "General products have been fetched"));
 });
 
-module.exports = { fetchMarketplaceStats, fetchOrderLogs, viewOrderLog, 
+module.exports = { marketplaceInitiator, fetchMarketplaceStats, fetchOrderLogs, viewOrderLog, 
 fetchProductAudits, viewProductDetails, fetchDisputedOrders, updateProductStatus,
 approveProduct, rejectProduct, fetchGeneralProducts };

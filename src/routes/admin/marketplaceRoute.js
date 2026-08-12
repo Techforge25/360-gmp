@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const { adminAuthentication, grantAccessTo } = require("../../middlewares/adminAuth");
-const { fetchMarketplaceStats, fetchOrderLogs, fetchProductAudits, fetchDisputedOrders, 
-viewOrderLog, viewProductDetails, approveProduct, rejectProduct, 
+const { marketplaceInitiator, fetchMarketplaceStats, fetchOrderLogs, fetchProductAudits, 
+fetchDisputedOrders, viewOrderLog, viewProductDetails, approveProduct, rejectProduct, 
 fetchGeneralProducts } = require("../../controllers/admin/marketplaceController");
 
 // Router instance
@@ -9,6 +9,9 @@ const marketPlaceRouter = Router();
 
 // Inject router level middleware
 marketPlaceRouter.use(adminAuthentication, grantAccessTo("Marketplace & Order Logs"));
+
+// Initiator
+marketPlaceRouter.route("/init").get(marketplaceInitiator);
 
 // Fetch marketplace stats
 marketPlaceRouter.route("/stats").get(fetchMarketplaceStats);

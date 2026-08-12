@@ -38,6 +38,12 @@ const getDateFilter = (request, fieldName = "createdAt") => {
     return { dateFilter };
 };
 
+// Initiator
+const subscriptionInitiator = asyncHandler(async (request, response) => {
+    // Response
+    return response.status(200).json(new ApiResponse(200, { hasAccess: true }, "Initiate Subscription Module"));
+});
+
 // Fetch subscription stats
 const fetchSubscriptionStats = asyncHandler(async (request, response) => {
     // Get date filter
@@ -643,5 +649,5 @@ const viewPaidUser = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Paid user details have been fetched"));
 });
 
-module.exports = { fetchSubscriptionStats, fetchTrialUsers, fetchPaidUsers, viewTrialUser, 
-viewPaidUser };
+module.exports = { subscriptionInitiator, fetchSubscriptionStats, fetchTrialUsers, 
+fetchPaidUsers, viewTrialUser, viewPaidUser };

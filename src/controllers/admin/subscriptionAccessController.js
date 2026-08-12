@@ -271,13 +271,54 @@ const fetchTrialUsers = asyncHandler(async (request, response) => {
                 daysConsumed: {
                     $ceil: {
                         $divide: [
-                            { $subtract: [today, "$subscription.startDate"] },
+                            {
+                                $subtract: [
+                                    {
+                                        $cond: [
+                                            {
+                                                $or: [
+                                                    { $eq: ["$subscription.status", "expired"] },
+                                                    { $eq: ["$subscription.status", "canceled"] },
+                                                    { $gte: [today, "$subscription.endDate"] }
+                                                ]
+                                            },
+                                            "$subscription.endDate",
+                                            today
+                                        ]
+                                    },
+                                    "$subscription.startDate"
+                                ]
+                            },
                             1000 * 60 * 60 * 24
                         ]
                     }
                 }
             }
         },
+
+        // Make sure consumed days never exceed trial duration
+        {
+            $addFields: {
+                daysConsumed: {
+                    $min: [
+                            "$daysConsumed",
+                            {
+                                $ceil: {
+                                    $divide: [
+                                        {
+                                            $subtract: [
+                                                "$subscription.endDate",
+                                                "$subscription.startDate"
+                                            ]
+                                        },
+                                        1000 * 60 * 60 * 24
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            },
 
         // Projection
         {

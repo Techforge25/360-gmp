@@ -186,6 +186,66 @@ const fetchMyBusinessProfile = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, businessProfile, "Business profile has been fetched successfully"));
 });
 
+// Fetch my rejected business profile
+const fetchMyRejectedBusinessProfile = asyncHandler(async (request, response) => {
+    const userId = request.user._id;
+
+    // Fetch 
+    const [business] = await BusinessProfile.aggregate([
+        // Match
+        { $match: { ownerUserId: convertToMongoId(userId) } },
+
+        // Projection
+        {
+            $project: {
+                companyName: 1,
+                businessType: 1,
+                companySize: 1,
+                primaryIndustry: 1,
+                countryOfRegistration: 1,
+                foundedDate: 1,
+                createdAt: 1,
+                ownerName: 1,
+                tradeName: 1,
+                businessRegistrationNumber: 1,
+                taxIdentificationNumber: 1,
+                dunsNumber: 1,
+                operationHour: 1,
+                website: 1,
+                description: 1,
+                logo: 1,
+                headOffice: 1,
+                warehouseAddress: 1,
+                additionalWarehouseAddress: 1,
+                internationalOffices: 1,
+                incoterms: 1,
+                termsAndCapability: 1,
+                executiveAndLeadership: 1,
+                ownedByAnotherCompany: 1,
+                parentCompany: 1,
+                primaryContactPerson: 1,
+                operationalAndTradeProfile: 1,
+                amlAndTransactionProfile: 1,
+                certificateOfIncorporation: 1,
+                taxRegistrationCertificate: 1,
+                shareHolderRegister: 1,
+                operatingLicense: 1,
+                evidenceOfFunds: 1,
+                status: 1,
+                rejection: { 
+                    rejectedAt: "$rejection.rejectedAt",
+                    note: "$rejection.note",
+                }
+            }
+        }        
+    ]);
+    if(!business) throw new ApiError(404, "No business profile found");
+    if(business.status !== "rejected") throw new ApiError(400, "Your business profile is not currently in a rejected state");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, business, "Rejected business profile has been fetched"));
+});
+
 // Delete my business profile
 const deleteMyBusinessProfile = asyncHandler(async (request, response) => {
     const userId = request.user._id;
@@ -397,4 +457,4 @@ const fetchBusinessCommunities = asyncHandler(async (request, response) => {
 
 module.exports = { createBusinessProfile, fetchBusinessProfiles, fetchMyBusinessProfile, 
 deleteMyBusinessProfile, getDirection, fetchLatestBusiness, fetchBusinessCountries, fetchBusinessJobs, 
-fetchBusinessProducts, fetchBusinessCommunities };
+fetchBusinessProducts, fetchBusinessCommunities, fetchMyRejectedBusinessProfile };

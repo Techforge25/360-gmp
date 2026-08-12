@@ -1,5 +1,5 @@
 const { isValidObjectId } = require("mongoose");
-const { emptyList } = require("../../constants");
+const { emptyList, superAdminId, adminFrontendURL } = require("../../constants");
 const Report = require("../../models/reportModel");
 const ApiError = require("../../utils/ApiError");
 const ApiResponse = require("../../utils/ApiResponse");
@@ -35,6 +35,12 @@ const getDateFilter = (request) => {
 
     return { dateFilter };
 };
+
+// Report initiator
+const reportInitiator = asyncHandler(async (request, response) => {
+    // Response
+    return response.status(200).json(new ApiResponse(200, { hasAccess: true }, "Initiate Report Module"));
+});
 
 // Fetch reports stats
 const fetchReportStats = asyncHandler(async (request, response) => {
@@ -596,6 +602,6 @@ const viewCommunityReport = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, report, "Business report has been viewed"));
 });
 
-module.exports = { fetchReportStats, fetchJobReports, fetchBusinessProfileReports, 
-fetchProductReports, fetchCommunityReports, viewJobReport, viewBusinessReport, 
-viewProductReport, viewCommunityReport };
+module.exports = { reportInitiator, fetchReportStats, fetchJobReports, fetchBusinessProfileReports, 
+fetchProductReports, fetchCommunityReports, viewJobReport, viewBusinessReport, viewProductReport, 
+viewCommunityReport };

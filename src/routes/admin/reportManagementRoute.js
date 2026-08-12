@@ -1,14 +1,17 @@
 const { Router } = require("express");
 const { adminAuthentication, adminAuthorization, grantAccessTo } = require("../../middlewares/adminAuth");
-const { fetchReportStats, fetchJobReports, fetchBusinessProfileReports, fetchProductReports, 
-fetchCommunityReports, viewJobReport, viewBusinessReport, viewProductReport, 
-viewCommunityReport } = require("../../controllers/admin/reportManagementController");
+const { reportInitiator, fetchReportStats, fetchJobReports, fetchBusinessProfileReports, 
+fetchProductReports, fetchCommunityReports, viewJobReport, viewBusinessReport, 
+viewProductReport, viewCommunityReport } = require("../../controllers/admin/reportManagementController");
 
 // Router instance
 const reportManagementRouter = Router();
 
 // Inject router level middleware
 reportManagementRouter.use(adminAuthentication, grantAccessTo("Reports"));
+
+// Initiator
+reportManagementRouter.route("/init").get(reportInitiator);
 
 // Fetch report stats
 reportManagementRouter.route("/stats").get(fetchReportStats);

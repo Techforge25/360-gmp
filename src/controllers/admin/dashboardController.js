@@ -8,6 +8,7 @@ const ApiError = require("../../utils/ApiError");
 const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
 const convertToMongoId = require("../../utils/convertToMongoId");
+const Plan = require("../../models/plan");
 
 // Initiator
 const dashboardInitiator = asyncHandler(async (request, response) => {
@@ -67,6 +68,59 @@ const fetchDashboardStats = asyncHandler(async (request, response) => {
 
     // Response
     return response.status(200).json(new ApiResponse(200, payload, "Dashboard stats have been fetched"));
+});
+
+// Fetch subscription based chart
+const fetchSubscriptionChart = asyncHandler(async (request, response) => {
+    // Total subscriptions
+    const totalSubscriptions = await Subscription.countDocuments({});
+
+    // Aggregate plan counts
+    const subscriptions = await Subscription.aggregate([
+        {
+            $group: {
+                _id: "$planId",
+                total: { $sum: 1 }
+            }
+        },
+
+        // Lookup plan
+        {
+            $lookup: {
+                from: "plans",
+                localField: "_id",
+                foreignField: "_id",
+                as: "plan"
+            }
+        },
+        { $unwind: "$plan" },
+
+        // Projection
+        { $project: { _id: 0, name: "$plan.name", total: 1 } }
+    ]);
+
+    // Fetch all plans
+    const plans = await Plan.find({}).select("_id name").lean();
+
+    // Chart
+    const chart = plans.map(plan => {
+        const found = subscriptions.find(s => s.name === plan.name);
+        const count = found ? found.total : 0;
+
+        return {
+            name: plan.name,
+            count,
+            percentage: totalSubscriptions === 0 ? 0 : Number(((count / totalSubscriptions) * 100).toFixed(2))
+        };
+    });
+
+    /*
+        Subscription Percentage = (Number of users subscribed to a specific plan ÷ Total number of subscribed users) × 100
+    */
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, chart, "Subscription chart has been fetched"));
+
 });
 
 // Fetch latest businesses
@@ -147,5 +201,5 @@ const viewLatestBusinessProfile = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, businessProfile, "Business profile has been fetched"));
 });
 
-module.exports = { dashboardInitiator, fetchDashboardStats, fetchLatestBusinesses, 
-viewLatestBusinessProfile };
+module.exports = { dashboardInitiator, fetchDashboardStats, fetchSubscriptionChart, 
+fetchLatestBusinesses, viewLatestBusinessProfile };

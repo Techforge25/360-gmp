@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { adminAuthentication, adminAuthorization, authorizeSuperAdmin } = require("../../middlewares/adminAuth");
-const { dashboardInitiator, fetchDashboardStats, fetchLatestBusinesses,
+const { dashboardInitiator, fetchDashboardStats, fetchLatestBusinesses, fetchSubscriptionChart,
 viewLatestBusinessProfile } = require("../../controllers/admin/dashboardController");
 
 // Router instance
@@ -14,6 +14,9 @@ dashboardRouter.route("/init").get(dashboardInitiator);
 
 // Fetch dashboard stats
 dashboardRouter.route("/stats").get(fetchDashboardStats);
+
+// Fetch dashboard stats
+dashboardRouter.route("/subscriptionChart").get(fetchSubscriptionChart);
 
 // Fetch latest business
 dashboardRouter.route("/latestBusinesses").get(fetchLatestBusinesses);

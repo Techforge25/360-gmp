@@ -79,10 +79,10 @@ const fetchUserProfiles = asyncHandler(async (request, response) => {
 
     // Filters
     const baseFilter = {};
-    const planFilter = {};
+    // const planFilter = {};
 
     if(search) baseFilter.fullName = { $regex: search, $options: "i" }; // Filter by user profile name
-    if(type) planFilter.name = { $regex: type, $options: "i" }; // Filter by plan type
+    // if(type) planFilter.name = { $regex: type, $options: "i" }; // Filter by plan type
 
     // Fetch
     const userProfiles = await UserProfile.aggregatePaginate([
@@ -107,7 +107,7 @@ const fetchUserProfiles = asyncHandler(async (request, response) => {
                             localField: "planId",
                             foreignField: "_id",
                             as: "plan",
-                            pipeline:[{ $match: planFilter }]
+                            // pipeline:[{ $match: planFilter }]
                         }
                     },
 
@@ -122,6 +122,13 @@ const fetchUserProfiles = asyncHandler(async (request, response) => {
 
         // Unwind
         { $unwind: { path: "$subscription", preserveNullAndEmptyArrays: true } },
+
+        // Filter by plan name
+        ...(type
+            ? [
+                { $match: { "subscription.subscriptionType": { $regex: type, $options: "i" } } }
+            ]
+        : []),        
 
         // Projection
         {
@@ -152,11 +159,11 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
 
     // Filters
     const baseFilter = {};
-    const planFilter = {};
+    // const planFilter = {};
     const statusFilter = {};
 
     if(search) baseFilter.companyName = { $regex: search, $options: "i" }; // Filter by company name
-    if(type) planFilter.name = { $regex: type, $options: "i" }; // Filter by plan type
+    // if(type) planFilter.name = { $regex: type, $options: "i" }; // Filter by plan type
     if(status) statusFilter.status = status; // Filter by profile status
 
     // Fetch
@@ -181,7 +188,7 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
                             localField: "planId",
                             foreignField: "_id",
                             as: "plan",
-                            pipeline:[{ $match: planFilter }]
+                            // pipeline:[{ $match: planFilter }]
                         }
                     },
 
@@ -195,7 +202,14 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
         },
 
         // Unwind
-        { $unwind: { path: "$subscription", preserveNullAndEmptyArrays: false } },
+        { $unwind: { path: "$subscription", preserveNullAndEmptyArrays: true } },
+
+        // Filter by plan name
+        ...(type
+            ? [
+                { $match: { "subscription.subscriptionType": { $regex: type, $options: "i" } } }
+            ]
+        : []),
 
         // Projection
         {

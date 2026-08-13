@@ -66,6 +66,12 @@ const fetchDashboardStats = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Dashboard stats have been fetched"));
 });
 
+// Fetch latest businesses
+const fetchLatestBusinesses = asyncHandler(async (request, response) => {
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Latest business profiles have been fetched"));
+});
+
 // Fetch total platform revenue
 // const fetchTotalPlatformRevenue = asyncHandler(async (request, response) => {
 //     const dateFilter = getDateFilter(request);
@@ -89,4 +95,4 @@ const fetchDashboardStats = asyncHandler(async (request, response) => {
 
 // });
 
-module.exports = { dashboardInitiator, fetchDashboardStats };
+module.exports = { dashboardInitiator, fetchDashboardStats, fetchLatestBusinesses };

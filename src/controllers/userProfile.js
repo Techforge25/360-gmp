@@ -107,7 +107,7 @@ const updateUserProfileBasicInfo = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Get payload
-    const { fullName, bio } = request.body || {};
+    const { fullName, bio } = validate(updateUserProfileBasicInfo, request.body) || {};
     if(!fullName) throw new ApiError(400, "Full name is required");
 
     // Update user profile
@@ -115,7 +115,7 @@ const updateUserProfileBasicInfo = asyncHandler(async (request, response) => {
     if(!userProfile) throw new ApiError(404, "User profile not found");
 
     // Prepare payload
-    const payload = { fullName:userProfile.fullName, bio:userProfile.bio };
+    const payload = { fullName: userProfile.fullName, bio: userProfile.bio };
 
     // Response
     return response.status(200).json(new ApiResponse(200, payload, "User profile has been updated!"));

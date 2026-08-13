@@ -116,4 +116,4 @@ const updateUserProfileBasicInfo = joi.object({
 });
 
 module.exports = { createUserProfileSchema, updateUserContactInfoValidationSchema, updateEducationValidationSchema, 
-addWorkExperienceValidationSchema, updateJobPreferencesValidationSchema, userSocialLinkValidationSchema };
+addWorkExperienceValidationSchema, updateJobPreferencesValidationSchema, userSocialLinkValidationSchema, updateUserProfileBasicInfo };

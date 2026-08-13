@@ -280,9 +280,6 @@ const viewBusinessProfile = asyncHandler(async (request, response) => {
         // Match
         { $match: { _id: convertToMongoId(businessProfileId) } },
 
-        // Sort
-        { $sort: { createdAt: -1 } },
-
         // Lookup approval admin
         {
             $lookup: {

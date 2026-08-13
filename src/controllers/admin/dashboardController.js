@@ -1,3 +1,4 @@
+const { isValidObjectId } = require("mongoose");
 const { emptyList } = require("../../constants");
 const BusinessProfile = require("../../models/businessProfileSchema");
 const Subscription = require("../../models/subscription");
@@ -6,6 +7,7 @@ const UserProfile = require("../../models/userProfile");
 const ApiError = require("../../utils/ApiError");
 const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
+const convertToMongoId = require("../../utils/convertToMongoId");
 
 // Initiator
 const dashboardInitiator = asyncHandler(async (request, response) => {
@@ -88,6 +90,63 @@ const fetchLatestBusinesses = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, businesses, "Latest business profiles have been fetched"));
 });
 
+// View latest business profile
+const viewLatestBusinessProfile = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { businessProfileId } = request.params;
+    if(!isValidObjectId(businessProfileId)) throw new ApiError(400, "Invalid Business Profile ID");
+
+    // Fetch
+    const [businessProfile] = await BusinessProfile.aggregate([
+        // Match
+        { $match: { _id: convertToMongoId(businessProfileId), status: "pending" } },
+
+        // Projection
+        {
+            $project: {
+                companyName: 1,
+                businessType: 1,
+                companySize: 1,
+                primaryIndustry: 1,
+                countryOfRegistration: 1,
+                foundedDate: 1,
+                createdAt: 1,
+                ownerName: 1,
+                tradeName: 1,
+                businessRegistrationNumber: 1,
+                taxIdentificationNumber: 1,
+                dunsNumber: 1,
+                operationHour: 1,
+                website: 1,
+                description: 1,
+                logo: 1,
+                headOffice: 1,
+                warehouseAddress: 1,
+                additionalWarehouseAddress: 1,
+                internationalOffices: 1,
+                incoterms: 1,
+                termsAndCapability: 1,
+                executiveAndLeadership: 1,
+                ownedByAnotherCompany: 1,
+                parentCompany: 1,
+                primaryContactPerson: 1,
+                operationalAndTradeProfile: 1,
+                amlAndTransactionProfile: 1,
+                certificateOfIncorporation: 1,
+                taxRegistrationCertificate: 1,
+                shareHolderRegister: 1,
+                operatingLicense: 1,
+                evidenceOfFunds: 1,
+                status: 1
+            }
+        }
+    ]);
+    if(!businessProfile) throw new ApiError(404, "Business profile not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, businessProfile, "Business profile has been fetched"));
+});
+
 // Fetch total platform revenue
 // const fetchTotalPlatformRevenue = asyncHandler(async (request, response) => {
 //     const dateFilter = getDateFilter(request);
@@ -111,4 +170,5 @@ const fetchLatestBusinesses = asyncHandler(async (request, response) => {
 
 // });
 
-module.exports = { dashboardInitiator, fetchDashboardStats, fetchLatestBusinesses };
+module.exports = { dashboardInitiator, fetchDashboardStats, 
+fetchLatestBusinesses, viewLatestBusinessProfile };

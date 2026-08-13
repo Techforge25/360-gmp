@@ -142,6 +142,9 @@ const fetchJobReports = asyncHandler(async (request, response) => {
 const fetchBusinessProfileReports = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10, search = "" } = request.query;
 
+    // Get date filter
+    const { dateFilter } = getDateFilter(request);     
+
     // Search by company name
     const searchFilter = {};
     if(search) searchFilter.companyName = { $regex: search, $options: "i" };
@@ -149,7 +152,7 @@ const fetchBusinessProfileReports = asyncHandler(async (request, response) => {
     // Fetch
     const reports = await Report.aggregatePaginate([
         // Match
-        { $match: { reportedModel: "BusinessProfile" } },
+        { $match: { ...dateFilter, reportedModel: "BusinessProfile" } },
 
         // Lookup user profile
         {
@@ -203,6 +206,9 @@ const fetchBusinessProfileReports = asyncHandler(async (request, response) => {
 const fetchProductReports = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10, search = "" } = request.query;
 
+    // Get date filter
+    const { dateFilter } = getDateFilter(request);      
+
     // Search by product title
     const searchFilter = {};
     if(search) searchFilter.title = { $regex: search, $options: "i" };    
@@ -210,7 +216,7 @@ const fetchProductReports = asyncHandler(async (request, response) => {
     // Fetch
     const reports = await Report.aggregatePaginate([
         // Match
-        { $match: { reportedModel: "Product" } },
+        { $match: { ...dateFilter, reportedModel: "Product" } },
 
         // Lookup user profile
         {
@@ -275,6 +281,9 @@ const fetchProductReports = asyncHandler(async (request, response) => {
 const fetchCommunityReports = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10, search = "" } = request.query;
 
+    // Get date filter
+    const { dateFilter } = getDateFilter(request);     
+
     // Search by community name
     const searchFilter = {};
     if(search) searchFilter.name = { $regex: search, $options: "i" };      
@@ -282,7 +291,7 @@ const fetchCommunityReports = asyncHandler(async (request, response) => {
     // Fetch
     const reports = await Report.aggregatePaginate([
         // Match
-        { $match: { reportedModel: "Community" } },
+        { $match: { ...dateFilter, reportedModel: "Community" } },
 
         // Lookup user profile
         {

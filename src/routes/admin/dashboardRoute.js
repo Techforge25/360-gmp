@@ -18,7 +18,7 @@ dashboardRouter.route("/stats").get(fetchDashboardStats);
 // Fetch latest business
 dashboardRouter.route("/latestBusinesses").get(fetchLatestBusinesses);
 
-// View business profile
+// View latest business profile
 dashboardRouter.route("/latestBusinesses/:businessProfileId").get(viewLatestBusinessProfile);
 
 module.exports = dashboardRouter;

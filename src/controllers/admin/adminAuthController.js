@@ -178,9 +178,15 @@ const authStatus = asyncHandler(async (request, response) => {
     // Verify
     const admin = verifyAdminAccessToken(adminAccessToken);
     if(!admin) return response.status(200).json(new ApiResponse(200, { isLoggedIn: false }, "No login session found!"));
+
+    // Prepare payload
+    const payload = {
+        role: String(admin._id) === superAdminId ? "superAdmin" : admin.role,
+    };
+    if(String(admin._id) !== superAdminId) payload.allowedModules = admin.allowedModules;
     
     // Response
-    return response.status(200).json(new ApiResponse(200, { isLoggedIn: true }, "Login session found"));    
+    return response.status(200).json(new ApiResponse(200, { isLoggedIn: true, ...payload }, "Login session found"));    
 });
 
 module.exports = { adminLogin, authMe, adminRefreshToken, adminLogout, authStatus };

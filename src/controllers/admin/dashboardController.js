@@ -147,28 +147,5 @@ const viewLatestBusinessProfile = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, businessProfile, "Business profile has been fetched"));
 });
 
-// Fetch total platform revenue
-// const fetchTotalPlatformRevenue = asyncHandler(async (request, response) => {
-//     const dateFilter = getDateFilter(request);
-
-//     // Aggregate
-//     const [result] = await EscrowTransaction.aggregate([
-//         { $match:{ ...dateFilter } },
-//         {
-//             $group:{
-//                 _id:null,
-//                 totalPlatformRevenue:{ $sum: "$platformFee" }
-//             }
-//         }
-//     ]);
-
-//     // Extract result
-//     const totalPlatformRevenue = Number(result?.totalPlatformRevenue?.toFixed(2)) || 0;
-
-//     // Response
-//     return response.status(200).json(new ApiResponse(200, totalPlatformRevenue, "Total platform revenue has been fetched"));
-
-// });
-
-module.exports = { dashboardInitiator, fetchDashboardStats, 
-fetchLatestBusinesses, viewLatestBusinessProfile };
+module.exports = { dashboardInitiator, fetchDashboardStats, fetchLatestBusinesses, 
+viewLatestBusinessProfile };

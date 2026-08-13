@@ -107,5 +107,13 @@ const userSocialLinkValidationSchema = joi.object({
     url: joi.string().trim().max(500).uri().required().label("Platform url"),
 });
 
+// Update basic info
+const updateUserProfileBasicInfo = joi.object({
+    fullName: joi.string().pattern(namePattern).min(3).max(50).required().label("Full name").messages({
+        "string.pattern.base": "Full name can only contain letters and spaces"
+    }),
+    bio: joi.string().trim().max(3000).required().label("Bio"),
+});
+
 module.exports = { createUserProfileSchema, updateUserContactInfoValidationSchema, updateEducationValidationSchema, 
 addWorkExperienceValidationSchema, updateJobPreferencesValidationSchema, userSocialLinkValidationSchema };

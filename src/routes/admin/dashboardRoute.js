@@ -15,6 +15,6 @@ dashboardRouter.route("/init").get(dashboardInitiator);
 dashboardRouter.route("/stats").get(fetchDashboardStats);
 
 // Fetch latest business
-dashboardRouter.route("/latestBusiness").get(fetchLatestBusinesses);
+dashboardRouter.route("/latestBusinesses").get(fetchLatestBusinesses);
 
 module.exports = dashboardRouter;

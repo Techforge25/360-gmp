@@ -24,15 +24,15 @@ const educationSchema = joi.object({
 }).optional();
 
 // Create user profile validation schema
-const createUserProfileSchema = joi.object({
-    fullName: joi.string().pattern(namePattern).min(3).max(40).required().label("Full name").messages({
+const createUserProfileSchema = joi.object({ 
+    fullName: joi.string().pattern(namePattern).min(3).max(50).required().label("Full name").messages({
         "string.pattern.base": "Full name can only contain letters and spaces"
     }),
-    title: joi.string().pattern(jobTitlePattern).max(40).allow("", null).label("Title"),
+    title: joi.string().pattern(jobTitlePattern).max(50).allow("", null).label("Title"),
     phone: joi.string().trim().max(15).pattern(/^\+?[1-9]\d{9,14}$/).required().messages({
         "string.pattern.base": "Phone number must be a valid international format (e.g., +923001234567)."
     }).label("Phone"),
-    email: joi.string().trim().lowercase().email().max(40).required().label("Email"),
+    email: joi.string().trim().lowercase().email().max(50).required().label("Email"),
     location: joi.string().trim().max(100).allow("", null).label("Location"),
     bio: joi.string().trim().max(3000).required().label("Bio"),
     resumeUrl: joi.string().uri().allow("", null).label("Resume"),
@@ -52,7 +52,7 @@ const createUserProfileSchema = joi.object({
 // Update contact info 
 const updateUserContactInfoValidationSchema = joi.object({
     // Basic info
-    email: joi.string().trim().lowercase().email().max(40).required().label("Email"),
+    email: joi.string().trim().lowercase().email().max(50).required().label("Email"),
     phone: joi.string().trim().max(15).pattern(/^\+?[1-9]\d{9,14}$/).required().messages({
         "string.pattern.base": "Phone number must be a valid international format (e.g., +923001234567)."
     }).label("Phone"),

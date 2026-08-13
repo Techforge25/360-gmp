@@ -1,5 +1,7 @@
+const BusinessProfile = require("../../models/businessProfileSchema");
 const Subscription = require("../../models/subscription");
 const SubscriptionHistory = require("../../models/subscriptionHistoryModel");
+const UserProfile = require("../../models/userProfile");
 const ApiError = require("../../utils/ApiError");
 const ApiResponse = require("../../utils/ApiResponse");
 const asyncHandler = require("../../utils/asyncHandler");
@@ -13,7 +15,8 @@ const dashboardInitiator = asyncHandler(async (request, response) => {
 // Fetch dashboard stats
 const fetchDashboardStats = asyncHandler(async (request, response) => {
 
-    const [[platformRevenue]] = await Promise.all([
+    const [[platformRevenue], totalUserProfiles, totalBusinessProfiles] = await Promise.all([
+        // Platform revvenue
         SubscriptionHistory.aggregate([
             // Group by invoiceId
             {
@@ -43,12 +46,20 @@ const fetchDashboardStats = asyncHandler(async (request, response) => {
                     totalAmount: { $sum: "$plan.price" }
                 }
             },
-        ])
+        ]),
+
+        // Total user profiles
+        UserProfile.countDocuments({}),
+
+        // Total business profiles
+        BusinessProfile.countDocuments({ status: "approved" })        
     ]);
 
     // Prepare payload
     const payload = {
-        totalPlatformRevenue: Number(platformRevenue?.totalAmount?.toFixed(2)) || 0
+        totalPlatformRevenue: Number(platformRevenue?.totalAmount?.toFixed(2)) || 0,
+        totalUserProfiles,
+        totalBusinessProfiles
     };
 
     // Response

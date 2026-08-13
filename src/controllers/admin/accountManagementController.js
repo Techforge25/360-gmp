@@ -195,7 +195,7 @@ const fetchBusinessProfiles = asyncHandler(async (request, response) => {
         },
 
         // Unwind
-        { $unwind: { path: "$subscription", preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: "$subscription", preserveNullAndEmptyArrays: false } },
 
         // Projection
         {

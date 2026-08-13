@@ -121,7 +121,7 @@ const fetchUserProfiles = asyncHandler(async (request, response) => {
         },
 
         // Unwind
-        { $unwind: "$subscription" },
+        { $unwind: { path: "$subscription", preserveNullAndEmptyArrays: true } },
 
         // Projection
         {

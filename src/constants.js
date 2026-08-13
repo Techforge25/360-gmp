@@ -19,11 +19,9 @@ if(isProduction)
 // Staging
 if(isStaging)
 {
-    // frontendURL = "https://360-gmp-front-end-git-staging-aftabs-projects-80f407ba.vercel.app";
+    frontendURL = "https://360-gmp-front-end-git-staging-aftabs-projects-80f407ba.vercel.app";
     // adminFrontendURL = "https://360-gmp-frontend-superadmin-64bl3oj4h-aftabs-projects-80f407ba.vercel.app";
-
-    frontendURL = "http://localhost:3000";
-    adminFrontendURL = "http://localhost:3000";   
+    adminFrontendURL = "http://localhost:3000";
 }
 
 // Local

@@ -1,3 +1,4 @@
+const { emptyList } = require("../../constants");
 const BusinessProfile = require("../../models/businessProfileSchema");
 const Subscription = require("../../models/subscription");
 const SubscriptionHistory = require("../../models/subscriptionHistoryModel");
@@ -68,8 +69,23 @@ const fetchDashboardStats = asyncHandler(async (request, response) => {
 
 // Fetch latest businesses
 const fetchLatestBusinesses = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10 } = request.query;
+
+    // Fetch
+    const businesses = await BusinessProfile.aggregatePaginate([
+        // Match
+        { $match: { status: "pending" } },
+
+        // Sort
+        { $sort: { createdAt: -1 } },
+
+        // Projection
+        { $project: { companyName: 1, createdAt: 1 } }
+    ], { page, limit });
+    if(!businesses.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No latest businesses found"));
+
     // Response
-    return response.status(200).json(new ApiResponse(200, null, "Latest business profiles have been fetched"));
+    return response.status(200).json(new ApiResponse(200, businesses, "Latest business profiles have been fetched"));
 });
 
 // Fetch total platform revenue

@@ -259,7 +259,7 @@ const resubmitBusinessProfile = asyncHandler(async (request, response) => {
     const data = validate(createBusinessProfileSchema, request.body) || {};
 
     // Update
-    const submit = await BusinessProfile.findByIdAndUpdate(business._id, data);
+    const submit = await BusinessProfile.findByIdAndUpdate(business._id, { ...data, status: "pending" });
     if(!submit) throw new ApiError(400, "Failed to re-submit business profile");
 
     // Response

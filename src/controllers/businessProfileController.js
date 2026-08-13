@@ -253,7 +253,7 @@ const resubmitBusinessProfile = asyncHandler(async (request, response) => {
     // Fetch and validate
     const business = await BusinessProfile.findOne({ ownerUserId: userId }).select("_id status").lean();
     if(!business) throw new ApiError(404, "Business profile not found");
-    if(business.status === "rejected") throw new ApiError(403, "You cannot resubmit your business profile unless it is in a rejected state");
+    if(business.status !== "rejected") throw new ApiError(403, "You cannot resubmit your business profile unless it is in a rejected state");
 
     // Get validated payload
     const data = validate(createBusinessProfileSchema, request.body) || {};

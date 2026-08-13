@@ -108,10 +108,9 @@ const updateUserProfileBasicInfo = asyncHandler(async (request, response) => {
 
     // Get payload
     const { fullName, bio } = validate(updateUserProfileBasicInfo, request.body) || {};
-    if(!fullName) throw new ApiError(400, "Full name is required");
 
     // Update user profile
-    const userProfile = await UserProfile.findOneAndUpdate({ userId }, { fullName, bio }, { new:true });
+    const userProfile = await UserProfile.findOneAndUpdate({ userId }, { $set: { fullName, bio } }, { new:true });
     if(!userProfile) throw new ApiError(404, "User profile not found");
 
     // Prepare payload

@@ -12,7 +12,6 @@ dashboardRouter.use(adminAuthentication, authorizeSuperAdmin);
 dashboardRouter.route("/init").get(dashboardInitiator);
 
 // Fetch dashboard stats
-dashboardRouter.route("/stats")
-.get(adminAuthentication, adminAuthorization(["superAdmin"]), fetchDashboardStats);
+dashboardRouter.route("/stats").get(fetchDashboardStats);
 
 module.exports = dashboardRouter;

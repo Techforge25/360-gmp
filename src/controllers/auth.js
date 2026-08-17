@@ -103,7 +103,7 @@ const verifyOTP = asyncHandler(async (request, response) => {
     const otp = await getCache(getOTPKey(user.email));
 
     // Validate
-    if(!otp) throw new ApiError(400, "Invalid or expired OTP");
+    if(!otp) throw new ApiError(400, "Invalid OTP");
     if(otp !== accountVerificationToken) throw new ApiError(400, "Invalid OTP");
 
     // Save to db
@@ -415,10 +415,11 @@ const switchRole = asyncHandler(async (request, response) => {
 const forgotPassword = asyncHandler(async (request, response) => {
     const { email } = validate(forgotPasswordSchema, request.body) || {};
 
-    // Check attempts
+    // Track attempts
     const key = `forgotPasswordEmailAttempts:${email}`;
-    const totalAttempts = await getCache(key);
-    if(totalAttempts >= 1) throw new ApiError(400, "Please wait 5 minutes for next password reset request");
+    const attempts = await redis.incr(key);
+    if(attempts === 1) await redis.expire(key, 60 * 5); // 5 minutes   
+    if(attempts > 1) throw new ApiError(400, "Please wait 5 minutes for next password reset request");
 
     // Find user
     const user = await User.findOne({ email });
@@ -431,10 +432,6 @@ const forgotPassword = asyncHandler(async (request, response) => {
 
     // Store token in redis
     await setCache(getResetPasswordKey(email), resetToken, 5); // 5 minutes
-
-    // Track attempts
-    const attempts = await redis.incr(key);
-    if(attempts === 1) await redis.expire(key, 60 * 5); // 5 minutes
 
     // Send email in backgrouund
     await emailQueue.add("sendResetPasswordEmail", { email, resetToken });
@@ -451,7 +448,7 @@ const verifypasswordResetToken = asyncHandler(async (request, response) => {
     const resetToken = await getCache(getResetPasswordKey(email));
 
     // Validate
-    if(!resetToken) throw new ApiError(400, "Invalid or expired OTP");
+    if(!resetToken) throw new ApiError(400, "Invalid OTP");
     if(resetToken !== passwordResetToken) throw new ApiError(400, "Invalid OTP");
 
     // Response
@@ -467,8 +464,8 @@ const resetPassword = asyncHandler(async (request, response) => {
     const resetToken = await getCache(getResetPasswordKey(email));
 
     // Validate
-    if(!resetToken) throw new ApiError(400, "Invalid or expired OTP");
-    if(resetToken !== passwordResetToken) throw new ApiError(400, "Invalid OTP");    
+    if(!resetToken) throw new ApiError(400, "Your password reset session has expired. Please try again.");
+    if(resetToken !== passwordResetToken) throw new ApiError(400, "Your password reset session has expired. Please try again");    
 
     // Find user associated with this email
     const user = await User.findOne({ email }).select("_id passwordHash googleAccount");

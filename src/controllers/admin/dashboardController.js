@@ -100,7 +100,7 @@ const fetchSubscriptionChart = asyncHandler(async (request, response) => {
     ]);
 
     // Fetch all plans
-    const plans = await Plan.find({}).select("_id name").lean();
+    const plans = await Plan.find({ name: { $ne: "Bronze" } }).select("_id name").lean();
 
     // Chart
     const chart = plans.map(plan => {

@@ -137,7 +137,7 @@ const createBusinessProfileSchema = joi.object({
     dunsNumber: joi.string().length(9).optional().allow("", null).label("Data Universal Numbering System"),
     countryOfRegistration: joi.string().max(50).trim().required().label("Country of registration"),
     businessType: joi.string().max(50).trim().required().valid(...allowedBusinessTypes).label("Business type"),
-    primaryIndustry: joi.string().max(500).trim().required().label("Primary industry"),
+    primaryIndustry: joi.string().max(100).trim().required().label("Primary industry"),
     foundedDate: joi.date().max("now").required().label("Founded date"),
     companySize: joi.string().trim().required().label("Company size"),
     operationHour: joi.string().max(50).trim().required().label("Operation hours"),

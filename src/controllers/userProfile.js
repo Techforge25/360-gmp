@@ -15,7 +15,7 @@ const sendNotification = require("../utils/sendNotification");
 const validate = require("../utils/validate");
 const { updateUserContactInfoValidationSchema, updateEducationValidationSchema, 
 addWorkExperienceValidationSchema, updateJobPreferencesValidationSchema, 
-userSocialLinkValidationSchema } = require("../validations/userProfile");
+userSocialLinkValidationSchema, updateUserProfileBasicInfoValidator } = require("../validations/userProfile");
 const { createUserProfileSchema } = require("../validations/userProfile");
 const fs = require("fs");
 const path = require("path");
@@ -107,7 +107,7 @@ const updateUserProfileBasicInfo = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Get payload
-    const { fullName, bio } = validate(updateUserProfileBasicInfo, request.body) || {};
+    const { fullName, bio } = validate(updateUserProfileBasicInfoValidator, request.body) || {};
 
     // Update user profile
     const userProfile = await UserProfile.findOneAndUpdate({ userId }, { $set: { fullName, bio } }, { new:true });

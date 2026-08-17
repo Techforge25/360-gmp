@@ -16,7 +16,11 @@ const validate = require("../utils/validate");
 
 // Create business
 const createBusinessProfile = asyncHandler(async (request, response) => {
-    const userId = request.user._id;
+    const { _id: userId, planName } = request.user;
+    if(planName === "Sneak Peek Free – 14 Days" || planName === "Consumer / Individual")
+    {
+        throw new ApiError(403, `You cannot create business profile while you are on a ${planName} plan`);
+    }    
 
     // Get validated payload Validate
     const data = validate(createBusinessProfileSchema, request.body) || {};
@@ -248,7 +252,11 @@ const fetchMyRejectedBusinessProfile = asyncHandler(async (request, response) =>
 
 // Re-submit business profile
 const resubmitBusinessProfile = asyncHandler(async (request, response) => {
-    const userId = request.user._id;
+    const { _id: userId, planName } = request.user;
+    if(planName === "Sneak Peek Free – 14 Days" || planName === "Consumer / Individual")
+    {
+        throw new ApiError(403, `You cannot resubmit your business profile while you are on a ${planName} plan`);
+    } 
 
     // Fetch and validate
     const business = await BusinessProfile.findOne({ ownerUserId: userId }).select("_id status").lean();

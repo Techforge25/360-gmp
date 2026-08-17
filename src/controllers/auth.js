@@ -332,7 +332,7 @@ const refreshAccessToken = asyncHandler(async (request, response) => {
 
 // Switch role
 const switchRole = asyncHandler(async (request, response) => {
-    const userId = request.user._id;
+    const { _id: userId, planName } = request.user;
     const { role = null } = request.query;
 
     // Validate
@@ -353,9 +353,9 @@ const switchRole = asyncHandler(async (request, response) => {
     // Check if business profile actually exist before switching
     if(role.toLowerCase() === "business")
     {
-        if(request.user.planName === "Sneak Peek Free – 14 Days")
+        if(planName === "Sneak Peek Free – 14 Days" || planName === "Consumer / Individual")
         {
-            throw new ApiError(403, "Switching to a business profile is not allowed while you are on a Sneak Peek Free plan");
+            throw new ApiError(403, `Switching to a business profile is not allowed while you are on a ${planName} plan`);
         }
         const businessProfile = await BusinessProfile.findOne({ ownerUserId: userId }).select("status");
         if(!businessProfile)

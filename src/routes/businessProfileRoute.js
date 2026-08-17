@@ -28,7 +28,7 @@ businessProfileRouter.route("/rejectedProfile")
 
 // Business profile re-submission
 businessProfileRouter.route("/resubmit")
-.put(authentication, resubmitBusinessProfile);
+.put(authentication, checkSubscription, resubmitBusinessProfile);
 
 // Fetch business countries
 businessProfileRouter.route("/countries")

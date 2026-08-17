@@ -249,7 +249,7 @@ const viewUserProfile = asyncHandler(async (request, response) => {
 
         // Projection
         {
-            $project: {
+            $project: { 
                 fullName: 1,
                 email: 1,
                 logo: 1,
@@ -257,6 +257,7 @@ const viewUserProfile = asyncHandler(async (request, response) => {
                 createdAt: 1,
                 location: 1,
                 title: 1,
+                targetJob: 1,
                 employmentType: 1,
                 education: 1,
                 workExperience: 1

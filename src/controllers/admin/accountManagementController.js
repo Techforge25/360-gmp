@@ -260,7 +260,9 @@ const viewUserProfile = asyncHandler(async (request, response) => {
                 targetJob: 1,
                 employmentType: 1,
                 education: 1,
-                workExperience: 1
+                workExperience: 1,
+                resumeUrl: 1,
+                phone: 1
             }
         }
     ]);

@@ -123,6 +123,78 @@ const fetchSubscriptionChart = asyncHandler(async (request, response) => {
 
 });
 
+// Fetch revenue graph
+const fetchRevenueGraph = asyncHandler(async (request, response) => {
+
+    // Calculate dates
+    const currentYear = new Date().getFullYear();
+
+    const startDate = new Date(currentYear, 0, 1);
+    const endDate = new Date(currentYear + 1, 0, 1);
+
+    const revenue = await SubscriptionHistory.aggregate([
+        // Only successful payments
+        {
+            $match: {
+                status: { $in: ["paid", "canceled"] },
+                createdAt: { $gte: startDate, $lt: endDate }
+            }
+        },
+
+        // Get plan
+        {
+            $lookup: {
+                from: "plans",
+                localField: "planId",
+                foreignField: "_id",
+                as: "plan"
+            }
+        },
+
+        // Convert plan array to object
+        { $unwind: "$plan" },
+
+        // Group revenue by month
+        {
+            $group: {
+                _id: { month: { $month: "$createdAt" } },
+                earning: { $sum: "$plan.price" }
+            }
+        },
+
+        // Sort January -> December
+        { $sort: { "_id.month": 1 } }
+    ]);
+
+    // Month names
+    const months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+    ];
+
+    // Create complete January -> December graph
+    const revenueGraph = months.map((month, index) => {
+        const found = revenue.find(item => item._id.month === index + 1);
+        return {
+            month,
+            earning: found ? found.earning : 0
+        };
+    });
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, revenueGraph, "Revenue graph has been fetched"));
+});
+
 // Fetch latest businesses
 const fetchLatestBusinesses = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
@@ -202,4 +274,4 @@ const viewLatestBusinessProfile = asyncHandler(async (request, response) => {
 });
 
 module.exports = { dashboardInitiator, fetchDashboardStats, fetchSubscriptionChart, 
-fetchLatestBusinesses, viewLatestBusinessProfile };
+fetchLatestBusinesses, viewLatestBusinessProfile, fetchRevenueGraph };

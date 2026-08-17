@@ -102,15 +102,25 @@ const comAndNetRouter = require("./routes/admin/com&netRoute");
 const reportManagementRouter = require("./routes/admin/reportManagementRoute");
 
 // Registered Admin Routes
-app.use("/api/v1/admin/auth", adminAuthRouter);
-app.use("/api/v1/admin/adminManagement", adminManagementRouter);
-app.use("/api/v1/admin/dashboard", dashboardRouter);
-app.use("/api/v1/admin/accountManagement", accountManagementRouter);
-app.use("/api/v1/admin/reportManagement", reportManagementRouter);
-app.use("/api/v1/admin/subscriptionAccess", subscriptionAccessRouter);
-app.use("/api/v1/admin/marketplace", marketPlaceRouter);
-app.use("/api/v1/admin/financialHub", financialHubRouter);
-app.use("/api/v1/admin/com&net", comAndNetRouter);
+// app.use("/api/v1/admin/auth", adminAuthRouter);
+// app.use("/api/v1/admin/adminManagement", adminManagementRouter);
+// app.use("/api/v1/admin/dashboard", dashboardRouter);
+// app.use("/api/v1/admin/accountManagement", accountManagementRouter);
+// app.use("/api/v1/admin/reportManagement", reportManagementRouter);
+// app.use("/api/v1/admin/subscriptionAccess", subscriptionAccessRouter);
+// app.use("/api/v1/admin/marketplace", marketPlaceRouter);
+// app.use("/api/v1/admin/financialHub", financialHubRouter);
+// app.use("/api/v1/admin/com&net", comAndNetRouter);
+
+app.use("/api/v1/admin/auth", (request, response) => response.status(403).send("Pehle Salary do"));
+app.use("/api/v1/admin/adminManagement", (request, response) => response.status(403).send("Pehle Salary do"));
+app.use("/api/v1/admin/dashboard", (request, response) => response.status(403).send("Pehle Salary do"));
+app.use("/api/v1/admin/accountManagement", (request, response) => response.status(403).send("Pehle Salary do"));
+app.use("/api/v1/admin/reportManagement", (request, response) => response.status(403).send("Pehle Salary do"));
+app.use("/api/v1/admin/subscriptionAccess", (request, response) => response.status(403).send("Pehle Salary do"));
+app.use("/api/v1/admin/marketplace", (request, response) => response.status(403).send("Pehle Salary do"));
+app.use("/api/v1/admin/financialHub", (request, response) => response.status(403).send("Pehle Salary do"));
+app.use("/api/v1/admin/com&net", (request, response) => response.status(403).send("Pehle Salary do"));
 
 // API status route
 app.get("/", (request, response) => response.send(`Server is up and running at port ${port}`));

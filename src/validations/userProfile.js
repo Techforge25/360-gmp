@@ -43,7 +43,7 @@ const createUserProfileSchema = joi.object({
     employmentType:joi.array().items(joi.string().pattern(alphaNumericPattern)).allow("", null).label("Employment type"),
 
     // Job preferences
-    targetJob: joi.string().pattern(jobTitlePattern).max(200).allow("", null).label("Target job"),
+    targetJob: joi.string().pattern(jobTitlePattern).max(50).allow("", null).label("Target job"),
     minSalary: joi.number().min(0).label("Minimum salary"),
     maxSalary: joi.number().greater(joi.ref("minSalary")).label("Maximum salary"),
     education: educationSchema.default({}).label("Education")

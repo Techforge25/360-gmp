@@ -171,18 +171,18 @@ const fetchRevenueGraph = asyncHandler(async (request, response) => {
 
     // Month names
     const months = [
-        "January",
-        "February",
-        "March",
-        "April",
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
         "May",
         "June",
         "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December"
+        "Aug",
+        "Sept",
+        "Oct",
+        "Nov",
+        "Dec"
     ];
 
     // Create complete January -> December graph

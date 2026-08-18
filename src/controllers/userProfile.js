@@ -15,7 +15,8 @@ const sendNotification = require("../utils/sendNotification");
 const validate = require("../utils/validate");
 const { updateUserContactInfoValidationSchema, updateEducationValidationSchema, 
 addWorkExperienceValidationSchema, updateJobPreferencesValidationSchema, 
-userSocialLinkValidationSchema, updateUserProfileBasicInfoValidator } = require("../validations/userProfile");
+userSocialLinkValidationSchema, updateUserProfileBasicInfoValidator, 
+updateUserProfileLogoValidator} = require("../validations/userProfile");
 const { createUserProfileSchema } = require("../validations/userProfile");
 const fs = require("fs");
 const path = require("path");
@@ -146,16 +147,15 @@ const updateUserProfileContactInfo = asyncHandler(async (request, response) => {
 const updateUserProfileLogo = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
-    // Get payload
-    const { logo } = request.body || {};
-    if(!logo) throw new ApiError(400, "User profile image is required");
+    // Get validated payload
+    const { logo } = validate(request.body, updateUserProfileLogoValidator) || {};
 
     // Update logo
     const userProfile = await UserProfile.findOneAndUpdate({ userId }, { logo }, { new:true });
     if(!userProfile) throw new ApiError(404, "User profile not found");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { logo:userProfile.logo }, "User logo has been updated!"));
+    return response.status(200).json(new ApiResponse(200, { logo: userProfile.logo }, "User logo has been updated!"));
 });
 
 // Update user profile (Profile banner)

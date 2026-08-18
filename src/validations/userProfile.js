@@ -115,6 +115,11 @@ const updateUserProfileBasicInfoValidator = joi.object({
     bio: joi.string().trim().max(3000).required().label("Bio"),
 });
 
+// Update user profile logo validator
+const updateUserProfileLogoValidator = joi.object({
+    logo: joi.string().trim().uri().required().label("Logo")
+});
+
 module.exports = { createUserProfileSchema, updateUserContactInfoValidationSchema, updateEducationValidationSchema, 
 addWorkExperienceValidationSchema, updateJobPreferencesValidationSchema, userSocialLinkValidationSchema, 
-updateUserProfileBasicInfoValidator };
+updateUserProfileBasicInfoValidator, updateUserProfileLogoValidator };

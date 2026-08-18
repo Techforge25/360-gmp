@@ -61,9 +61,9 @@ const updateUserContactInfoValidationSchema = joi.object({
 
 // Update education
 const updateEducationValidationSchema = joi.object({
-    institution: joi.string().pattern(titlePattern).trim().required().label("Intitution name"),
-    degree: joi.string().pattern(titlePattern).trim().required().label("Educational degree"),
-    fieldOfStudy: joi.string().pattern(titlePattern).trim().required().label("Field of study"),
+    institution: joi.string().pattern(titlePattern).trim().min(1).max(50).required().label("Intitution name"),
+    degree: joi.string().pattern(titlePattern).trim().min(1).max(50).required().label("Degree"),
+    fieldOfStudy: joi.string().pattern(titlePattern).trim().min(1).max(50).required().label("Field of Study"),    
     startDate: joi.date().required().label("Starting date"),
 
     endDate: joi.date().min(joi.ref("startDate")).when("isCurrent", { 

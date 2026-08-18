@@ -13,12 +13,10 @@ const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const sendNotification = require("../utils/sendNotification");
 const validate = require("../utils/validate");
-const { updateUserContactInfoValidationSchema, updateEducationValidationSchema, 
-addWorkExperienceValidationSchema, updateJobPreferencesValidationSchema, 
-userSocialLinkValidationSchema, updateUserProfileBasicInfoValidator, 
-updateUserProfileLogoValidator,
-updateUserProfileBannerValidator} = require("../validations/userProfile");
-const { createUserProfileSchema } = require("../validations/userProfile");
+const { createUserProfileSchema, updateUserContactInfoValidationSchema, updateEducationValidationSchema, 
+addWorkExperienceValidationSchema, updateJobPreferencesValidationSchema, userSocialLinkValidationSchema, 
+updateUserProfileBasicInfoValidator, updateUserProfileLogoValidator, updateUserProfileBannerValidator, 
+updateUserProfileResumeValidator } = require("../validations/userProfile");
 const fs = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
@@ -178,16 +176,15 @@ const updateUserProfileBanner = asyncHandler(async (request, response) => {
 const updateUserProfileResume = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
-    // Get payload
-    const { resumeUrl } = request.body || {};
+    // Get validated payload
+    const { resumeUrl } = validate(request.body, updateUserProfileResumeValidator) || {};
     if(!resumeUrl) throw new ApiError(400, "Resume is required");
 
     // Update resume
-    const userProfile = await UserProfile.findOneAndUpdate({ userId }, { resumeUrl }, { new:true });
-    if(!userProfile) throw new ApiError(404, "User profile not found");
+    const userProfile = await UserProfile.findOneAndUpdate({ userId }, { resumeUrl }, { new: true });
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { resumeUrl:userProfile.resumeUrl }, "Resume has been updated!"));
+    return response.status(200).json(new ApiResponse(200, { resumeUrl: userProfile.resumeUrl }, "Resume has been updated!"));
 });
 
 // Update user profile (Education)

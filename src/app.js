@@ -26,6 +26,10 @@ app.use("/public", express.static(path.resolve("public")));
 app.use(compression());
 app.use(morgan("dev"));
 
+app.use((request, response) => {
+    throw new ApiError(500, "サーバー停止中");
+});
+
 // Import Routes
 const authRouter = require("./routes/auth");
 const planRouter = require("./routes/plan");
@@ -100,6 +104,7 @@ const marketPlaceRouter = require("./routes/admin/marketplaceRoute");
 const financialHubRouter = require("./routes/admin/financialHubRoute");
 const comAndNetRouter = require("./routes/admin/com&netRoute");
 const reportManagementRouter = require("./routes/admin/reportManagementRoute");
+const ApiError = require("./utils/ApiError");
 
 // Registered Admin Routes
 app.use("/api/v1/admin/auth", adminAuthRouter);

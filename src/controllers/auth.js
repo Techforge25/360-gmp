@@ -237,7 +237,7 @@ const userLogin = asyncHandler(async (request, response) => {
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
-    .json(new ApiResponse(200, { role, isNewToPlatform:isNewUser, accessToken, refreshToken, redirectURL }, "Login successful"));
+    .json(new ApiResponse(200, { role, isNewToPlatform: isNewUser, accessToken, refreshToken, redirectURL }, "Login successful"));
 });
 
 // Logout
@@ -384,12 +384,9 @@ const switchRole = asyncHandler(async (request, response) => {
 
     // Find profiles
     const [businessProfile, userProfile] = await Promise.all([
-        BusinessProfile.findOne({ ownerUserId:userId }).lean(),
-        UserProfile.findOne({ userId }).lean()
-    ]);
-
-    // Payload based on role
-    const profilePayload = user.role === "user" ? userProfile : businessProfile;    
+        BusinessProfile.findOne({ ownerUserId: userId }).select("_id").lean(),
+        UserProfile.findOne({ userId }).select("_id").lean()
+    ]);   
 
     // Generate new token with updated role
     const accessToken = generateAccessToken({ 
@@ -408,7 +405,7 @@ const switchRole = asyncHandler(async (request, response) => {
     // Response
     return response.status(200)
     .cookie("accessToken", accessToken, cookieOptions)
-    .json(new ApiResponse(200, { profilePayload, accessToken, redirectURL }, `Role has changed to ${role}`));
+    .json(new ApiResponse(200, { accessToken, redirectURL }, `Role has changed to ${role}`));
 });
 
 // Forgot password

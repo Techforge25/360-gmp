@@ -16,7 +16,8 @@ const validate = require("../utils/validate");
 const { updateUserContactInfoValidationSchema, updateEducationValidationSchema, 
 addWorkExperienceValidationSchema, updateJobPreferencesValidationSchema, 
 userSocialLinkValidationSchema, updateUserProfileBasicInfoValidator, 
-updateUserProfileLogoValidator} = require("../validations/userProfile");
+updateUserProfileLogoValidator,
+updateUserProfileBannerValidator} = require("../validations/userProfile");
 const { createUserProfileSchema } = require("../validations/userProfile");
 const fs = require("fs");
 const path = require("path");
@@ -162,16 +163,15 @@ const updateUserProfileLogo = asyncHandler(async (request, response) => {
 const updateUserProfileBanner = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
-    // Get payload
-    const { banner } = request.body || {};
-    if(!banner) throw new ApiError(400, "User profile banner is required");
+    // Get validated payload
+    const { banner } = validate(request.body, updateUserProfileBannerValidator) || {}; 
 
     // Update banner
     const userProfile = await UserProfile.findOneAndUpdate({ userId }, { banner }, { new:true });
     if(!userProfile) throw new ApiError(404, "User profile not found");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { banner:userProfile.banner }, "User banner has been updated!"));
+    return response.status(200).json(new ApiResponse(200, { banner: userProfile.banner }, "User banner has been updated!"));
 });
 
 // Update user profile (Resume)

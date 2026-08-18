@@ -120,6 +120,11 @@ const updateUserProfileLogoValidator = joi.object({
     logo: joi.string().trim().uri().required().label("Logo")
 });
 
+// Update user profile banner validator
+const updateUserProfileBannerValidator = joi.object({
+    banner: joi.string().trim().uri().required().label("Banner")
+});
+
 module.exports = { createUserProfileSchema, updateUserContactInfoValidationSchema, updateEducationValidationSchema, 
 addWorkExperienceValidationSchema, updateJobPreferencesValidationSchema, userSocialLinkValidationSchema, 
-updateUserProfileBasicInfoValidator, updateUserProfileLogoValidator };
+updateUserProfileBasicInfoValidator, updateUserProfileLogoValidator, updateUserProfileBannerValidator };

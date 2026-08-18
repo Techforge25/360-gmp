@@ -22,6 +22,9 @@ const fetchDashboardStats = asyncHandler(async (request, response) => {
     const [[platformRevenue], totalUserProfiles, totalBusinessProfiles] = await Promise.all([
         // Platform revvenue
         SubscriptionHistory.aggregate([
+            // Match
+            { $match: { status: { $in: ["paid", "canceled"] } } },
+
             // Group by invoiceId
             {
                 $group: {

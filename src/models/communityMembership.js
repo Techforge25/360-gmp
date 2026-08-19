@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
 // Schema
 const communityMembershipSchema = new Schema({
@@ -41,6 +42,9 @@ const communityMembershipSchema = new Schema({
 // Indexes - Prevent duplicate memberships
 communityMembershipSchema.index({ communityId: 1, memberId: 1 }, { unique: true });
 communityMembershipSchema.index({ status: 1 });
+
+// Add pagination plugin
+communityMembershipSchema.plugin(aggregatePaginate);
 
 // Model
 const CommunityMembership = model("CommunityMembership", communityMembershipSchema);

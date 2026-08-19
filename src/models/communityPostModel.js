@@ -1,4 +1,5 @@
 const { Schema, model } = require("mongoose");
+const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
 // Schema
 const communityPostSchema = new Schema({
@@ -73,6 +74,8 @@ const communityPostSchema = new Schema({
 // Indexes
 communityPostSchema.index({ communityId: 1, createdAt: -1 });
 communityPostSchema.index({ authorUserProfileId: 1 });
+
+communityPostSchema.plugin(aggregatePaginate);
 
 // Model
 const CommunityPost = model("CommunityPost", communityPostSchema);

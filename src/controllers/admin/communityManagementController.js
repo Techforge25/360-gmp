@@ -6,6 +6,8 @@ const ApiError = require("../../utils/ApiError");
 const asyncHandler = require("../../utils/asyncHandler");
 const Report = require("../../models/reportModel");
 const { emptyList } = require("../../constants");
+const { isValidObjectId } = require("mongoose");
+const convertToMongoId = require("../../utils/convertToMongoId");
 
 // Initiator
 const communityManagementInitiator = asyncHandler(async (request, response) => {
@@ -72,7 +74,7 @@ const fetchCommunities = asyncHandler(async (request, response) => {
         // Unwind
         { $unwind: { path: "$creator", preserveNullAndEmptyArrays: true } },
 
-        // Add fields
+        // Add member count field
         {
             $addFields: {
                 membersCount: { $size: "$membership" }
@@ -101,4 +103,72 @@ const fetchCommunities = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, communities, "Communities have been fetched"));
 });
 
-module.exports = { communityManagementInitiator, fetchCommunityStats, fetchCommunities };
+// View community
+const viewCommunity = asyncHandler(async (request, response) => {
+    // Validate ID
+    const { communityId } = request.params;
+    if(!isValidObjectId(communityId)) throw new ApiError(400, "Invalid Community ID");
+
+    // Fetch
+    const [community] = await Community.aggregate([
+        // Match
+        { $match: { _id: convertToMongoId(communityId) } },
+
+        // Lookup business profile
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "businessId",
+                foreignField: "_id",
+                as: "creator",
+                pipeline: [{ $project: { ownerName: 1, companyName: 1, logo: 1, createdAt: 1,  } }]
+            }
+        },   
+        
+        // Lookup community membership
+        {
+            $lookup: {
+                from: "communitymemberships",
+                localField: "_id",
+                foreignField: "communityId",
+                as: "membership",
+                pipeline:[
+                    { $match: { status: "approved" } }
+                ]
+            }
+        },        
+
+        // Unwind
+        { $unwind: { path: "$creator", preserveNullAndEmptyArrays: true } },
+        
+        // Add member count field
+        {
+            $addFields: {
+                membersCount: { $size: "$membership" }
+            }
+        },        
+
+        // Projection
+        {
+            $project: {
+                name: 1,
+                profileImage: 1,
+                description: 1,
+                status: 1,
+                type: 1,
+                purpose: 1,
+                category: 1,
+                membersCount: 1,
+                createdAt: 1,
+                creator: 1
+            }
+        }
+    ]);
+    if(!community) throw new ApiError(404, "Community not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, community, "Community has been fetched"));
+});
+
+module.exports = { communityManagementInitiator, fetchCommunityStats, fetchCommunities, 
+viewCommunity };

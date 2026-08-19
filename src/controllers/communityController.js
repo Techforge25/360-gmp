@@ -175,12 +175,13 @@ const getCommunityById = asyncHandler(async (request, response) => {
     });
 
     // Replace actual member count to exclude owner
-    const memberCount = Number(community.memberCount) - 1;
-    delete community.memberCount;
+    // const memberCount = Number(community.memberCount) - 1;
+    // delete community.memberCount;
 
     // Prepare payload
     const payload = { 
-        community: { ...community, memberCount } , 
+        // community: { ...community, memberCount } , 
+        community, 
         postCount, 
         isMember, 
         membershipStatus, 

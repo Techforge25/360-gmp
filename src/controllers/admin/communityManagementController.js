@@ -170,5 +170,23 @@ const viewCommunity = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, community, "Community has been fetched"));
 });
 
+// Fetch community members
+const fetchCommunityMembers = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10 } = request.query;
+
+    // Validate ID
+    const { communityId } = request.params;
+    if(!isValidObjectId(communityId)) throw new ApiError(400, "Invalid Community ID");
+
+    // Find community
+    const members = await CommunityMembership.aggregatePaginate([
+
+    ], { page, limit });
+    if(!members.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No "))
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Community members have been fetched"));
+});
+
 module.exports = { communityManagementInitiator, fetchCommunityStats, fetchCommunities, 
-viewCommunity };
+viewCommunity, fetchCommunityMembers };

@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const { adminAuthentication, adminAuthorization, grantAccessTo } = require("../../middlewares/adminAuth");
 const { communityManagementInitiator, fetchCommunityStats, 
-fetchCommunities, viewCommunity } = require("../../controllers/admin/communityManagementController");
+fetchCommunities, viewCommunity, fetchCommunityMembers } = require("../../controllers/admin/communityManagementController");
 
 // Router instance
 const communityManagementRouter = Router();
@@ -20,5 +20,8 @@ communityManagementRouter.route("/").get(fetchCommunities);
 
 // View community
 communityManagementRouter.route("/:communityId").get(viewCommunity);
+
+// Fetch community members
+communityManagementRouter.route("/:communityId/members").get(fetchCommunityMembers);
 
 module.exports = communityManagementRouter;

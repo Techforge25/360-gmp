@@ -68,7 +68,7 @@ const communityPostSchema = new Schema({
 
     // Other fields added by another Dev
     images: { type: [String], default: [] },
-    docId: { type:String },
+    docId: { type: String },
 }, { timestamps: true });
 
 // Indexes

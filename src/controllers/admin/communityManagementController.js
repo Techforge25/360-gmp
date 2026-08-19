@@ -256,7 +256,31 @@ const fetchCommunityPosts = asyncHandler(async (request, response) => {
         // Match
         { $match: { communityId: convertToMongoId(communityId) } }, 
         
-        
+        // Lookup business profile
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "authorId",
+                foreignField: "_id",
+                as: "businessProfile",
+                pipeline:[{ $project: { _id: 0, name: "$ownerName", logo: 1 } }]
+            }
+        },
+
+        // Lookup user profile
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "authorId",
+                foreignField: "_id",
+                as: "userProfile",
+                pipeline:[{ $project: { _id: 0, name: "$fullName", logo: 1 } }]
+            }
+        },        
+
+        // Unwind
+        { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: "$userProfile", preserveNullAndEmptyArrays: true } },         
         
         // Sort
         { $sort: { createdAt: -1 } },
@@ -266,6 +290,13 @@ const fetchCommunityPosts = asyncHandler(async (request, response) => {
             $project: {
                 type: 1,
                 content: 1,
+                postedBy:{
+                    $cond: [
+                        { $eq: ["$authorModel", "UserProfile"] },
+                        "$userProfile",
+                        "$businessProfile"
+                    ]
+                },
                 file: {
                     $cond: [
                         { $eq: ["$type", "file"] },

@@ -172,7 +172,7 @@ const viewCommunity = asyncHandler(async (request, response) => {
 
 // Fetch community members
 const fetchCommunityMembers = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10 } = request.query;
+    const { page = 1, limit = 10, search = "" } = request.query;
 
     // Validate ID
     const { communityId } = request.params;
@@ -180,12 +180,75 @@ const fetchCommunityMembers = asyncHandler(async (request, response) => {
 
     // Find community
     const members = await CommunityMembership.aggregatePaginate([
+        // Match
+        { $match: { communityId: convertToMongoId(communityId) } },
 
+        // Lookup business profile
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "memberId",
+                foreignField: "_id",
+                as: "businessProfile",
+                pipeline: [{ $project: { ownerName: 1, logo: 1 } }]
+            }
+        },   
+        
+        // Lookup user profile
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "memberId",
+                foreignField: "_id",
+                as: "userProfile",
+                pipeline: [{ $project: { fullName: 1, logo: 1 } }]
+            }
+        },         
+        
+        // Unwind
+        { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: "$userProfile", preserveNullAndEmptyArrays: true } }, 
+        
+        // Search by business owner name or user's full name
+        ...(search ? [{ 
+            $match: {
+                $or: [
+                    { 'businessProfile.ownerName': { $regex: search, $options: "i" } },
+                    { 'userProfile.fullName': { $regex: search, $options: "i" } },
+                ]
+            }           
+        }] : []),
+
+        // Sort
+        { $sort: { joinedAt: -1 } },
+
+        // Projection
+        {
+            $project: {
+                role: 1,
+                joinedAt: 1,
+                memberModel: 1,
+                userProfile: {
+                    $cond: [
+                        { $eq: ["$memberModel", "UserProfile"] },
+                        "$userProfile",
+                        "$$REMOVE"
+                    ]
+                },
+                businessProfile: {
+                    $cond: [
+                        { $eq: ["$memberModel", "BusinessProfile"] },
+                        "$businessProfile",
+                        "$$REMOVE"
+                    ]
+                }
+            }
+        }
     ], { page, limit });
-    if(!members.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No "))
+    if(!members.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No community members found"));
 
     // Response
-    return response.status(200).json(new ApiResponse(200, null, "Community members have been fetched"));
+    return response.status(200).json(new ApiResponse(200, members, "Community members have been fetched"));
 });
 
 module.exports = { communityManagementInitiator, fetchCommunityStats, fetchCommunities, 

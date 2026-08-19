@@ -178,7 +178,7 @@ const fetchCommunityMembers = asyncHandler(async (request, response) => {
     const { communityId } = request.params;
     if(!isValidObjectId(communityId)) throw new ApiError(400, "Invalid Community ID");
 
-    // Find community
+    // Fetch
     const members = await CommunityMembership.aggregatePaginate([
         // Match
         { $match: { communityId: convertToMongoId(communityId) } },
@@ -190,7 +190,7 @@ const fetchCommunityMembers = asyncHandler(async (request, response) => {
                 localField: "memberId",
                 foreignField: "_id",
                 as: "businessProfile",
-                pipeline: [{ $project: { ownerName: 1, logo: 1 } }]
+                pipeline: [{ $project: { _id: 0, name: "$ownerName", logo: 1 } }]
             }
         },   
         
@@ -201,7 +201,7 @@ const fetchCommunityMembers = asyncHandler(async (request, response) => {
                 localField: "memberId",
                 foreignField: "_id",
                 as: "userProfile",
-                pipeline: [{ $project: { fullName: 1, logo: 1 } }]
+                pipeline: [{ $project: { _id: 0, name: "$fullName", logo: 1 } }]
             }
         },         
         
@@ -213,8 +213,8 @@ const fetchCommunityMembers = asyncHandler(async (request, response) => {
         ...(search ? [{ 
             $match: {
                 $or: [
-                    { 'businessProfile.ownerName': { $regex: search, $options: "i" } },
-                    { 'userProfile.fullName': { $regex: search, $options: "i" } },
+                    { 'businessProfile.name': { $regex: search, $options: "i" } },
+                    { 'userProfile.name': { $regex: search, $options: "i" } },
                 ]
             }           
         }] : []),
@@ -227,19 +227,11 @@ const fetchCommunityMembers = asyncHandler(async (request, response) => {
             $project: {
                 role: 1,
                 joinedAt: 1,
-                memberModel: 1,
-                userProfile: {
+                member: {
                     $cond: [
                         { $eq: ["$memberModel", "UserProfile"] },
                         "$userProfile",
-                        "$$REMOVE"
-                    ]
-                },
-                businessProfile: {
-                    $cond: [
-                        { $eq: ["$memberModel", "BusinessProfile"] },
-                        "$businessProfile",
-                        "$$REMOVE"
+                        "$businessProfile"
                     ]
                 }
             }
@@ -251,5 +243,60 @@ const fetchCommunityMembers = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, members, "Community members have been fetched"));
 });
 
+// Fetch community posts
+const fetchCommunityPosts = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10 } = request.query;
+
+    // Validate ID
+    const { communityId } = request.params;
+    if(!isValidObjectId(communityId)) throw new ApiError(400, "Invalid Community ID");
+
+    // Fetch
+    const posts = await CommunityPost.aggregatePaginate([
+        // Match
+        { $match: { communityId: convertToMongoId(communityId) } }, 
+        
+        
+        
+        // Sort
+        { $sort: { createdAt: -1 } },
+        
+        // Projection
+        {
+            $project: {
+                type: 1,
+                content: 1,
+                file: {
+                    $cond: [
+                        { $eq: ["$type", "file"] },
+                        "$file",
+                        "$$REMOVE"
+                    ]                    
+                },
+                event: {
+                    $cond: [
+                        { $eq: ["$type", "event"] },
+                        "$event",
+                        "$$REMOVE"
+                    ]                     
+                },
+                poll: {
+                    $cond: [
+                        { $eq: ["$type", "poll"] },
+                        "$poll",
+                        "$$REMOVE"
+                    ]                      
+                },
+                images: 1,
+                createdAt: 1
+            }
+        }
+    ], { page, limit });
+    if(!posts.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No community posts found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, posts, "Community posts have been fetched"));
+});
+
 module.exports = { communityManagementInitiator, fetchCommunityStats, fetchCommunities, 
-viewCommunity, fetchCommunityMembers };
+viewCommunity, fetchCommunityMembers, fetchCommunityPosts };

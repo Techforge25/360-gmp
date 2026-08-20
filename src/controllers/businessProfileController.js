@@ -471,7 +471,7 @@ const fetchBusinessCommunities = asyncHandler(async (request, response) => {
     const options = {
         page: Number(page),
         limit: Number(limit),
-        select: "-__v -updatedAt -postingPermissions -colorHashcode -rules -industry -purpose -bannerTagLine",
+        select: "-__v -updatedAt -colorHashcode -rules -purpose -bannerTagLine",
         sort:{ createdAt:-1 },
     };
 

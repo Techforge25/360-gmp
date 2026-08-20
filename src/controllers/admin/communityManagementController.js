@@ -448,7 +448,7 @@ const suspendCommunity = asyncHandler(async (request, response) => {
     await sendNotification({
         type: "BusinessProfile",
         title: `Community Suspension (${community.name})`,
-        content: `Your community ${community.name} has been suspended`,
+        content: `Your community "${community.name}" has been suspended`,
         userId: community.businessId.ownerUserId,
         io: request.app.get("io")
     });
@@ -482,7 +482,7 @@ const activateCommunity = asyncHandler(async (request, response) => {
     await sendNotification({
         type: "BusinessProfile",
         title: `Community Activation (${community.name})`,
-        content: `Your community ${community.name} has been re-actived`,
+        content: `Your community "${community.name}" has been re-actived`,
         userId: community.businessId.ownerUserId,
         io: request.app.get("io")
     });

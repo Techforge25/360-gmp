@@ -169,15 +169,26 @@ const viewCommunity = asyncHandler(async (request, response) => {
                     { $match: { status: "approved" } }
                 ]
             }
-        },        
+        },   
+        
+        // Lookup community warnings
+        {
+            $lookup: {
+                from: "communitywarnings",
+                localField: "_id",
+                foreignField: "communityId",
+                as: "communitywarnings"
+            }
+        },         
 
         // Unwind
         { $unwind: { path: "$creator", preserveNullAndEmptyArrays: true } },
         
-        // Add member count field
+        // Add member count and warning count fields
         {
             $addFields: {
-                membersCount: { $size: "$membership" }
+                membersCount: { $size: "$membership" },
+                warningsCount: { $size: "$communitywarnings" }
             }
         },        
 
@@ -192,6 +203,7 @@ const viewCommunity = asyncHandler(async (request, response) => {
                 purpose: 1,
                 category: 1,
                 membersCount: 1,
+                warningsCount: 1,
                 createdAt: 1,
                 creator: 1
             }

@@ -27,7 +27,6 @@ const createCommunitySchema = Joi.object({
     rules: Joi.string().max(2000).trim().allow("", null).label("Rules"),
     coverImage: Joi.string().trim().optional().uri().label("Cover image"),
     profileImage: Joi.string().trim().optional().uri().label("Community image"),
-    industry: Joi.string().pattern(alphaNumericPattern).allow("", null).label("Industry"),
     region: Joi.string().pattern(addressPattern).allow("", null).label("Region"),
 });
 

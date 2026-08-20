@@ -65,7 +65,7 @@ const createCommunity = asyncHandler(async (request, response) => {
 // Get All Communities (with pagination and filters)
 const getAllCommunities = asyncHandler(async (request, response) => {
     const userId = convertToMongoId(request.user._id);
-    const { businessId, type, status, category, page = 1, limit = 20, search = "", industry, region } = request.query;
+    const { businessId, type, status, category, page = 1, limit = 20, search = "", region } = request.query;
 
     // Base filter
     const filter = {};
@@ -75,7 +75,6 @@ const getAllCommunities = asyncHandler(async (request, response) => {
 
     // Searches
     if(search) filter.name = { $regex: search, $options: "i" };
-    if(industry) filter.industry = { $regex:industry, $options:"i" };
     if(region) filter.region = { $regex:region, $options:"i" };
     if(businessId) filter.businessId = convertToMongoId(businessId);
     if(type) filter.type = type;
@@ -574,7 +573,6 @@ const fetchSuggestedCommunities = asyncHandler(async (request, response) => {
             { category: { $regex: k, $options: "i" } },
             { tags: { $regex: k, $options: "i" } },
             { description: { $regex: k, $options: "i" } },
-            { industry: { $regex: k, $options: "i" } }
         );
     });
 

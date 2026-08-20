@@ -12,8 +12,6 @@ const communitySchema = new Schema({
     description: { type:String, trim:true },
     purpose: { type:String, trim:true },
     industry:{ type:String, trim:true },
-    region:{ type:String },
-    tags: { type: [String], default:[] },
     rules: { type: String, trim: true },
 
     // Media settings

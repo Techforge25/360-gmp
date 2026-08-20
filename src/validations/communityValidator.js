@@ -5,6 +5,10 @@ const alphaNumericPattern = /^[a-zA-Z0-9 -]*$/;
 const addressPattern = /^[a-zA-Z0-9 -,]*$/;
 const customPattern = /^[a-zA-Z0-9 \-.,\n\r]*$/;
 
+// Allowed community categories
+const allowedCommunityCategories = ["Manufacturer", "Distributor", "Wholesaler", "Retailer", 
+"Service Provider", "Consultant", "Franchise", "Others"];
+
 // Create Community schema
 const createCommunitySchema = Joi.object({
     name: Joi.string().pattern(alphaNumericPattern).min(3).max(100).required().trim().messages({
@@ -13,8 +17,8 @@ const createCommunitySchema = Joi.object({
         "string.max": "Community name must not exceed 100 characters",
         "string.pattern.base": "Community name can only contain letters, numbers, spaces, and hyphens"
     }).label("Community name"),
-    category: Joi.string().pattern(alphaNumericPattern).trim().allow("", null).label("Category"),
-    type: Joi.string().valid("public", "private", "featured").default("public").messages({
+    category: Joi.string().trim().valid(...allowedCommunityCategories).label("Category"),
+    type: Joi.string().valid("public", "private").default("public").messages({
         "any.only": "Community type must be one of: public, private, featured"
     }).label("Type"),
     description: Joi.string().max(1000).trim().allow("", null).label("Description"),
@@ -34,9 +38,9 @@ const updateCommunitySchema = Joi.object({
         "string.max": "Community name must not exceed 100 characters",
         "string.pattern.base": "Community name can only contain letters, numbers, spaces, and hyphens"
     }).label("Community name"),
-    category: Joi.string().pattern(alphaNumericPattern).trim().allow("", null).label("Category"),
-    type: Joi.string().valid("public", "private", "featured").messages({
-        "any.only": "Community type must be one of: public, private, featured"
+    category: Joi.string().trim().valid(...allowedCommunityCategories).label("Category"),
+    type: Joi.string().valid("public", "private").messages({
+        "any.only": "Community type must be one of: public, private"
     }).label("Type"),
     description: Joi.string().max(1000).trim().allow("", null).label("Description"),
     purpose: Joi.string().max(2000).trim().allow("", null).label("Purpose"),

@@ -41,9 +41,6 @@ const communityPostSchema = new Schema({
         duration: { type:Date }, // Duration in (1 day, 2 days, 3 days, 1 week, 2 weeks)
     },
 
-    // Meta tags for mentioning fellows
-    tags: { type: String, trim: true },
-
     // Likes
     likes: [{
         userId: { type: Schema.Types.ObjectId, refPath: 'likes.onModel' },

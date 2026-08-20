@@ -11,42 +11,25 @@ const allowedCommunityCategories = ["Manufacturer", "Distributor", "Wholesaler",
 
 // Create Community schema
 const createCommunitySchema = Joi.object({
-    name: Joi.string().pattern(alphaNumericPattern).min(3).max(100).required().trim().messages({
-        "any.required": "Community name is required",
-        "string.min": "Community name must be at least 3 characters long",
-        "string.max": "Community name must not exceed 100 characters",
-        "string.pattern.base": "Community name can only contain letters, numbers, spaces, and hyphens"
-    }).label("Community name"),
+    name: Joi.string().pattern(alphaNumericPattern).min(3).max(100).trim().required().label("Community name"),
     category: Joi.string().trim().valid(...allowedCommunityCategories).label("Category"),
-    type: Joi.string().valid("public", "private").default("public").messages({
-        "any.only": "Community type must be one of: public, private, featured"
-    }).label("Type"),
-    description: Joi.string().max(1000).trim().allow("", null).label("Description"),
-    purpose: Joi.string().max(2000).trim().allow("", null).label("Purpose"),
-    tags: Joi.array().items(Joi.string().pattern(alphaNumericPattern).trim()).default([]).label("Tags"),
+    type: Joi.string().valid("public", "private").default("public").label("Type"),
+    description: Joi.string().max(200).trim().allow("", null).label("Description"),
+    purpose: Joi.string().max(1000).trim().allow("", null).label("Purpose"),
     rules: Joi.string().max(2000).trim().allow("", null).label("Rules"),
     coverImage: Joi.string().trim().optional().uri().label("Cover image"),
-    profileImage: Joi.string().trim().optional().uri().label("Community image"),
-    region: Joi.string().pattern(addressPattern).allow("", null).label("Region"),
+    profileImage: Joi.string().trim().optional().uri().label("Community image")
 });
 
-// Update Community schema (all fields optional)
+// Update community validator
 const updateCommunitySchema = Joi.object({
-    name: Joi.string().pattern(alphaNumericPattern).min(3).max(100).trim().messages({
-        "string.min": "Community name must be at least 3 characters long",
-        "string.max": "Community name must not exceed 100 characters",
-        "string.pattern.base": "Community name can only contain letters, numbers, spaces, and hyphens"
-    }).label("Community name"),
+    name: Joi.string().pattern(alphaNumericPattern).min(3).max(100).trim().required().label("Community name"),
     category: Joi.string().trim().valid(...allowedCommunityCategories).label("Category"),
-    description: Joi.string().max(1000).trim().allow("", null).label("Description"),
-    purpose: Joi.string().max(2000).trim().allow("", null).label("Purpose"),
-    tags: Joi.array().items(Joi.string().pattern(alphaNumericPattern).trim()).label("Tags"),
+    description: Joi.string().max(200).trim().allow("", null).label("Description"),
+    purpose: Joi.string().max(1000).trim().allow("", null).label("Purpose"),
     rules: Joi.string().max(2000).trim().allow("", null).label("Rules"),
     coverImage: Joi.string().trim().optional().uri().label("Cover image"),
-    profileImage: Joi.string().trim().optional().uri().label("Community image"),
-    status: Joi.string().valid("active", "inactive", "suspended").messages({
-        "any.only": "Status must be one of: active, inactive, suspended"
-    }).label("Status")
+    profileImage: Joi.string().trim().optional().uri().label("Community image")
 });
 
 // Join Community schema

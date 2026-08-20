@@ -409,8 +409,6 @@ const warnCommunityOwner = asyncHandler(async (request, response) => {
 
 // Suspend community
 const suspendCommunity = asyncHandler(async (request, response) => {
-    const adminId = request.admin._id;
-
     // Validate ID
     const { communityId } = request.params;
     if(!isValidObjectId(communityId)) throw new ApiError(400, "Invalid Community ID");   
@@ -444,9 +442,40 @@ const suspendCommunity = asyncHandler(async (request, response) => {
     });
 
     // Response
-    return response.status(201).json(new ApiResponse(201, null, "Warning has been issued to community owner"));
+    return response.status(200).json(new ApiResponse(200, null, "Community has been suspended"));
+});
+
+// Re-activate community
+const activateCommunity = asyncHandler(async (request, response) => {
+    // Validate ID
+    const { communityId } = request.params;
+    if(!isValidObjectId(communityId)) throw new ApiError(400, "Invalid Community ID");   
+
+    // Find community
+    const community = await Community.findById(communityId).select("name status")
+    .populate({ path: "businessId", select: "-_id ownerUserId" });
+
+    // Validate
+    if(!community) throw new ApiError(404, "Community not found");
+    if(community.status !== "suspended") throw new ApiError(400, "This community is already in active mode");
+
+    // Save to db
+    community.status = "active";
+    await community.save();
+
+    // Send notification
+    await sendNotification({
+        type: "BusinessProfile",
+        title: `Community Activation (${community.name})`,
+        content: `Your community ${community.name} has been re-actived`,
+        userId: community.businessId.ownerUserId,
+        io: request.app.get("io")
+    });
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Community has been re-activated"));
 });
 
 module.exports = { communityManagementInitiator, fetchCommunityStats, fetchCommunities, 
 viewCommunity, fetchCommunityMembers, fetchCommunityPosts, warnCommunityOwner,
-suspendCommunity };
+suspendCommunity, activateCommunity };

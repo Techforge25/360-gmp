@@ -2,7 +2,7 @@ const { Router } = require("express");
 const { adminAuthentication, adminAuthorization, grantAccessTo } = require("../../middlewares/adminAuth");
 const { communityManagementInitiator, fetchCommunityStats, fetchCommunities, 
 viewCommunity, fetchCommunityMembers, fetchCommunityPosts, warnCommunityOwner,
-suspendCommunity } = require("../../controllers/admin/communityManagementController");
+suspendCommunity, activateCommunity } = require("../../controllers/admin/communityManagementController");
 
 // Router instance
 const communityManagementRouter = Router();
@@ -33,5 +33,8 @@ communityManagementRouter.route("/:communityId/warn").post(warnCommunityOwner);
 
 // Suspend community
 communityManagementRouter.route("/:communityId/suspend").post(suspendCommunity);
+
+// Re-active community
+communityManagementRouter.route("/:communityId/activate").post(activateCommunity);
 
 module.exports = communityManagementRouter;

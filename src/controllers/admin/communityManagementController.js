@@ -1,6 +1,7 @@
 const Community = require("../../models/communityModel");
 const CommunityMembership = require("../../models/communityMembership");
 const CommunityPost = require("../../models/communityPostModel");
+const CommunityWarning = require("../../models/communityWarningModel");
 const ApiResponse = require("../../utils/ApiResponse");
 const ApiError = require("../../utils/ApiError");
 const asyncHandler = require("../../utils/asyncHandler");
@@ -10,7 +11,6 @@ const { isValidObjectId } = require("mongoose");
 const convertToMongoId = require("../../utils/convertToMongoId");
 const validate = require("../../utils/validate");
 const { warnCommunityOwnerValidator } = require("../../validations/communityManagementValidator");
-const CommunityWarning = require("../../models/communityWarningModel");
 const sendNotification = require("../../utils/sendNotification");
 
 // Allowed date filters
@@ -462,6 +462,9 @@ const activateCommunity = asyncHandler(async (request, response) => {
     // Save to db
     community.status = "active";
     await community.save();
+
+    // Delete warnings
+    await CommunityWarning.deleteMany({ communityId });
 
     // Send notification
     await sendNotification({

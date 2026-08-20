@@ -38,9 +38,6 @@ const updateCommunitySchema = Joi.object({
         "string.pattern.base": "Community name can only contain letters, numbers, spaces, and hyphens"
     }).label("Community name"),
     category: Joi.string().trim().valid(...allowedCommunityCategories).label("Category"),
-    type: Joi.string().valid("public", "private").messages({
-        "any.only": "Community type must be one of: public, private"
-    }).label("Type"),
     description: Joi.string().max(1000).trim().allow("", null).label("Description"),
     purpose: Joi.string().max(2000).trim().allow("", null).label("Purpose"),
     tags: Joi.array().items(Joi.string().pattern(alphaNumericPattern).trim()).label("Tags"),

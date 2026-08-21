@@ -70,24 +70,20 @@ const createCommunity = asyncHandler(async (request, response) => {
 // Get All Communities (with pagination and filters)
 const getAllCommunities = asyncHandler(async (request, response) => {
     const userId = convertToMongoId(request.user._id);
-    const { businessId, type, status, category, page = 1, limit = 20, search = "", region } = request.query;
+    const { businessId, type, status, category, page = 1, limit = 20, search = "" } = request.query;
 
     // Base filter
     const filter = {};
 
-    // Same parent profiles restriction
-    // if(String(userId) === String(community.businessId.ownerUserId)) isOwnCommunity = true;
-
     // Searches
     if(search) filter.name = { $regex: search, $options: "i" };
-    if(region) filter.region = { $regex:region, $options:"i" };
     if(businessId) filter.businessId = convertToMongoId(businessId);
     if(type) filter.type = type;
     if(status) filter.status = status;
     if(category) filter.category = category;
 
-    // Aggregation
-    const aggregation = Community.aggregate([
+    // Fetch
+    const communities = await Community.aggregatePaginate([
         // Match
         { $match: filter },
 
@@ -98,7 +94,7 @@ const getAllCommunities = asyncHandler(async (request, response) => {
                 localField: "businessId",
                 foreignField: "_id",
                 as: "businessId",
-                pipeline:[{ $project: { ownerUserId: 1, companyName: 1, businessType: 1, primaryIndustry: 1, logo: 1 } }]
+                pipeline:[{ $project: { companyName: 1, businessType: 1, primaryIndustry: 1, logo: 1 } }]
             }
         },
 
@@ -114,18 +110,22 @@ const getAllCommunities = asyncHandler(async (request, response) => {
         // Projection
         { 
             $project: { 
-                purpose:0, 
-                rules:0, 
-                status:0
-            } 
+                businessId: 1, 
+                name: 1, 
+                category: 1,
+                type: 1,
+                description: 1,
+                coverImage: 1,
+                profileImage: 1,
+                memberCount: 1,
+                createdAt: 1,
+                isOwnCommunity: 1
+            }             
         },
 
         // Sort
         { $sort:{ createdAt:-1 } }
-    ]);
-
-    // Execute query
-    const communities = await Community.aggregatePaginate(aggregation, { page, limit });
+    ], { page, limit });
     if(!communities.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Communites not found"));
 
     // Response

@@ -449,29 +449,31 @@ const updateCommunity = asyncHandler(async (request, response) => {
     // Get validated payload
     const { name, category, description, purpose, rules, coverImage, profileImage } = validate(updateCommunitySchema, request.body);
 
-    // Check authorization
+    // Check membership
     const membership = await CommunityMembership.findOne({ 
         communityId, 
         memberId: { $in: [userProfileId, businessProfileId] } 
     }).select("role");
+
+    // Check authorization
     if(!membership) throw new ApiError(403, "You are not a member of this community");
     if(!["owner", "admin"].includes(membership.role)) throw new ApiError(403, "Only community owner and admin can update community")
 
     // Update community
-    const updateCommunity = await Community.findByIdAndUpdate(
+    const community = await Community.findByIdAndUpdate(
         communityId,
         { $set: { name, category, description, purpose, rules, coverImage, profileImage } }
-    );
-    if(!updateCommunity) throw new ApiError(500, "Failed to update community");
+    ).populate({ path: "businessId", select: "ownerUserId" });
+    if(!community) throw new ApiError(500, "Failed to update community");
 
     // Send notification to business
-    // await sendNotification({
-    //     userId: community.businessId.ownerUserId,
-    //     title: "Community Updated",
-    //     content: "Your community settings has been updated",
-    //     type: "BusinessProfile",
-    //     io: request.app.get("io")        
-    // });      
+    await sendNotification({
+        userId: community.businessId.ownerUserId,
+        title: "Community Updated",
+        content: "Your community settings has been updated",
+        type: "BusinessProfile",
+        io: request.app.get("io")        
+    });      
 
     // Response
     return response.status(200).json(new ApiResponse(200, null, "Community updated successfully"));

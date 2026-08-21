@@ -26,11 +26,22 @@ const createCommunity = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const { businessProfileId } = request.user.profiles || {};
 
-    const { error, value } = createCommunitySchema.validate(request.body, { abortEarly: false });
-    if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
+    // Get validated payload
+    const { name, category, type, description, purpose, rules, 
+    coverImage, profileImage } = validate(createCommunitySchema, request.body);
 
     // Create community
-    const community = await Community.create({ ...value, businessId: businessProfileId });
+    const community = await Community.create({ 
+        businessId: businessProfileId, 
+        name, 
+        category, 
+        type, 
+        description, 
+        purpose, 
+        rules, 
+        coverImage, 
+        profileImage 
+    });
     if(!community) throw new ApiError(500, "Failed to create community");
 
     // Create membership for owner
@@ -43,24 +54,17 @@ const createCommunity = asyncHandler(async (request, response) => {
     });
     if(!membership) throw new ApiError(500, "Failed to create community membership");
 
-    // Update member count
-    community.memberCount = 1;
-    await community.save();
-
-    // Populate business details
-    await community.populate("businessId", "companyName businessType primaryIndustry logo");
-
     // Send notification to business
     await sendNotification({
         userId,
         title: "Community Creation",
-        content: "You have created a new community",
+        content: `You have created a new community - "${community.name}"`,
         type: "BusinessProfile",
         io: request.app.get("io")        
     });      
 
     // Response
-    return response.status(201).json(new ApiResponse(201, community, "Community created successfully"));
+    return response.status(201).json(new ApiResponse(201, null, "Community has been created"));
 });
 
 // Get All Communities (with pagination and filters)

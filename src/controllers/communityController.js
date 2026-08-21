@@ -12,6 +12,7 @@ const { isValidObjectId } = require("mongoose");
 const CommunityPost = require("../models/communityPostModel");
 const convertToMongoId = require("../utils/convertToMongoId");
 const sendNotification = require("../utils/sendNotification");
+const validate = require("../utils/validate");
 
 // Helper function to get userProfileId from userId
 const getUserProfileId = async (userId) => {
@@ -111,8 +112,7 @@ const getAllCommunities = asyncHandler(async (request, response) => {
             $project: { 
                 purpose:0, 
                 rules:0, 
-                status:0, 
-                tags:0,
+                status:0
             } 
         },
 
@@ -439,48 +439,42 @@ const getCommunityMembers = asyncHandler(async (request, response) => {
 
 // Update Community
 const updateCommunity = asyncHandler(async (request, response) => {
-    const { id } = request.params;
+    const userId = request.user._id;
+    const { userProfileId, businessProfileId } = request.user.profiles || {};
 
-    const { error, value } = updateCommunitySchema.validate(request.body, { abortEarly: false });
-    if(error) throw new ApiError(400, error.details.map(err => err.message).join(", "));
+    // Validate ID
+    const { communityId } = request.params;
+    if(!isValidObjectId(communityId)) throw new ApiError(400, "Invalid Community ID");
 
-    // Get community
-    const community = await Community.findById(id)
-    .populate({ path:"businessId", select:"ownerUserId" });
-    if(!community) throw new ApiError(404, "Community not found");
+    // Get validated payload
+    const { name, category, description, purpose, rules, coverImage, profileImage } = validate(updateCommunitySchema, request.body);
 
-    // Verify user is business owner or admin
-    const businessProfile = await BusinessProfile.findById(community.businessId._id);
-    if(businessProfile.ownerUserId.toString() !== request.user._id.toString()) {
-        const userProfileId = await getUserProfileId(request.user._id);
-        const userMembership = await CommunityMembership.findOne({
-            communityId: id,
-            userProfileId: userProfileId,
-            role: { $in: ["owner", "admin"] }
-        });
-        if(!userMembership) {
-            throw new ApiError(403, "Only community owner/admins can update community");
-        }
-    }
+    // Check authorization
+    const membership = await CommunityMembership.findOne({ 
+        communityId, 
+        memberId: { $in: [userProfileId, businessProfileId] } 
+    }).select("role");
+    if(!membership) throw new ApiError(403, "You are not a member of this community");
+    if(!["owner", "admin"].includes(membership.role)) throw new ApiError(403, "Only community owner and admin can update community")
 
     // Update community
-    const updatedCommunity = await Community.findByIdAndUpdate(
-        id,
-        { $set: value },
-        { new: true, runValidators: true }
-    ).populate("businessId", "companyName businessType primaryIndustry logo");
+    const updateCommunity = await Community.findByIdAndUpdate(
+        communityId,
+        { $set: { name, category, description, purpose, rules, coverImage, profileImage } }
+    );
+    if(!updateCommunity) throw new ApiError(500, "Failed to update community");
 
     // Send notification to business
-    await sendNotification({
-        userId: community.businessId.ownerUserId,
-        title: "Community Updated",
-        content: "Your community settings has been updated",
-        type: "BusinessProfile",
-        io: request.app.get("io")        
-    });      
+    // await sendNotification({
+    //     userId: community.businessId.ownerUserId,
+    //     title: "Community Updated",
+    //     content: "Your community settings has been updated",
+    //     type: "BusinessProfile",
+    //     io: request.app.get("io")        
+    // });      
 
     // Response
-    return response.status(200).json(new ApiResponse(200, updatedCommunity, "Community updated successfully"));
+    return response.status(200).json(new ApiResponse(200, null, "Community updated successfully"));
 });
 
 // Delete Community
@@ -571,7 +565,6 @@ const fetchSuggestedCommunities = asyncHandler(async (request, response) => {
         orConditions.push(
             { name: { $regex: k, $options: "i" } },
             { category: { $regex: k, $options: "i" } },
-            { tags: { $regex: k, $options: "i" } },
             { description: { $regex: k, $options: "i" } },
         );
     });

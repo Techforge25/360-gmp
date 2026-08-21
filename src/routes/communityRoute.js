@@ -17,7 +17,7 @@ communityRouter.route("/").get(authentication, getAllCommunities);
 communityRouter.route("/:id").get(authentication, getCommunityById);
 
 // Update community (owner/admin only)
-communityRouter.route("/:id").put(authentication, updateCommunity);
+communityRouter.route("/:communityId").put(authentication, updateCommunity);
 
 // Delete community (owner only)
 communityRouter.route("/:id").delete(authentication, authorization(["business"]), deleteCommunity);

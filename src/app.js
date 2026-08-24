@@ -26,10 +26,6 @@ app.use("/public", express.static(path.resolve("public")));
 app.use(compression());
 app.use(morgan("dev"));
 
-app.use((request, response) => {
-    
-});
-
 // Import Routes
 const authRouter = require("./routes/auth");
 const planRouter = require("./routes/plan");

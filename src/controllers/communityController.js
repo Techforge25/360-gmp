@@ -93,24 +93,24 @@ const getAllCommunities = asyncHandler(async (request, response) => {
                 from: "businessprofiles",
                 localField: "businessId",
                 foreignField: "_id",
-                as: "businessId",
+                as: "businessProfile",
                 pipeline:[{ $project: { companyName: 1, businessType: 1, primaryIndustry: 1, logo: 1 } }]
             }
         },
 
-        { $unwind:"$businessId" },
+        { $unwind:"$businessProfile" },
 
         // Add a key to determine own community
         {
             $addFields:{
-                isOwnCommunity: { $eq:["$businessId.ownerUserId", userId] }
+                isOwnCommunity: { $eq:["$businessProfile.ownerUserId", userId] }
             }
         },
 
         // Projection
         { 
             $project: { 
-                businessId: 1, 
+                businessProfile: 1, 
                 name: 1, 
                 category: 1,
                 type: 1,

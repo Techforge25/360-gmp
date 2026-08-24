@@ -116,17 +116,28 @@ const getAllCommunities = asyncHandler(async (request, response) => {
             }
         },        
 
+        // // Unwind
+        // { $unwind: { path: "$membership", preserveNullAndEmptyArrays: true } },
+        // { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
+
+        // // Add a key to determine membership and own community flag
+        // {
+        //     $addFields:{
+        //         isMember: { $eq: ["$membership.memberId", convertToMongoId(memberId)] },
+        //         isOwnCommunity: { $eq: ["$businessProfile.ownerUserId", convertToMongoId(userId)] }
+        //     }
+        // },
+
         // Unwind
-        { $unwind: { path: "$membership", preserveNullAndEmptyArrays: true } },
         { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
 
         // Add a key to determine membership and own community flag
         {
-            $addFields:{
-                isMember: { $eq: ["$membership.memberId", convertToMongoId(memberId)] },
+            $addFields: {
+                isMember: { $in: [convertToMongoId(memberId), "$membership.memberId"] },
                 isOwnCommunity: { $eq: ["$businessProfile.ownerUserId", convertToMongoId(userId)] }
             }
-        },
+        },       
 
         // Projection
         { 

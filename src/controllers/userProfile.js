@@ -147,7 +147,7 @@ const updateUserProfileLogo = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Get validated payload
-    const { logo } = validate(request.body, updateUserProfileLogoValidator) || {};
+    const { logo } = validate(updateUserProfileLogoValidator, request.body) || {};
 
     // Update logo
     const userProfile = await UserProfile.findOneAndUpdate({ userId }, { logo }, { new:true });
@@ -162,7 +162,7 @@ const updateUserProfileBanner = asyncHandler(async (request, response) => {
     const userId = request.user._id;
 
     // Get validated payload
-    const { banner } = validate(request.body, updateUserProfileBannerValidator) || {}; 
+    const { banner } = validate(updateUserProfileBannerValidator, request.body) || {}; 
 
     // Update banner
     const userProfile = await UserProfile.findOneAndUpdate({ userId }, { banner }, { new:true });

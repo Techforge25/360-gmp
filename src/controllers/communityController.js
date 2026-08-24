@@ -69,7 +69,9 @@ const createCommunity = asyncHandler(async (request, response) => {
 
 // Get All Communities (with pagination and filters)
 const getAllCommunities = asyncHandler(async (request, response) => {
-    const userId = convertToMongoId(request.user._id);
+    const { _id: userId, role } = request.user;
+
+    // Get filters
     const { businessId, type, status, category, page = 1, limit = 20, search = "" } = request.query;
 
     // Base filter
@@ -82,28 +84,47 @@ const getAllCommunities = asyncHandler(async (request, response) => {
     if(status) filter.status = status;
     if(category) filter.category = category;
 
+    // Get current logged-in profile ID
+    let memberId = null;
+    if(role === "user") memberId = request.user.profiles.userProfileId;
+    if(role === "business") memberId = request.user.profiles.businessProfileId;
+
     // Fetch
     const communities = await Community.aggregatePaginate([
         // Match
         { $match: filter },
 
-        // Lookup inside business profile
+        // Lookup membership
         {
-            $lookup:{
+            $lookup: {
+                from: "communitymemberships",
+                localField: "_id",
+                foreignField: "communityId",
+                as: "membership",
+                pipeline: [{ $project: { _id: 0, memberId: 1 } }]
+            }
+        },
+
+        // Lookup business profile
+        {
+            $lookup: {
                 from: "businessprofiles",
                 localField: "businessId",
                 foreignField: "_id",
                 as: "businessProfile",
                 pipeline:[{ $project: { ownerUserId: 1, companyName: 1, businessType: 1, primaryIndustry: 1, logo: 1 } }]
             }
-        },
+        },        
 
-        { $unwind:"$businessProfile" },
+        // Unwind
+        { $unwind: { path: "$membership", preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
 
-        // Add a key to determine own community
+        // Add a key to determine membership and own community flag
         {
             $addFields:{
-                isOwnCommunity: { $eq:["$businessProfile.ownerUserId", convertToMongoId(userId)] }
+                isMember: { $eq: ["$membership.memberId", convertToMongoId(memberId)] },
+                isOwnCommunity: { $eq: ["$businessProfile.ownerUserId", convertToMongoId(userId)] }
             }
         },
 
@@ -119,6 +140,7 @@ const getAllCommunities = asyncHandler(async (request, response) => {
                 profileImage: 1,
                 memberCount: 1,
                 createdAt: 1,
+                isMember: 1,
                 isOwnCommunity: 1
             }             
         },

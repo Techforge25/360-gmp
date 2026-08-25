@@ -101,7 +101,7 @@ const getAllCommunities = asyncHandler(async (request, response) => {
                 localField: "_id",
                 foreignField: "communityId",
                 as: "membership",
-                pipeline: [{ $project: { _id: 0, memberId: 1 } }]
+                pipeline: [{ $project: { _id: 0, memberId: 1, status: 1 } }]
             }
         },
 
@@ -119,11 +119,40 @@ const getAllCommunities = asyncHandler(async (request, response) => {
         // Unwind
         { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
 
-        // Add a key to determine membership and own community flag
+        // Add fields to determine membership, own community flag and total membership count for each community
         {
             $addFields: {
-                isMember: { $in: [convertToMongoId(memberId), "$membership.memberId"] },
-                isOwner: { $eq: ["$businessProfile.ownerUserId", convertToMongoId(userId)] }
+                isMember: {
+                    $gt: [
+                        {
+                            $size: {
+                                $filter: {
+                                    input: "$membership",
+                                    as: "member",
+                                    cond: {
+                                        $and: [
+                                            { $eq: ["$$member.memberId", convertToMongoId(memberId)] },
+                                            { $eq: ["$$member.status", "approved"] }
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        0
+                    ]
+                },
+
+                isOwner: { $eq: ["$businessProfile.ownerUserId", convertToMongoId(userId)] },
+
+                memberCount: {
+                    $size: {
+                        $filter: {
+                            input: "$membership",
+                            as: "member",
+                            cond: { $eq: ["$$member.status", "approved"] }
+                        }
+                    }
+                }
             }
         },       
 

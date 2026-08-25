@@ -523,46 +523,55 @@ const updateCommunity = asyncHandler(async (request, response) => {
     // Send notification to business
     await sendNotification({
         userId: community.businessId.ownerUserId,
-        title: "Community Updated",
+        title: `Community Updated - ${community.name}`,
         content: "Your community settings has been updated",
         type: "BusinessProfile",
         io: request.app.get("io")        
     });      
 
     // Response
-    return response.status(200).json(new ApiResponse(200, null, "Community updated successfully"));
+    return response.status(200).json(new ApiResponse(200, null, "Community has been updated"));
 });
 
 // Delete Community
 const deleteCommunity = asyncHandler(async (request, response) => {
     const userId = request.user._id;
     const { businessProfileId } = request.user.profiles || {};
-    const { id } = request.params;
+
+    // Validate ID
+    const { communityId } = request.params;
+    if(!isValidObjectId(communityId)) throw new ApiError(400, "Invalid Community ID");
 
     // Get community
-    const community = await Community.findById(id);
+    const community = await Community.findById(communityId);
     if(!community) throw new ApiError(404, "Community not found");
 
     // Verify user is business owner
     if(String(businessProfileId) !== String(community.businessId)) throw new ApiError(403, "Only business owner can delete the community");
 
-    // Delete all memberships
-    await CommunityMembership.deleteMany({ communityId: id });
+    // Execute parallel queries
+    await Promise.all([
+        // Delete all memberships
+        CommunityMembership.deleteMany({ communityId }),
 
-    // Delete community
-    await Community.findByIdAndDelete(id);
+        // Delete all community posts
+        CommunityPost.deleteMany({ communityId }),
+
+        // Delete community
+        Community.findByIdAndDelete(communityId)
+    ]);
 
     // Send notification to business
     await sendNotification({
         userId,
-        title: "Community Deletion",
+        title: `Community Deletion - ${community.name}`,
         content: "Your community has been deleted",
         type: "BusinessProfile",
         io: request.app.get("io")        
     });      
 
     // Response
-    return response.status(200).json(new ApiResponse(200, null, "Community deleted successfully"));
+    return response.status(200).json(new ApiResponse(200, null, "Community has been deleted"));
 });
 
 // Leave Community

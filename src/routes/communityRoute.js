@@ -17,10 +17,10 @@ communityRouter.route("/").get(authentication, getAllCommunities);
 communityRouter.route("/:id").get(authentication, getCommunityById);
 
 // Update community (owner/admin only)
-communityRouter.route("/:communityId").put(authentication, updateCommunity);
+communityRouter.route("/:communityId").put(authentication, authorization(["business", "user"]), updateCommunity);
 
 // Delete community (owner only)
-communityRouter.route("/:id").delete(authentication, authorization(["business"]), deleteCommunity);
+communityRouter.route("/:communityId").delete(authentication, authorization(["business"]), deleteCommunity);
 
 // Join community
 communityRouter.route("/:id/join").post(authentication, authorization(["user"]), joinCommunity);

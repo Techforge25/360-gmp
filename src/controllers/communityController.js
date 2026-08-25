@@ -116,18 +116,6 @@ const getAllCommunities = asyncHandler(async (request, response) => {
             }
         },        
 
-        // // Unwind
-        // { $unwind: { path: "$membership", preserveNullAndEmptyArrays: true } },
-        // { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
-
-        // // Add a key to determine membership and own community flag
-        // {
-        //     $addFields:{
-        //         isMember: { $eq: ["$membership.memberId", convertToMongoId(memberId)] },
-        //         isOwnCommunity: { $eq: ["$businessProfile.ownerUserId", convertToMongoId(userId)] }
-        //     }
-        // },
-
         // Unwind
         { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
 
@@ -135,7 +123,7 @@ const getAllCommunities = asyncHandler(async (request, response) => {
         {
             $addFields: {
                 isMember: { $in: [convertToMongoId(memberId), "$membership.memberId"] },
-                isOwnCommunity: { $eq: ["$businessProfile.ownerUserId", convertToMongoId(userId)] }
+                isOwner: { $eq: ["$businessProfile.ownerUserId", convertToMongoId(userId)] }
             }
         },       
 
@@ -152,7 +140,7 @@ const getAllCommunities = asyncHandler(async (request, response) => {
                 memberCount: 1,
                 createdAt: 1,
                 isMember: 1,
-                isOwnCommunity: 1
+                isOwner: 1
             }             
         },
 

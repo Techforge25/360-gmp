@@ -257,6 +257,7 @@ const joinCommunity = asyncHandler(async (request, response) => {
     const community = await Community.findById(id)
     .populate({ path:"businessId", select:"ownerUserId" });
     if(!community) throw new ApiError(404, "Community not found");
+    if(community.status === "suspended") throw new ApiError(403, "This community has been suspended");
 
     // Same parent restriction
     if(businessProfileId && String(businessProfileId) === String(community.businessId._id))
@@ -348,6 +349,7 @@ const approveMembership = asyncHandler(async (request, response) => {
     // Find community
     const community = await Community.findById(id);
     if(!community) throw new ApiError(404, "Community not found");
+    if(community.status === "suspended") throw new ApiError(403, "This community has been suspended");
 
     // Verify user is business owner or admin
     const businessProfile = await BusinessProfile.findById(community.businessId);
@@ -417,7 +419,10 @@ const getPendingRequests = asyncHandler(async (request, response) => {
 
     // Get community
     const community = await Community.findById(id);
+
+    // Validate
     if(!community) throw new ApiError(404, "Community not found");
+    if(community.status === "suspended") throw new ApiError(403, "This community has been suspended");
 
     // Verify user is business owner or admin
     const businessProfile = await BusinessProfile.findById(community.businessId);
@@ -466,7 +471,10 @@ const getCommunityMembers = asyncHandler(async (request, response) => {
 
     // Get community
     const community = await Community.findById(id);
+
+    // Validate
     if(!community) throw new ApiError(404, "Community not found");
+    if(community.status === "suspended") throw new ApiError(403, "This community has been suspended");
 
     // Pagination
     const pageNumber = Number.parseInt(page, 10);

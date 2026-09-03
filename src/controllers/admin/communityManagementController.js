@@ -87,7 +87,7 @@ const fetchCommunities = asyncHandler(async (request, response) => {
                 localField: "businessId",
                 foreignField: "_id",
                 as: "creator",
-                pipeline: [{ $project: { ownerName: 1 } }]
+                pipeline: [{ $project: { companyName: 1 } }]
             }
         },
 
@@ -122,7 +122,7 @@ const fetchCommunities = asyncHandler(async (request, response) => {
             $project: {
                 name: 1,
                 profileImage: 1,
-                creator: "$creator.ownerName",
+                creator: "$creator.companyName",
                 type: 1,
                 category: 1,
                 membersCount: 1,

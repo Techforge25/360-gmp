@@ -173,8 +173,8 @@ const getAllCommunities = asyncHandler(async (request, response) => {
             }             
         },
 
-        // Sort
-        { $sort:{ createdAt:-1 } }
+        // Sort by joined communities first
+        { $sort: { isMember: -1, createdAt: -1 } }        
     ], { page, limit });
     if(!communities.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "Communites not found"));
 

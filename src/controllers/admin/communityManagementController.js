@@ -202,6 +202,7 @@ const viewCommunity = asyncHandler(async (request, response) => {
                 type: 1,
                 purpose: 1,
                 category: 1,
+                rules: 1,
                 membersCount: 1,
                 warningsCount: 1,
                 createdAt: 1,

@@ -18,7 +18,7 @@ const createCommunitySchema = Joi.object({
     purpose: Joi.string().max(1000).trim().allow("", null).label("Purpose"),
     rules: Joi.string().max(2000).trim().allow("", null).label("Rules"),
     coverImage: Joi.string().trim().optional().uri().label("Cover image"),
-    profileImage: Joi.string().trim().optional().uri().label("Community image")
+    profileImage: Joi.string().trim().required().uri().label("Community image")
 });
 
 // Update community validator
@@ -29,7 +29,7 @@ const updateCommunitySchema = Joi.object({
     purpose: Joi.string().max(1000).trim().allow("", null).label("Purpose"),
     rules: Joi.string().max(2000).trim().allow("", null).label("Rules"),
     coverImage: Joi.string().trim().optional().uri().label("Cover image"),
-    profileImage: Joi.string().trim().optional().uri().label("Community image")
+    profileImage: Joi.string().trim().required().uri().label("Community image")
 });
 
 // Join Community schema

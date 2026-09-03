@@ -100,6 +100,7 @@ const marketPlaceRouter = require("./routes/admin/marketplaceRoute");
 const financialHubRouter = require("./routes/admin/financialHubRoute");
 const reportManagementRouter = require("./routes/admin/reportManagementRoute");
 const communityManagementRouter = require("./routes/admin/communityManagemenRoute");
+const jobManagementRouter = require("./routes/admin/jobManagementRoute");
 
 // Registered Admin Routes
 app.use("/api/v1/admin/auth", adminAuthRouter);
@@ -110,6 +111,7 @@ app.use("/api/v1/admin/reportManagement", reportManagementRouter);
 app.use("/api/v1/admin/subscriptionAccess", subscriptionAccessRouter);
 app.use("/api/v1/admin/marketplace", marketPlaceRouter);
 app.use("/api/v1/admin/communityManagement", communityManagementRouter);
+app.use("/api/v1/admin/jobManagement", jobManagementRouter);
 app.use("/api/v1/admin/financialHub", financialHubRouter);
 
 // API status route

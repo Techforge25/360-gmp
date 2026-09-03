@@ -72,7 +72,7 @@ const getAllCommunities = asyncHandler(async (request, response) => {
     const { _id: userId, role } = request.user;
 
     // Get filters
-    const { businessId, type, status, category, page = 1, limit = 20, search = "" } = request.query;
+    const { businessId, type, category, page = 1, limit = 20, search = "" } = request.query;
 
     // Base filter
     const filter = {};
@@ -81,7 +81,6 @@ const getAllCommunities = asyncHandler(async (request, response) => {
     if(search) filter.name = { $regex: search, $options: "i" };
     if(businessId) filter.businessId = convertToMongoId(businessId);
     if(type) filter.type = type;
-    if(status) filter.status = status;
     if(category) filter.category = category;
 
     // Get current logged-in profile ID
@@ -92,7 +91,7 @@ const getAllCommunities = asyncHandler(async (request, response) => {
     // Fetch
     const communities = await Community.aggregatePaginate([
         // Match
-        { $match: filter },
+        { $match: { status: "active", ...filter } },
 
         // Lookup membership
         {

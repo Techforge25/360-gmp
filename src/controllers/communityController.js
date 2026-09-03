@@ -188,9 +188,10 @@ const getCommunityById = asyncHandler(async (request, response) => {
 
     // Find community
     const community = await Community.findById(id)
-    .populate("businessId", "_id ownerUserId companyName businessType primaryIndustry location logo banner website")
+    .populate("businessId", "_id ownerUserId companyName businessType primaryIndustry location logo banner website status")
     .lean();
     if(!community) throw new ApiError(404, "Community not found");
+    if(community.status === "suspended") throw new ApiError(403, "This community has been suspended");
 
     // Check if user is member (for private communities)
     let isOwnCommunity = false;

@@ -24,7 +24,7 @@ jobManagementRouter.route("/activeJobs/:jobId").get(viewActiveJob);
 // Fetch reported jobs
 jobManagementRouter.route("/reportedJobs").get(fetchReportedJobs);
 
-// View reported job
+// View reported job / Delete reported job
 jobManagementRouter.route("/reportedJobs/:jobId")
 .get(viewReportedJob)
 .delete(deleteJob);

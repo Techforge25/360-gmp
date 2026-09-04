@@ -481,7 +481,7 @@ const getCommunityMembers = asyncHandler(async (request, response) => {
     const limitNumber = Number.parseInt(limit, 10);
     const skip = (pageNumber - 1) * limitNumber;
 
-    const filter = { communityId: id, status: "approved", role:{ $in:["member", "admin"] } };
+    const filter = { communityId: id, status: "approved", role:{ $in:["member", "admin", "owner"] } };
     if(role) filter.role = role;
     if(status) filter.status = status;
 
@@ -494,9 +494,8 @@ const getCommunityMembers = asyncHandler(async (request, response) => {
 
     const total = await CommunityMembership.countDocuments(filter);
 
-    return response.status(200).json(
-        new ApiResponse(200, { members, total }, "Community members fetched successfully")
-    );
+    // Response
+    return response.status(200).json(new ApiResponse(200, { members, total }, "Community members fetched successfully"));
 });
 
 // Update Community

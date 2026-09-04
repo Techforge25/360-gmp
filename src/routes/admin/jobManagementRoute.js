@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const { adminAuthentication, grantAccessTo } = require("../../middlewares/adminAuth");
 const { jobManagementInitiator, fetchJobStats, fetchActiveJobs, viewActiveJob, 
-fetchReportedJobs, viewReportedJob } = require("../../controllers/admin/jobManagementController");
+fetchReportedJobs, viewReportedJob, deleteJob } = require("../../controllers/admin/jobManagementController");
 
 // Router instance
 const jobManagementRouter = Router();
@@ -25,6 +25,8 @@ jobManagementRouter.route("/activeJobs/:jobId").get(viewActiveJob);
 jobManagementRouter.route("/reportedJobs").get(fetchReportedJobs);
 
 // View reported job
-jobManagementRouter.route("/reportedJobs/:jobId").get(viewReportedJob);
+jobManagementRouter.route("/reportedJobs/:jobId")
+.get(viewReportedJob)
+.delete(deleteJob);
 
 module.exports = jobManagementRouter;

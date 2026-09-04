@@ -9,6 +9,7 @@ const sendNotification = require("../../utils/sendNotification");
 const Job = require("../../models/jobsSchema");
 const Report = require("../../models/reportModel");
 const getDateFilter = require("../../utils/dateFilter");
+const JobApplication = require("../../models/jobApplication");
 
 // Allowed date filters
 const allowedDateFilters = ["all", "1d", "3d", "7d"];
@@ -336,5 +337,41 @@ const viewReportedJob = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, job, "Reported job has been fetched"));
 });
 
+// Delete job
+const deleteJob = asyncHandler(async (request, response) => {
+    const { jobId } = request.params;
+    if(!isValidObjectId(jobId)) throw new ApiError(400, "Invalid Job ID");
+
+    // Check if job is reported
+    const exist = await Report.exists({ reportedContentId: jobId });
+    if(!exist) throw new ApiError(404, "You can only delete a reported job");
+
+    // Delete
+    const job = await Job.findByIdAndDelete(jobId)
+    .populate({ path: "businessId", select: "ownerUserId" });
+    if(!job) throw new ApiError(404, "Job not found");
+
+    // Cleanup
+    await Promise.all([
+        // Delete all reports associated with this job
+        Report.deleteMany({ reportedContentId: jobId }),
+
+        // Delete all applications associated with this job
+        JobApplication.deleteMany({ jobId }),
+
+        // Send notification to business
+        sendNotification({
+            userId: job.businessId.ownerUserId,
+            type: "BusinessProfile",
+            title: `Job Deleted`,
+            content: `Your job "${job.jobTitle}" has been deleted by an Admin`,
+            io: request.app.get("io")
+        })     
+    ]);
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Job has been deleted"));
+});
+
 module.exports = { jobManagementInitiator, fetchJobStats, fetchActiveJobs, viewActiveJob,
-fetchReportedJobs, viewReportedJob };
+fetchReportedJobs, viewReportedJob, deleteJob };

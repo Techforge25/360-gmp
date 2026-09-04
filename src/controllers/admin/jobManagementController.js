@@ -42,12 +42,16 @@ const fetchActiveJobs = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
 
     // Get date filter
-    const { dateFilter } = getDateFilter(request);    
+    const { dateFilter } = getDateFilter(request);
+
+    // Filter out non-reported jobs
+    const reportedJobs = await Report.find({ reportedModel: "Job" }).select("-_id reportedContentId");
+    const reportedJobIds = reportedJobs.map(reportedJob => reportedJob?.reportedContentId);
 
     // Fetch
     const jobs = await Job.aggregatePaginate([
         // Match
-        { $match: { status: "open", ...dateFilter } },
+        { $match: { status: "open", _id: { $nin: reportedJobIds }, ...dateFilter } },
 
         // Lookup business
         {

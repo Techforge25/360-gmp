@@ -1,7 +1,8 @@
 const { Router } = require("express");
 const { adminAuthentication, grantAccessTo } = require("../../middlewares/adminAuth");
 const { jobManagementInitiator, fetchJobStats, fetchActiveJobs, viewActiveJob, 
-fetchReportedJobs, viewReportedJob, deleteJob } = require("../../controllers/admin/jobManagementController");
+fetchSectorDistributionGraph, fetchReportedJobs, viewReportedJob, 
+deleteJob } = require("../../controllers/admin/jobManagementController");
 
 // Router instance
 const jobManagementRouter = Router();
@@ -14,6 +15,9 @@ jobManagementRouter.route("/init").get(jobManagementInitiator);
 
 // Fetch stats
 jobManagementRouter.route("/stats").get(fetchJobStats);
+
+// Fetch sector distribution graph
+jobManagementRouter.route("/graph").get(fetchSectorDistributionGraph);
 
 // Fetch active jobs
 jobManagementRouter.route("/activeJobs").get(fetchActiveJobs);

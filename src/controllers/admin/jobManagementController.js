@@ -38,6 +38,78 @@ const fetchJobStats = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Job stats have been fetched"));
 });
 
+// Fetch sector distribution graph
+const fetchSectorDistributionGraph = asyncHandler(async (request, response) => {
+    const [result] = await Job.aggregate([
+        // Group jobs by category
+        {
+            $group: {
+                _id: "$jobCategory",
+                count: { $sum: 1 }
+            }
+        },
+
+        // Get total jobs and category data
+        {
+            $group: {
+                _id: null,
+                totalJobs: { $sum: "$count" },
+                categories: {
+                    $push: {
+                        category: "$_id",
+                        count: "$count"
+                    }
+                }
+            }
+        },
+
+        // Calculate percentage for each category
+        {
+            $project: {
+                _id: 0,
+                data: {
+                    $arrayToObject: {
+                        $map: {
+                            input: "$categories",
+                            as: "item",
+                            in: {
+                                k: {
+                                    $ifNull: [
+                                        "$$item.category",
+                                        "Uncategorized"
+                                    ]
+                                },
+                                v: {
+                                    $round: [
+                                        {
+                                            $multiply: [
+                                                {
+                                                    $divide: [
+                                                        "$$item.count",
+                                                        "$totalJobs"
+                                                    ]
+                                                },
+                                                100
+                                            ]
+                                        },
+                                        2
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]);
+
+    // Final data
+    const data = result?.data || {};
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, data, "Sector distribution graph has been fetched"));
+});
+
 // Fetch active jobs
 const fetchActiveJobs = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
@@ -337,7 +409,7 @@ const viewReportedJob = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, job, "Reported job has been fetched"));
 });
 
-// Delete job
+// Delete reported job
 const deleteJob = asyncHandler(async (request, response) => {
     const { jobId } = request.params;
     if(!isValidObjectId(jobId)) throw new ApiError(400, "Invalid Job ID");
@@ -373,5 +445,6 @@ const deleteJob = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, null, "Job has been deleted"));
 });
 
-module.exports = { jobManagementInitiator, fetchJobStats, fetchActiveJobs, viewActiveJob,
-fetchReportedJobs, viewReportedJob, deleteJob };
+module.exports = { jobManagementInitiator, fetchJobStats, fetchActiveJobs, 
+fetchSectorDistributionGraph, viewActiveJob, fetchReportedJobs, 
+viewReportedJob, deleteJob };

@@ -163,10 +163,10 @@ const viewActiveJob = asyncHandler(async (request, response) => {
             }
         }
     ]);
-    if(!job) throw new ApiError(404, "Job not found");
+    if(!job) throw new ApiError(404, "Active job not found");
 
     // Response
-    return response.status(200).json(new ApiResponse(200, job, "Job has been fetched"));
+    return response.status(200).json(new ApiResponse(200, job, "Active job has been fetched"));
 });
 
 // Fetch reported jobs
@@ -236,5 +236,105 @@ const fetchReportedJobs = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, jobs, "Reported jobs have been fetched"));
 });
 
+// View reported job
+const viewReportedJob = asyncHandler(async (request, response) => {
+    const { jobId } = request.params;
+    if(!isValidObjectId(jobId)) throw new ApiError(400, "Invalid Job ID");
+
+    // Check if job is reported
+    const exist = await Report.exists({ reportedContentId: jobId });
+    if(!exist) throw new ApiError(404, "No reported job found");
+
+    // Fetch
+    const [job] = await Job.aggregate([
+        // Match
+        { $match: { _id: convertToMongoId(jobId) } },
+
+        // Lookup business
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "businessId",
+                foreignField: "_id",
+                as: "businessProfile",
+                pipeline:[{ $project: { _id:0, companyName: 1, logo: 1, businessType: 1, email: "$primaryContactPerson.supportEmail" } }]
+            }
+        },
+
+        // Lookup job applications
+        {
+            $lookup: {
+                from: "jobapplications",
+                localField: "_id",
+                foreignField: "jobId",
+                as: "jobApplications"
+            }
+        },
+        
+        // Lookup job reports
+        {
+            $lookup: {
+                from: "reports",
+                localField: "_id",
+                foreignField: "reportedContentId",
+                as: "jobReports",
+                pipeline:[
+                    // Lookup user profile
+                    {
+                        $lookup: {
+                            from: "userprofiles",
+                            localField: "userProfileId",
+                            foreignField: "_id",
+                            as: "userProfile",
+                            pipeline:[{ $project: { _id: 0, fullName: 1, logo: 1, title: 1, } }]
+                        }
+                    },
+
+                    // Unwind
+                    { $unwind: { path: "$userProfile", preserveNullAndEmptyArrays: true } },
+
+                    // Projection
+                    { $project: { _id: 0, reason: 1, description: 1, media: 1, createdAt: 1, userProfile: 1 } },
+                ]
+            }
+        },        
+
+        // Unwind
+        { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
+
+        // Count total job applicants and reports
+        {
+            $addFields: {
+                totalJobApplicants: { $size: "$jobApplications" },
+                reportCount: { $size: "$jobReports" }
+            }
+        },
+
+        // Sort
+        { $sort: { createdAt: -1 } },
+
+        // Project
+        {
+            $project: {
+                jobTitle: 1,
+                location: 1,
+                employmentType: 1,
+                description: 1,
+                businessProfile: 1,
+                totalJobApplicants: 1,
+                reportCount: 1,
+                salaryMin: 1,
+                salaryMax: 1,
+                createdAt: 1,
+                jobReports: 1
+            }
+        }
+    ]);
+    if(!job) throw new ApiError(404, "Reported job not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, job, "Reported job has been fetched"));
+});
+
 module.exports = { jobManagementInitiator, fetchJobStats, fetchActiveJobs, viewActiveJob,
-fetchReportedJobs };
+fetchReportedJobs, viewReportedJob };

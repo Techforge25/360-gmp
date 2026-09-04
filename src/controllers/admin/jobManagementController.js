@@ -104,4 +104,69 @@ const fetchActiveJobs = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, jobs, "Active jobs have been fetched"));
 });
 
-module.exports = { jobManagementInitiator, fetchJobStats, fetchActiveJobs };
+// View active job
+const viewActiveJob = asyncHandler(async (request, response) => {
+    const { jobId } = request.params;
+    if(!isValidObjectId(jobId)) throw new ApiError(400, "Invalid Job ID");
+
+    // Fetch
+    const [job] = await Job.aggregate([
+        // Match
+        { $match: { _id: convertToMongoId(jobId) } },
+
+        // Lookup business
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "businessId",
+                foreignField: "_id",
+                as: "businessProfile",
+                pipeline:[{ $project: { _id:0, companyName: 1, logo: 1, businessType: 1, email: "$primaryContactPerson.supportEmail" } }]
+            }
+        },
+
+        // Lookup job applications
+        {
+            $lookup: {
+                from: "jobapplications",
+                localField: "_id",
+                foreignField: "jobId",
+                as: "jobApplications"
+            }
+        },        
+
+        // Unwind
+        { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
+
+        // Count total job applicants
+        {
+            $addFields: {
+                totalJobApplicants: { $size: "$jobApplications" }
+            }
+        },
+
+        // Sort
+        { $sort: { createdAt: -1 } },
+
+        // Project
+        {
+            $project: {
+                jobTitle: 1,
+                location: 1,
+                employmentType: 1,
+                description: 1,
+                businessProfile: 1,
+                totalJobApplicants: 1,
+                salaryMin: 1,
+                salaryMax: 1,
+                createdAt: 1
+            }
+        }
+    ]);
+    if(!job) throw new ApiError(404, "Job not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, job, "Job has been fetched"));
+});
+
+module.exports = { jobManagementInitiator, fetchJobStats, fetchActiveJobs, viewActiveJob };

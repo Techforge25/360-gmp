@@ -169,4 +169,72 @@ const viewActiveJob = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, job, "Job has been fetched"));
 });
 
-module.exports = { jobManagementInitiator, fetchJobStats, fetchActiveJobs, viewActiveJob };
+// Fetch reported jobs
+const fetchReportedJobs = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10 } = request.query;
+
+    // Get date filter
+    const { dateFilter } = getDateFilter(request);
+
+    // Filter out reported jobs
+    const reportedJobs = await Report.find({ reportedModel: "Job" }).select("-_id reportedContentId");
+    const reportedJobIds = reportedJobs.map(reportedJob => reportedJob?.reportedContentId);
+
+    // Fetch
+    const jobs = await Job.aggregatePaginate([
+        // Match
+        { $match: { status: "open", _id: { $in: reportedJobIds }, ...dateFilter } },
+
+        // Lookup business
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "businessId",
+                foreignField: "_id",
+                as: "businessProfile",
+                pipeline:[{ $project: { _id:0, companyName: 1, logo: 1 } }]
+            }
+        },
+
+        // Lookup reports
+        {
+            $lookup: {
+                from: "reports",
+                localField: "_id",
+                foreignField: "reportedContentId",
+                as: "reports"
+            }
+        },        
+
+        // Unwind
+        { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
+
+        // Count total job reports
+        {
+            $addFields: {
+                reportCount: { $size: "$reports" }
+            }
+        },
+
+        // Sort
+        { $sort: { createdAt: -1 } },
+
+        // Project
+        {
+            $project: {
+                jobTitle: 1,
+                location: 1,
+                businessProfile: 1,
+                reportCount: 1,
+                createdAt: 1
+            }
+        },
+    ], { page, limit });
+    if(!jobs.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No reported jobs found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, jobs, "Reported jobs have been fetched"));
+});
+
+module.exports = { jobManagementInitiator, fetchJobStats, fetchActiveJobs, viewActiveJob,
+fetchReportedJobs };

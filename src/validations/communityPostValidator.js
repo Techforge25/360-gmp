@@ -20,7 +20,7 @@ const createPostSchema = joi.object({
 
     // Document
     document: joi.string().trim().uri()
-    .when('type', { is: ['document'], then: joi.required(), otherwise: joi.forbidden() }).label("Document"),       
+    .when('type', { is: ['post'], then: joi.optional(), otherwise: joi.forbidden() }).label("Document"),     
 
     // Event Details
     event: joi.object({
@@ -57,7 +57,7 @@ const updatePostSchema = joi.object({
 
     // Document
     document: joi.string().trim().uri()
-    .when('type', { is: ['document'], then: joi.required(), otherwise: joi.forbidden() }).label("Document"),      
+    .when('type', { is: ['post'], then: joi.optional(), otherwise: joi.forbidden() }).label("Document"),      
 
     // Event Details
     event: joi.object({

@@ -476,26 +476,72 @@ const getCommunityMembers = asyncHandler(async (request, response) => {
     if(!community) throw new ApiError(404, "Community not found");
     if(community.status === "suspended") throw new ApiError(403, "This community has been suspended");
 
-    // Pagination
-    const pageNumber = Number.parseInt(page, 10);
-    const limitNumber = Number.parseInt(limit, 10);
-    const skip = (pageNumber - 1) * limitNumber;
-
-    const filter = { communityId: id, status: "approved", role:{ $in:["member", "admin", "owner"] } };
+    // Base filter
+    const filter = { 
+        communityId: convertToMongoId(id), 
+        status: "approved", 
+        role: { $in:["member", "admin", "owner"] } 
+    };
     if(role) filter.role = role;
     if(status) filter.status = status;
 
     // Get members
-    const members = await CommunityMembership.find(filter)
-    .populate("memberId", "fullName title logo bio")
-    .sort({ joinedAt: -1 })
-    .skip(skip)
-    .limit(limitNumber);
+    const members = await CommunityMembership.aggregatePaginate([
+        // Match
+        { $match: filter },
 
+        // Lookup business profile
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "memberId",
+                foreignField: "_id",
+                as: "businessProfile",
+                pipeline: [{ $project: { _id: 0, name: "$ownerName", logo: 1 } }]
+            }
+        },   
+        
+        // Lookup user profile
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "memberId",
+                foreignField: "_id",
+                as: "userProfile",
+                pipeline: [{ $project: { _id: 0, name: "$fullName", logo: 1 } }]
+            }
+        },          
+
+        // Sort
+        { $sort: { joinedAt: -1 } },
+
+        // Projection
+        {
+            $project: { 
+                communityId: 1, 
+                memberModel: 1, 
+                member: {
+                    $cond: [
+                        { $eq: ["$memberModel", "UserProfile"] },
+                        "$userProfile",
+                        "$businessProfile"
+                    ]
+                },
+                role: 1,
+                status: 1,
+                isPaid: 1,
+                joinedAt: 1,
+                createdAt: 1
+            }
+        }
+    ], { page, limit });
+    if(!members.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No members found"));
+
+    // Total members counts
     const total = await CommunityMembership.countDocuments(filter);
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { members, total }, "Community members fetched successfully"));
+    return response.status(200).json(new ApiResponse(200, { members, total }, "Community members have been fetched successfully"));
 });
 
 // Update Community

@@ -8,7 +8,7 @@ const createPostSchema = joi.object({
 
     // Simple content for post
     content: joi.string().min(1).max(5000).trim()
-    .when('type', { is: ['post'], then: joi.required(), otherwise: joi.forbidden() }).label("Post Content"),
+    .when('type', { is: ['post'], then: joi.required(), otherwise: joi.forbidden() }).label("Post Content"), 
 
     // File
     file: joi.object({
@@ -17,6 +17,10 @@ const createPostSchema = joi.object({
         size: joi.number().required(),
         mimeType: joi.string().trim().required()
     }).optional().when('type', { is: 'post', then: joi.optional(), otherwise: joi.forbidden() }).label("File"),
+
+    // Document
+    document: joi.string().trim().uri()
+    .when('type', { is: ['document'], then: joi.required(), otherwise: joi.forbidden() }).label("Document"),       
 
     // Event Details
     event: joi.object({
@@ -50,6 +54,10 @@ const updatePostSchema = joi.object({
     // Simple content for post
     content: joi.string().min(1).max(5000).trim().label("Post Content")
     .when('type', { is: 'post', then: joi.required(), otherwise: joi.optional() }).label("Post Content"),
+
+    // Document
+    document: joi.string().trim().uri()
+    .when('type', { is: ['document'], then: joi.required(), otherwise: joi.forbidden() }).label("Document"),      
 
     // Event Details
     event: joi.object({

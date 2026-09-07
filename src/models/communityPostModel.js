@@ -22,6 +22,9 @@ const communityPostSchema = new Schema({
         mimeType: { type: String, trim: true },  
     },
 
+    // Document
+    document: { type: String, trim: true },
+
     // Event Details
     event: {
         name: { type: String, trim: true },

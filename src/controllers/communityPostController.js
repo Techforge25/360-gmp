@@ -369,47 +369,214 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
 });
 
 // Get Post By ID
+// const getPostById = asyncHandler(async (request, response) => {
+//     const { postId } = request.params;
+
+//     const post = await CommunityPost.findById(postId)
+//         .populate("authorUserProfileId", "fullName title logo bio")
+//         .populate("communityId", "name type");
+
+//     if(!post) throw new ApiError(404, "Post not found");
+
+//     // Check if user is member (for private communities)
+//     if(post.communityId.type === "private" && request.user?._id) {
+//         try {
+//             const userProfileId = await getUserProfileId(request.user._id);
+//             const membership = await CommunityMembership.findOne({
+//                 communityId: post.communityId._id,
+//                 userProfileId: userProfileId,
+//                 status: "approved"
+//             });
+//             if(!membership) {
+//                 throw new ApiError(403, "You must be a member to view this post");
+//             }
+//         } catch(err) {
+//             throw new ApiError(403, "You must be a member to view this post");
+//         }
+//     }
+
+//     // Check if user liked the post
+//     if(request.user?._id) {
+//         try {
+//             const userProfileId = await getUserProfileId(request.user._id);
+//             post.likedByUser = post.likes.some(
+//                 like => like.userProfileId === userProfileId
+//             );
+//         } catch(err) {
+//             post.likedByUser = false;
+//         }
+//     }
+
+//     return response.status(200).json(
+//         new ApiResponse(200, post, "Post fetched successfully")
+//     );
+// });
+
 const getPostById = asyncHandler(async (request, response) => {
+    // Sanitize ID
     const { postId } = request.params;
+    if(!isValidObjectId(postId)) throw new ApiError(400, "Invalid Post ID");
 
-    const post = await CommunityPost.findById(postId)
-        .populate("authorUserProfileId", "fullName title logo bio")
-        .populate("communityId", "name type");
+    // Get Profile IDs & metadata
+    const { _id: userId, role } = request.user;
+    const { userProfileId, businessProfileId } = request.user.profiles || {}; 
 
+    // Set dynamic member ID and model
+    const memberId = role === "user" ? userProfileId : businessProfileId;
+    const memberModel = role === "user" ? "UserProfile" : "BusinessProfile";
+    
+    // Get post
+    const post = await CommunityPost.findById(postId);
     if(!post) throw new ApiError(404, "Post not found");
 
-    // Check if user is member (for private communities)
-    if(post.communityId.type === "private" && request.user?._id) {
-        try {
-            const userProfileId = await getUserProfileId(request.user._id);
-            const membership = await CommunityMembership.findOne({
-                communityId: post.communityId._id,
-                userProfileId: userProfileId,
-                status: "approved"
-            });
-            if(!membership) {
-                throw new ApiError(403, "You must be a member to view this post");
+    // Check membership
+    const membership = await CommunityMembership.findOne({ 
+        communityId: post.communityId, 
+        memberId,
+        memberModel,
+        status: "approved"
+    });
+    if(!membership) throw new ApiError(403, "You must be a member to view posts in this community");
+
+    // Fetch
+    const [postData] = await CommunityPost.aggregate([
+        // Match
+        { $match: { _id: convertToMongoId(postId) } },
+
+        // Lookup business profile
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "authorId",
+                foreignField: "_id",
+                as: "businessProfile",
+                pipeline:[{ $project: { _id: 0, name: "$ownerName", logo: 1 } }]
             }
-        } catch(err) {
-            throw new ApiError(403, "You must be a member to view this post");
-        }
-    }
+        },
 
-    // Check if user liked the post
-    if(request.user?._id) {
-        try {
-            const userProfileId = await getUserProfileId(request.user._id);
-            post.likedByUser = post.likes.some(
-                like => like.userProfileId === userProfileId
-            );
-        } catch(err) {
-            post.likedByUser = false;
-        }
-    }
+        // Lookup user profile
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "authorId",
+                foreignField: "_id",
+                as: "userProfile",
+                pipeline:[{ $project: { _id: 0, name: "$fullName", logo: 1 } }]
+            }
+        },  
+        
+        // Lookup post likes
+        {
+            $lookup: {
+                from: "postlikes",
+                localField: "_id",
+                foreignField: "postId",
+                as: "postLikes"
+            }
+        }, 
+        
+        // Lookup post comments
+        {
+            $lookup: {
+                from: "postcomments",
+                localField: "_id",
+                foreignField: "postId",
+                as: "postComments"
+            }
+        },        
+        
+        // Lookup membership
+        {
+            $lookup: {
+                from: "communitymemberships",
+                let: {
+                    authorId: "$authorId",
+                    communityId: "$communityId"
+                },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    {
+                                        $eq: [
+                                            "$memberId",
+                                            "$$authorId"
+                                        ]
+                                    },
+                                    {
+                                        $eq: [
+                                            "$communityId",
+                                            "$$communityId"
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    { $project: { _id: 0, role: 1 } }
+                ],
+                as: "memberInfo"
+            }
+        },          
 
-    return response.status(200).json(
-        new ApiResponse(200, post, "Post fetched successfully")
-    );
+        // Unwind
+        { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: "$userProfile", preserveNullAndEmptyArrays: true } },  
+        { $unwind: { path: "$memberInfo", preserveNullAndEmptyArrays: true } },
+        
+        // Projection
+        {
+            $project: {
+                type: 1,
+                likesCount: { $size: "$postLikes" },
+                commentsCount: { $size: "$postComments" },
+                content: 1,
+                memberRole: "$memberInfo.role", 
+                postedBy:{
+                    $cond: [
+                        { $eq: ["$authorModel", "UserProfile"] },
+                        "$userProfile",
+                        "$businessProfile"
+                    ]
+                },
+                file: {
+                    $cond: [
+                        { $eq: ["$type", "file"] },
+                        "$file",
+                        "$$REMOVE"
+                    ]                    
+                },
+                document: {
+                    $cond: [
+                        { $eq: ["$type", "post"] },
+                        "$document",
+                        "$$REMOVE"
+                    ]                    
+                },                
+                event: {
+                    $cond: [
+                        { $eq: ["$type", "event"] },
+                        "$event",
+                        "$$REMOVE"
+                    ]                     
+                },
+                poll: {
+                    $cond: [
+                        { $eq: ["$type", "poll"] },
+                        "$poll",
+                        "$$REMOVE"
+                    ]                      
+                },
+                images: 1,
+                createdAt: 1
+            }
+        }        
+    ]);
+    if(!postData) throw new ApiError(404, "Post not found");
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, postData, "Post has been fetched"));
 });
 
 // Update Post

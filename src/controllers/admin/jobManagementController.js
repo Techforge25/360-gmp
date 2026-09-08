@@ -164,6 +164,7 @@ const fetchActiveJobs = asyncHandler(async (request, response) => {
         {
             $project: {
                 jobTitle: 1,
+                employmentType: 1,
                 location: 1,
                 businessProfile: 1,
                 totalJobApplicants: 1,

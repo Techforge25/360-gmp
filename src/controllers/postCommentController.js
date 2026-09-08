@@ -148,4 +148,60 @@ const fetchComments = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, comments, "Comments have been fetched"));
 });
 
-module.exports = { createComment, fetchComments };
+// Update comment
+const updateComment = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { commentId } = request.params;
+    if(!isValidObjectId(commentId)) throw new ApiError(400, "Invalid Post ID");
+
+    // Get validated payload
+    const { content } = validate(postCommentValidator, request.body) || {};    
+
+    // Get profile role and IDs
+    const { userProfileId, businessProfileId } = request.user.profiles || {};
+    const { role } = request.user;
+
+    // Set dynamic commenter ID and model
+    const commenterId = role === "user" ? userProfileId : businessProfileId;
+    const commenterModel = role === "user" ? "UserProfile" : "BusinessProfile";
+
+    // Fetch comment
+    const comment = await PostComment.findById(commentId);
+    if(!comment) throw new ApiError(404, "Comment not found");
+
+    // Fetch post
+    const post = await CommunityPost.findById(comment.postId).select("-_id communityId");
+    if(!post) throw new ApiError(404, "Post not found");
+
+    // Authorize to comment
+    const membership = await CommunityMembership.findOne({
+        communityId: post.communityId, 
+        memberId: commenterId,
+        memberModel: commenterModel,
+        status: "approved"
+    });
+    if(!membership) throw new ApiError(403, "To update comment, you need to be a member of this community");   
+
+    // Save to db
+    comment.content = content;
+    await comment.save();
+
+    // Populate commentor info
+    await comment.populate({ path: "commenterId", select: "-_id logo fullName companyName" });
+
+    // Payload
+    const payload = {
+        _id: comment._id,
+        content: comment.content,
+        commentedBy: {
+            logo: comment.commenterId?.logo,
+            name: comment.commenterId?.fullName || comment.commenterId?.companyName,
+        },
+        createdAt: comment.createdAt
+    };
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, payload, "Comment has been updated"));
+});
+
+module.exports = { createComment, fetchComments, updateComment };

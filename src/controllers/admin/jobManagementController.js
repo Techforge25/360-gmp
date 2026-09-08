@@ -378,6 +378,9 @@ const viewReportedJob = asyncHandler(async (request, response) => {
                     // Unwind
                     { $unwind: { path: "$userProfile", preserveNullAndEmptyArrays: true } },
 
+                    // Sort
+                    { $sort: { createdAt: -1 } },
+
                     // Projection
                     { $project: { _id: 0, reason: 1, description: 1, media: 1, createdAt: 1, userProfile: 1 } },
                 ]

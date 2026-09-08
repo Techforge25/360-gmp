@@ -259,7 +259,17 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
                 foreignField: "postId",
                 as: "postLikes"
             }
-        },         
+        }, 
+        
+        // Lookup post comments
+        {
+            $lookup: {
+                from: "postcomments",
+                localField: "_id",
+                foreignField: "postId",
+                as: "postComments"
+            }
+        },        
         
         // Lookup membership
         {
@@ -309,6 +319,7 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
             $project: {
                 type: 1,
                 likesCount: { $size: "$postLikes" },
+                commentsCount: { $size: "$postComments" },
                 content: 1,
                 memberRole: "$memberInfo.role", 
                 postedBy: {

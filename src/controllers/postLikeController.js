@@ -35,7 +35,8 @@ const likePost = asyncHandler(async (request, response) => {
     const membership = await CommunityMembership.findOne({ 
         communityId: post.communityId, 
         memberId: likerId,
-        memberModel: likerModel
+        memberModel: likerModel,
+        status: "approved"
     });
 
     // Check membership

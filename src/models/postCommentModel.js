@@ -6,7 +6,8 @@ const postCommentSchema = new Schema({
     // References
     postId: { type: Schema.Types.ObjectId, ref: "CommunityPost" },
     commenterId: { type: Schema.Types.ObjectId, refPath: "commenterModel", required: true },
-    commenterModel: { type: String, enum: ['UserProfile', 'BusinessProfile'], required: true }
+    commenterModel: { type: String, enum: ['UserProfile', 'BusinessProfile'], required: true },
+    content: { type: String, trim: true, required: true }
 }, { timestamps: true });
 
 // Add pagination plugin

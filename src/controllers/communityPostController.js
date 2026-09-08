@@ -9,6 +9,8 @@ const { createPostSchema, updatePostSchema, addCommentSchema } = require("../val
 const BusinessProfile = require("../models/businessProfileSchema");
 const { isValidObjectId } = require("mongoose");
 const sendNotification = require("../utils/sendNotification");
+const convertToMongoId = require("../utils/convertToMongoId");
+const { emptyList } = require("../constants");
 
 // Helper function to get userProfileId from userId
 const getUserProfileId = async (userId) => {
@@ -89,113 +91,270 @@ const createPost = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, post, "Post created successfully"));
 });
 
+// // Get All Posts in Community (with pagination)
+// const getCommunityPosts = asyncHandler(async (request, response) => {
+//     const { userProfileId, businessProfileId } = request.user.profiles || {};
+//     const { _id:userId, role } = request.user;
+//     const { id } = request.params; // communityId
+//     const { page = 1, limit = 20 } = request.query;
+
+//     // Get community
+//     const community = await Community.findById(id).populate("businessId");
+//     if(!community) throw new ApiError(404, "Community not found");
+
+//     // Check if user is member (for private communities)
+//     let isMember = false;
+//     let hasAccess = false;
+
+//     if(role === "business")
+//     {
+//         // Always accessible to business community owner
+//         const isBusinessOwner = String(community.businessId._id) === String(businessProfileId);     
+//         if(isBusinessOwner)
+//         {
+//             isMember = true;
+//             hasAccess = true;
+//         }
+//     }
+
+//     if(role === "user")
+//     {
+//         if(!userProfileId) throw new ApiError(404, "User profile ID is missing while watching a post as a user");
+
+//         const membership = await CommunityMembership.findOne({
+//             communityId: id,
+//             memberId: userProfileId,
+//             memberModel: "UserProfile",
+//             status: "approved"
+//         });
+
+//         if(membership)
+//         {
+//             isMember = true;
+//             hasAccess = true;
+//         }        
+//     }    
+
+//     if(!hasAccess) throw new ApiError(403, "You must be a member to view posts in this community");
+
+//     // Pagination
+//     const pageNumber = Number.parseInt(page, 10);
+//     const limitNumber = Number.parseInt(limit, 10);
+//     const skip = (pageNumber - 1) * limitNumber;
+
+//     // Get total count
+//     const totalPosts = await CommunityPost.countDocuments({ communityId: id });
+//     const totalPages = Math.ceil(totalPosts / limitNumber);
+
+//     // Get posts
+//     const posts = await CommunityPost.find({ communityId: id })
+//     .populate("authorId", "fullName logo companyName")
+//     .sort({ createdAt: -1 })
+//     .skip(skip)
+//     .limit(limitNumber)
+//     .lean();
+
+//     // Determine current identity
+//     let currentProfileId = null;
+//     let currentProfileModel = null;
+
+//     if(role === "user" && userProfileId)
+//     {
+//         currentProfileId = userProfileId;
+//         currentProfileModel = "UserProfile";
+//     }
+
+//     if(role === "business" && businessProfileId)
+//     {
+//         currentProfileId = businessProfileId;
+//         currentProfileModel = "BusinessProfile";
+//     }
+
+//     // Add hasLiked flag
+//     for(let post of posts)
+//     {
+//         post.hasLiked = currentProfileId ? post.likes?.some(like =>
+//             like.userId && String(like.userId) === String(currentProfileId) && like.onModel === currentProfileModel
+//         ) : false;
+
+//         // Has voted flag for poll post
+//         post.hasVoted = false;
+//         if (post.type === "poll" && currentProfileId)
+//         {
+//             post.hasVoted = post.poll?.options?.some(option =>
+//                 option.votedBy?.some(id => String(id) === String(currentProfileId))
+//             );
+//         }        
+//     }
+
+//     const paginationInfo = {
+//         currentPage: pageNumber,
+//         totalPages: totalPages,
+//         totalPosts: totalPosts,
+//         hasNextPage: pageNumber < totalPages,
+//         hasPrevPage: pageNumber > 1,
+//         limit: limitNumber
+//     };
+
+//     // Response
+//     return response.status(200).json(new ApiResponse(200,{ community, posts, pagination: paginationInfo },"Posts fetched successfully"));
+// });
+
 // Get All Posts in Community (with pagination)
 const getCommunityPosts = asyncHandler(async (request, response) => {
-    const { userProfileId, businessProfileId } = request.user.profiles || {};
-    const { _id:userId, role } = request.user;
-    const { id } = request.params; // communityId
+    const { communityId } = request.params;
     const { page = 1, limit = 20 } = request.query;
 
+    // Sanitize ID
+    if(!isValidObjectId(communityId)) throw new ApiError(400, "Invalid Community ID");
+
+    // Get Profile IDs & metadata
+    const { _id: userId, role } = request.user;
+    const { userProfileId, businessProfileId } = request.user.profiles || {};    
+
     // Get community
-    const community = await Community.findById(id).populate("businessId");
+    const community = await Community.findById(communityId);
     if(!community) throw new ApiError(404, "Community not found");
 
-    // Check if user is member (for private communities)
-    let isMember = false;
-    let hasAccess = false;
-
-    if(role === "business")
-    {
-        // Always accessible to business community owner
-        const isBusinessOwner = String(community.businessId._id) === String(businessProfileId);        
-        if(isBusinessOwner)
-        {
-            isMember = true;
-            hasAccess = true;
-        }
-    }
-
-    if(role === "user")
-    {
-        if(!userProfileId) throw new ApiError(404, "User profile ID is missing while watching a post as a user");
-
-        const membership = await CommunityMembership.findOne({
-            communityId: id,
-            memberId: userProfileId,
-            memberModel: "UserProfile",
-            status: "approved"
-        });
-
-        if(membership)
-        {
-            isMember = true;
-            hasAccess = true;
-        }        
-    }    
-
-    if(!hasAccess) throw new ApiError(403, "You must be a member to view posts in this community");
-
-    // Pagination
-    const pageNumber = Number.parseInt(page, 10);
-    const limitNumber = Number.parseInt(limit, 10);
-    const skip = (pageNumber - 1) * limitNumber;
-
-    // Get total count
-    const totalPosts = await CommunityPost.countDocuments({ communityId: id });
-    const totalPages = Math.ceil(totalPosts / limitNumber);
+    // Check membership
+    const membership = await CommunityMembership.findOne({ 
+        communityId, 
+        memberId: { $in:[userProfileId, businessProfileId] },
+        status: "approved"
+    });
+    if(!membership) throw new ApiError(403, "You must be a member to view posts in this community");
 
     // Get posts
-    const posts = await CommunityPost.find({ communityId: id })
-    .populate("authorId", "fullName logo companyName")
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limitNumber)
-    .lean();
+    const posts = await CommunityPost.aggregatePaginate([
+        // Match
+        { $match: { communityId: convertToMongoId(communityId) } },
 
-    // Determine current identity
-    let currentProfileId = null;
-    let currentProfileModel = null;
-
-    if(role === "user" && userProfileId)
-    {
-        currentProfileId = userProfileId;
-        currentProfileModel = "UserProfile";
-    }
-
-    if(role === "business" && businessProfileId)
-    {
-        currentProfileId = businessProfileId;
-        currentProfileModel = "BusinessProfile";
-    }
-
-    // Add hasLiked flag
-    for(let post of posts)
-    {
-        post.hasLiked = currentProfileId ? post.likes?.some(like =>
-            like.userId && String(like.userId) === String(currentProfileId) && like.onModel === currentProfileModel
-        ) : false;
-
-        // Has voted flag for poll post
-        post.hasVoted = false;
-        if (post.type === "poll" && currentProfileId)
+        // Lookup business profile
         {
-            post.hasVoted = post.poll?.options?.some(option =>
-                option.votedBy?.some(id => String(id) === String(currentProfileId))
-            );
-        }        
-    }
+            $lookup: {
+                from: "businessprofiles",
+                localField: "authorId",
+                foreignField: "_id",
+                as: "businessProfile",
+                pipeline:[{ $project: { _id: 0, name: "$ownerName", logo: 1 } }]
+            }
+        },
 
-    const paginationInfo = {
-        currentPage: pageNumber,
-        totalPages: totalPages,
-        totalPosts: totalPosts,
-        hasNextPage: pageNumber < totalPages,
-        hasPrevPage: pageNumber > 1,
-        limit: limitNumber
-    };
+        // Lookup user profile
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "authorId",
+                foreignField: "_id",
+                as: "userProfile",
+                pipeline:[{ $project: { _id: 0, name: "$fullName", logo: 1 } }]
+            }
+        },   
+        
+        // Lookup post likes
+        {
+            $lookup: {
+                from: "postlikes",
+                localField: "_id",
+                foreignField: "postId",
+                as: "postLikes"
+            }
+        },         
+        
+        // Lookup membership
+        {
+            $lookup: {
+                from: "communitymemberships",
+                let: {
+                    authorId: "$authorId",
+                    communityId: "$communityId"
+                },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    {
+                                        $eq: [
+                                            "$memberId",
+                                            "$$authorId"
+                                        ]
+                                    },
+                                    {
+                                        $eq: [
+                                            "$communityId",
+                                            "$$communityId"
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    { $project: { _id: 0, role: 1 } }
+                ],
+                as: "memberInfo"
+            }
+        },       
+
+        // Unwind
+        { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: "$userProfile", preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: "$memberInfo", preserveNullAndEmptyArrays: true } },
+
+        // Sort
+        { $sort: { createdAt: -1 } },
+
+        // Projection
+        {
+            $project: {
+                type: 1,
+                likesCount: { $size: "$postLikes" },
+                content: 1,
+                memberRole: "$memberInfo.role", 
+                postedBy: {
+                    $cond: [
+                        { $eq: ["$authorModel", "UserProfile"] },
+                        "$userProfile",
+                        "$businessProfile"
+                    ]
+                },
+                file: {
+                    $cond: [
+                        { $eq: ["$type", "file"] },
+                        "$file",
+                        "$$REMOVE"
+                    ]                    
+                },
+                document: {
+                    $cond: [
+                        { $eq: ["$type", "post"] },
+                        "$document",
+                        "$$REMOVE"
+                    ]                    
+                },                
+                event: {
+                    $cond: [
+                        { $eq: ["$type", "event"] },
+                        "$event",
+                        "$$REMOVE"
+                    ]                     
+                },
+                poll: {
+                    $cond: [
+                        { $eq: ["$type", "poll"] },
+                        "$poll",
+                        "$$REMOVE"
+                    ]                      
+                },
+                images: 1,
+                createdAt: 1             
+            }
+        }
+    ], { page, limit });
+    if(!posts.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No posts found"));
 
     // Response
-    return response.status(200).json(new ApiResponse(200,{ community, posts, pagination: paginationInfo },"Posts fetched successfully"));
+    return response.status(200).json(new ApiResponse(200, posts, "Posts have been fetched"));
 });
 
 // Get Post By ID

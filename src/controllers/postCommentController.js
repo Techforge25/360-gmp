@@ -204,4 +204,47 @@ const updateComment = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, payload, "Comment has been updated"));
 });
 
-module.exports = { createComment, fetchComments, updateComment };
+// Delete comment
+const deleteComment = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { commentId } = request.params;
+    if(!isValidObjectId(commentId)) throw new ApiError(400, "Invalid Post ID");    
+
+    // Get profile role and IDs
+    const { userProfileId, businessProfileId } = request.user.profiles || {};
+    const { role } = request.user;
+
+    // Set dynamic commenter ID and model
+    const commenterId = role === "user" ? userProfileId : businessProfileId;
+    const commenterModel = role === "user" ? "UserProfile" : "BusinessProfile";
+
+    // Fetch comment
+    const comment = await PostComment.findById(commentId);
+    if(!comment) throw new ApiError(404, "Comment not found");
+
+    // Fetch post
+    const post = await CommunityPost.findById(comment.postId).select("-_id communityId");
+    if(!post) throw new ApiError(404, "Post not found");
+
+    // Authorize user to delete
+    if(String(commenterId) !== String(comment.commenterId))
+    {
+        // Authorize owner and admin to delete
+        const membership = await CommunityMembership.findOne({
+            communityId: post.communityId, 
+            memberId: commenterId,
+            memberModel: commenterModel,
+            role: { $in: ["owner", "admin"] },
+            status: "approved",
+        });     
+        if(membership) throw new ApiError(403, "You are not authorized to delete this comment");   
+    }
+
+    // Delete
+    await comment.deleteOne();
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Comment has been deleted"));
+});
+
+module.exports = { createComment, fetchComments, updateComment, deleteComment };

@@ -4,15 +4,11 @@ const asyncHandler = require("../../utils/asyncHandler");
 const { emptyList } = require("../../constants");
 const { isValidObjectId } = require("mongoose");
 const convertToMongoId = require("../../utils/convertToMongoId");
-const validate = require("../../utils/validate");
 const sendNotification = require("../../utils/sendNotification");
 const Job = require("../../models/jobsSchema");
 const Report = require("../../models/reportModel");
 const getDateFilter = require("../../utils/dateFilter");
 const JobApplication = require("../../models/jobApplication");
-
-// Allowed date filters
-const allowedDateFilters = ["all", "1d", "3d", "7d"];
 
 // Initiator
 const jobManagementInitiator = asyncHandler(async (request, response) => {
@@ -67,32 +63,117 @@ const fetchSectorDistributionGraph = asyncHandler(async (request, response) => {
         {
             $project: {
                 _id: 0,
+                totalJobs: 1,
+                categories: 1
+            }
+        },
+
+        // Calculate rounded percentages
+        {
+            $project: {
+                totalJobs: 1,
+                categories: {
+                    $map: {
+                        input: "$categories",
+                        as: "item",
+                        in: {
+                            category: {
+                                $ifNull: [
+                                    "$$item.category",
+                                    "Uncategorized"
+                                ]
+                            },
+                            percentage: {
+                                $round: [
+                                    {
+                                        $multiply: [
+                                            {
+                                                $divide: [
+                                                    "$$item.count",
+                                                    "$totalJobs"
+                                                ]
+                                            },
+                                            100
+                                        ]
+                                    },
+                                    2
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+
+        // Calculate remaining percentage
+        {
+            $set: {
+                totalPercentage: {
+                    $sum: "$categories.percentage"
+                }
+            }
+        },
+
+        // Assign remaining percentage to the last category
+        {
+            $project: {
                 data: {
                     $arrayToObject: {
                         $map: {
-                            input: "$categories",
-                            as: "item",
+                            input: {
+                                $range: [
+                                    0,
+                                    { $size: "$categories" }
+                                ]
+                            },
+                            as: "index",
                             in: {
                                 k: {
-                                    $ifNull: [
-                                        "$$item.category",
-                                        "Uncategorized"
+                                    $arrayElemAt: [
+                                        "$categories.category",
+                                        "$$index"
                                     ]
                                 },
                                 v: {
-                                    $round: [
+                                    $cond: [
                                         {
-                                            $multiply: [
+                                            $eq: [
+                                                "$$index",
                                                 {
-                                                    $divide: [
-                                                        "$$item.count",
-                                                        "$totalJobs"
+                                                    $subtract: [
+                                                        { $size: "$categories" },
+                                                        1
                                                     ]
-                                                },
-                                                100
+                                                }
                                             ]
                                         },
-                                        2
+                                        {
+                                            $round: [
+                                                {
+                                                    $add: [
+                                                        {
+                                                            $arrayElemAt: [
+                                                                "$categories.percentage",
+                                                                "$$index"
+                                                            ]
+                                                        },
+                                                        {
+                                                            $subtract: [
+                                                                100,
+                                                                "$totalPercentage"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                2
+                                            ]
+                                        },
+                                        {
+                                            $arrayElemAt: [
+                                                "$categories.percentage",
+                                                "$$index"
+                                            ]
+                                        }
                                     ]
                                 }
                             }

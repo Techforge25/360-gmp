@@ -371,7 +371,7 @@ const viewReportedJob = asyncHandler(async (request, response) => {
                             localField: "userProfileId",
                             foreignField: "_id",
                             as: "userProfile",
-                            pipeline:[{ $project: { _id: 0, fullName: 1, logo: 1, title: 1, } }]
+                            pipeline:[{ $project: { _id: 0, fullName: 1, logo: 1, email: 1, } }]
                         }
                     },
 

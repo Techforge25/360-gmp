@@ -337,7 +337,7 @@ const fetchReportedJobs = asyncHandler(async (request, response) => {
     // Fetch reported jobs
     const jobs = await Job.aggregatePaginate([
         // Match jobs
-        { $match: { status: "open", ...dateFilter } },
+        { $match: { status: "open" } },
 
         // Lookup business
         {
@@ -358,11 +358,10 @@ const fetchReportedJobs = asyncHandler(async (request, response) => {
                 pipeline: [
                     {
                         $match: {
+                            reportedModel: "Job",
+                            ...dateFilter,
                             $expr: {
-                                $and: [
-                                    { $eq: ["$reportedContentId", "$$jobId"] },
-                                    { $eq: ["$reportedModel", "Job"] }
-                                ]
+                                $eq: ["$reportedContentId", "$$jobId"]
                             }
                         }
                     },
@@ -403,6 +402,7 @@ const fetchReportedJobs = asyncHandler(async (request, response) => {
             }
         }
     ], { page, limit });
+
     if(!jobs.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No reported jobs found"));
     
     // Response

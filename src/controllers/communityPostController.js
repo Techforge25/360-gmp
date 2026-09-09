@@ -207,10 +207,14 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
 
     // Sanitize ID
     if(!isValidObjectId(communityId)) throw new ApiError(400, "Invalid Community ID");
-
+    
     // Get Profile IDs & metadata
     const { _id: userId, role } = request.user;
-    const { userProfileId, businessProfileId } = request.user.profiles || {};    
+    const { userProfileId, businessProfileId } = request.user.profiles || {}; 
+
+    // Set dynamic member ID and model
+    const memberId = role === "user" ? convertToMongoId(userProfileId) : convertToMongoId(businessProfileId);
+    const memberModel = role === "user" ? "UserProfile" : "BusinessProfile";    
 
     // Get community
     const community = await Community.findById(communityId);
@@ -219,7 +223,8 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
     // Check membership
     const membership = await CommunityMembership.findOne({ 
         communityId, 
-        memberId: { $in:[userProfileId, businessProfileId] },
+        memberId,
+        memberModel,
         status: "approved"
     });
     if(!membership) throw new ApiError(403, "You must be a member to view posts in this community");
@@ -277,6 +282,7 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
                 from: "communitymemberships",
                 let: {
                     authorId: "$authorId",
+                    authorModel: "$authorModel",
                     communityId: "$communityId"
                 },
                 pipeline: [
@@ -284,18 +290,9 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
                         $match: {
                             $expr: {
                                 $and: [
-                                    {
-                                        $eq: [
-                                            "$memberId",
-                                            "$$authorId"
-                                        ]
-                                    },
-                                    {
-                                        $eq: [
-                                            "$communityId",
-                                            "$$communityId"
-                                        ]
-                                    }
+                                    { $eq: ["$memberId", "$$authorId"] },
+                                    { $eq: ["$memberModel", "$$authorModel"] },
+                                    { $eq: ["$communityId", "$$communityId"] }
                                 ]
                             }
                         }
@@ -304,12 +301,19 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
                 ],
                 as: "memberInfo"
             }
-        },       
+        },     
 
         // Unwind
         { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
         { $unwind: { path: "$userProfile", preserveNullAndEmptyArrays: true } },
         { $unwind: { path: "$memberInfo", preserveNullAndEmptyArrays: true } },
+
+        // Add field to determine if post liked by user
+        {
+            $addFields: {
+                hasLiked: { $in: [memberId, "$postLikes.likerId"] }
+            }
+        },
 
         // Sort
         { $sort: { createdAt: -1 } },
@@ -320,6 +324,7 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
                 type: 1,
                 likesCount: { $size: "$postLikes" },
                 commentsCount: { $size: "$postComments" },
+                hasLiked: 1,
                 content: 1,
                 memberRole: "$memberInfo.role", 
                 postedBy: {
@@ -355,7 +360,7 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
                         { $eq: ["$type", "poll"] },
                         "$poll",
                         "$$REMOVE"
-                    ]                      
+                    ]                  
                 },
                 images: 1,
                 createdAt: 1             
@@ -422,7 +427,7 @@ const getPostById = asyncHandler(async (request, response) => {
     const { userProfileId, businessProfileId } = request.user.profiles || {}; 
 
     // Set dynamic member ID and model
-    const memberId = role === "user" ? userProfileId : businessProfileId;
+    const memberId = role === "user" ? convertToMongoId(userProfileId) : convertToMongoId(businessProfileId);
     const memberModel = role === "user" ? "UserProfile" : "BusinessProfile";
     
     // Get post
@@ -491,6 +496,7 @@ const getPostById = asyncHandler(async (request, response) => {
                 from: "communitymemberships",
                 let: {
                     authorId: "$authorId",
+                    authorModel: "$authorModel",
                     communityId: "$communityId"
                 },
                 pipeline: [
@@ -498,18 +504,9 @@ const getPostById = asyncHandler(async (request, response) => {
                         $match: {
                             $expr: {
                                 $and: [
-                                    {
-                                        $eq: [
-                                            "$memberId",
-                                            "$$authorId"
-                                        ]
-                                    },
-                                    {
-                                        $eq: [
-                                            "$communityId",
-                                            "$$communityId"
-                                        ]
-                                    }
+                                    { $eq: ["$memberId", "$$authorId"] },
+                                    { $eq: ["$memberModel", "$$authorModel"] },
+                                    { $eq: ["$communityId", "$$communityId"] }
                                 ]
                             }
                         }
@@ -524,6 +521,13 @@ const getPostById = asyncHandler(async (request, response) => {
         { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
         { $unwind: { path: "$userProfile", preserveNullAndEmptyArrays: true } },  
         { $unwind: { path: "$memberInfo", preserveNullAndEmptyArrays: true } },
+
+        // Add field to determine if post liked by user
+        {
+            $addFields: {
+                hasLiked: { $in: [memberId, "$postLikes.likerId"] }
+            }
+        },        
         
         // Projection
         {
@@ -531,6 +535,7 @@ const getPostById = asyncHandler(async (request, response) => {
                 type: 1,
                 likesCount: { $size: "$postLikes" },
                 commentsCount: { $size: "$postComments" },
+                hasLiked: 1,
                 content: 1,
                 memberRole: "$memberInfo.role", 
                 postedBy:{

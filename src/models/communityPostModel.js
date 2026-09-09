@@ -12,15 +12,10 @@ const communityPostSchema = new Schema({
     type: { type: String, enum: ['post', 'document', 'event', 'poll', 'file'], default:'post', required:true },
 
     // Content
-    content: { type: String, trim:true },
+    content: { type: String, trim: true },
     
-    // Files
-    file: {
-        url: { type: String, trim: true },
-        name: { type: String, trim: true },
-        size: { type: Number },
-        mimeType: { type: String, trim: true },  
-    },
+    // File
+    file: { type: String, trim: true },
 
     // Document
     document: { type: String, trim: true },

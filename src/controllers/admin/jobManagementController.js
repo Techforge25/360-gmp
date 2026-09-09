@@ -21,14 +21,21 @@ const fetchJobStats = asyncHandler(async (request, response) => {
     // Get date filter
     const { dateFilter } = getDateFilter(request);
 
+    // Fetch reported job IDs
+    const reportedJobIds = await Report.distinct("reportedContentId", { reportedModel: "Job", ...dateFilter });
+
     // Fetch
-    const [totalActiveJobs, reportedJobIds] = await Promise.all([
+    const [totalActiveJobs, totalReportedJobs] = await Promise.all([
         Job.countDocuments({ status: "open", ...dateFilter }),
-        Report.distinct("reportedContentId", { reportedModel: "Job", ...dateFilter })
+        Job.countDocuments({
+            _id: { $in: reportedJobIds },
+            status: "open",
+            ...dateFilter
+        })
     ]);
 
     // Payload
-    const payload = { totalActiveJobs, totalReportedJobs: reportedJobIds.length };
+    const payload = { totalActiveJobs, totalReportedJobs };
 
     // Response
     return response.status(200).json(new ApiResponse(200, payload, "Job stats have been fetched"));

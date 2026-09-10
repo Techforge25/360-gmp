@@ -546,7 +546,6 @@ const getCommunityMembers = asyncHandler(async (request, response) => {
 
 // Update Community
 const updateCommunity = asyncHandler(async (request, response) => {
-    const userId = request.user._id;
     const { userProfileId, businessProfileId } = request.user.profiles || {};
 
     // Validate ID
@@ -554,7 +553,7 @@ const updateCommunity = asyncHandler(async (request, response) => {
     if(!isValidObjectId(communityId)) throw new ApiError(400, "Invalid Community ID");
 
     // Get validated payload
-    const { name, category, description, purpose, rules, coverImage, profileImage } = validate(updateCommunitySchema, request.body);
+    const { name, category, description, purpose, rules, profileImage } = validate(updateCommunitySchema, request.body);
 
     // Check membership
     const membership = await CommunityMembership.findOne({ 
@@ -569,7 +568,7 @@ const updateCommunity = asyncHandler(async (request, response) => {
     // Update community
     const community = await Community.findByIdAndUpdate(
         communityId,
-        { $set: { name, category, description, purpose, rules, coverImage, profileImage } }
+        { $set: { name, category, description, purpose, rules, profileImage } }
     ).populate({ path: "businessId", select: "ownerUserId" });
     if(!community) throw new ApiError(500, "Failed to update community");
 

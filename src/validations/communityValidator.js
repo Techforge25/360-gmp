@@ -17,7 +17,7 @@ const createCommunitySchema = Joi.object({
     description: Joi.string().max(200).trim().allow("", null).label("Description"),
     purpose: Joi.string().max(1000).trim().allow("", null).label("Purpose"),
     rules: Joi.string().max(2000).trim().allow("", null).label("Rules"),
-    coverImage: Joi.string().trim().optional().uri().label("Cover image"),
+    coverImage: Joi.string().trim().optional().allow("", null).uri().label("Cover image"),
     profileImage: Joi.string().trim().required().uri().label("Community image")
 });
 
@@ -28,7 +28,7 @@ const updateCommunitySchema = Joi.object({
     description: Joi.string().max(200).trim().allow("", null).label("Description"),
     purpose: Joi.string().max(1000).trim().allow("", null).label("Purpose"),
     rules: Joi.string().max(2000).trim().allow("", null).label("Rules"),
-    coverImage: Joi.string().trim().optional().uri().label("Cover image"),
+    coverImage: Joi.string().trim().optional().allow("", null).uri().label("Cover image"),
     profileImage: Joi.string().trim().required().uri().label("Community image")
 });
 

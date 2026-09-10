@@ -471,7 +471,7 @@ const fetchBusinessCommunities = asyncHandler(async (request, response) => {
     const options = {
         page: Number(page),
         limit: Number(limit),
-        select: "-__v -updatedAt -colorHashcode -rules -purpose -bannerTagLine",
+        select: "-__v -updatedAt -colorHashcode -bannerTagLine",
         sort:{ createdAt:-1 },
     };
 
@@ -481,7 +481,6 @@ const fetchBusinessCommunities = asyncHandler(async (request, response) => {
     // Response
     return response.status(200).json(new ApiResponse(200, communities, "Business communities have been fetched"));
 });
-
 
 module.exports = { createBusinessProfile, fetchBusinessProfiles, fetchMyBusinessProfile, 
 deleteMyBusinessProfile, getDirection, fetchLatestBusiness, fetchBusinessCountries, fetchBusinessJobs, 

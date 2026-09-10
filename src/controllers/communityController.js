@@ -81,7 +81,7 @@ const getAllCommunities = asyncHandler(async (request, response) => {
     if(search) filter.name = { $regex: search, $options: "i" };
     if(businessId) filter.businessId = convertToMongoId(businessId);
     if(type) filter.type = type;
-    if(category) filter.category = category;
+    if(category) filter.category = { $regex: category, $options: "i" };
 
     // Get current logged-in profile ID
     let memberId = null;

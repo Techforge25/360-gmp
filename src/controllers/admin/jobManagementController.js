@@ -21,21 +21,17 @@ const fetchJobStats = asyncHandler(async (request, response) => {
     // Get date filter
     const { dateFilter } = getDateFilter(request);
 
-    // Fetch reported job IDs
-    const reportedJobIds = await Report.distinct("reportedContentId", { reportedModel: "Job", ...dateFilter });
-
     // Fetch
     const [totalActiveJobs, totalReportedJobs] = await Promise.all([
         Job.countDocuments({ status: "open", ...dateFilter }),
-        Job.countDocuments({
-            _id: { $in: reportedJobIds },
-            status: "open",
-            ...dateFilter
-        })
+        Report.distinct("reportedContentId", { reportedModel: "Job", ...dateFilter }), // Unique reported job IDs
     ]);
 
     // Payload
-    const payload = { totalActiveJobs, totalReportedJobs };
+    const payload = { 
+        totalActiveJobs, 
+        totalReportedJobs: totalReportedJobs.length
+    };
 
     // Response
     return response.status(200).json(new ApiResponse(200, payload, "Job stats have been fetched"));
@@ -328,6 +324,88 @@ const viewActiveJob = asyncHandler(async (request, response) => {
 });
 
 // Fetch reported jobs
+// const fetchReportedJobs = asyncHandler(async (request, response) => {
+//     const { page = 1, limit = 10 } = request.query;
+
+//     // Get date filter
+//     const { dateFilter } = getDateFilter(request);
+
+//     // Fetch reported jobs
+//     const jobs = await Job.aggregatePaginate([
+//         // Match jobs
+//         { $match: { status: "open" } },
+
+//         // Lookup business
+//         {
+//             $lookup: {
+//                 from: "businessprofiles",
+//                 localField: "businessId",
+//                 foreignField: "_id",
+//                 as: "businessProfile",
+//                 pipeline: [{ $project: { _id: 0, companyName: 1, logo: 1 } }]
+//             }
+//         },
+
+//         // Lookup reports for this job
+//         {
+//             $lookup: {
+//                 from: "reports",
+//                 let: { jobId: "$_id" },
+//                 pipeline: [
+//                     {
+//                         $match: {
+//                             reportedModel: "Job",
+//                             ...dateFilter,
+//                             $expr: {
+//                                 $eq: ["$reportedContentId", "$$jobId"]
+//                             }
+//                         }
+//                     },
+//                     { $sort: { createdAt: -1 } }
+//                 ],
+//                 as: "reports"
+//             }
+//         },
+
+//         // Only jobs that have reports
+//         { $match: { "reports.0": { $exists: true } } },
+
+//         // Unwind business
+//         { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
+
+//         // Add report count and latest report date
+//         {
+//             $addFields: {
+//                 reportCount: { $size: "$reports" },
+//                 latestReportAt: {
+//                     $arrayElemAt: ["$reports.createdAt", 0]
+//                 }
+//             }
+//         },
+
+//         // Sort by latest report
+//         { $sort: { latestReportAt: -1 } },
+
+//         // Projection
+//         {
+//             $project: {
+//                 jobTitle: 1,
+//                 location: 1,
+//                 businessProfile: 1,
+//                 reportCount: 1,
+//                 latestReportAt: 1,
+//                 createdAt: 1
+//             }
+//         }
+//     ], { page, limit });
+
+//     if(!jobs.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No reported jobs found"));
+    
+//     // Response
+//     return response.status(200).json(new ApiResponse(200, jobs, "Reported jobs have been fetched"));
+// });
+
+// Fetch reported jobs
 const fetchReportedJobs = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
 
@@ -335,74 +413,65 @@ const fetchReportedJobs = asyncHandler(async (request, response) => {
     const { dateFilter } = getDateFilter(request);
 
     // Fetch reported jobs
-    const jobs = await Job.aggregatePaginate([
-        // Match jobs
-        { $match: { status: "open" } },
+    const jobs = await Report.aggregatePaginate([
+        // Match job reports
+        { $match: { reportedModel: "Job", ...dateFilter } },
+
+        // Group reports by job
+        {
+            $group: {
+                _id: "$reportedContentId",
+                reportCount: { $sum: 1 },
+                latestReportAt: { $max: "$createdAt" }
+            }
+        },
+
+        // Lookup job
+        {
+            $lookup: {
+                from: "jobs",
+                localField: "_id",
+                foreignField: "_id",
+                as: "job"
+            }
+        },
+
+        // Unwind job
+        { $unwind: "$job" },
+
+        // Only open jobs
+        { $match: { "job.status": "open" } },
 
         // Lookup business
         {
             $lookup: {
                 from: "businessprofiles",
-                localField: "businessId",
+                localField: "job.businessId",
                 foreignField: "_id",
                 as: "businessProfile",
                 pipeline: [{ $project: { _id: 0, companyName: 1, logo: 1 } }]
             }
         },
 
-        // Lookup reports for this job
-        {
-            $lookup: {
-                from: "reports",
-                let: { jobId: "$_id" },
-                pipeline: [
-                    {
-                        $match: {
-                            reportedModel: "Job",
-                            ...dateFilter,
-                            $expr: {
-                                $eq: ["$reportedContentId", "$$jobId"]
-                            }
-                        }
-                    },
-                    { $sort: { createdAt: -1 } }
-                ],
-                as: "reports"
-            }
-        },
-
-        // Only jobs that have reports
-        { $match: { "reports.0": { $exists: true } } },
-
         // Unwind business
         { $unwind: { path: "$businessProfile", preserveNullAndEmptyArrays: true } },
 
-        // Add report count and latest report date
+        // Replace root fields
         {
-            $addFields: {
-                reportCount: { $size: "$reports" },
-                latestReportAt: {
-                    $arrayElemAt: ["$reports.createdAt", 0]
-                }
+            $project: {
+                _id: "$job._id",
+                jobTitle: "$job.jobTitle",
+                location: "$job.location",
+                businessProfile: 1,
+                reportCount: 1,
+                latestReportAt: 1,
+                createdAt: "$job.createdAt"
             }
         },
 
         // Sort by latest report
-        { $sort: { latestReportAt: -1 } },
-
-        // Projection
-        {
-            $project: {
-                jobTitle: 1,
-                location: 1,
-                businessProfile: 1,
-                reportCount: 1,
-                latestReportAt: 1,
-                createdAt: 1
-            }
-        }
+        { $sort: { latestReportAt: -1 } }
     ], { page, limit });
-
     if(!jobs.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No reported jobs found"));
     
     // Response

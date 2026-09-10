@@ -721,7 +721,7 @@ const fetchMyCommunities = asyncHandler(async (request, response) => {
     const memberships = await CommunityMembership.find({ 
         memberId,
         status: "approved"
-    }).populate("communityId", "name profileImage memberCount type status").lean();
+    }).populate("communityId", "name profileImage memberCount type status category description").lean();
 
     // Extract communities
     const communities = memberships.map(m => m.communityId);

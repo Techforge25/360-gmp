@@ -14,7 +14,7 @@ const createCommunitySchema = Joi.object({
     name: Joi.string().pattern(alphaNumericPattern).min(3).max(100).trim().required().label("Community name"),
     category: Joi.string().trim().valid(...allowedCommunityCategories).label("Category"),
     type: Joi.string().valid("public", "private").default("public").label("Type"),
-    description: Joi.string().max(200).trim().allow("", null).label("Description"),
+    description: Joi.string().max(120).trim().allow("", null).label("Description"),
     purpose: Joi.string().max(1000).trim().allow("", null).label("Purpose"),
     rules: Joi.string().max(2000).trim().allow("", null).label("Rules"),
     coverImage: Joi.string().trim().optional().allow("", null).uri().label("Cover image"),
@@ -25,7 +25,7 @@ const createCommunitySchema = Joi.object({
 const updateCommunitySchema = Joi.object({
     name: Joi.string().pattern(alphaNumericPattern).min(3).max(100).trim().required().label("Community name"),
     category: Joi.string().trim().valid(...allowedCommunityCategories).label("Category"),
-    description: Joi.string().max(200).trim().allow("", null).label("Description"),
+    description: Joi.string().max(120).trim().allow("", null).label("Description"),
     purpose: Joi.string().max(1000).trim().allow("", null).label("Purpose"),
     rules: Joi.string().max(2000).trim().allow("", null).label("Rules"),
     coverImage: Joi.string().trim().optional().allow("", null).uri().label("Cover image"),

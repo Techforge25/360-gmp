@@ -518,7 +518,6 @@ const getCommunityMembers = asyncHandler(async (request, response) => {
         // Projection
         {
             $project: { 
-                _id: 0,
                 communityId: 1, 
                 memberModel: 1, 
                 member: {

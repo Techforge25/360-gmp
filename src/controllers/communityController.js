@@ -497,7 +497,7 @@ const getCommunityMembers = asyncHandler(async (request, response) => {
                 localField: "memberId",
                 foreignField: "_id",
                 as: "businessProfile",
-                pipeline: [{ $project: { _id: 0, name: "$ownerName", logo: 1 } }]
+                pipeline: [{ $project: { memberId: "$_id", name: "$ownerName", logo: 1 } }]
             }
         },   
         
@@ -508,7 +508,7 @@ const getCommunityMembers = asyncHandler(async (request, response) => {
                 localField: "memberId",
                 foreignField: "_id",
                 as: "userProfile",
-                pipeline: [{ $project: { _id: 0, name: "$fullName", logo: 1 } }]
+                pipeline: [{ $project: { memberId: "$_id", name: "$fullName", logo: 1 } }]
             }
         },          
 
@@ -518,6 +518,7 @@ const getCommunityMembers = asyncHandler(async (request, response) => {
         // Projection
         {
             $project: { 
+                _id: 0,
                 communityId: 1, 
                 memberModel: 1, 
                 member: {

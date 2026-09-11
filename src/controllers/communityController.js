@@ -497,7 +497,7 @@ const getCommunityMembers = asyncHandler(async (request, response) => {
                 localField: "memberId",
                 foreignField: "_id",
                 as: "businessProfile",
-                pipeline: [{ $project: { _id: 0, memberId: "$_id", name: "$ownerName", logo: 1 } }]
+                pipeline: [{ $project: { name: "$ownerName", logo: 1 } }]
             }
         },   
         
@@ -508,9 +508,22 @@ const getCommunityMembers = asyncHandler(async (request, response) => {
                 localField: "memberId",
                 foreignField: "_id",
                 as: "userProfile",
-                pipeline: [{ $project: { _id: 0, memberId: "$_id", name: "$fullName", logo: 1 } }]
+                pipeline: [{ $project: { name: "$fullName", logo: 1 } }]
             }
-        },          
+        },
+        
+        // Add Field memberId
+        {
+            $addFields: {
+                memberId: {
+                    $cond: [
+                        { $eq: ["$memberModel", "UserProfile"] },
+                        { $arrayElemAt: ["$userProfile._id", 0] },
+                        { $arrayElemAt: ["$businessProfile._id", 0] }
+                    ]
+                }
+            }
+        },
 
         // Sort
         { $sort: { joinedAt: -1 } },
@@ -518,13 +531,14 @@ const getCommunityMembers = asyncHandler(async (request, response) => {
         // Projection
         {
             $project: { 
-                communityId: 1, 
+                communityId: 1,
                 memberModel: 1, 
+                memberId: 1,
                 member: {
                     $cond: [
                         { $eq: ["$memberModel", "UserProfile"] },
-                        "$userProfile",
-                        "$businessProfile"
+                        { $arrayElemAt: ["$userProfile", 0] },
+                        { $arrayElemAt: ["$businessProfile", 0] },
                     ]
                 },
                 role: 1,

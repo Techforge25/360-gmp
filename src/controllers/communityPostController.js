@@ -311,7 +311,8 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
         // Add field to determine if post liked by user
         {
             $addFields: {
-                hasLiked: { $in: [memberId, "$postLikes.likerId"] }
+                hasLiked: { $in: [memberId, "$postLikes.likerId"] },
+                isAuthor: { $eq: ["$authorId", memberId] }
             }
         },
 
@@ -325,6 +326,7 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
                 likesCount: { $size: "$postLikes" },
                 commentsCount: { $size: "$postComments" },
                 hasLiked: 1,
+                isAuthor: 1,
                 content: 1,
                 memberRole: "$memberInfo.role", 
                 postedBy: {

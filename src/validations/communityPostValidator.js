@@ -11,8 +11,7 @@ const createPostSchema = joi.object({
     .when('type', { is: ['post'], then: joi.required(), otherwise: joi.forbidden() }).label("Post Content"), 
 
     // File
-    file: joi.string().trim()
-    .when('type', { is: 'post', then: joi.optional(), otherwise: joi.forbidden() }).label("File"),
+    file: joi.array().items(joi.string().trim().when('type', { is: 'post', then: joi.optional(), otherwise: joi.forbidden() }).label("File")),
 
     // Document
     document: joi.string().trim().uri()

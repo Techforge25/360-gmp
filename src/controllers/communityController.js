@@ -413,56 +413,127 @@ const approveMembership = asyncHandler(async (request, response) => {
 });
 
 // Get Pending Join Requests (for private/featured communities)
+// const getPendingRequests = asyncHandler(async (request, response) => {
+//     const { id } = request.params; // communityId
+//     const { page = 1, limit = 20 } = request.query;
+
+//     // Get community
+//     const community = await Community.findById(id);
+
+//     // Validate
+//     if(!community) throw new ApiError(404, "Community not found");
+//     if(community.status === "suspended") throw new ApiError(403, "This community has been suspended");
+
+//     // Verify user is business owner or admin
+//     const businessProfile = await BusinessProfile.findById(community.businessId);
+//     if(businessProfile.ownerUserId.toString() !== request.user._id.toString()) {
+//         const userProfileId = await getUserProfileId(request.user._id);
+//         const userMembership = await CommunityMembership.findOne({
+//             communityId: id,
+//             userProfileId: userProfileId,
+//             role: { $in: ["owner", "admin", "moderator"] }
+//         });
+//         if(!userMembership) {
+//             throw new ApiError(403, "Only community owner/admins can view pending requests");
+//         }
+//     }
+
+//     // Pagination
+//     const pageNumber = Number.parseInt(page, 10);
+//     const limitNumber = Number.parseInt(limit, 10);
+//     const skip = (pageNumber - 1) * limitNumber;
+
+//     // Get pending memberships
+//     const pendingMemberships = await CommunityMembership.find({
+//         communityId: id,
+//         status: "pending",
+//         role: { $in:["member"] }
+//     }).populate("memberId", "fullName title logo")
+//     .sort({ createdAt: -1 })
+//     .skip(skip)
+//     .limit(limitNumber);
+
+//     const total = await CommunityMembership.countDocuments({
+//         communityId: id,
+//         status: "pending",
+//         role: { $in:["member"] }
+//     });
+
+//     return response.status(200).json(
+//         new ApiResponse(200, { pendingRequests: pendingMemberships, total }, "Pending requests fetched successfully")
+//     );
+// });
+
+// Get pending request for private communities
 const getPendingRequests = asyncHandler(async (request, response) => {
-    const { id } = request.params; // communityId
-    const { page = 1, limit = 20 } = request.query;
+    // Pagination options
+    const { page = 1, limit = 10 } = request.query;
+
+    // Get profile IDs
+    const { userProfileId, businessProfileId } = request.user.profiles || {};
+
+    // Set dynamic member id and model
+    const { role } = request.user;
+    const memberId = role === "user" ? userProfileId : businessProfileId;
+    const memberModel = role === "user" ? "UserProfile" : "BusinessProfile";
+
+    // Sanitize community ID
+    const { communityId } = request.params;
+    if(!isValidObjectId(communityId)) throw new ApiError(400, "Invalid Community ID");
 
     // Get community
-    const community = await Community.findById(id);
-
-    // Validate
+    const community = await Community.findById(communityId);
     if(!community) throw new ApiError(404, "Community not found");
     if(community.status === "suspended") throw new ApiError(403, "This community has been suspended");
-
-    // Verify user is business owner or admin
-    const businessProfile = await BusinessProfile.findById(community.businessId);
-    if(businessProfile.ownerUserId.toString() !== request.user._id.toString()) {
-        const userProfileId = await getUserProfileId(request.user._id);
-        const userMembership = await CommunityMembership.findOne({
-            communityId: id,
-            userProfileId: userProfileId,
-            role: { $in: ["owner", "admin", "moderator"] }
-        });
-        if(!userMembership) {
-            throw new ApiError(403, "Only community owner/admins can view pending requests");
-        }
-    }
-
-    // Pagination
-    const pageNumber = Number.parseInt(page, 10);
-    const limitNumber = Number.parseInt(limit, 10);
-    const skip = (pageNumber - 1) * limitNumber;
-
-    // Get pending memberships
-    const pendingMemberships = await CommunityMembership.find({
-        communityId: id,
-        status: "pending",
-        role: { $in:["member"] }
-    }).populate("memberId", "fullName title logo")
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limitNumber);
-
-    const total = await CommunityMembership.countDocuments({
-        communityId: id,
-        status: "pending",
-        role: { $in:["member"] }
+    
+    // Check membership
+    const membership = await CommunityMembership.findOne({
+        communityId,
+        memberId,
+        memberModel,
+        status: "approved",
+        role: { $in: ["owner", "admin"] }
     });
+    if(!membership) throw new ApiError(403, "You are not authorized to view pending request");
 
-    return response.status(200).json(
-        new ApiResponse(200, { pendingRequests: pendingMemberships, total }, "Pending requests fetched successfully")
-    );
+    // Get requests
+    const pendingRequests = await CommunityMembership.aggregatePaginate([
+        // Match
+        { $match: { communityId: convertToMongoId(communityId), status: "pending" } }, 
+        
+        // Lookup user profile
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "memberId",
+                foreignField: "_id",
+                as: "member",
+                pipeline: [{ $project: { _id: 0, memberId: "$_id", fullName: 1, logo: 1 } }]
+            }
+        },  
+        
+        // Unwind
+        { $unwind: { path: "$member", preserveNullAndEmptyArrays: true } }, 
+
+        // Sort
+        { $sort: { createdAt: -1 } },   
+        
+        // Projection
+        {
+            $project: {
+                _id: 0,
+                memberId: "$member.memberId",
+                fullName: "$member.fullName",
+                logo: "$member.logo",
+            }
+        }
+    ], { page, limit });
+    if(!pendingRequests.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No pending request found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, pendingRequests, "Pending requests have been fetched"));
 });
+
 
 // Get Community Members
 const getCommunityMembers = asyncHandler(async (request, response) => {

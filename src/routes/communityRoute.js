@@ -29,7 +29,7 @@ communityRouter.route("/:id/join").post(authentication, authorization(["user"]),
 communityRouter.route("/:id/leave").post(authentication, authorization(["user", "business"]), leaveCommunity);
 
 // Get pending join requests (owner/admin only)
-communityRouter.route("/:id/pending-requests").get(authentication, getPendingRequests);
+communityRouter.route("/:communityId/pending-requests").get(authentication, getPendingRequests);
 
 // Approve/Reject membership (owner/admin only)
 communityRouter.route("/:id/approve-membership").post(authentication, approveMembership);

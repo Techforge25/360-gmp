@@ -1,7 +1,6 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
-const { createPost, getCommunityPosts, getPostById, updatePost, deletePost,
-getPostComments, addVote } = require("../controllers/communityPostController");
+const { createPost, getCommunityPosts, getPostById, updatePost, deletePost } = require("../controllers/communityPostController");
 
 // Router instance
 const communityPostRouter = Router();
@@ -20,11 +19,5 @@ communityPostRouter.route("/:postId").put(authentication, updatePost);
 
 // Delete post (author or admin only)
 communityPostRouter.route("/:postId").delete(authentication, authorization(["user", "business"]), deletePost);
-
-// Get comments of a post (with pagination)
-communityPostRouter.route("/:postId/comments").get(authentication, getPostComments);
-
-// Add vote to a poll option
-communityPostRouter.route("/:postId/vote").post(authentication, addVote);
 
 module.exports = communityPostRouter;

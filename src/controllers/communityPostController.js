@@ -336,13 +336,14 @@ const getCommunityPosts = asyncHandler(async (request, response) => {
                         "$businessProfile"
                     ]
                 },
-                file: {
-                    $cond: [
-                        { $eq: ["$type", "file"] },
-                        "$file",
-                        "$$REMOVE"
-                    ]                    
-                },
+                file: 1,
+                // file: {
+                //     $cond: [
+                //         { $eq: ["$type", "file"] },
+                //         "$file",
+                //         "$$REMOVE"
+                //     ]                    
+                // },
                 document: {
                     $cond: [
                         { $eq: ["$type", "post"] },
@@ -547,13 +548,14 @@ const getPostById = asyncHandler(async (request, response) => {
                         "$businessProfile"
                     ]
                 },
-                file: {
-                    $cond: [
-                        { $eq: ["$type", "file"] },
-                        "$file",
-                        "$$REMOVE"
-                    ]                    
-                },
+                file: 1,
+                // file: {
+                //     $cond: [
+                //         { $eq: ["$type", "file"] },
+                //         "$file",
+                //         "$$REMOVE"
+                //     ]                    
+                // },
                 document: {
                     $cond: [
                         { $eq: ["$type", "post"] },

@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
-const { createPost, getCommunityPosts, getPostById, updatePost, deletePost } = require("../controllers/communityPostController");
+const { createPost, getCommunityPosts, getPostById, deletePost } = require("../controllers/communityPostController");
 
 // Router instance
 const communityPostRouter = Router();
@@ -13,9 +13,6 @@ communityPostRouter.route("/community/:communityId").get(authentication, authori
 
 // Get post by ID
 communityPostRouter.route("/:postId").get(authentication, getPostById);
-
-// Update post (author only)
-communityPostRouter.route("/:postId").put(authentication, updatePost);
 
 // Delete post (author or admin only)
 communityPostRouter.route("/:postId").delete(authentication, authorization(["user", "business"]), deletePost);

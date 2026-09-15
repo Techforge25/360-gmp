@@ -352,13 +352,6 @@ const fetchCommunityPosts = asyncHandler(async (request, response) => {
                         "$file",
                         "$$REMOVE"
                     ]                    
-                },
-                document: {
-                    $cond: [
-                        { $eq: ["$type", "post"] },
-                        "$document",
-                        "$$REMOVE"
-                    ]                    
                 },                
                 event: {
                     $cond: [

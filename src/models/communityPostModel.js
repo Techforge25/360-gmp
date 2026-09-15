@@ -9,67 +9,20 @@ const communityPostSchema = new Schema({
     authorModel: { type:String, enum:['UserProfile', 'BusinessProfile'], required:true, index:true },
 
     // Post Type
-    type: { type: String, enum: ['post', 'document', 'event', 'poll', 'file'], default:'post', required:true },
+    type: { type: String, enum: ['post', 'document'], default: 'post', required: true },
 
     // Content
     content: { type: String, trim: true },
     
-    // File
-    file: { type: String, trim: true },
-
-    // Document
-    document: { type: String, trim: true },
-
-    // Event Details
-    event: {
-        name: { type: String, trim: true },
-        description: { type: String, trim: true },
-        date: { type: Date },
-        location: { type: String, trim: true }
-    },
-
-    // Poll Details
-    poll: {
-        question: { type: String, trim: true },
-        options: [{
-            option: { type: String, trim: true },
-            votedBy:[{ type:Schema.Types.ObjectId }],
-            votes: { type: Number, default: 0 }
-        }],
-        duration: { type:Date }, // Duration in (1 day, 2 days, 3 days, 1 week, 2 weeks)
-    },
-
-    // Likes
-    likes: [{
-        userId: { type: Schema.Types.ObjectId, refPath: 'likes.onModel' },
-        onModel: { type: String, enum: ['UserProfile', 'BusinessProfile'] },
-        likedAt: { type: Date, default: Date.now }
-    }],
-    
-    // Comments
-    comments: [{
-        userId: { type: Schema.Types.ObjectId, refPath: 'comments.onModel' },
-        onModel: { type: String, enum: ['UserProfile', 'BusinessProfile'] },
-        content: String,
-        commentedAt: { type: Date, default: Date.now }
-    }],
-
-    // Counters
-    likeCount: { type: Number, default: 0 },
-    commentCount: { type: Number, default: 0},
-
-    // Flag
-    isEdited: { type: Boolean, default: false },    
-
-    // Other fields added by another Dev
-    images: { type: [String], default: [] },
-    docId: { type: String },
+    // File (For docs and images)
+    file: { type: String, trim: true }
 }, { timestamps: true });
 
 // Indexes
-communityPostSchema.index({ communityId: 1, createdAt: -1 });
+communityPostSchema.index({ communityId: 1 });
 communityPostSchema.index({ authorUserProfileId: 1 });
 
+// Add pagination plugin
 communityPostSchema.plugin(aggregatePaginate);
 
 // Model

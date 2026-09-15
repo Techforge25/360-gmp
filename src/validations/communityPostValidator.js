@@ -18,25 +18,6 @@ const createPostSchema = joi.object({
     document: joi.string().trim().uri()
     .when('type', { is: ['post'], then: joi.optional(), otherwise: joi.forbidden() }).label("Document"),     
 
-    // Event Details
-    event: joi.object({
-        name: joi.string().trim().label("Event Name"),
-        description: joi.string().trim().label("Event Description"),
-        date: joi.date().label("Event Date"),
-        location: joi.string().trim().label("Event Location")
-    }).when('type', { is: 'event', then: joi.required(), otherwise: joi.forbidden() }).label("Event Details"),
-
-    // Poll Details
-    poll: joi.object({
-        question: joi.string().trim().required().label("Poll Question"),
-
-        options: joi.array().items(joi.object({
-            option: joi.string().trim().label("Poll Option")
-        })).min(2).max(10).label("Poll Options"),
-
-        duration: joi.date().label("Poll Duration")
-    }).when('type', { is: 'poll', then: joi.required(), otherwise: joi.forbidden() }).label("Poll Details"),
-
     images: joi.array().items(joi.string().trim()).default([]),
     docId: joi.string().trim().allow("", null)
 });
@@ -55,36 +36,7 @@ const updatePostSchema = joi.object({
     document: joi.string().trim().uri()
     .when('type', { is: ['post'], then: joi.optional(), otherwise: joi.forbidden() }).label("Document"),      
 
-    // Event Details
-    event: joi.object({
-        name: joi.string().trim().label("Event Name"),
-        description: joi.string().trim().label("Event Description"),
-        date: joi.date().label("Event Date"),
-        location: joi.string().trim().label("Event Location")
-    }).when('type', { is: 'event', then: joi.required(), otherwise: joi.optional() }).label("Event Details"),
-
-    // Poll Details
-    poll: joi.object({
-        question: joi.string().trim().required().label("Poll Question"),
-        options: joi.array().items(joi.object({
-            option: joi.string().trim().label("Poll Option")
-        })).min(2).max(10).label("Poll Options"),
-        duration: joi.date().label("Poll Duration")
-    }).when('type', { is: 'poll', then: joi.required(), otherwise: joi.optional() }).label("Poll Details"),
-
-    images: joi.array().items(joi.string().trim()).default([]),
-    docId: joi.string().trim().allow("", null)    
+    images: joi.array().items(joi.string().trim()).default([])  
 });
 
-// Like/Unlike Post schema
-const likePostSchema = joi.object({
-    postId: joi.string().required().label("Post ID")
-});
-
-// Add Comment schema
-const addCommentSchema = joi.object({
-    postId: joi.string().required().label("Post ID"),
-    content: joi.string().min(1).max(1000).required().trim().label("Comment Content")
-});
-
-module.exports = { createPostSchema, updatePostSchema, likePostSchema, addCommentSchema };
+module.exports = { createPostSchema, updatePostSchema };

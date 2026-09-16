@@ -8,22 +8,12 @@ const createPlan = asyncHandler(async (request, response) => {
     let { name, price, description, features, durationDays, stripePriceId } = request.body;
     if(!name) throw new ApiError(400, "Please select plan");
 
-    let allowsUserAccess = true;
-    let allowsBusinessAccess = true;
-    if(name === "TRIAL")
-    {
-        price = 0;
-        allowsBusinessAccess = false;
-    }
-
     // Create plan
     const plan = await Plan.create({ 
         name, 
         price:Number(price),
         description,
         features,
-        allowsUserAccess, 
-        allowsBusinessAccess, 
         durationDays:Number(durationDays),
         stripePriceId
     });

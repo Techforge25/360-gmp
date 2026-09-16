@@ -5,7 +5,7 @@ fetchViewCounts, updateContactInfo, fetchLowStockProducts,fetchRecentJobApplicat
 fetchNewLeads, countTotalJobApplications, countTotalHiredApplicants, countTotalInterviewApplicants, 
 countConversionRate, fetchInStockProducts, fetchOutOfStockProducts, countTotalJobViews,
 fetchMyJobs, updateBusinessBanner,updateBusinessLogo } = require("../controllers/businessProfileManagementController");
-const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
+const { checkSubscription } = require("../middlewares/checkSubscription");
 
 // Router instance
 const businessProfileManagementRouter = Router();
@@ -32,7 +32,7 @@ businessProfileManagementRouter.route("/top-performing-products")
 
 // Update map URL
 businessProfileManagementRouter.route("/map-url")
-.patch(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, updateMapURL);
+.patch(authentication, authorization(["business"]), checkSubscription, updateMapURL);
 
 // View business profile
 businessProfileManagementRouter.route("/view/:businessProfileId")
@@ -44,7 +44,7 @@ businessProfileManagementRouter.route("/view-counts")
 
 // Update contact information
 businessProfileManagementRouter.route("/contact-info")
-.patch(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, updateContactInfo);
+.patch(authentication, authorization(["business"]), checkSubscription, updateContactInfo);
 
 // Fetch recent job applicants
 businessProfileManagementRouter.route("/recent-job-applicants")

@@ -7,7 +7,7 @@ fetchBusinessProcessingOrders, fetchBsuinessInTransitOrders, fetchBusinessComple
 fetchBusinessCancelledOrders, updateOrderTrackingInfo, fetchNewOrders, fetchBusinessNewOrders, 
 fetchDeliveredOrders, fetchBusinessDeliveredOrders, fetchUnreviewedOrders, 
 fetchDisputedOrders } = require("../controllers/ordersController");
-const { checkSubscription, checkUserAccess } = require("../middlewares/checkSubscription");
+const { checkSubscription } = require("../middlewares/checkSubscription");
 
 // Router instance
 const orderRouter = Router();
@@ -22,7 +22,7 @@ orderRouter.route("/stripe/success")
 
 // Create order through wallet
 orderRouter.route("/wallet")
-.post(authentication, authorization(["user"]), checkSubscription, checkUserAccess, createOrderWithWallet);
+.post(authentication, authorization(["user"]), checkSubscription, createOrderWithWallet);
 
 // Update order tracking info by seller
 orderRouter.route("/:orderId/trackingInfo")

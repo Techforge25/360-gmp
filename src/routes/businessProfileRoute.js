@@ -5,7 +5,7 @@ fetchMyBusinessProfile, deleteMyBusinessProfile, fetchLatestBusiness,
 fetchBusinessCountries, fetchBusinessJobs, fetchBusinessProducts, 
 fetchBusinessCommunities, fetchMyRejectedBusinessProfile, 
 resubmitBusinessProfile } = require("../controllers/businessProfileController");
-const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
+const { checkSubscription } = require("../middlewares/checkSubscription");
 
 // Router instance
 const businessProfileRouter = Router();
@@ -36,7 +36,7 @@ businessProfileRouter.route("/countries")
 
 // Delete business profile
 businessProfileRouter.route("/")
-.delete(authentication, checkSubscription, checkBusinessAccess, deleteMyBusinessProfile);
+.delete(authentication, checkSubscription, deleteMyBusinessProfile);
 
 // Get direction
 businessProfileRouter.route("/:businessId/getDirection")

@@ -6,8 +6,6 @@ const planSchema = new Schema({
     price: { type: Number },
     description: { type: String },
     features:[{ type: String }],
-    allowsUserAccess: { type: Boolean },
-    allowsBusinessAccess: { type: Boolean },
     durationDays: { type: Number },
     stripePriceId: { type: String }
 });

@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
-const { checkSubscription, checkBusinessAccess } = require("../middlewares/checkSubscription");
+const { checkSubscription } = require("../middlewares/checkSubscription");
 const { createProduct, fetchAllProducts, viewProduct, updateProduct, 
 deleteProduct, fetchBusinessFeaturedProducts, setFeaturedProduct, fetchFeaturedProducts, 
 fetchTopRankingProducts, fetchNewProducts, fetchFlashDeals, fetchRelatedProducts } = require("../controllers/productsController");
@@ -10,7 +10,7 @@ const productsRouter = Router();
 
 // Create product / Fetch all products
 productsRouter.route("/")
-.post(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, createProduct)
+.post(authentication, authorization(["business"]), checkSubscription, createProduct)
 .get(authentication, fetchAllProducts);
 
 // Fetch featured products
@@ -31,12 +31,12 @@ productsRouter.route("/top-deals").get(authentication, fetchFlashDeals);
 // View product / Update product / Delete product
 productsRouter.route("/:productId")
 .get(authentication, viewProduct)
-.put(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, updateProduct)
-.delete(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, deleteProduct);
+.put(authentication, authorization(["business"]), checkSubscription, updateProduct)
+.delete(authentication, authorization(["business"]), checkSubscription, deleteProduct);
 
 // Set featured product
 productsRouter.route("/:productId/featured")
-.patch(authentication, authorization(["business"]), checkSubscription, checkBusinessAccess, setFeaturedProduct);
+.patch(authentication, authorization(["business"]), checkSubscription, setFeaturedProduct);
 
 // Fetch related products
 productsRouter.route("/:productId/related-products")

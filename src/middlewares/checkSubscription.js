@@ -29,25 +29,7 @@ const checkSubscription = asyncHandler(async (request, response, next) => {
     request.user.subscription = subscription;
     request.user.plan = subscription.planId;
     request.user.planName = subscription.planId?.name || null;
-    request.user.allowsUserAccess = subscription.planId?.allowsUserAccess || false;
-    request.user.allowsBusinessAccess = subscription.planId?.allowsBusinessAccess || false;
 
-    return next();
-});
-
-// Middleware to check if user has access to user features
-const checkUserAccess = asyncHandler(async (request, response, next) => {
-    if(!request.user.allowsUserAccess) {
-        throw new ApiError(403, "Your current plan does not allow access to user features. Please upgrade your plan.");
-    }
-    return next();
-});
-
-// Middleware to check if user has access to business features
-const checkBusinessAccess = asyncHandler(async (request, response, next) => {
-    if(!request.user.allowsBusinessAccess) {
-        throw new ApiError(403, "Your current plan does not allow access to business features. Please upgrade your plan.");
-    }
     return next();
 });
 
@@ -65,4 +47,4 @@ const restrictTrialUser = asyncHandler(async (request, response, next) => {
     return next();
 });
 
-module.exports = { checkSubscription, checkUserAccess, checkBusinessAccess, restrictTrialUser };
+module.exports = { checkSubscription, restrictTrialUser };

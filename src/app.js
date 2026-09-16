@@ -105,7 +105,6 @@ const financialHubRouter = require("./routes/admin/financialHubRoute");
 const reportManagementRouter = require("./routes/admin/reportManagementRoute");
 const communityManagementRouter = require("./routes/admin/communityManagemenRoute");
 const jobManagementRouter = require("./routes/admin/jobManagementRoute");
-const featureRouter = require("./routes/admin/featureRoute");
 
 // Registered Admin Routes
 app.use("/api/v1/admin/auth", adminAuthRouter);
@@ -118,7 +117,6 @@ app.use("/api/v1/admin/marketplace", marketPlaceRouter);
 app.use("/api/v1/admin/communityManagement", communityManagementRouter);
 app.use("/api/v1/admin/jobManagement", jobManagementRouter);
 app.use("/api/v1/admin/financialHub", financialHubRouter);
-app.use("/api/v1/admin/feature", featureRouter);
 
 // API status route
 app.get("/", (request, response) => response.send(`Server is up and running at port ${port}`));

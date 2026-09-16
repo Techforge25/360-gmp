@@ -14,6 +14,7 @@ const checkMembership = async (communityId, memberId, memberModel) => {
     }
     catch(error)
     {
+        console.log(error.message);
         return null;
     }
 };

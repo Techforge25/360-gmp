@@ -254,27 +254,30 @@ const viewCommunity = asyncHandler(async (request, response) => {
     if(!isValidObjectId(communityId)) throw new ApiError(400, "Invalid Community ID");  
     
     // Get dynamic member id and model
-    const { memberId, memberModel } = getMemberIdAndModel(request.user);    
+    const { memberId, memberModel } = getMemberIdAndModel(request.user); 
+    
+    // Parallel execution
+    const [membership, isOwner] = await Promise.all([
+        // Check membership
+        CommunityMembership.findOne({
+            communityId, 
+            memberId, 
+            memberModel, 
+            status: { $in: ["pending", "approved", "rejected"] }
+        }),
 
-    // Check membership
-    const membership = await CommunityMembership.findOne({
-        communityId, 
-        memberId, 
-        memberModel, 
-        status: { $in: ["pending", "approved", "rejected"] }
-    });
+        // Is own community flag
+        CommunityMembership.findOne({
+            communityId, 
+            memberId: { $in:[request.user.profiles.businessProfileId] }, 
+            memberModel: "BusinessProfile", 
+            role: "owner"
+        })
+    ]);
     if(!membership) throw new ApiError(403, "To view this community, you must be a member of this community");
 
     // Is member flag
     const isMember = membership.status === "approved";
-
-    // Is own community flag
-    const isOwner = await CommunityMembership.findOne({
-        communityId, 
-        memberId: { $in:[request.user.profiles.businessProfileId] }, 
-        memberModel: "BusinessProfile", 
-        role: "owner"
-    });
 
     // Fetch
     const [community] = await Community.aggregate([

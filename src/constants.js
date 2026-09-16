@@ -86,6 +86,9 @@ const allowedTermsAndCapability = ['Air Freight', 'Sea Freight', 'Express Courie
 // Allowed plan names
 const allowedPlanNames = ["Consumer / Individual", "Sneak Peek Free – 14 Days", "Silver", "Bronze", "Enterprise", "Gold"];
 
+// Allowed feature names
+const allowedFeatureNames = ["View products", "Purchase products"];
+
 module.exports = {
     port,
     isProduction,
@@ -100,5 +103,6 @@ module.exports = {
     allowedNotificationTypes,
     allowedIncoterms,
     allowedTermsAndCapability,
-    allowedPlanNames
+    allowedPlanNames,
+    allowedFeatureNames
 };

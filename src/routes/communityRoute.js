@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
-const { createCommunity, getAllCommunities, getCommunityById, joinCommunity, approveMembership,
+const { createCommunity, getAllCommunities, viewCommunity, joinCommunity, approveMembership,
 getPendingRequests, getCommunityMembers, updateCommunity, deleteCommunity, leaveCommunity, 
 fetchSuggestedCommunities,  fetchMyCommunities } = require("../controllers/communityController");
 
@@ -14,7 +14,7 @@ communityRouter.route("/").post(authentication, authorization(["business"]), cre
 communityRouter.route("/").get(authentication, getAllCommunities);
 
 // Get community by ID
-communityRouter.route("/:id").get(authentication, getCommunityById);
+communityRouter.route("/:communityId").get(authentication, viewCommunity);
 
 // Update community (owner/admin only)
 communityRouter.route("/:communityId").put(authentication, authorization(["business", "user"]), updateCommunity);

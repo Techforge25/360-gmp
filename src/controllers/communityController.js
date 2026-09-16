@@ -13,6 +13,8 @@ const CommunityPost = require("../models/communityPostModel");
 const convertToMongoId = require("../utils/convertToMongoId");
 const sendNotification = require("../utils/sendNotification");
 const validate = require("../utils/validate");
+const getMemberIdAndModel = require("../utils/getMemberIdAndModel");
+const checkMembership = require("../utils/checkMembership");
 
 // Helper function to get userProfileId from userId
 const getUserProfileId = async (userId) => {
@@ -182,67 +184,173 @@ const getAllCommunities = asyncHandler(async (request, response) => {
 });
 
 // Get Community By ID
-const getCommunityById = asyncHandler(async (request, response) => {
-    const userId = request.user._id;
-    const { id } = request.params;
+// const getCommunityById = asyncHandler(async (request, response) => {
+//     const userId = request.user._id;
+//     const { communityId } = request.params;
 
-    // Find community
-    const community = await Community.findById(id)
-    .populate("businessId", "_id ownerUserId companyName businessType primaryIndustry location logo banner website status")
-    .lean();
-    if(!community) throw new ApiError(404, "Community not found");
-    if(community.status === "suspended") throw new ApiError(403, "This community has been suspended");
+//     // Find community
+//     const community = await Community.findById(communityId)
+//     .populate("businessId", "_id ownerUserId companyName businessType primaryIndustry location logo banner website status")
+//     .lean();
+//     if(!community) throw new ApiError(404, "Community not found");
+//     if(community.status === "suspended") throw new ApiError(403, "This community has been suspended");
 
-    // Check if user is member (for private communities)
-    let isOwnCommunity = false;
-    let isMember = false;
-    let membershipStatus = null;
+//     // Check if user is member (for private communities)
+//     let isOwnCommunity = false;
+//     let isMember = false;
+//     let membershipStatus = null;
 
-    // Get profile IDs
-    const { businessProfileId, userProfileId } = request.user.profiles || {};  
+//     // Get profile IDs
+//     const { businessProfileId, userProfileId } = request.user.profiles || {};  
     
-    // Same parent profiles restriction
-    if(String(userId) === String(community.businessId.ownerUserId)) isOwnCommunity = true;
+//     // Same parent profiles restriction
+//     if(String(userId) === String(community.businessId.ownerUserId)) isOwnCommunity = true;
 
-    // Find membership
+//     // Find membership
+//     const membership = await CommunityMembership.findOne({
+//         communityId,
+//         memberId: { $in:[userProfileId, businessProfileId] },
+//         status: "approved"
+//     });
+
+//     if(membership) 
+//     {
+//         isMember = true;
+//         membershipStatus = membership.status;
+//     }
+
+//     // Post count of current month
+//     const now = new Date();
+//     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+//     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    
+//     const postCount = await CommunityPost.countDocuments({ 
+//         communityId, 
+//         createdAt:{ $gte:startOfMonth, $lte:endOfMonth } 
+//     });
+
+//     // Replace actual member count to exclude owner
+//     // const memberCount = Number(community.memberCount) - 1;
+//     // delete community.memberCount;
+
+//     // Prepare payload
+//     const payload = { 
+//         // community: { ...community, memberCount } , 
+//         community, 
+//         postCount, 
+//         isMember, 
+//         membershipStatus, 
+//         isOwnCommunity 
+//     };
+
+//     // Response
+//     return response.status(200).json(new ApiResponse(200, payload, "Community fetched successfully"));
+// });
+
+// View community
+const viewCommunity = asyncHandler(async (request, response) => {
+    // Sanitize ID
+    const { communityId } = request.params;
+    if(!isValidObjectId(communityId)) throw new ApiError(400, "Invalid Community ID");  
+    
+    // Get dynamic member id and model
+    const { memberId, memberModel } = getMemberIdAndModel(request.user);    
+
+    // Check membership
     const membership = await CommunityMembership.findOne({
-        communityId: id,
-        memberId: { $in:[userProfileId, businessProfileId] },
-        status: "approved"
+        communityId, 
+        memberId, 
+        memberModel, 
+        status: { $in: ["pending", "approved", "rejected"] }
+    });
+    if(!membership) throw new ApiError(403, "To view this community, you must be a member of this community");
+
+    // Is member flag
+    const isMember = membership.status === "approved";
+
+    // Is own community flag
+    const isOwner = await CommunityMembership.findOne({
+        communityId, 
+        memberId: { $in:[request.user.profiles.businessProfileId] }, 
+        memberModel: "BusinessProfile", 
+        role: "owner"
     });
 
-    if(membership) 
-    {
-        isMember = true;
-        membershipStatus = membership.status;
-    }
+    // Fetch
+    const [community] = await Community.aggregate([
+        // Match
+        { $match: { _id: convertToMongoId(communityId) } },
 
-    // Post count of current month
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-    
-    const postCount = await CommunityPost.countDocuments({ 
-        communityId: id, 
-        createdAt:{ $gte:startOfMonth, $lte:endOfMonth } 
-    });
+        // Lookup business profile
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "businessId",
+                foreignField: "_id",
+                as: "owner",
+                pipeline:[{ $project: { _id: 0, companyName: 1, businessType: 1, primaryIndustry: 1 } }]
+            }
+        },
+        { $unwind: { path: "$owner", preserveNullAndEmptyArrays: true } },
 
-    // Replace actual member count to exclude owner
-    // const memberCount = Number(community.memberCount) - 1;
-    // delete community.memberCount;
+        // Lookup community post
+        {
+            $lookup: {
+                from: "communityposts",
+                localField: "_id",
+                foreignField: "communityId",
+                as: "posts"
+            }
+        },
 
-    // Prepare payload
-    const payload = { 
-        // community: { ...community, memberCount } , 
-        community, 
-        postCount, 
-        isMember, 
-        membershipStatus, 
-        isOwnCommunity 
+        // Lookup community membership
+        {
+            $lookup: {
+                from: "communitymemberships",
+                localField: "_id",
+                foreignField: "communityId",
+                as: "members",
+                pipeline: [{ $project: { membershipStatus: "$status" } }]
+            }
+        }, 
+
+        // Add fields
+        {
+            $addFields: {
+                totalPosts: { $size: "$posts" },
+                totalMembers: { $size: "$members" }
+            }
+        },
+
+        // Projection
+        {
+            $project: {
+                name: 1,
+                category: 1,
+                type: 1,
+                description: 1,
+                purpose: 1,
+                rules: 1,
+                coverImage: 1,
+                profileImage: 1,
+                owner: 1,
+                totalPosts: 1,
+                totalMembers: 1,
+                membershipStatus: membership.status
+            }
+        }
+    ]);
+    if(!community) throw new ApiError(404, "Community not found");
+
+    // Payload
+    const payload = {
+        ...community,
+        isMember,
+        isOwner: Boolean(isOwner)
     };
 
     // Response
-    return response.status(200).json(new ApiResponse(200, payload, "Community fetched successfully"));
+    return response.status(200).json(new ApiResponse(200, payload, "Community has been fetched"));
 });
 
 // Join Community
@@ -412,58 +520,6 @@ const approveMembership = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, membership, `Membership ${value.status} successfully`));
 });
 
-// Get Pending Join Requests (for private/featured communities)
-// const getPendingRequests = asyncHandler(async (request, response) => {
-//     const { id } = request.params; // communityId
-//     const { page = 1, limit = 20 } = request.query;
-
-//     // Get community
-//     const community = await Community.findById(id);
-
-//     // Validate
-//     if(!community) throw new ApiError(404, "Community not found");
-//     if(community.status === "suspended") throw new ApiError(403, "This community has been suspended");
-
-//     // Verify user is business owner or admin
-//     const businessProfile = await BusinessProfile.findById(community.businessId);
-//     if(businessProfile.ownerUserId.toString() !== request.user._id.toString()) {
-//         const userProfileId = await getUserProfileId(request.user._id);
-//         const userMembership = await CommunityMembership.findOne({
-//             communityId: id,
-//             userProfileId: userProfileId,
-//             role: { $in: ["owner", "admin", "moderator"] }
-//         });
-//         if(!userMembership) {
-//             throw new ApiError(403, "Only community owner/admins can view pending requests");
-//         }
-//     }
-
-//     // Pagination
-//     const pageNumber = Number.parseInt(page, 10);
-//     const limitNumber = Number.parseInt(limit, 10);
-//     const skip = (pageNumber - 1) * limitNumber;
-
-//     // Get pending memberships
-//     const pendingMemberships = await CommunityMembership.find({
-//         communityId: id,
-//         status: "pending",
-//         role: { $in:["member"] }
-//     }).populate("memberId", "fullName title logo")
-//     .sort({ createdAt: -1 })
-//     .skip(skip)
-//     .limit(limitNumber);
-
-//     const total = await CommunityMembership.countDocuments({
-//         communityId: id,
-//         status: "pending",
-//         role: { $in:["member"] }
-//     });
-
-//     return response.status(200).json(
-//         new ApiResponse(200, { pendingRequests: pendingMemberships, total }, "Pending requests fetched successfully")
-//     );
-// });
-
 // Get pending request for private communities
 const getPendingRequests = asyncHandler(async (request, response) => {
     // Pagination options
@@ -533,7 +589,6 @@ const getPendingRequests = asyncHandler(async (request, response) => {
     // Response
     return response.status(200).json(new ApiResponse(200, pendingRequests, "Pending requests have been fetched"));
 });
-
 
 // Get Community Members
 const getCommunityMembers = asyncHandler(async (request, response) => {
@@ -816,7 +871,7 @@ const fetchMyCommunities = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, communities, "Communities fetched successfully"));
 });
 
-module.exports = { createCommunity, getAllCommunities, getCommunityById, 
+module.exports = { createCommunity, getAllCommunities, viewCommunity, 
 joinCommunity, approveMembership, getPendingRequests, getCommunityMembers, 
 updateCommunity, deleteCommunity, leaveCommunity, fetchSuggestedCommunities, 
 fetchMyCommunities };

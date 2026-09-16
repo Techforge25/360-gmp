@@ -339,7 +339,8 @@ const viewCommunity = asyncHandler(async (request, response) => {
                 owner: 1,
                 totalPosts: 1,
                 totalMembers: 1,
-                membershipStatus: membership.status
+                membershipStatus: membership.status,
+                createdAt: 1
             }
         }
     ]);

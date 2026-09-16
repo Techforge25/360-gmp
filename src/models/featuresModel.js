@@ -4,10 +4,10 @@ const { allowedFeatureNames } = require("../constants");
 // Schema
 const featureSchema = new Schema({
     // Reference
-    planId: { type: Schema.Types.ObjectId, ref: "Plan" },
+    planId: { type: Schema.Types.ObjectId, ref: "Plan", required: true },
 
     // Info
-    name: { type: String, required: true, enum: allowedFeatureNames, index: true, unique: true },
+    name: { type: String, required: true, enum: allowedFeatureNames, index: true },
     limit: { type: Number, default: 0 },
     isInfinite: { type: Boolean, default: false }
 }, { timestamps: true });

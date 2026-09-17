@@ -465,17 +465,60 @@ const fetchBusinessCommunities = asyncHandler(async (request, response) => {
     if(!isValidObjectId(businessId)) throw new ApiError(400, "Invalid business ID");
 
     // Pagination
-    const { page = 1, limit = 10 } = request.query;
+    const { page = 1, limit = 10 } = request.query; 
 
-    // Options
-    const options = {
-        page: Number(page),
-        limit: Number(limit),
-        select: "-__v -updatedAt -colorHashcode -bannerTagLine",
-        sort:{ createdAt:-1 },
-    };
+    // Fetch
+    const communities = await Community.aggregatePaginate([
+        // Match
+        { $match: { businessId: convertToMongoId(businessId) } },
 
-    const communities = await Community.paginate({ businessId }, options);
+        // Lookup membership
+        {
+            $lookup: {
+                from: "communitymemberships",
+                localField: "_id",
+                foreignField: "communityId",
+                as: "membership",
+                pipeline: [{ $project: { _id: 0, memberId: 1, status: 1 } }]
+            }
+        },
+        
+        // Add fields to determine membership, own community flag and total membership count for each community
+        {
+            $addFields: {
+                memberCount: {
+                    $size: {
+                        $filter: {
+                            input: "$membership",
+                            as: "member",
+                            cond: { $eq: ["$$member.status", "approved"] }
+                        }
+                    }
+                }
+            }
+        },         
+
+        // Sort
+        { $sort: { createdAt: -1 } },
+
+        // Projection
+        {
+            $project: {
+                businessId: 1,
+                name: 1,
+                category: 1,
+                type: 1,
+                description: 1,
+                purpose: 1,
+                rules: 1,
+                coverImage: 1,
+                profileImage: 1,
+                status: 1,
+                memberCount: 1,
+                createdAt: 1
+            }
+        }
+    ], { page, limit });
     if(!communities.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No business communities found"));
 
     // Response

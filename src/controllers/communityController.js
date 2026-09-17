@@ -274,10 +274,9 @@ const viewCommunity = asyncHandler(async (request, response) => {
             role: "owner"
         })
     ]);
-    if(!membership) throw new ApiError(403, "To view this community, you must be a member of this community");
 
     // Is member flag
-    const isMember = membership.status === "approved";
+    const isMember = membership?.status === "approved";
 
     // Fetch
     const [community] = await Community.aggregate([
@@ -313,7 +312,10 @@ const viewCommunity = asyncHandler(async (request, response) => {
                 localField: "_id",
                 foreignField: "communityId",
                 as: "members",
-                pipeline: [{ $project: { membershipStatus: "$status" } }]
+                pipeline: [
+                    { $match: { status: "approved" } },
+                    { $project: { membershipStatus: "$status" } }
+                ]
             }
         }, 
 
@@ -339,7 +341,7 @@ const viewCommunity = asyncHandler(async (request, response) => {
                 owner: 1,
                 totalPosts: 1,
                 totalMembers: 1,
-                membershipStatus: membership.status,
+                membershipStatus: membership?.status,
                 createdAt: 1
             }
         }

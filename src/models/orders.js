@@ -21,11 +21,13 @@ const orderSchema = new Schema({
 
     // Shipping address info
     shippingAddress: {
-        name: { type:String, trim:true, required:true },
-        phone: { type:String, trim:true, required:true },
-        lineAddress: [{ type:String, trim:true }],
-        province: { type:String, trim:true, required:true },
-        postalCode: { type:String, trim:true, required:true },
+        name: { type: String, trim:true, required: true },
+        phone: { type: String, trim:true, required: true },
+        continent: { type: String, trim: true, required: true, enum: ["Asia", "Africa", "America", "Antarctica", "Europe", "Australia"] },
+        regionName: { type: String, trim: true, required: true, enum: ["South", "North", "East", "West"] },
+        lineAddress: [{ type: String, trim:true }],
+        province: { type: String, trim:true, required:true },
+        postalCode: { type: String, trim:true, required:true },
     },
 
     // Tracking info

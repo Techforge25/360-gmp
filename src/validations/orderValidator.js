@@ -8,7 +8,7 @@ const namePattern = /^[a-zA-Z ]*$/; // only letters + spaces
 
 // Create order validation schema
 const createOrderValidationSchema = joi.object({
-    shippingAddress:{
+    shippingAddress: joi.object({
         name: joi.string().pattern(namePattern).trim().min(3).max(40).required().label("Full name").messages({
             "string.pattern.base": "Name can only contain letters and spaces"
         }),
@@ -17,13 +17,13 @@ const createOrderValidationSchema = joi.object({
         }).label("Phone"),
         lineAddress: joi.array().items(joi.string().min(10).max(500)).max(2).label("Line addresses"),
         province: joi.string().pattern(alphaNumericPattern).trim().max(50).required().label("State/Province"),
-        postalCode: joi.string().pattern(alphaNumericPattern).trim().max(30).required().label("Postal code"),
-    },
+        postalCode: joi.string().pattern(alphaNumericPattern).trim().max(30).required().label("Postal code"),        
+    }).required().label("Shipping address"),
 
-    items: joi.array().items(joi.object({
+    items: joi.array().min(1).items(joi.object({
         productId: joi.string().trim().required().label("Product ID"),
         quantity: joi.number().min(1).required().label("Quantity")
-    }))
+    })).label("Order items")
 });
 
 // Update order status

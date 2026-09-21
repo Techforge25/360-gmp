@@ -89,6 +89,12 @@ const allowedPlanNames = ["Consumer / Individual", "Sneak Peek Free – 14 Days"
 // Allowed feature names
 const allowedFeatureNames = ["View products", "Purchase products"];
 
+// Continent list
+const continentList = ["Asia", "Africa", "America", "Antarctica", "Europe", "Australia"];
+
+// Region list
+const regionList = ["South", "North", "East", "West"];
+
 module.exports = {
     port,
     isProduction,
@@ -104,5 +110,7 @@ module.exports = {
     allowedIncoterms,
     allowedTermsAndCapability,
     allowedPlanNames,
-    allowedFeatureNames
+    allowedFeatureNames,
+    continentList,
+    regionList
 };

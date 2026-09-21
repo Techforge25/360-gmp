@@ -29,8 +29,6 @@ const createProductSchema = Joi.object({
     stockQty: Joi.number().integer().positive().min(Joi.ref("minOrderQty")).required().label("Stock quantity"),
     lowStockThreshold: Joi.number().integer().min(1).allow(null).label("Lock threeshold"),    
 
-    // shippingCost: Joi.number().min(0).required().label("Shipping Cost"),
-
     // Shipping cost
     shippingCost: Joi.object({
         continent: Joi.string().trim().required().valid(...continentList).label("Continent"),

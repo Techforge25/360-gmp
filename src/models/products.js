@@ -14,7 +14,7 @@ const productSchema = new Schema({
   image: { type: String, trim: true, required: true },
   groupImages: [{ type: String, trim: true }],
   category: { type: String, required: true },
-  subCategory: { type: String, required:true },
+  subCategory: { type: String, required: true },
 
   // Pricing
   pricePerUnit: { type: Number, required: true },
@@ -39,7 +39,6 @@ const productSchema = new Schema({
   lowStockThreshold: { type: Number, default: 5 }, // For critical stock alert
 
   // Other
-  estimatedDeliveryDays: { type: String, required: true },
   isFeatured: { type: Boolean, default: false },
   status: { type: String, enum: ["pending", "approved", "rejected", "draft"], default: "pending" },
   isSingleProductAvailable: { type: Boolean, default: false },

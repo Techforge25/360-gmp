@@ -17,7 +17,7 @@ const createProduct = asyncHandler(async (request, response) => {
     const userId = request.user?._id;
 
     // Get validated payload
-    const payload = validate(createProductSchema, request.body);
+    const payload = validate(createProductSchema, request.body) || {};
 
     // Find business
     const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");

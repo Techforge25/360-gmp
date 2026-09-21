@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const { continentList, regionList } = require("../constants");
+// const { continentList, regionList } = require("../constants");
 
 // Patterns
 const titlePattern = /^[a-zA-Z0-9 \-(),.&]*$/; // Allow common product title chars
@@ -30,13 +30,13 @@ const createProductSchema = Joi.object({
     lowStockThreshold: Joi.number().integer().min(1).allow(null).label("Lock threeshold"),    
 
     // Shipping cost
-    shippingCost: Joi.object({
-        continent: Joi.string().trim().required().valid(...continentList).label("Continent"),
-        region: Joi.array().min(1).items(Joi.object({
-            name: Joi.string().trim().required().valid(...regionList).label("Region name"),
-            price: Joi.number().min(0).required().label("Region price")
-        })).label("Region")
-    }).label("Shipping cost"),
+    // shippingCost: Joi.object({
+    //     continent: Joi.string().trim().required().valid(...continentList).label("Continent"),
+    //     region: Joi.array().min(1).items(Joi.object({
+    //         name: Joi.string().trim().required().valid(...regionList).label("Region name"),
+    //         price: Joi.number().min(0).required().label("Region price")
+    //     })).label("Region")
+    // }).label("Shipping cost"),
  
     // Other
     isSingleProductAvailable: Joi.boolean()

@@ -1,7 +1,7 @@
 const { Schema, model } = require("mongoose");
 const paginate = require("mongoose-paginate-v2");
 const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
-const { continentList, regionList } = require("../constants");
+// const { continentList, regionList } = require("../constants");
 
 // Schema
 const productSchema = new Schema({
@@ -25,13 +25,13 @@ const productSchema = new Schema({
   // shippingCost: { type: Number, required: true, default: 0 },
 
   // As per new requirement
-  shippingCost: {
-    continent: { type: String, trim: true, required: true, enum: continentList },
-    region: [{
-      name: { type: String, trim: true, required: true, enum: regionList },
-      price: { type: Number, default: 0 }
-    }]
-  },
+  // shippingCost: {
+  //   continent: { type: String, trim: true, required: true, enum: continentList },
+  //   region: [{
+  //     name: { type: String, trim: true, required: true, enum: regionList },
+  //     price: { type: Number, default: 0 }
+  //   }]
+  // },
 
   // Quantity
   minOrderQty: { type: Number, required:true, default: 1 },

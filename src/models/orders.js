@@ -1,7 +1,7 @@
 const { Schema, model } = require("mongoose");
 const paginate = require("mongoose-paginate-v2");
 const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
-const { continentList, regionList } = require("../constants");
+// const { continentList, regionList } = require("../constants");
 
 // Updated Schema
 const orderSchema = new Schema({
@@ -24,8 +24,8 @@ const orderSchema = new Schema({
     shippingAddress: {
         name: { type: String, trim:true, required: true },
         phone: { type: String, trim:true, required: true },
-        continent: { type: String, trim: true, required: true, enum: continentList },
-        regionName: { type: String, trim: true, required: true, enum: regionList },
+        // continent: { type: String, trim: true, required: true, enum: continentList },
+        // regionName: { type: String, trim: true, required: true, enum: regionList },
         lineAddress: [{ type: String, trim:true }],
         province: { type: String, trim:true, required:true },
         postalCode: { type: String, trim:true, required:true },

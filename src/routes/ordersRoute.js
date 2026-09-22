@@ -13,8 +13,12 @@ const { checkSubscription } = require("../middlewares/checkSubscription");
 const orderRouter = Router();
 
 // Create order through stripe
-orderRouter.route("/stripe")
+orderRouter.route("/cod")
 .post(authentication, authorization(["user"]), checkSubscription, createOrder);
+
+// // Create order through stripe
+// orderRouter.route("/stripe")
+// .post(authentication, authorization(["user"]), checkSubscription, createOrder);
 
 // Verify payment
 // orderRouter.route("/stripe/success")

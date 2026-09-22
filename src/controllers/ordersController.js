@@ -309,7 +309,7 @@ const Dispute = require("../models/disputeModel");
 // Create order - Purchase product using COD
 const createOrder = asyncHandler(async (request, response) => {
     const { _id: userId, planName } = request.user;
-    const { userProfileId, businessProfileId } = request.user.profiles;
+    const { userProfileId } = request.user.profiles;
     if(!planName) throw new ApiError(400, "No subscription plan name found");
 
     // Track trial orders
@@ -341,7 +341,9 @@ const createOrder = asyncHandler(async (request, response) => {
         if(!product) throw new ApiError(404, "Product not found");
 
         // User cannot purchase his own product from his own business profile
-        if(String(product.businessId) === String(businessProfileId))
+        const businessProfile = await BusinessProfile.findById(product.businessId).select("ownerUserId").lean();
+        if(!businessProfile) throw new ApiError(404, "Product owner not found");
+        if(String(businessProfile.ownerUserId) === String(userId))
         {
             throw new ApiError(400, "You cannot purchase product from your own business profile");
         }

@@ -14,26 +14,41 @@ const sendNotification = require("../utils/sendNotification");
 
 // Create product
 const createProduct = asyncHandler(async (request, response) => {
-    const userId = request.user?._id;
+    // Get profile IDs
+    const userId = request.user._id;
+    const { businessProfileId } = request.user.profiles;
 
-    // Get validated payload
-    const payload = validate(createProductValidator, request.body) || {};
+    // Sanitize payload
+    const { title, detail, image, groupImages, category, subCategory,
+    pricePerUnit, tieredPricing, minOrderQty, stockQty, lowStockThreshold,
+    isSingleProductAvailable } = validate(createProductValidator, request.body) || {};
 
-    // Find business
-    const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");
-    if(!business) throw new ApiError(404, "Business not found");
-
-    // Savve to db
-    const product = await Product.create({ ...payload, businessId:business._id });
+    // Save to db
+    const product = await Product.create({
+        businessId: businessProfileId,
+        title, 
+        detail, 
+        image, 
+        groupImages, 
+        category, 
+        subCategory,
+        pricePerUnit, 
+        tieredPricing, 
+        minOrderQty, 
+        stockQty, 
+        lowStockThreshold, 
+        isSingleProductAvailable
+    });
+    if(!product) throw new ApiError(500, "Failed to create product");
 
     // Send notification to business
     await sendNotification({ 
         userId,
         title: "New Product Created", 
-        content: `You have successfully listed ${payload.title} as your product`, 
+        content: `You have successfully listed ${title} as your product`, 
         type: "BusinessProfile",
         io: request.app.get("io") 
-    });    
+    }); 
 
     // Response
     return response.status(201).json(new ApiResponse(201, product, "Product created successfully"));

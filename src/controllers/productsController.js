@@ -5,7 +5,7 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const validate = require("../utils/validate");
-const { createProductSchema } = require("../validations/productsValidator");
+const { createProductValidator } = require("../validations/productsValidator");
 const Order = require("../models/orders");
 const convertToMongoId = require("../utils/convertToMongoId");
 const ProductReview = require("../models/productReviewModel");
@@ -17,7 +17,7 @@ const createProduct = asyncHandler(async (request, response) => {
     const userId = request.user?._id;
 
     // Get validated payload
-    const payload = validate(createProductSchema, request.body) || {};
+    const payload = validate(createProductValidator, request.body) || {};
 
     // Find business
     const business = await BusinessProfile.findOne({ ownerUserId:userId }).select("_id");
@@ -426,7 +426,7 @@ const updateProduct = asyncHandler(async (request, response) => {
     if(!product.businessId.equals(business._id)) throw new ApiError(403, "Unauthorized! You cannot update this product");
 
     // Get validated payload
-    const payload = validate(createProductSchema, request.body);
+    const payload = validate(createProductValidator, request.body) || {};
 
     // Update
     const updateProduct = await Product.findByIdAndUpdate(productId, payload, { new:true, lean:true });

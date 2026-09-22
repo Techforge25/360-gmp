@@ -4,7 +4,7 @@ const Joi = require("joi");
 // Patterns
 const titlePattern = /^[a-zA-Z0-9 \-(),.&]*$/; // Allow common product title chars
 
-const createProductSchema = Joi.object({
+const createProductValidator = Joi.object({
     // Basic info
     title: Joi.string().pattern(titlePattern).trim().min(3).max(150).required().label("Product title").messages({
         "string.pattern.base": "Product title contains invalid characters"
@@ -28,17 +28,8 @@ const createProductSchema = Joi.object({
     minOrderQty: Joi.number().integer().positive().min(1).required().label("Minimum order quantity"),
     stockQty: Joi.number().integer().positive().min(Joi.ref("minOrderQty")).required().label("Stock quantity"),
     lowStockThreshold: Joi.number().integer().min(1).allow(null).label("Lock threeshold"),    
-
-    // Shipping cost
-    // shippingCost: Joi.object({
-    //     continent: Joi.string().trim().required().valid(...continentList).label("Continent"),
-    //     region: Joi.array().min(1).items(Joi.object({
-    //         name: Joi.string().trim().required().valid(...regionList).label("Region name"),
-    //         price: Joi.number().min(0).required().label("Region price")
-    //     })).label("Region")
-    // }).label("Shipping cost"),
  
-    // Other
+    // Checkbox
     isSingleProductAvailable: Joi.boolean()
 });
 
@@ -47,4 +38,4 @@ const rejectProductValidator = Joi.object({
     note: Joi.string().trim().max(1000).required().label("Note")
 });
 
-module.exports = { createProductSchema, rejectProductValidator };
+module.exports = { createProductValidator, rejectProductValidator };

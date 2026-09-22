@@ -30,7 +30,16 @@ const createProductValidator = Joi.object({
     lowStockThreshold: Joi.number().integer().min(1).allow(null).label("Lock threeshold"),    
  
     // Checkbox
-    isSingleProductAvailable: Joi.boolean()
+    isSingleProductAvailable: Joi.boolean().custom((value, helpers) => {
+        if(value === true && helpers.state.ancestors[0].minOrderQty > 1) 
+        {
+            return helpers.error("any.singleProductNotAllowed");
+        }
+        return value;
+    })
+    .messages({ 
+        "any.singleProductNotAllowed": "Single product availability cannot be enabled when minimum order quantity is greater than 1" 
+    })
 });
 
 // Reject product validator

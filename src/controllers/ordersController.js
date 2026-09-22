@@ -456,233 +456,233 @@ const createOrder = asyncHandler(async (request, response) => {
     return response.status(201).json(new ApiResponse(201, order, "Order placed successfully"));
 });
 
-// Purchase product using Wallet balance
-const createOrderWithWallet = asyncHandler(async (request, response) => {
-    const userId = request.user._id;
-    const { planName } = request.user || {};
-    if(!planName) throw new ApiError(400, "No subscription plan name found");
+// // Purchase product using Wallet balance
+// const createOrderWithWallet = asyncHandler(async (request, response) => {
+//     const userId = request.user._id;
+//     const { planName } = request.user || {};
+//     if(!planName) throw new ApiError(400, "No subscription plan name found");
 
-    // Track trial orders
-    if(planName === "TRIAL")
-    {
-        const trial = await TrialUsage.findOne({ userId, ordersUsed:{ $gte:1 } });
-        if(trial && trial.ordersUsed >= 1) throw new ApiError(403, "Trial users can place only one order. Please upgrade your plan.");
-    }    
+//     // Track trial orders
+//     if(planName === "TRIAL")
+//     {
+//         const trial = await TrialUsage.findOne({ userId, ordersUsed:{ $gte:1 } });
+//         if(trial && trial.ordersUsed >= 1) throw new ApiError(403, "Trial users can place only one order. Please upgrade your plan.");
+//     }    
 
-    // Get buyer profile
-    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
-    if(!userProfile) throw new ApiError(404, "User profile not found");
+//     // Get buyer profile
+//     const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+//     if(!userProfile) throw new ApiError(404, "User profile not found");
 
-    // Get payload
-    const { shippingAddress, items } = request.body;
+//     // Get payload
+//     const { shippingAddress, items } = request.body;
 
-    // Validate shipping address and items
-    if(!shippingAddress) throw new ApiError(400, "Shipping address is required");
-    if(!items || !items.length) throw new ApiError(400, "Product item is required");
+//     // Validate shipping address and items
+//     if(!shippingAddress) throw new ApiError(400, "Shipping address is required");
+//     if(!items || !items.length) throw new ApiError(400, "Product item is required");
 
-    let sellerBusinessId = null;
-    let sellerParentUserId = null; // For sending notification to user
-    let serverComputedTotal = 0;
+//     let sellerBusinessId = null;
+//     let sellerParentUserId = null; // For sending notification to user
+//     let serverComputedTotal = 0;
 
-    // Validate items & compute total
-    for(const item of items)
-    {
-        const { productId, quantity } = item;
+//     // Validate items & compute total
+//     for(const item of items)
+//     {
+//         const { productId, quantity } = item;
 
-        // Validate quantity
-        if(!quantity || quantity <= 0) throw new ApiError(400, "Invalid product quantity");
+//         // Validate quantity
+//         if(!quantity || quantity <= 0) throw new ApiError(400, "Invalid product quantity");
 
-        // Trial cannot purchase in bulk
-        if(planName === "TRIAL" && quantity > 1) throw new ApiError(400, "You cannot purchase in bulk within Trial period! Please upgrade");
+//         // Trial cannot purchase in bulk
+//         if(planName === "TRIAL" && quantity > 1) throw new ApiError(400, "You cannot purchase in bulk within Trial period! Please upgrade");
 
-        // Find each product by "id"
-        const product = await Product.findById(productId)
-        .select("title stockQty minOrderQty pricePerUnit businessId");
-        if(!product) throw new ApiError(404, "Product not found");
+//         // Find each product by "id"
+//         const product = await Product.findById(productId)
+//         .select("title stockQty minOrderQty pricePerUnit businessId");
+//         if(!product) throw new ApiError(404, "Product not found");
 
-        // User cannot purchase his own product from his own business profile
-        const businessProfile = await BusinessProfile.findById(product.businessId).select("ownerUserId").lean();
-        if(!businessProfile) throw new ApiError(404, "Product owner not found");
-        if(String(businessProfile.ownerUserId) === String(userId))
-        {
-            throw new ApiError(400, "You cannot purchase product from your own business profile");
-        }        
+//         // User cannot purchase his own product from his own business profile
+//         const businessProfile = await BusinessProfile.findById(product.businessId).select("ownerUserId").lean();
+//         if(!businessProfile) throw new ApiError(404, "Product owner not found");
+//         if(String(businessProfile.ownerUserId) === String(userId))
+//         {
+//             throw new ApiError(400, "You cannot purchase product from your own business profile");
+//         }        
 
-        // Restrict single-item purchase if the product is available only for bulk orders
-        if(!product.isSingleProductAvailable && quantity <= 1)
-        {
-            throw new ApiError(400, `${product.title} is available for bulk purchase only. Single-item orders are not allowed.`);
-        }
+//         // Restrict single-item purchase if the product is available only for bulk orders
+//         if(!product.isSingleProductAvailable && quantity <= 1)
+//         {
+//             throw new ApiError(400, `${product.title} is available for bulk purchase only. Single-item orders are not allowed.`);
+//         }
 
-        // Prevent multiple sellers in single order
-        if(!sellerBusinessId)
-        {
-            sellerBusinessId = String(product.businessId);
-            sellerParentUserId = String(businessProfile.ownerUserId);
-        }
-        else if(sellerBusinessId !== product.businessId.toString())
-        {
-            throw new ApiError(400, "Multiple sellers in one order are not allowed");
-        }
+//         // Prevent multiple sellers in single order
+//         if(!sellerBusinessId)
+//         {
+//             sellerBusinessId = String(product.businessId);
+//             sellerParentUserId = String(businessProfile.ownerUserId);
+//         }
+//         else if(sellerBusinessId !== product.businessId.toString())
+//         {
+//             throw new ApiError(400, "Multiple sellers in one order are not allowed");
+//         }
 
-        // Compare stock quantity with demanded quantity
-        if(product.stockQty < Number(quantity)) throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
+//         // Compare stock quantity with demanded quantity
+//         if(product.stockQty < Number(quantity)) throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
 
-        // Validate min order quantity
-        if(product.minOrderQty > Number(quantity))
-        {
-            const message = `Minimum order quantity for "${product.title}" is ${product.minOrderQty}. Please increase the quantity for "${product.title}"`
-            throw new ApiError(400, message);
-        }
+//         // Validate min order quantity
+//         if(product.minOrderQty > Number(quantity))
+//         {
+//             const message = `Minimum order quantity for "${product.title}" is ${product.minOrderQty}. Please increase the quantity for "${product.title}"`
+//             throw new ApiError(400, message);
+//         }
 
-        // Compute total amount
-        // const itemTotal = (product.pricePerUnit * quantity) + product.shippingCost || 0;
-        const itemTotal = (product.pricePerUnit * quantity);
-        serverComputedTotal += itemTotal;
-    }
+//         // Compute total amount
+//         // const itemTotal = (product.pricePerUnit * quantity) + product.shippingCost || 0;
+//         const itemTotal = (product.pricePerUnit * quantity);
+//         serverComputedTotal += itemTotal;
+//     }
 
-    // Start DB transaction
-    const dbSession = await mongoose.startSession();
-    dbSession.startTransaction();
+//     // Start DB transaction
+//     const dbSession = await mongoose.startSession();
+//     dbSession.startTransaction();
 
-    try 
-    {
-        const amount = Number(serverComputedTotal);
+//     try 
+//     {
+//         const amount = Number(serverComputedTotal);
 
-        // Deduct balance from buyer wallet 
-        const buyerWallet = await Wallet.findOneAndUpdate(
-            { ownerId: userProfile._id, ownerModel: "UserProfile", availableBalance: { $gte: amount } },
-            { $inc: { availableBalance: -amount } },
-            { new: true, session: dbSession }
-        );
-        if(!buyerWallet) throw new ApiError(400, "Insufficient wallet balance");
+//         // Deduct balance from buyer wallet 
+//         const buyerWallet = await Wallet.findOneAndUpdate(
+//             { ownerId: userProfile._id, ownerModel: "UserProfile", availableBalance: { $gte: amount } },
+//             { $inc: { availableBalance: -amount } },
+//             { new: true, session: dbSession }
+//         );
+//         if(!buyerWallet) throw new ApiError(400, "Insufficient wallet balance");
 
-        // Deduct stock & prepare items
-        const itemsWithPrice = [];
-        for(const item of items) 
-        {
-            const { productId, quantity } = item;
+//         // Deduct stock & prepare items
+//         const itemsWithPrice = [];
+//         for(const item of items) 
+//         {
+//             const { productId, quantity } = item;
 
-            // Deduct stock
-            const product = await Product.findOneAndUpdate(
-                { _id: productId, stockQty: { $gte: quantity } },
-                { $inc: { stockQty: -quantity } },
-                { new: true, session: dbSession }
-            );
-            if(!product) throw new ApiError(400, "Product went out of stock");
+//             // Deduct stock
+//             const product = await Product.findOneAndUpdate(
+//                 { _id: productId, stockQty: { $gte: quantity } },
+//                 { $inc: { stockQty: -quantity } },
+//                 { new: true, session: dbSession }
+//             );
+//             if(!product) throw new ApiError(400, "Product went out of stock");
 
-            // Push items
-            itemsWithPrice.push({
-                productId: product._id,
-                quantity,
-                priceAtPurchase: product.pricePerUnit
-            });
-        }
+//             // Push items
+//             itemsWithPrice.push({
+//                 productId: product._id,
+//                 quantity,
+//                 priceAtPurchase: product.pricePerUnit
+//             });
+//         }
 
-        // Create order
-        const [order] = await Order.create([{
-            buyerUserProfileId: userProfile._id,
-            sellerBusinessId,
-            totalAmount: amount,
-            status: "pending",
-            shippingAddress,
-            items: itemsWithPrice
-        }], { session: dbSession });
+//         // Create order
+//         const [order] = await Order.create([{
+//             buyerUserProfileId: userProfile._id,
+//             sellerBusinessId,
+//             totalAmount: amount,
+//             status: "pending",
+//             shippingAddress,
+//             items: itemsWithPrice
+//         }], { session: dbSession });
 
-        // Escrow calculation
-        const platformFee = amount * 0.10;
-        const netAmount = amount - platformFee; // Seller's share
+//         // Escrow calculation
+//         const platformFee = amount * 0.10;
+//         const netAmount = amount - platformFee; // Seller's share
 
-        // Hold escrow
-        await EscrowTransaction.create([{
-            orderId: order._id,
-            sellerId: sellerBusinessId,
-            buyerId: userProfile._id,
-            totalAmount: amount,
-            platformFee,
-            netAmount,
-            status: "held",
-            paymentMethod: "wallet"
-        }], { session: dbSession });
+//         // Hold escrow
+//         await EscrowTransaction.create([{
+//             orderId: order._id,
+//             sellerId: sellerBusinessId,
+//             buyerId: userProfile._id,
+//             totalAmount: amount,
+//             platformFee,
+//             netAmount,
+//             status: "held",
+//             paymentMethod: "wallet"
+//         }], { session: dbSession });
         
 
-        // Increase seller pending balance
-        await Wallet.findOneAndUpdate(
-            { ownerId: sellerBusinessId, ownerModel: "BusinessProfile" },
-            { $inc: { pendingBalance: netAmount } },
-            { upsert: true, session: dbSession }
-        );
+//         // Increase seller pending balance
+//         await Wallet.findOneAndUpdate(
+//             { ownerId: sellerBusinessId, ownerModel: "BusinessProfile" },
+//             { $inc: { pendingBalance: netAmount } },
+//             { upsert: true, session: dbSession }
+//         );
 
-        // Log buyer wallet transaction
-        await Transaction.create([{
-            ownerId: userProfile._id,
-            ownerModel: "UserProfile",
-            orderId: order._id,
-            amount,
-            type: "buy",
-            paymentMethod: "wallet",
-            status: "completed"
-        }], { session: dbSession });
+//         // Log buyer wallet transaction
+//         await Transaction.create([{
+//             ownerId: userProfile._id,
+//             ownerModel: "UserProfile",
+//             orderId: order._id,
+//             amount,
+//             type: "buy",
+//             paymentMethod: "wallet",
+//             status: "completed"
+//         }], { session: dbSession });
 
-        // Log seller wallet transaction
-        await Transaction.create([{
-            ownerId: sellerBusinessId,
-            ownerModel: "BusinessProfile",
-            orderId: order._id,
-            amount,
-            type: "sale",
-            paymentMethod: "wallet",
-            status: "completed"
-        }], { session: dbSession });      
+//         // Log seller wallet transaction
+//         await Transaction.create([{
+//             ownerId: sellerBusinessId,
+//             ownerModel: "BusinessProfile",
+//             orderId: order._id,
+//             amount,
+//             type: "sale",
+//             paymentMethod: "wallet",
+//             status: "completed"
+//         }], { session: dbSession });      
 
-        // Mark trial usage after successful payment
-        if(planName === "TRIAL")
-        {
-            await TrialUsage.findOneAndUpdate(
-                { userId },
-                { $set:{ ordersUsed:1 } },
-                { upsert:true, session:dbSession }
-            ); 
-        }        
+//         // Mark trial usage after successful payment
+//         if(planName === "TRIAL")
+//         {
+//             await TrialUsage.findOneAndUpdate(
+//                 { userId },
+//                 { $set:{ ordersUsed:1 } },
+//                 { upsert:true, session:dbSession }
+//             ); 
+//         }        
 
-        // Commit db changes
-        await dbSession.commitTransaction();
-        dbSession.endSession();
+//         // Commit db changes
+//         await dbSession.commitTransaction();
+//         dbSession.endSession();
 
-        // Get socket instance
-        const io = request.app.get("io");
+//         // Get socket instance
+//         const io = request.app.get("io");
 
-        // Emit real-time event to business profile for order creation
-        io.to(String(sellerBusinessId)).emit("order-creation", order); 
+//         // Emit real-time event to business profile for order creation
+//         io.to(String(sellerBusinessId)).emit("order-creation", order); 
 
-        // Send notification to seller (user profile)
-        await sendNotification({ 
-            userId,
-            title: "Order Placement Through Wallet", 
-            content: `You have placed a new order successfully!`,
-            type: "UserProfile",
-            io
-        });         
+//         // Send notification to seller (user profile)
+//         await sendNotification({ 
+//             userId,
+//             title: "Order Placement Through Wallet", 
+//             content: `You have placed a new order successfully!`,
+//             type: "UserProfile",
+//             io
+//         });         
 
-        // Send notification to seller (business profile)
-        await sendNotification({ 
-            userId: sellerParentUserId,
-            title: "Order Placement", 
-            content: `You have received a new order.`,
-            type: "BusinessProfile",
-            io
-        });        
+//         // Send notification to seller (business profile)
+//         await sendNotification({ 
+//             userId: sellerParentUserId,
+//             title: "Order Placement", 
+//             content: `You have received a new order.`,
+//             type: "BusinessProfile",
+//             io
+//         });        
 
-        // Response
-        return response.status(201).json(new ApiResponse(201, order, "Order placed successfully using wallet"));
-    } 
-    catch(error) 
-    {
-        await dbSession.abortTransaction();
-        dbSession.endSession();
-        throw error;
-    }
-});
+//         // Response
+//         return response.status(201).json(new ApiResponse(201, order, "Order placed successfully using wallet"));
+//     } 
+//     catch(error) 
+//     {
+//         await dbSession.abortTransaction();
+//         dbSession.endSession();
+//         throw error;
+//     }
+// });
 
 // Fetch all user orders
 const fetchAllUserOrders = asyncHandler(async (request, response) => {
@@ -1690,7 +1690,7 @@ const fetchDisputedOrders = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, orders, "Disputed orders have been fetched"));     
 });
 
-module.exports = { createOrder, createOrderWithWallet, completeOrder, updateOrderStatusBySeller, 
+module.exports = { createOrder, completeOrder, updateOrderStatusBySeller, 
 fetchAllUserOrders, fetchAllBusinessOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, fetchCancelledOrders,
 fetchBusinessProcessingOrders, fetchBsuinessInTransitOrders, fetchBusinessCompletedOrders, fetchBusinessCancelledOrders,
 viewOrder, cancelOrder, updateOrderTrackingInfo, fetchNewOrders, fetchBusinessNewOrders, fetchDeliveredOrders, 

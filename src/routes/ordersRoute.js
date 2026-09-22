@@ -2,7 +2,7 @@ const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
 const { createOrder, completeOrder, updateOrderStatusBySeller, 
 fetchAllUserOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, 
-fetchCancelledOrders, viewOrder, createOrderWithWallet, cancelOrder, fetchAllBusinessOrders, 
+fetchCancelledOrders, viewOrder, cancelOrder, fetchAllBusinessOrders, 
 fetchBusinessProcessingOrders, fetchBsuinessInTransitOrders, fetchBusinessCompletedOrders,
 fetchBusinessCancelledOrders, updateOrderTrackingInfo, fetchNewOrders, fetchBusinessNewOrders, 
 fetchDeliveredOrders, fetchBusinessDeliveredOrders, fetchUnreviewedOrders, 
@@ -24,9 +24,9 @@ orderRouter.route("/cod")
 // orderRouter.route("/stripe/success")
 // .get(verifyStripePaymentForOrders);
 
-// Create order through wallet
-orderRouter.route("/wallet")
-.post(authentication, authorization(["user"]), checkSubscription, createOrderWithWallet);
+// // Create order through wallet
+// orderRouter.route("/wallet")
+// .post(authentication, authorization(["user"]), checkSubscription, createOrderWithWallet);
 
 // Update order tracking info by seller
 orderRouter.route("/:orderId/trackingInfo")

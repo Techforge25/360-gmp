@@ -22,16 +22,6 @@ const productSchema = new Schema({
     qty: { type: String, trim: true },
     price: { type: Number, min:0 }
   }],
-  // shippingCost: { type: Number, required: true, default: 0 },
-
-  // As per new requirement
-  // shippingCost: {
-  //   continent: { type: String, trim: true, required: true, enum: continentList },
-  //   region: [{
-  //     name: { type: String, trim: true, required: true, enum: regionList },
-  //     price: { type: Number, default: 0 }
-  //   }]
-  // },
 
   // Quantity
   minOrderQty: { type: Number, required:true, default: 1 },

@@ -20,10 +20,296 @@ updateTrackingInfoValidationSchema, cancelOrderValidationSchema } = require("../
 const sendNotification = require("../utils/sendNotification");
 const Dispute = require("../models/disputeModel");
 
-// Create order - Purchase product using stripe payment
+// // Create order - Purchase product using stripe payment
+// const createOrder = asyncHandler(async (request, response) => {
+//     const userId = request.user._id;
+//     const { planName } = request.user || {};
+//     if(!planName) throw new ApiError(400, "No subscription plan name found");
+
+//     // Track trial orders
+//     if(planName === "TRIAL")
+//     {
+//         const trial = await TrialUsage.findOne({ userId, ordersUsed:{ $gte:1 } });
+//         if(trial && trial.ordersUsed >= 1) throw new ApiError(403, "Trial users can place only one order. Please upgrade your plan.");
+//     }
+
+//     // Get user profile
+//     const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
+//     if(!userProfile) throw new ApiError(404, "User profile not found! Invalid user profile ID");
+
+//     // Validate request body
+//     const { shippingAddress, items } = validate(createOrderValidationSchema, request.body) || {};
+
+//     // Variables
+//     let sellerBusinessId = null;
+//     let sellerParentUserId = null; // For sending notification to user
+//     let serverComputedTotal = 0;
+
+//     // Loop through items for validation & calculation
+//     for(const item of items)
+//     {
+//         const { productId, quantity } = item;
+
+//         // Validate quantity
+//         if(!quantity || quantity <= 0) throw new ApiError(400, "Invalid product quantity");
+
+//         // Trial user cannot purchase in bulk
+//         if(planName === "TRIAL" && quantity > 1) throw new ApiError(400, "You cannot purchase in bulk within Trial period! Please upgrade");
+
+//         // Fetch product from DB (price & shipping must come from server)
+//         const product = await Product.findById(productId)
+//         .select("title stockQty minOrderQty pricePerUnit businessId isSingleProductAvailable");
+//         if(!product) throw new ApiError(404, "Product not found");
+
+//         // User cannot purchase his own product from his own business profile
+//         const businessProfile = await BusinessProfile.findById(product.businessId).select("ownerUserId").lean();
+//         if(!businessProfile) throw new ApiError(404, "Product owner not found");
+//         if(String(businessProfile.ownerUserId) === String(userId))
+//         {
+//             throw new ApiError(400, "You cannot purchase product from your own business profile");
+//         }
+
+//         // Restrict single-item purchase if the product is available only for bulk orders
+//         if(!product.isSingleProductAvailable && quantity <= 1)
+//         {
+//             throw new ApiError(400, `${product.title} is available for bulk purchase only. Single-item orders are not allowed.`);
+//         }
+
+//         // Enforce single seller per order
+//         if(!sellerBusinessId)
+//         {
+//             sellerBusinessId = String(product.businessId);
+//             sellerParentUserId = String(businessProfile.ownerUserId);
+//         }
+//         else if(sellerBusinessId !== product.businessId.toString())
+//         {
+//             throw new ApiError(400, "Multiple sellers in one order are not allowed");
+//         }
+
+//         // Compare stock quantity with demanded quantity
+//         if(product.stockQty < Number(quantity)) throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
+
+//         // Validate min order quantity
+//         if(product.minOrderQty > Number(quantity))
+//         {
+//             const message = `Minimum order quantity for "${product.title}" is ${product.minOrderQty}. Please increase the quantity for "${product.title}"`
+//             throw new ApiError(400, message);
+//         }
+
+//         // Compute item total (SERVER TRUSTED)
+//         // const itemTotal = Number(product.pricePerUnit) * Number(quantity) + Number(product.shippingCost);
+//         const itemTotal = Number(product.pricePerUnit) * Number(quantity);
+//         serverComputedTotal += itemTotal;
+//     }
+
+//     // Stripe instance
+//     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+//     // Create Stripe checkout session
+//     const session = await stripe.checkout.sessions.create({
+//         payment_method_types: ["card"],
+//         mode: "payment",
+//         line_items: [
+//             {
+//                 price_data: {
+//                     currency: "usd",
+//                     unit_amount: Math.round(Number(serverComputedTotal) * 100),
+//                     product_data: {
+//                         name: "Product purchasing",
+//                         metadata: {
+//                             brand: "360-GMP",
+//                             category: "Products"
+//                         }
+//                     }
+//                 },
+//                 quantity: 1
+//             }
+//         ],
+//         metadata: {
+//             userId: String(userId), // Sending parent user ID for marking trial usage after order completion
+//             buyerUserProfileId: String(userProfile._id),
+//             sellerBusinessId: String(sellerBusinessId),
+//             sellerParentUserId: String(sellerParentUserId),
+//             totalAmount: serverComputedTotal,
+//             shippingAddress: JSON.stringify(shippingAddress),
+//             items: JSON.stringify(items),
+//             planName
+//         },
+//         success_url: `${process.env.BACKEND_URL}/api/v1/orders/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
+//         cancel_url: `${process.env.BACKEND_URL}/api/v1/orders/stripe/cancel`
+//     });
+
+//     if(!session) throw new ApiError(400, "Stripe session creation failed");
+
+//     // Response
+//     return response.status(200).json(new ApiResponse(200, session.url, "Checkout url generated"));
+// });
+
+// // Verify stripe payment for orders
+// const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
+//     const { session_id } = request.query;
+//     if (!session_id) throw new ApiError(400, "Session ID is missing");
+
+//     // Fetch session
+//     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+//     const stripeSession = await stripe.checkout.sessions.retrieve(session_id);
+
+//     // Validate
+//     if(!stripeSession) throw new ApiError(404, "Session not found");
+//     if(stripeSession.payment_status !== "paid") throw new ApiError(400, "Payment not completed");
+
+//     // Start MongoDB transaction
+//     const dbSession = await mongoose.startSession();
+//     dbSession.startTransaction();
+//     try 
+//     {
+//         // Extract data from metadata
+//         const { userId, buyerUserProfileId, sellerBusinessId, sellerParentUserId, 
+//         totalAmount, shippingAddress, items, planName } = stripeSession.metadata;
+//         const parsedItems = JSON.parse(items);
+
+//         // Stock deduction and prepare items with priceAtPurchase
+//         const itemsWithPrice = [];
+//         for (const item of parsedItems) 
+//         {
+//             const { productId, quantity } = item;
+
+//             const product = await Product.findOneAndUpdate(
+//                 { _id: productId, stockQty: { $gte: Number(quantity) } },
+//                 { $inc: { stockQty: -Number(quantity) } },
+//                 { new: true, session: dbSession }
+//             );
+
+//             if(!product) 
+//             {
+//                 const existingProduct = await Product.findById(productId).select("title stockQty").session(dbSession);
+//                 if(!existingProduct) throw new ApiError(404, "Product not found");
+
+//                 throw new ApiError(400,`Only ${existingProduct.stockQty} unit(s) available for "${existingProduct.title}"`);
+//             }
+
+//             // Add priceAtPurchase to item
+//             itemsWithPrice.push({
+//                 productId: product._id,
+//                 quantity: Number(quantity),
+//                 priceAtPurchase: product.pricePerUnit
+//             });
+//         }
+
+//         // Type safety
+//         const amount = Number(totalAmount);
+
+//         // Create order
+//         const [order] = await Order.create([{
+//             buyerUserProfileId,
+//             sellerBusinessId,
+//             totalAmount:amount,
+//             status: "pending",
+//             shippingAddress: JSON.parse(shippingAddress),
+//             items: itemsWithPrice
+//         }], { session:dbSession });
+
+//         // Escrow calculation
+//         const platformFee = amount * 0.10; // 10% Fee
+//         const netAmount = amount - platformFee; // Seller's share
+
+//         // Hold on escrow
+//         await EscrowTransaction.create([{
+//             orderId: order._id,
+//             sellerId: sellerBusinessId,
+//             buyerId: buyerUserProfileId,
+//             totalAmount: amount,
+//             platformFee: Number(platformFee),
+//             netAmount: Number(netAmount),
+//             status: 'held', // Amount held
+//             paymentMethod:"stripe"
+//         }], { session:dbSession });
+
+//         // Update wallet
+//         await Wallet.findOneAndUpdate(
+//             { ownerId:sellerBusinessId, ownerModel:"BusinessProfile" },
+//             { $inc: { pendingBalance:netAmount } },
+//             { upsert:true, session:dbSession }
+//         );
+
+//         // Transaction for user profile
+//         await Transaction.create([{
+//             ownerId: buyerUserProfileId, 
+//             ownerModel: "UserProfile",
+//             orderId: order._id,
+//             amount: amount,
+//             type: "buy",
+//             stripeSessionId: stripeSession.id,
+//             status: "completed",
+//             paymentMethod:"stripe"
+//         }], { session:dbSession });
+
+//         // Transaction for business profile
+//         await Transaction.create([{
+//             ownerId: sellerBusinessId, 
+//             ownerModel: "BusinessProfile",
+//             orderId: order._id,
+//             amount: amount,
+//             type: "sale",
+//             stripeSessionId: stripeSession.id,
+//             status: "completed",
+//             paymentMethod:"stripe"
+//         }], { session:dbSession });        
+
+//         // Mark trial usage after successful payment
+//         if(planName === "TRIAL")
+//         {
+//             await TrialUsage.findOneAndUpdate(
+//                 { userId },
+//                 { $set:{ ordersUsed:1 } },
+//                 { upsert:true, session:dbSession }
+//             ); 
+//         }
+
+//         // Complete transaction
+//         await dbSession.commitTransaction();
+//         dbSession.endSession();
+
+//         // Get socket instance
+//         const io = request.app.get("io");
+        
+//         // Emit real-time event to business profile for order creation
+//         io.to(String(sellerBusinessId)).emit("order-creation", order);
+
+//         // Send notification to buyer (user profile)
+//         await sendNotification({ 
+//             userId,
+//             title: "Order Placement Through Stripe", 
+//             content: `Your have placed a new order successfully! Your stripe session ID is ${stripeSession.id}`,
+//             type: "UserProfile",
+//             io
+//         });        
+
+//         // Send notification to seller (business profile)
+//         await sendNotification({ 
+//             userId: sellerParentUserId,
+//             title: "Order Placement", 
+//             content: `You have received a new order.`,
+//             type: "BusinessProfile",
+//             io
+//         });
+
+//         // Response
+//         return response.status(303).redirect(`${process.env.FRONTEND_URL}/dashboard/user/checkout/payment-confirmation/${order._id}`);
+//     } 
+//     catch(error) 
+//     {
+//         await dbSession.abortTransaction();
+//         dbSession.endSession();
+//         throw error;
+//     }
+// });
+
+
+// Create order - Purchase product using COD
 const createOrder = asyncHandler(async (request, response) => {
-    const userId = request.user._id;
-    const { planName } = request.user || {};
+    const { _id: userId, planName } = request.user;
+    const { userProfileId, businessProfileId } = request.user.profiles;
     if(!planName) throw new ApiError(400, "No subscription plan name found");
 
     // Track trial orders
@@ -33,18 +319,12 @@ const createOrder = asyncHandler(async (request, response) => {
         if(trial && trial.ordersUsed >= 1) throw new ApiError(403, "Trial users can place only one order. Please upgrade your plan.");
     }
 
-    // Get user profile
-    const userProfile = await UserProfile.findOne({ userId }).select("_id").lean();
-    if(!userProfile) throw new ApiError(404, "User profile not found! Invalid user profile ID");
-
     // Validate request body
-    const { shippingAddress, items } = validate(createOrderValidationSchema, request.body);
-    if(!shippingAddress) throw new ApiError(400, "Shipping address is required");
-    if(!items || !items.length) throw new ApiError(400, "Product item is required");
+    const { shippingAddress, items } = validate(createOrderValidationSchema, request.body) || {};
 
     // Variables
     let sellerBusinessId = null;
-    let sellerParentUserId = null; // For sending notification to user
+    let sellerParentUserId = null;
     let serverComputedTotal = 0;
 
     // Loop through items for validation & calculation
@@ -52,21 +332,16 @@ const createOrder = asyncHandler(async (request, response) => {
     {
         const { productId, quantity } = item;
 
-        // Validate quantity
-        if(!quantity || quantity <= 0) throw new ApiError(400, "Invalid product quantity");
-
         // Trial user cannot purchase in bulk
         if(planName === "TRIAL" && quantity > 1) throw new ApiError(400, "You cannot purchase in bulk within Trial period! Please upgrade");
 
-        // Fetch product from DB (price & shipping must come from server)
+        // Fetch product from DB
         const product = await Product.findById(productId)
-        .select("title stockQty minOrderQty pricePerUnit shippingCost businessId isSingleProductAvailable");
+        .select("title stockQty minOrderQty pricePerUnit businessId isSingleProductAvailable");
         if(!product) throw new ApiError(404, "Product not found");
 
         // User cannot purchase his own product from his own business profile
-        const businessProfile = await BusinessProfile.findById(product.businessId).select("ownerUserId").lean();
-        if(!businessProfile) throw new ApiError(404, "Product owner not found");
-        if(String(businessProfile.ownerUserId) === String(userId))
+        if(String(product.businessId) === String(businessProfileId))
         {
             throw new ApiError(400, "You cannot purchase product from your own business profile");
         }
@@ -83,227 +358,100 @@ const createOrder = asyncHandler(async (request, response) => {
             sellerBusinessId = String(product.businessId);
             sellerParentUserId = String(businessProfile.ownerUserId);
         }
-        else if(sellerBusinessId !== product.businessId.toString())
+        else if(sellerBusinessId !== String(product.businessId))
         {
             throw new ApiError(400, "Multiple sellers in one order are not allowed");
         }
 
         // Compare stock quantity with demanded quantity
-        if(product.stockQty < Number(quantity)) throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
+        if(Number(quantity) > product.stockQty) throw new ApiError(400, `Only ${product.stockQty} unit(s) available for "${product.title}"`);
 
         // Validate min order quantity
-        if(product.minOrderQty > Number(quantity))
+        if(Number(quantity) < product.minOrderQty)
         {
             const message = `Minimum order quantity for "${product.title}" is ${product.minOrderQty}. Please increase the quantity for "${product.title}"`
             throw new ApiError(400, message);
         }
 
-        // Compute item total (SERVER TRUSTED)
-        const itemTotal = Number(product.pricePerUnit) * Number(quantity) + Number(product.shippingCost);
+        // Compute item total
+        const itemTotal = Number(product.pricePerUnit) * Number(quantity);
         serverComputedTotal += itemTotal;
     }
 
-    // Stripe instance
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-    // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        mode: "payment",
-        line_items: [
-            {
-                price_data: {
-                    currency: "usd",
-                    unit_amount: Math.round(Number(serverComputedTotal) * 100),
-                    product_data: {
-                        name: "Product purchasing",
-                        metadata: {
-                            brand: "360-GMP",
-                            category: "Products"
-                        }
-                    }
-                },
-                quantity: 1
-            }
-        ],
-        metadata: {
-            userId: String(userId), // Sending parent user ID for marking trial usage after order completion
-            buyerUserProfileId: String(userProfile._id),
-            sellerBusinessId: String(sellerBusinessId),
-            sellerParentUserId: String(sellerParentUserId),
-            totalAmount: serverComputedTotal,
-            shippingAddress: JSON.stringify(shippingAddress),
-            items: JSON.stringify(items),
-            planName
-        },
-        success_url: `${process.env.BACKEND_URL}/api/v1/orders/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.BACKEND_URL}/api/v1/orders/stripe/cancel`
-    });
-
-    if(!session) throw new ApiError(400, "Stripe session creation failed");
-
-    // Response
-    return response.status(200).json(new ApiResponse(200, session.url, "Checkout url generated"));
-});
-
-// Verify stripe payment for orders
-const verifyStripePaymentForOrders = asyncHandler(async (request, response) => {
-    const { session_id } = request.query;
-    if (!session_id) throw new ApiError(400, "Session ID is missing");
-
-    // Fetch session
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const stripeSession = await stripe.checkout.sessions.retrieve(session_id);
-
-    // Validate
-    if(!stripeSession) throw new ApiError(404, "Session not found");
-    if(stripeSession.payment_status !== "paid") throw new ApiError(400, "Payment not completed");
-
-    // Start MongoDB transaction
-    const dbSession = await mongoose.startSession();
-    dbSession.startTransaction();
-    try 
+    // Deduct stock and prepare items with priceAtPurchase
+    const itemsWithPrice = [];
+    for(const item of items)
     {
-        // Extract data from metadata
-        const { userId, buyerUserProfileId, sellerBusinessId, sellerParentUserId, 
-        totalAmount, shippingAddress, items, planName } = stripeSession.metadata;
-        const parsedItems = JSON.parse(items);
+        const { productId, quantity } = item;
 
-        // Stock deduction and prepare items with priceAtPurchase
-        const itemsWithPrice = [];
-        for (const item of parsedItems) 
-        {
-            const { productId, quantity } = item;
-
-            const product = await Product.findOneAndUpdate(
-                { _id: productId, stockQty: { $gte: Number(quantity) } },
-                { $inc: { stockQty: -Number(quantity) } },
-                { new: true, session: dbSession }
-            );
-
-            if(!product) 
-            {
-                const existingProduct = await Product.findById(productId).select("title stockQty").session(dbSession);
-                if(!existingProduct) throw new ApiError(404, "Product not found");
-
-                throw new ApiError(400,`Only ${existingProduct.stockQty} unit(s) available for "${existingProduct.title}"`);
-            }
-
-            // Add priceAtPurchase to item
-            itemsWithPrice.push({
-                productId: product._id,
-                quantity: Number(quantity),
-                priceAtPurchase: product.pricePerUnit
-            });
-        }
-
-        // Type safety
-        const amount = Number(totalAmount);
-
-        // Create order
-        const [order] = await Order.create([{
-            buyerUserProfileId,
-            sellerBusinessId,
-            totalAmount:amount,
-            status: "pending",
-            shippingAddress: JSON.parse(shippingAddress),
-            items: itemsWithPrice
-        }], { session:dbSession });
-
-        // Escrow calculation
-        const platformFee = amount * 0.10; // 10% Fee
-        const netAmount = amount - platformFee; // Seller's share
-
-        // Hold on escrow
-        await EscrowTransaction.create([{
-            orderId: order._id,
-            sellerId: sellerBusinessId,
-            buyerId: buyerUserProfileId,
-            totalAmount: amount,
-            platformFee: Number(platformFee),
-            netAmount: Number(netAmount),
-            status: 'held', // Amount held
-            paymentMethod:"stripe"
-        }], { session:dbSession });
-
-        // Update wallet
-        await Wallet.findOneAndUpdate(
-            { ownerId:sellerBusinessId, ownerModel:"BusinessProfile" },
-            { $inc: { pendingBalance:netAmount } },
-            { upsert:true, session:dbSession }
+        const product = await Product.findOneAndUpdate(
+            { _id: productId, stockQty: { $gte: Number(quantity) } },
+            { $inc: { stockQty: -Number(quantity) } },
+            { new: true }
         );
 
-        // Transaction for user profile
-        await Transaction.create([{
-            ownerId: buyerUserProfileId, 
-            ownerModel: "UserProfile",
-            orderId: order._id,
-            amount: amount,
-            type: "buy",
-            stripeSessionId: stripeSession.id,
-            status: "completed",
-            paymentMethod:"stripe"
-        }], { session:dbSession });
-
-        // Transaction for business profile
-        await Transaction.create([{
-            ownerId: sellerBusinessId, 
-            ownerModel: "BusinessProfile",
-            orderId: order._id,
-            amount: amount,
-            type: "sale",
-            stripeSessionId: stripeSession.id,
-            status: "completed",
-            paymentMethod:"stripe"
-        }], { session:dbSession });        
-
-        // Mark trial usage after successful payment
-        if(planName === "TRIAL")
+        if(!product)
         {
-            await TrialUsage.findOneAndUpdate(
-                { userId },
-                { $set:{ ordersUsed:1 } },
-                { upsert:true, session:dbSession }
-            ); 
+            const existingProduct = await Product.findById(productId).select("title stockQty");
+            if(!existingProduct) throw new ApiError(404, "Product not found");
+            throw new ApiError(400,`Only ${existingProduct.stockQty} unit(s) available for "${existingProduct.title}"`);
         }
 
-        // Complete transaction
-        await dbSession.commitTransaction();
-        dbSession.endSession();
-
-        // Get socket instance
-        const io = request.app.get("io");
-        
-        // Emit real-time event to business profile for order creation
-        io.to(String(sellerBusinessId)).emit("order-creation", order);
-
-        // Send notification to buyer (user profile)
-        await sendNotification({ 
-            userId,
-            title: "Order Placement Through Stripe", 
-            content: `Your have placed a new order successfully! Your stripe session ID is ${stripeSession.id}`,
-            type: "UserProfile",
-            io
-        });        
-
-        // Send notification to seller (business profile)
-        await sendNotification({ 
-            userId: sellerParentUserId,
-            title: "Order Placement", 
-            content: `You have received a new order.`,
-            type: "BusinessProfile",
-            io
+        // Add priceAtPurchase to item
+        itemsWithPrice.push({
+            productId: product._id,
+            quantity: Number(quantity),
+            priceAtPurchase: product.pricePerUnit
         });
-
-        // Response
-        return response.status(303).redirect(`${process.env.FRONTEND_URL}/dashboard/user/checkout/payment-confirmation/${order._id}`);
-    } 
-    catch(error) 
-    {
-        await dbSession.abortTransaction();
-        dbSession.endSession();
-        throw error;
     }
+
+    // Create COD order
+    const order = await Order.create({
+        buyerUserProfileId: userProfileId,
+        sellerBusinessId,
+        totalAmount: Number(serverComputedTotal),
+        status: "pending",
+        shippingAddress,
+        items: itemsWithPrice
+    });
+    if(!order) throw new ApiError(400, "Order creation failed");
+
+    // Mark trial usage after successful order placement
+    if(planName === "TRIAL")
+    {
+        await TrialUsage.findOneAndUpdate(
+            { userId },
+            { $set:{ ordersUsed:1 } },
+            { upsert:true }
+        );
+    }
+
+    // Get socket instance
+    const io = request.app.get("io");
+
+    // Emit real-time event to business profile for order creation
+    io.to(String(sellerBusinessId)).emit("order-creation", order);
+
+    // Send notification to buyer (user profile)
+    await sendNotification({ 
+        userId,
+        title: "Order Placement Through COD", 
+        content: `Your order has been placed successfully! Your order ID is ${order._id}`,
+        type: "UserProfile",
+        io
+    });   
+
+    // Send notification to seller (business profile)
+    await sendNotification({ 
+        userId: sellerParentUserId,
+        title: "Order Placement", 
+        content: `You have received a new COD order.`,
+        type: "BusinessProfile",
+        io
+    });
+
+    // Response
+    return response.status(201).json(new ApiResponse(201, order, "Order placed successfully"));
 });
 
 // Purchase product using Wallet balance
@@ -347,7 +495,7 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
 
         // Find each product by "id"
         const product = await Product.findById(productId)
-        .select("title stockQty minOrderQty pricePerUnit shippingCost businessId");
+        .select("title stockQty minOrderQty pricePerUnit businessId");
         if(!product) throw new ApiError(404, "Product not found");
 
         // User cannot purchase his own product from his own business profile
@@ -386,7 +534,8 @@ const createOrderWithWallet = asyncHandler(async (request, response) => {
         }
 
         // Compute total amount
-        const itemTotal = (product.pricePerUnit * quantity) + product.shippingCost || 0;
+        // const itemTotal = (product.pricePerUnit * quantity) + product.shippingCost || 0;
+        const itemTotal = (product.pricePerUnit * quantity);
         serverComputedTotal += itemTotal;
     }
 
@@ -1539,7 +1688,7 @@ const fetchDisputedOrders = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, orders, "Disputed orders have been fetched"));     
 });
 
-module.exports = { createOrder, verifyStripePaymentForOrders, createOrderWithWallet, completeOrder, updateOrderStatusBySeller, 
+module.exports = { createOrder, createOrderWithWallet, completeOrder, updateOrderStatusBySeller, 
 fetchAllUserOrders, fetchAllBusinessOrders, fetchProcessingOrders, fetchInTransitOrders, fetchCompletedOrders, fetchCancelledOrders,
 fetchBusinessProcessingOrders, fetchBsuinessInTransitOrders, fetchBusinessCompletedOrders, fetchBusinessCancelledOrders,
 viewOrder, cancelOrder, updateOrderTrackingInfo, fetchNewOrders, fetchBusinessNewOrders, fetchDeliveredOrders, 

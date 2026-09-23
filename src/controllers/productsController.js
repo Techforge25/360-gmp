@@ -19,7 +19,7 @@ const createProduct = asyncHandler(async (request, response) => {
     const { businessProfileId } = request.user.profiles;
 
     // Sanitize payload
-    const { title, detail, image, groupImages, category, subCategory,
+    const { title, detail, image, groupImages, category,
     pricePerUnit, tieredPricing, minOrderQty, stockQty, lowStockThreshold,
     isSingleProductAvailable } = validate(createProductValidator, request.body) || {};
 
@@ -30,8 +30,7 @@ const createProduct = asyncHandler(async (request, response) => {
         detail, 
         image, 
         groupImages, 
-        category, 
-        subCategory,
+        category,
         pricePerUnit, 
         tieredPricing, 
         minOrderQty, 

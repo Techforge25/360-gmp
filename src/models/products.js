@@ -14,7 +14,6 @@ const productSchema = new Schema({
   image: { type: String, trim: true, required: true },
   groupImages: [{ type: String, trim: true }],
   category: { type: String, required: true },
-  subCategory: { type: String, required: true },
 
   // Pricing
   pricePerUnit: { type: Number, required: true },

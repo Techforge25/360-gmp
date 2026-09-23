@@ -15,7 +15,6 @@ const createProductValidator = Joi.object({
 
     // Category info
     category: Joi.string().required().label("Product category"),
-    subCategory: Joi.string().required().label("Product sub-category"),
 
     // Pricing
     pricePerUnit: Joi.number().positive().required().label("Price per unit"),

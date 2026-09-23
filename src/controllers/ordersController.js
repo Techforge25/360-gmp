@@ -710,13 +710,10 @@ const fetchAllUserOrders = asyncHandler(async (request, response) => {
 
 // Update order tracking info
 const updateOrderTrackingInfo = asyncHandler(async (request, response) => {
-    const userId = request.user._id;
     const { businessProfileId } = request.user.profiles || {};
     const { orderId } = request.params;
 
-    // Validate IDs
-    if(!businessProfileId) throw new ApiError(400, "Business profile ID is missing");
-    if(!isValidObjectId(businessProfileId)) throw new ApiError(400, "Invalid Business profile ID");
+    // Sanitize ID
     if(!isValidObjectId(orderId)) throw new ApiError(400, "Invalid Order ID");
 
     // Get validated payload
@@ -747,7 +744,7 @@ const updateOrderTrackingInfo = asyncHandler(async (request, response) => {
         content: `Courier info has been attached to your order`, 
         type: "UserProfile",
         io: request.app.get("io") 
-    }); 
+    });
 
     // Response
     return response.status(200).json(new ApiResponse(200, order.tracking, "Order tracking info has been updated"));

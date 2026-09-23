@@ -327,7 +327,7 @@ const fetchBusinessProducts = asyncHandler(async (request, response) => {
 
     // Aggregate pipeline
     const products = await Product.aggregatePaginate([
-        { $match: { businessId: convertToMongoId(businessId) } },
+        { $match: { businessId: convertToMongoId(businessId), status: "approved" } },
 
         // Join reviews
         {

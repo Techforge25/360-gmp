@@ -1,6 +1,5 @@
 const { isValidObjectId } = require("mongoose");
 const { emptyList } = require("../../constants");
-const Dispute = require("../../models/disputeModel");
 const EscrowTransaction = require("../../models/escrowTrasanction");
 const Order = require("../../models/orders");
 const Product = require("../../models/products");

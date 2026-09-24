@@ -371,7 +371,7 @@ const viewProduct = asyncHandler(async (request, response) => {
 
     // Fetch product + business profile + rating stats
     const [product, businessProfile, ratingStats, sold] = await Promise.all([
-        Product.findOne({ _id: productId, status: "approved" })
+        Product.findOne({ _id: productId })
         .populate({ path:"businessId", select:"_id companyName foundedDate logo" })
         .select("-__v -updatedAt"),
 

@@ -3,30 +3,28 @@ const { Schema, model } = require("mongoose");
 // Updated Schema
 const chatSchema = new Schema({
     // References
-    sender: {
-        id: { type:Schema.Types.ObjectId, required:true, refPath:"sender.model"},
-        model: { type:String, required:true, enum:["UserProfile", "BusinessProfile"]}
-    },
-    receiver: {
-        id: { type:Schema.Types.ObjectId, required:true, refPath:"receiver.model" },
-        model: { type:String, required:true, enum:["UserProfile", "BusinessProfile"] }
-    },
-    conversationId: { type:String, index:true, required:true },
+    senderId: { type: Schema.Types.ObjectId, refPath: "senderModel", required: true },
+    senderModel: { type: String, required: true, enum: ["UserProfile", "BusinessProfile"] },
+    receiverId: { type: Schema.Types.ObjectId, refPath: "receiverModel", required: true },
+    receiverModel: { type: String, required: true, enum: ["UserProfile", "BusinessProfile"] },    
+
+    // Thread ID
+    conversationId: { type: String, index: true, required: true },
 
     // Message details
-    message: { type:String, trim:true, required:true },
-    messageType: { type:String, enum:["text", "file", "customOffer"], default:"text" },
+    message: { type: String, trim: true, required: true },
+    messageType: { type: String, enum: ["text", "media"], default: "text" },
 
     // Read status
-    isRead: { type:Boolean, default:false },
-    readAt: { type:Date, default:null },
+    isRead: { type: Boolean, default: false },
+    readAt: { type: Date, default: null },
 
     // Last message tracking
-    lastMessage: { type:String, trim:true },
-    lastMessageAt: { type:Date, default: Date.now },
+    lastMessage: { type: String, trim: true },
+    lastMessageAt: { type: Date, default: Date.now },
 
     // Media
-    fileUrl: { type:String, trim:true }
+    mediaUrl: { type: String, trim: true }
 }, { timestamps:true });
 
 // Model

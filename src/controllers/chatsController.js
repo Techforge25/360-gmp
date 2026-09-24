@@ -12,5 +12,12 @@ const generateConversationId = require("../utils/generateConversationId");
 const validate = require("../utils/validate");
 const { privateMessageValidationSchema } = require("../validations/chatValidator");
 
+// Send private message
+const sendPrivateMessage = asyncHandler(async (request, response) => {
+    
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "Message has been sent"));
+});
 
-module.exports = {  };
+
+module.exports = { sendPrivateMessage };

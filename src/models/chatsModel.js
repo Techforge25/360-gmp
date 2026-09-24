@@ -24,7 +24,8 @@ const chatSchema = new Schema({
     lastMessageAt: { type: Date, default: Date.now },
 
     // Media
-    mediaUrl: { type: String, trim: true }
+    images: { type: [String] },
+    video: { type: String, trim: true }
 }, { timestamps:true });
 
 // Model

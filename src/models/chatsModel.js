@@ -11,7 +11,6 @@ const chatSchema = new Schema({
         id: { type:Schema.Types.ObjectId, required:true, refPath:"receiver.model" },
         model: { type:String, required:true, enum:["UserProfile", "BusinessProfile"] }
     },
-    customOfferId: { type:Schema.Types.ObjectId, ref:"CustomOffer", default:null },
     conversationId: { type:String, index:true, required:true },
 
     // Message details

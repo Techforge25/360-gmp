@@ -4,7 +4,7 @@ const joi = require("joi");
 const privateMessageValidator = joi.object({
     // Receiver details
     receiverId: joi.string().trim().required().length(24).label("Receiver ID"),
-    receiverModel: joi.string().trim().required().valid("UserProfile", "BusinessProfile").label("Receiver odel"),
+    receiverModel: joi.string().trim().required().valid("UserProfile", "BusinessProfile").label("Receiver Model"),
 
     // Message details
     messageType: joi.string().valid("text", "media").default("text").label("Message type"),
@@ -17,9 +17,9 @@ const privateMessageValidator = joi.object({
     }).label("Message"),
 
     // Media URLs (Required only if 'messageType' is media)
-    media: joi.array().when("messageType", {
+    media: joi.array().min(1).items(joi.string().trim().uri()).when("messageType", {
         is: "media",
-        then: joi.array().min(1).items(joi.string().trim().uri()),
+        then: joi.array().min(1),
         otherwise: joi.forbidden()
     }).label("Media")
 });

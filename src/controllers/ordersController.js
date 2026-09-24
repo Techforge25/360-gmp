@@ -840,9 +840,9 @@ const completeOrder = asyncHandler(async (request, response) => {
     if(order.status === "completed") return response.status(200).json(new ApiResponse(200, null, "Order has already been completed"));
     if(!allowedCurrentStatuses.includes(order.status)) throw new ApiError(400, `Order cannot be completed in its current status: ${order.status}`);
 
-    // Find escrow
-    const escrow = await EscrowTransaction.findOne({ orderId:order._id, status:"held" });
-    if(!escrow) throw new ApiError(404, "Escrow record not found or already released");
+    // // Find escrow
+    // const escrow = await EscrowTransaction.findOne({ orderId:order._id, status:"held" });
+    // if(!escrow) throw new ApiError(404, "Escrow record not found or already released");
 
     // Start db session for safe transaction
     const dbSession = await mongoose.startSession();
@@ -855,16 +855,16 @@ const completeOrder = asyncHandler(async (request, response) => {
         order.completedAt = new Date();
         await order.save({ session:dbSession });
 
-        // Update escrow status
-        escrow.status = "released";
-        await escrow.save({ session:dbSession });
+        // // Update escrow status
+        // escrow.status = "released";
+        // await escrow.save({ session:dbSession });
 
-        // Release funds (Update business profile wallet)
-        await Wallet.findOneAndUpdate(
-            { ownerId:order.sellerBusinessId._id, ownerModel:"BusinessProfile" },
-            { $inc:{ pendingBalance:-escrow.netAmount, availableBalance:escrow.netAmount, totalEarned:escrow.netAmount } },
-            { upsert:true, session:dbSession }
-        );
+        // // Release funds (Update business profile wallet)
+        // await Wallet.findOneAndUpdate(
+        //     { ownerId:order.sellerBusinessId._id, ownerModel:"BusinessProfile" },
+        //     { $inc:{ pendingBalance:-escrow.netAmount, availableBalance:escrow.netAmount, totalEarned:escrow.netAmount } },
+        //     { upsert:true, session:dbSession }
+        // );
 
         // Commit changes
         await dbSession.commitTransaction();

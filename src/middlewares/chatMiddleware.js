@@ -19,7 +19,17 @@ const validateChatPayload = asyncHandler((request, response, next) => {
     const { receiverId, receiverModel, messageType, message, media } = validate(privateMessageValidator, request.body) || {};
 
     // Attach data
-    request.payload = { senderId, senderModel, receiverId, receiverModel, messageType, message, media };
+    request.payload = { 
+        senderId, 
+        senderModel, 
+        receiverId, 
+        receiverModel, 
+        messageType, 
+        message, 
+        media,
+        lastMessage: message,
+        lastMessageAt: new Date()
+    };
     return next();
 });
 

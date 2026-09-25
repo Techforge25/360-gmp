@@ -4,16 +4,22 @@ const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const asyncHandler = require("../utils/asyncHandler");
 const convertToMongoId = require("../utils/convertToMongoId");
-const generateConversationId = require("../utils/generateConversationId");
-const validate = require("../utils/validate");
 
 // Send private message
 const sendPrivateMessage = asyncHandler(async (request, response) => {
-    // Get sender details
-    const { senderId, senderModel } = request.user.sender;
+    // Get payload
+    const payload = request.payload;
+
+    // Save to db
+    const chat = await Chat.create(payload);
+    if(!chat) throw new ApiError(500, "Failed to save chat");
+
+    // Send real time
+    const io = request.app.get("io");
+    io.to(String(payload.receiverId)).emit("privateMessage", { ...payload });
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { data: request.payload }, "Message has been sent"));
+    return response.status(200).json(new ApiResponse(200, { ...payload }, "Message has been sent"));
 });
 
 

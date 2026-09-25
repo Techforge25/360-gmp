@@ -1,5 +1,5 @@
 const generateConversationId = (senderId, receiverId) => {
-    return [senderId.toString(), receiverId.toString()].sort().join("-");
+    return [String(senderId), String(receiverId)].sort().join("-");
 };
 
 module.exports = generateConversationId;

@@ -10,18 +10,18 @@ const privateMessageValidator = joi.object({
     messageType: joi.string().valid("text", "media").default("text").label("Message type"),
 
     // Text (Optional only when uploading image or video)
-    message: joi.string().when("messageType", {
+    message: joi.when("messageType", {
         is: "text",
-        then: joi.string().trim().required().min(1),
-        otherwise: joi.optional().allow("", null)
+        then: joi.string().trim().min(1).required(),
+        otherwise: joi.string().trim().optional().allow("", null)
     }).label("Message"),
 
     // Media URLs (Required only if 'messageType' is media)
-    media: joi.array().min(1).items(joi.string().trim().uri()).when("messageType", {
+    media: joi.when("messageType", {
         is: "media",
-        then: joi.array().min(1),
+        then: joi.array().min(1).items(joi.string().trim().uri()).required(),
         otherwise: joi.forbidden()
-    }).label("Media")
+    }).label("Media") 
 });
 
 module.exports = { privateMessageValidator };

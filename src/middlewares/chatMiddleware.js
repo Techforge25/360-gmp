@@ -26,9 +26,7 @@ const validateChatPayload = asyncHandler((request, response, next) => {
         recipientModel, 
         messageType, 
         message, 
-        media,
-        lastMessage: message,
-        lastMessageAt: new Date()
+        media
     };
     return next();
 });

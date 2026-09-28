@@ -1,5 +1,4 @@
 const { isValidObjectId } = require("mongoose");
-const BusinessProfile = require("../models/businessProfileSchema");
 const Chat = require("../models/chatsModel");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
@@ -7,22 +6,192 @@ const asyncHandler = require("../utils/asyncHandler");
 const convertToMongoId = require("../utils/convertToMongoId");
 const generateConversationId = require("../utils/generateConversationId");
 const { emptyList } = require("../constants");
+const Thread = require("../models/threadsModel");
+
+// Helper function to get profile ID and model
+const getProfileIdAndModel = (userPayload) => {
+    const { role } = userPayload;
+    const { userProfileId, businessProfileId } = userPayload.profiles || {};
+
+    // Set dynamic profile ID and Model
+    const profileId = role === "user" ? userProfileId : businessProfileId;
+    const profileModel = role === "user" ? "UserProfile" : "BusinessProfile";
+
+    return { profileId: convertToMongoId(profileId), profileModel };
+};
 
 // Send private message
 const sendPrivateMessage = asyncHandler(async (request, response) => {
-    // Get payload
-    const payload = request.payload;
+    // Get payloads
+    const chatPayload = request.chatPayload;
+    const threadPayload = request.threadPayload;
 
-    // Save to db
-    const chat = await Chat.create(payload);
-    if(!chat) throw new ApiError(500, "Failed to save chat");
+    // Get conversation ID
+    const { conversationId } = chatPayload;
+
+    // Parallel execution
+    const [thread, chat] = await Promise.all([
+        // Create or update thread
+        Thread.findOneAndUpdate(
+            { conversationId },
+            { $set: threadPayload },
+            { upsert: true }
+        ),
+
+        // Create new message
+        Chat.create(chatPayload)
+    ]);
+    if(!chat) throw new ApiError(500, "Failed to send new message");
+
+    // Exclude conversation ID
+    delete chatPayload.conversationId;
 
     // Send real time
     const io = request.app.get("io");
-    io.to(String(payload.recipientId)).emit("privateMessage", { ...payload });
+    io.to(String(chatPayload.recipientId)).emit("privateMessage", chatPayload);
 
     // Response
-    return response.status(200).json(new ApiResponse(200, { ...payload }, "Message has been sent"));
+    return response.status(200).json(new ApiResponse(200, chatPayload, "Message has been sent"));
+});
+
+// Fetch threads
+const fetchThreads = asyncHandler(async (request, response) => {
+    const { page = 1, limit = 10 } = request.query;
+
+    // Get dynamic profile Id
+    const { profileId } = getProfileIdAndModel(request.user);
+
+    // Fetch
+    const threads = await Thread.aggregatePaginate([
+        // Match
+        { 
+            $match: { 
+                $or: [
+                    { senderId: profileId }, 
+                    { recipientId: profileId }
+                ] 
+            } 
+        },
+
+        // Add fields
+        {
+            $addFields: {
+                isMyMessage: { $eq: ["$senderId", profileId] },
+
+                participantId: {
+                    $cond: [
+                        { $eq: ["$senderId", profileId] },
+                        "$recipientId",
+                        "$senderId"
+                    ]
+                },
+
+                participantModel: {
+                    $cond: [
+                        { $eq: ["$senderId", profileId] },
+                        "$recipientModel",
+                        "$senderModel"
+                    ]
+                }
+            }
+        },
+
+        // Lookup user profile
+        {
+            $lookup: {
+                from: "userprofiles",
+                localField: "participantId",
+                foreignField: "_id",
+                as: "userProfile"
+            }
+        },
+
+        // Lookup business profile
+        {
+            $lookup: {
+                from: "businessprofiles",
+                localField: "participantId",
+                foreignField: "_id",
+                as: "businessProfile"
+            }
+        },
+
+        // Lookup unread messages
+        {
+            $lookup: {
+                from: "chats",
+                let: { conversationId: "$conversationId" },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ["$conversationId", "$$conversationId"] },
+                                    { $eq: ["$recipientId", profileId] },
+                                    { $eq: ["$isRead", false] }
+                                ]
+                            }
+                        }
+                    },
+                    { $count: "count" }
+                ],
+                as: "unreadMessages"
+            }
+        },        
+
+        // Add participant
+        {
+            $addFields: {
+                // Participant info
+                participant: {
+                    $cond: [
+                        { $eq: ["$participantModel", "UserProfile"] },
+                        {
+                            id: { $arrayElemAt: ["$userProfile._id", 0] },
+                            name: { $arrayElemAt: ["$userProfile.fullName", 0] },
+                            logo: { $arrayElemAt: ["$userProfile.logo", 0] },
+                            model: "UserProfile"
+                        },
+                        {
+                            id: { $arrayElemAt: ["$businessProfile._id", 0] },
+                            name: { $arrayElemAt: ["$businessProfile.companyName", 0] },
+                            logo: { $arrayElemAt: ["$businessProfile.logo", 0] },
+                            model: "BusinessProfile"
+                        }
+                    ]
+                },
+
+                // Unread count
+                unreadCount: {
+                    $ifNull: [
+                        { $arrayElemAt: ["$unreadMessages.count", 0] },
+                        0
+                    ]
+                }                
+            }
+        },
+
+        // Sort
+        { $sort: { lastMessageAt: -1 } },
+
+        // Project
+        {
+            $project: {
+                isMyMessage: 1,
+                participant: 1,
+                lastMessage: 1,
+                lastMessageAt: 1,
+                messageType: 1,
+                media: 1,
+                isRead: 1,
+                unreadCount: 1
+            }
+        }
+    ], { page, limit });
+    if(!threads.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No threads found"));
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, threads, "Threads have been fetched"));
 });
 
 // Fetch thread list
@@ -48,10 +217,8 @@ const fetchPrivateMessages = asyncHandler(async (request, response) => {
         // Match 
         { $match: { conversationId } },
 
-
-
         // Sort
-        { $sort: { lastMessageAt: -1 } },
+        { $sort: { createdAt: -1 } },
 
         // Projection
         {
@@ -59,6 +226,7 @@ const fetchPrivateMessages = asyncHandler(async (request, response) => {
                 message: 1,
                 messageType: 1,
                 isRead: 1,
+                isMyMessage: { $eq: ["$senderId", convertToMongoId(senderId)] },
                 lastMessage: 1,
                 lastMessageAt: 1,
                 media: 1,
@@ -72,4 +240,4 @@ const fetchPrivateMessages = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, messages, "Threads have been fetched"));
 });
 
-module.exports = { sendPrivateMessage, fetchPrivateMessages };
+module.exports = { sendPrivateMessage, fetchThreads, fetchPrivateMessages };

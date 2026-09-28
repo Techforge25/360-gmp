@@ -187,6 +187,7 @@ const fetchThreads = asyncHandler(async (request, response) => {
         // Project
         {
             $project: {
+                conversationId: 1,
                 isMyMessage: 1,
                 participant: 1,
                 lastMessage: 1,
@@ -250,4 +251,21 @@ const fetchPrivateMessages = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, messages, "Threads have been fetched"));
 });
 
-module.exports = { sendPrivateMessage, fetchThreads, fetchPrivateMessages };
+// Mark messages as read
+const markAsRead = asyncHandler(async (request, response) => {
+    const { conversationId } = request.params;
+    
+    // Get profile ID
+    const { profileId } = getProfileIdAndModel(request.user);
+
+    // Update
+    await Chat.updateMany(
+        { conversationId, recipientId: profileId, isRead: false },
+        { $set: { isRead: true } }
+    );
+
+    // Response
+    return response.status(200).json(new ApiResponse(200, null, "All messages have been marked as read"));
+});
+
+module.exports = { sendPrivateMessage, fetchThreads, fetchPrivateMessages, markAsRead };

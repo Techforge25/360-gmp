@@ -24,31 +24,31 @@ const getProfileIdAndModel = (userPayload) => {
 const sendPrivateMessage = asyncHandler(async (request, response) => {
     // Get payloads
     const chatPayload = request.chatPayload;
-    const threadPayload = request.threadPayload;
+    // const threadPayload = request.threadPayload;
 
-    // Get conversation ID
-    const { conversationId } = chatPayload;
+    // // Get conversation ID
+    // const { conversationId } = chatPayload;
 
-    // Parallel execution
-    const [thread, chat] = await Promise.all([
-        // Create or update thread
-        Thread.findOneAndUpdate(
-            { conversationId },
-            { $set: threadPayload },
-            { upsert: true }
-        ),
+    // // Parallel execution
+    // const [thread, chat] = await Promise.all([
+    //     // Create or update thread
+    //     Thread.findOneAndUpdate(
+    //         { conversationId },
+    //         { $set: threadPayload },
+    //         { upsert: true }
+    //     ),
 
-        // Create new message
-        Chat.create(chatPayload)
-    ]);
-    if(!chat) throw new ApiError(500, "Failed to send new message");
+    //     // Create new message
+    //     Chat.create(chatPayload)
+    // ]);
+    // if(!chat) throw new ApiError(500, "Failed to send new message");
 
-    // Exclude conversation ID
-    delete chatPayload.conversationId;
+    // // Exclude conversation ID
+    // delete chatPayload.conversationId;
 
     // Send real time
     const io = request.app.get("io");
-    io.to(String(chatPayload.recipientId)).emit("privateMessage", chatPayload);
+    io.to(String(chatPayload.recipientId)).emit("privateMessage", { message: chatPayload.message });
 
     // Response
     return response.status(200).json(new ApiResponse(200, chatPayload, "Message has been sent"));

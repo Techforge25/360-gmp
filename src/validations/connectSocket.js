@@ -2,12 +2,16 @@
 function connectSocket(io)
 {
     io.on("connection", (socket) => {
-        console.log("Socket connected", socket.id);
-
-        socket.on("joinRoom", ({ userId, userProfileId, businessProfileId }) => {
-            if(userId) socket.join(userId);
-            if(userProfileId) socket.join(userProfileId);
-            if(businessProfileId) socket.join(businessProfileId);
+        socket.on("joinRoom", ({ profileId }) => {
+            if(profileId)
+            {
+                socket.join(profileId);
+                console.log(`Socket connected with Profile ID: ${profileId}`);
+            }
+            else
+            {
+                console.log(`Socket connected with Random ID: ${socket.id}`);
+            }
         });
 
         // Disonnect event

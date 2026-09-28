@@ -194,7 +194,6 @@ const fetchThreads = asyncHandler(async (request, response) => {
                 lastMessageAt: 1,
                 messageType: 1,
                 media: 1,
-                isRead: 1,
                 unreadCount: 1
             }
         }

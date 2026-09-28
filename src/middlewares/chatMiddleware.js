@@ -47,7 +47,7 @@ const validateChatPayload = asyncHandler((request, response, next) => {
 // Validate conversation ID
 const validateConversationId = asyncHandler((request, response, next) => {
     // Sanitize IDs
-    const { senderId, recipientId } = request.payload;
+    const { senderId, recipientId } = request.chatPayload;
     if(!isValidObjectId(senderId)) throw new ApiError(400, "Invalid Sender ID");
     if(!isValidObjectId(recipientId)) throw new ApiError(400, "Invalid Recipient ID");
 

@@ -1,7 +1,7 @@
 const { Schema, model } = require("mongoose");
 const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
-// Updated Schema
+// Schema
 const chatSchema = new Schema({
     // References
     senderId: { type: Schema.Types.ObjectId, refPath: "senderModel", required: true },
@@ -9,7 +9,7 @@ const chatSchema = new Schema({
     recipientId: { type: Schema.Types.ObjectId, refPath: "recipientModel", required: true },
     recipientModel: { type: String, required: true, enum: ["UserProfile", "BusinessProfile"] },    
 
-    // Thread ID
+    // Conversation ID
     conversationId: { type: String, index: true, required: true },
 
     // Message details

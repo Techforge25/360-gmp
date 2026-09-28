@@ -10,7 +10,7 @@ const chatSchema = new Schema({
     recipientModel: { type: String, required: true, enum: ["UserProfile", "BusinessProfile"] },    
 
     // Conversation ID
-    conversationId: { type: String, trim: true, required: true, index: true, },
+    conversationId: { type: String, trim: true, required: true, index: true },
 
     // Message details
     message: { type: String, trim: true, required: true },

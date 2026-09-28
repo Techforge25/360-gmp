@@ -56,7 +56,7 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
 
 // Fetch threads
 const fetchThreads = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10, search = "" } = request.query;
+    const { page = 1, limit = 10, search = "", filter = "all" } = request.query;
 
     // Get dynamic profile Id
     const { profileId } = getProfileIdAndModel(request.user);
@@ -174,7 +174,12 @@ const fetchThreads = asyncHandler(async (request, response) => {
         // Search
         ...(search ? [
             { $match: { "participant.name": { $regex: search, $options: "i" } } }
-        ] : []),        
+        ] : []),  
+        
+        // Unread filter
+        ...(filter && filter === "unread" ? [
+            { $match: { unreadCount: { $gt: 0 } } },
+        ] : []),
 
         // Sort
         { $sort: { lastMessageAt: -1 } },

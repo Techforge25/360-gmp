@@ -18,16 +18,29 @@ const validateChatPayload = asyncHandler((request, response, next) => {
     // Sanitize payload
     const { recipientId, recipientModel, messageType, message, media } = validate(privateMessageValidator, request.body) || {};
 
-    // Attach data
-    request.payload = { 
+    // Attach chat payload
+    request.chatPayload = { 
         senderId, 
         senderModel, 
         recipientId, 
         recipientModel, 
-        messageType, 
-        message, 
+        message,
+        messageType,  
         media
     };
+
+    // Attach thread payload
+    request.threadPayload = {
+        senderId, 
+        senderModel, 
+        recipientId, 
+        recipientModel,
+        lastMessage: message, 
+        lastMessageAt: new Date(),
+        messageType,
+        media
+    };
+
     return next();
 });
 
@@ -45,7 +58,8 @@ const validateConversationId = asyncHandler((request, response, next) => {
     const conversationId = generateConversationId(senderId, recipientId);
 
     // Attach conversation ID
-    request.payload.conversationId = conversationId;
+    request.chatPayload.conversationId = conversationId;
+    request.threadPayload.conversationId = conversationId;
     return next();
 });
 

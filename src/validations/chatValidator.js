@@ -2,9 +2,9 @@ const joi = require("joi");
 
 // Validation schema for sending private message
 const privateMessageValidator = joi.object({
-    // Receiver details
-    receiverId: joi.string().trim().required().length(24).label("Receiver ID"),
-    receiverModel: joi.string().trim().required().valid("UserProfile", "BusinessProfile").label("Receiver Model"),
+    // Recipient details
+    recipientId: joi.string().trim().required().length(24).label("Recipient ID"),
+    recipientModel: joi.string().trim().required().valid("UserProfile", "BusinessProfile").label("Recipient Model"),
 
     // Message details
     messageType: joi.string().valid("text", "media").default("text").label("Message type"),

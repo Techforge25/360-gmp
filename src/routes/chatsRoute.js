@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const { authentication, authorization } = require("../middlewares/auth");
-const { sendPrivateMessage } = require("../controllers/chatsController");
+const { sendPrivateMessage, fetchPrivateMessages } = require("../controllers/chatsController");
 const { checkSubscription } = require("../middlewares/checkSubscription");
 const { validateChatPayload, validateConversationId } = require("../middlewares/chatMiddleware");
 
@@ -12,5 +12,8 @@ chatRouter.use(authentication, authorization(["user", "business"]), checkSubscri
 
 // Send private message
 chatRouter.route("/").post(validateChatPayload, validateConversationId, sendPrivateMessage);
+
+// Fetch private messages
+chatRouter.route("/:recipientId").get(fetchPrivateMessages);
 
 module.exports = chatRouter;

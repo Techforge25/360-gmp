@@ -1,12 +1,13 @@
 const { Schema, model } = require("mongoose");
+const aggregatePaginate = require("mongoose-aggregate-paginate-v2");
 
 // Updated Schema
 const chatSchema = new Schema({
     // References
     senderId: { type: Schema.Types.ObjectId, refPath: "senderModel", required: true },
     senderModel: { type: String, required: true, enum: ["UserProfile", "BusinessProfile"] },
-    receiverId: { type: Schema.Types.ObjectId, refPath: "receiverModel", required: true },
-    receiverModel: { type: String, required: true, enum: ["UserProfile", "BusinessProfile"] },    
+    recipientId: { type: Schema.Types.ObjectId, refPath: "recipientModel", required: true },
+    recipientModel: { type: String, required: true, enum: ["UserProfile", "BusinessProfile"] },    
 
     // Thread ID
     conversationId: { type: String, index: true, required: true },
@@ -20,12 +21,15 @@ const chatSchema = new Schema({
     readAt: { type: Date, default: null },
 
     // Last message tracking
-    lastMessage: { type: String, trim: true },
-    lastMessageAt: { type: Date, default: Date.now },
+    // lastMessage: { type: String, trim: true },
+    // lastMessageAt: { type: Date, default: Date.now },
 
     // Media (Images & Videos URLs)
     media: { type: [String] }
 }, { timestamps:true });
+
+// Add pagination plugin
+chatSchema.plugin(aggregatePaginate);
 
 // Model
 const Chat = model("Chat", chatSchema);

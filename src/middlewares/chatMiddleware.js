@@ -16,14 +16,14 @@ const validateChatPayload = asyncHandler((request, response, next) => {
     const senderModel = role === "user" ? "UserProfile" : "BusinessProfile";
 
     // Sanitize payload
-    const { receiverId, receiverModel, messageType, message, media } = validate(privateMessageValidator, request.body) || {};
+    const { recipientId, recipientModel, messageType, message, media } = validate(privateMessageValidator, request.body) || {};
 
     // Attach data
     request.payload = { 
         senderId, 
         senderModel, 
-        receiverId, 
-        receiverModel, 
+        recipientId, 
+        recipientModel, 
         messageType, 
         message, 
         media,
@@ -36,15 +36,15 @@ const validateChatPayload = asyncHandler((request, response, next) => {
 // Validate conversation ID
 const validateConversationId = asyncHandler((request, response, next) => {
     // Sanitize IDs
-    const { senderId, receiverId } = request.payload;
+    const { senderId, recipientId } = request.payload;
     if(!isValidObjectId(senderId)) throw new ApiError(400, "Invalid Sender ID");
-    if(!isValidObjectId(receiverId)) throw new ApiError(400, "Invalid Receiver ID");
+    if(!isValidObjectId(recipientId)) throw new ApiError(400, "Invalid Recipient ID");
 
     // Validate conversation ID
-    if(String(senderId) === String(receiverId)) throw new ApiError(403, "You cannot send a message to yourself");
+    if(String(senderId) === String(recipientId)) throw new ApiError(403, "You cannot send a message to yourself");
 
     // Generate conversation ID
-    const conversationId = generateConversationId(senderId, receiverId);
+    const conversationId = generateConversationId(senderId, recipientId);
 
     // Attach conversation ID
     request.payload.conversationId = conversationId;

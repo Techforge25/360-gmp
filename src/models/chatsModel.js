@@ -20,10 +20,6 @@ const chatSchema = new Schema({
     isRead: { type: Boolean, default: false },
     readAt: { type: Date, default: null },
 
-    // Last message tracking
-    // lastMessage: { type: String, trim: true },
-    // lastMessageAt: { type: Date, default: Date.now },
-
     // Media (Images & Videos URLs)
     media: { type: [String] }
 }, { timestamps:true });

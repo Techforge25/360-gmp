@@ -56,7 +56,7 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
 
 // Fetch threads
 const fetchThreads = asyncHandler(async (request, response) => {
-    const { page = 1, limit = 10 } = request.query;
+    const { page = 1, limit = 10, search = "" } = request.query;
 
     // Get dynamic profile Id
     const { profileId } = getProfileIdAndModel(request.user);
@@ -170,6 +170,11 @@ const fetchThreads = asyncHandler(async (request, response) => {
                 }                
             }
         },
+
+        // Search
+        ...(search ? [
+            { $match: { "participant.name": { $regex: search, $options: "i" } } }
+        ] : []),        
 
         // Sort
         { $sort: { lastMessageAt: -1 } },

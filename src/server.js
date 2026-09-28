@@ -8,6 +8,7 @@ const socketAuthentication = require("./middlewares/socket");
 const Chat = require("./models/chatsModel");
 const ApiError = require("./utils/ApiError");
 const generateConversationId = require("./utils/generateConversationId");
+const connectSocket = require("./validations/connectSocket");
 require("./cron/autoReleaseEscrow");
 require("./cron/subscriptionAutoExpire");
 require("./workers/emailWorker");
@@ -25,81 +26,8 @@ app.set("io", io);
 // Socket authentication middleware
 io.use(socketAuthentication);
 
-// Socket.io connection handling
-io.on("connection", (socket) => {
-    console.log("A user connected:", socket.id);
-
-    // Get user payload from socket
-    const { user } = socket;
-
-    // Join private rooms
-    if(user) 
-    {
-        // Join parent user private room
-        socket.join(String(socket.user._id));
-        console.log(`User joined private room: ${String(socket.user._id)}`);
-
-        const { businessProfileId, userProfileId } = user.profiles || {};
-
-        // Join business profile room if they exist
-        if(businessProfileId)
-        {
-            socket.join(String(businessProfileId));
-            console.log(`User joined business profile room: ${businessProfileId}`);
-        }
-
-        // Join user profile room if it exists
-        if(userProfileId)
-        {
-            socket.join(String(userProfileId));
-            console.log(`User joined user profile room: ${userProfileId}`);
-        }
-    }
-
-    // Join community room
-    socket.on("join_community", (communityId) => {
-        socket.join(`community:${communityId}`);
-        console.log(`User joined community room: ${communityId}`);
-    });
-
-    // Disonnect event
-    socket.on("disconnect", () => {
-        console.log("User disconnected");
-    });
-
-    // Read message
-    socket.on("read-message", async ({ messageId, senderId, receiverId }) => {
-        try 
-        {
-            // Mark as read in db
-            const message = await Chat.findByIdAndUpdate(messageId, { isRead:true });
-            if(!message) throw new ApiError(404, "Message not found! Failed to read");
-
-            console.log("Marking message as read on server.", messageId);
-            
-            // Emit read message
-            io.to(senderId).emit("read-message", { isRead:true });
-            io.to(receiverId).emit("read-message", { isRead:true });
-        } 
-        catch(error) 
-        {
-            throw error;
-        }
-    });
-
-    /* Listen Start & Stop Typing For Private Chats */
-    // Start - Private
-    socket.on("private-typing:start", ({ senderId, senderName, receiverId }) => {
-        const conversationId = generateConversationId(senderId, receiverId);
-        socket.to(receiverId).emit("private-typing:start", { senderName, conversationId });
-    });
-
-    // Stop - Private
-    socket.on("private-typing:stop", ({ senderId, senderName, receiverId }) => {
-        const conversationId = generateConversationId(senderId, receiverId);
-        socket.to(receiverId).emit("private-typing:stop", { senderName, conversationId });
-    });    
-});
+// Socket connection
+connectSocket(io);
 
 // Connect db
 connectDB()

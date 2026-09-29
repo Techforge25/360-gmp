@@ -17,10 +17,6 @@ const threadSchema = new Schema({
     lastMessageAt: { type: Date, default: Date.now },
     messageType: { type: String, enum: ["text", "media"], default: "text" },
 
-    // Read status
-    isRead: { type: Boolean, default: false },
-    readAt: { type: Date, default: null },
-
     // Media (Images & Videos URLs)
     media: { type: [String] }
 }, { timestamps:true });

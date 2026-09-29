@@ -13,7 +13,7 @@ const chatSchema = new Schema({
     conversationId: { type: String, trim: true, required: true, index: true },
 
     // Message details
-    message: { type: String, trim: true, required: true },
+    message: { type: String, trim: true },
     messageType: { type: String, enum: ["text", "media"], default: "text" },
 
     // Read status

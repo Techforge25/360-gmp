@@ -43,9 +43,6 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
     ]);
     if(!chat) throw new ApiError(500, "Failed to send new message");
 
-    // Exclude conversation ID
-    delete chatPayload.conversationId;
-
     // Send real time
     const io = request.app.get("io");
     io.to(String(chatPayload.senderId)).emit("privateMessage", chatPayload);

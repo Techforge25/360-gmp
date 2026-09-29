@@ -216,92 +216,7 @@ const fetchThreads = asyncHandler(async (request, response) => {
     return response.status(200).json(new ApiResponse(200, threads, "Threads have been fetched"));
 });
 
-// Fetch thread list
-// const fetchPrivateMessages = asyncHandler(async (request, response) => {
-//     const { page = 1, limit = 10 } = request.query;
-
-//     // Sanitize ID
-//     const { recipientId } = request.params;
-//     if(!isValidObjectId(recipientId)) throw new ApiError(400, "Invalid Recipient ID");
-
-//     // Get sender details
-//     const { role } = request.user;
-//     const { userProfileId, businessProfileId } = request.user.profiles || {};
-
-//     // Set dynamic sender ID and Model
-//     const senderId = role === "user" ? userProfileId : businessProfileId;
-
-//     // Generate conversation ID
-//     const conversationId = generateConversationId(senderId, recipientId);
-
-//     // Fetch
-//     const messages = await Chat.aggregatePaginate([
-//         // Match 
-//         { $match: { conversationId } },
-
-//         // Lookup business profile
-//         {
-//             $lookup: {
-//                 from: "businessprofiles",
-//                 localField: "recipientId",
-//                 foreignField: "_id",
-//                 as: "businessProfile",
-//                 pipeline:[{ $project: { _id: 0, logo: 1, name: "$companyName", model: "BusinessProfile" } }]             
-//             }
-//         },
-
-//         // Lookup user profile
-//         {
-//             $lookup: {
-//                 from: "userprofiles",
-//                 localField: "recipientId",
-//                 foreignField: "_id",
-//                 as: "userProfile",
-//                 pipeline:[{ $project: { _id: 0, logo: 1, name: "$fullName", model: "UserProfile" } }]        
-//             }
-//         },
-        
-//         // Add fields for recipient info
-//         {
-//             $addFields: {
-//                 recipient: {
-//                     $cond: [
-//                         { $eq: ["$recipientModel", "UserProfile"] },
-//                         "$userProfile",
-//                         "$businessProfile"
-//                     ]
-//                 }
-//             }
-//         },
-
-//         // Unwind model
-//         { $unwind: { path: "$recipient", preserveNullAndEmptyArrays: true } },
-
-//         // Sort
-//         { $sort: { createdAt: -1 } },
-
-//         // Projection
-//         {
-//             $project: {
-//                 message: 1,
-//                 messageType: 1,
-//                 isRead: 1,
-//                 isMyMessage: { $eq: ["$senderId", convertToMongoId(senderId)] },
-//                 lastMessage: 1,
-//                 lastMessageAt: 1,
-//                 media: 1,
-//                 createdAt: 1,
-//                 recipient: 1
-//             }
-//         }
-//     ], { page, limit });
-//     if(!messages.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No messages found"));
-
-//     // Response
-//     return response.status(200).json(new ApiResponse(200, messages, "Threads have been fetched"));
-// });
-
-// Fetch thread list
+// Fetch private messages
 const fetchPrivateMessages = asyncHandler(async (request, response) => {
     const { page = 1, limit = 10 } = request.query;
 
@@ -407,7 +322,7 @@ const fetchPrivateMessages = asyncHandler(async (request, response) => {
     if(!messages.totalDocs) return response.status(200).json(new ApiResponse(200, emptyList, "No messages found"));
 
     // Response
-    return response.status(200).json(new ApiResponse(200, messages, "Threads have been fetched"));
+    return response.status(200).json(new ApiResponse(200, messages, "Private messages have been fetched"));
 });
 
 // Mark messages as read

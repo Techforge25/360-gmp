@@ -48,6 +48,7 @@ const sendPrivateMessage = asyncHandler(async (request, response) => {
 
     // Send real time
     const io = request.app.get("io");
+    io.to(String(chatPayload.senderId)).emit("privateMessage", chatPayload);
     io.to(String(chatPayload.recipientId)).emit("privateMessage", chatPayload);
 
     // Response

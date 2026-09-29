@@ -167,7 +167,20 @@ const fetchThreads = asyncHandler(async (request, response) => {
                         { $arrayElemAt: ["$unreadMessages.count", 0] },
                         0
                     ]
-                }                
+                },
+                
+                // Is read thread
+                isRead: {
+                    $eq: [
+                        {
+                            $ifNull: [
+                                { $arrayElemAt: ["$unreadMessages.count", 0] },
+                                0
+                            ]
+                        },
+                        0
+                    ]
+                }
             }
         },
 
@@ -194,7 +207,8 @@ const fetchThreads = asyncHandler(async (request, response) => {
                 lastMessageAt: 1,
                 messageType: 1,
                 media: 1,
-                unreadCount: 1
+                unreadCount: 1,
+                isRead: 1
             }
         }
     ], { page, limit });
